@@ -10,7 +10,6 @@ import com.github.overengineer.container.scope.Scope;
 import com.github.overengineer.container.scope.Scopes;
 import com.github.overengineer.container.util.Order;
 import com.github.overengineer.container.util.ParameterRef;
-import com.github.overengineer.container.util.ParameterRefImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,77 +19,6 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 /**
- *
- * TODO Features:
- * TODO scoped containers and proxies, factories, enhance interceptor rules (@OR, @AND, @NOT)
- * TODO named containers
- * TODO for scoped proxies - new proxy that uses a provider to obtain it's component on each request -
- * TODO       new ThreadLocalContainer interface and DelegatingThreadLocalContainer impl
- * TODO       new ThreadLocalContainerStrategy, so new DelegatingThreadLocalContainer(threadLocalStrategy);
- * TODO       for instance:
- *
- * <pre>
- *
- *     class SessionScopedContainerStrategy implements ThreadLocalContainerStrategy {
- *
- *          SessionScopedContainerStrategy(Module ... sessionModules) {
- *
- *          }
- *
- *          public Container getContainer(String name?) {
- *              HttpServletRequest request = RequestHolder.getRequest();
- *              HttpSession session = request.getSession(true);
- *              Container = session.get("session.scoped.container." + name);
- *              if (container == null) {
- *                  container = Clarence.please.gimmeThatTainer(sessionModules);
- *                  session.put(...
- *              }
- *              return container;
- *          }
- *
- *     }
- *
- *
- * </pre>
- *
- *
- *  <pre>
- *
- *     class MyApplication extends WebApplication {
- *
- *
- *          protected void configure() {
- *
- *              requestScope.loadModule(...
- *
- *              sessionScope.loadModule(...
- *
- *              globalScope.loadModule(...
- *
- *              master.loadModule(...
- *
- *
- *          }
- *
- *     }
- *
- *
- * </pre>
- *
- * TODO ScopedProxyHandler(ThreadLocalContainer container)
- * TODO
- *
- *
- * TODO Tech debt:
- * TODO cleanup interceptor impl, move from extensions to decorations?
- * TODO move aspect list to invocation factory, create new "aspect cache" interface for factory to implement?
- * TODO then the aop container can just interface with its cache and that of its children?
- *
- * TODO strategies keys become UnqualifiedDependencyKey
- * TODO strategies hold reference to QualifiedImplementationKey
- * TODO container takes requests for QualifiedDependencyRequest
- * TODO component strategy becomes
- *
  * @author rees.byars
  */
 public class DefaultContainer implements Container {
