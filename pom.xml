@@ -3,16 +3,60 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <parent>
-        <artifactId>parent</artifactId>
-        <groupId>com.github.overengineer.scope</groupId>
-        <version>2.0.0-SNAPSHOT</version>
-    </parent>
-
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.overengineer</groupId>
-    <artifactId>container</artifactId>
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
+    </parent>
+
+    <groupId>com.github.overengineer.clarence</groupId>
+    <artifactId>clarence</artifactId>
+    <packaging>jar</packaging>
+    <version>0.0.1-BETA</version>
+
+    <name>Clarence</name>
+    <description>A sweet-ass JSR-330 dependency injection library for Java.</description>
+    <url>https://github.com/overengineer/clarence</url>
+    <inceptionYear>2013</inceptionYear>
+
+    <scm>
+        <url>http://github.com/overengineer/clarence/</url>
+        <connection>scm:git:git://github.com/overengineer/clarence.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/overengineer/clarence.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>http://github.com/overengineer/clarence/issues</url>
+    </issueManagement>
+
+    <licenses>
+        <license>
+            <name>Apache 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Rees Byars</name>
+            <roles>
+                <role>
+                    Creator
+                </role>
+            </roles>
+            <timezone>-4</timezone>
+            <email>reesDOTbyarsATG00GLEMAIL</email>
+        </developer>
+    </developers>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <slf4j.version>1.7.0</slf4j.version>
+    </properties>
 
     <dependencies>
 
@@ -23,7 +67,34 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
         <!-- =========  TEST  ========= -->
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.14</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
@@ -39,7 +110,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
+            <version>3.1.1.RELEASE</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -48,6 +119,7 @@
             <version>0.5</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
 
