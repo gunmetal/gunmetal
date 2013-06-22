@@ -12,8 +12,8 @@
     </parent>
 
     <groupId>com.github.overengineer.clarence</groupId>
-    <artifactId>clarence</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>parent</artifactId>
+    <packaging>pom</packaging>
     <version>0.0.1-BETA</version>
 
     <name>Clarence</name>
@@ -53,70 +53,82 @@
         </developer>
     </developers>
 
+    <modules>
+        <module>core</module>
+    </modules>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.0</slf4j.version>
     </properties>
 
+    <dependencyManagement>
+
+        <dependencies>
+
+            <dependency>
+                <groupId>javax.inject</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>1</version>
+                <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+
+            <!-- =========  TEST  ========= -->
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>1.2.14</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>3.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.picocontainer</groupId>
+                <artifactId>picocontainer</artifactId>
+                <version>2.14.3</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>3.1.1.RELEASE</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>se.jbee</groupId>
+                <artifactId>silk-di</artifactId>
+                <version>0.5</version>
+                <scope>test</scope>
+            </dependency>
+
+        </dependencies>
+
+    </dependencyManagement>
+
     <dependencies>
 
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
-
         <!-- =========  TEST  ========= -->
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.10</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.14</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>3.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.picocontainer</groupId>
-            <artifactId>picocontainer</artifactId>
-            <version>2.14.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>3.1.1.RELEASE</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>se.jbee</groupId>
-            <artifactId>silk-di</artifactId>
-            <version>0.5</version>
             <scope>test</scope>
         </dependency>
 
