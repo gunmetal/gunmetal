@@ -68,11 +68,10 @@ public class ScheduledExecutorTimeoutMonitor<T extends Timeoutable<T>> implement
     protected final Map<String, TimeoutRunner<T>> timeoutRunners = new Hashtable<String, TimeoutRunner<T>>(INITIAL_CAPACITY, LOAD_FACTOR);
     protected transient Map<String, ScheduledFuture<?>> scheduledFutures;
     protected transient ScheduledExecutorService scheduler;
-    protected long monitoringFrequency;
-    protected SchedulerProvider schedulerProvider;
+    @javax.inject.Inject protected long monitoringFrequency;
+    @javax.inject.Inject protected SchedulerProvider schedulerProvider;
 
     @Inject
-    @javax.inject.Inject
     public void setMonitoringFrequency(@Named(CommonConstants.Properties.MONITORING_FREQUENCY) Long monitoringFrequency) {
         this.monitoringFrequency = monitoringFrequency;
     }
@@ -81,7 +80,6 @@ public class ScheduledExecutorTimeoutMonitor<T extends Timeoutable<T>> implement
      * sets the scheduler to be used
      */
     @Inject
-    @javax.inject.Inject
     public void setSchedulerProvider(SchedulerProvider schedulerProvider) {
         this.schedulerProvider = schedulerProvider;
     }

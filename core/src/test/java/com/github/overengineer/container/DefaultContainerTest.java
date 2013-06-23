@@ -15,6 +15,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
+import dagger.ObjectGraph;
 import org.junit.Test;
 import org.picocontainer.DefaultPicoContainer;
 import org.picocontainer.MutablePicoContainer;
@@ -790,6 +791,13 @@ public class DefaultContainerTest implements Serializable {
             }
         }, threads).run(duration, primingRuns, "my container creation");
 
+        long daggers = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                ObjectGraph.create(new DaggerIBeanModule()).get(IBean.class);
+            }
+        }, threads).run(duration, primingRuns, "dagger container creation");
+
         long picos = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
@@ -847,6 +855,7 @@ public class DefaultContainerTest implements Serializable {
         printComparison(mines, guices, "guice");
         printComparison(mines, springs, "spring");
         printComparison(mines, silks, "silks");
+        printComparison(mines, daggers, "dagger");
     }
 
     public static class PrototypeSilkBeans extends BinderModule {
@@ -872,6 +881,16 @@ public class DefaultContainerTest implements Serializable {
                 container3.get(key).stuff();
             }
         }, threads).run(duration, primingRuns, "my plain prototype");
+
+
+        final ObjectGraph objectGraph = ObjectGraph.create(new DaggerIBeanModule());
+
+        long daggers = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                objectGraph.get(IBean.class).stuff();
+            }
+        }, threads).run(duration, primingRuns, "dagger plain prototype");
 
         final MutablePicoContainer picoContainer = new DefaultPicoContainer()
                 .addComponent(IBean.class, Bean.class)
@@ -967,6 +986,15 @@ public class DefaultContainerTest implements Serializable {
                 container2.get(key).yo();
             }
         }, threads).run(duration, primingRuns, "my singleton");
+
+        final ObjectGraph objectGraph = ObjectGraph.create(new DaggerISingletonModule());
+
+        long daggers = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                objectGraph.get(ISingleton.class).yo();
+            }
+        }, threads).run(duration, primingRuns, "dagger singleton");
 
 
         final PicoContainer picoContainer3 = new DefaultPicoContainer(new Caching())
