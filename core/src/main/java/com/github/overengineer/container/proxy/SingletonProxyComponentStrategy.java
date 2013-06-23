@@ -13,7 +13,7 @@ public class SingletonProxyComponentStrategy<T> implements HotSwappableProxyStra
     private final ComponentStrategy<T> delegateStrategy;
     private final ProxyHandlerFactory handlerFactory;
 
-    public SingletonProxyComponentStrategy(Class<?> type, ComponentStrategy<T> delegateStrategy, ProxyHandlerFactory handlerFactory) {
+    SingletonProxyComponentStrategy(Class<?> type, ComponentStrategy<T> delegateStrategy, ProxyHandlerFactory handlerFactory) {
         this.type = type;
         this.delegateStrategy = delegateStrategy;
         this.handlerFactory = handlerFactory;

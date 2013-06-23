@@ -16,7 +16,7 @@ public class PrototypeProxyComponentStrategy<T> implements ComponentStrategy<T> 
     private final ProxyHandlerFactory handlerFactory;
     private transient ThreadLocal<ProxyHandlerHolder> handlerHolder = new ThreadLocal<ProxyHandlerHolder>();
 
-    public PrototypeProxyComponentStrategy(Class<?> type, ComponentStrategy<T> delegateStrategy, ProxyHandlerFactory handlerFactory) {
+    PrototypeProxyComponentStrategy(Class<?> type, ComponentStrategy<T> delegateStrategy, ProxyHandlerFactory handlerFactory) {
         this.type = type;
         this.delegateStrategy = delegateStrategy;
         this.handlerFactory = handlerFactory;

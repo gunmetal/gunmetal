@@ -12,7 +12,7 @@ public class CustomComponentStrategy<T> implements ComponentStrategy<T> {
     private final Class providedType;
     private final Object qualifier;
 
-    public CustomComponentStrategy(ComponentStrategy providerStrategy, MethodInjector methodInjector, Class providedType, Object qualifier) {
+    CustomComponentStrategy(ComponentStrategy providerStrategy, MethodInjector methodInjector, Class providedType, Object qualifier) {
         this.providerStrategy = providerStrategy;
         this.methodInjector = methodInjector;
         this.providedType = providedType;

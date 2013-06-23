@@ -13,7 +13,7 @@ public class DecoratorParameterProxy<T> implements ParameterProxy<T> {
     private final Key<T> key;
     private final Class<?> injectionTarget;
 
-    public DecoratorParameterProxy(Key<T> key, Class<?> injectionTarget) {
+    DecoratorParameterProxy(Key<T> key, Class<?> injectionTarget) {
         this.key = key;
         this.injectionTarget = injectionTarget;
     }

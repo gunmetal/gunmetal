@@ -10,7 +10,7 @@ public class TrailingArgsParameterBuilder<T> implements ParameterBuilder<T> {
     private final ParameterProxy[] proxies;
     private final boolean decorator;
 
-    public TrailingArgsParameterBuilder(ParameterProxy[] proxies, boolean decorator) {
+    TrailingArgsParameterBuilder(ParameterProxy[] proxies, boolean decorator) {
         this.proxies = proxies;
         this.decorator = decorator;
     }

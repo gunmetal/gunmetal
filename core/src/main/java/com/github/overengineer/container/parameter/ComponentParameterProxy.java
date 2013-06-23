@@ -10,7 +10,7 @@ public class ComponentParameterProxy<T> implements ParameterProxy<T> {
 
     private final Key<T> key;
 
-    public ComponentParameterProxy(Key<T> key) {
+    ComponentParameterProxy(Key<T> key) {
         this.key = key;
     }
 

@@ -15,7 +15,7 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
     private final Object qualifier;
     private final List<ComponentInitializationListener> initializationListeners;
 
-    public PrototypeComponentStrategy(ComponentInjector<T> injector, Instantiator<T> instantiator, Object qualifier, List<ComponentInitializationListener> initializationListeners) {
+    PrototypeComponentStrategy(ComponentInjector<T> injector, Instantiator<T> instantiator, Object qualifier, List<ComponentInitializationListener> initializationListeners) {
         this.injector = injector;
         this.instantiator = instantiator;
         this.qualifier = qualifier;

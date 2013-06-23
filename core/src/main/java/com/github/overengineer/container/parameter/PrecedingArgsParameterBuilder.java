@@ -10,7 +10,7 @@ public class PrecedingArgsParameterBuilder<T> implements ParameterBuilder<T> {
     private final ParameterProxy[] proxies;
     private final boolean decorator;
 
-    public PrecedingArgsParameterBuilder(ParameterProxy[] proxies, boolean decorator) {
+    PrecedingArgsParameterBuilder(ParameterProxy[] proxies, boolean decorator) {
         this.proxies = proxies;
         this.decorator = decorator;
     }

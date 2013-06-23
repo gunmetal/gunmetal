@@ -15,7 +15,7 @@ public class DefaultMethodInjector<T> implements MethodInjector<T> {
     private final MethodRef methodRef;
     private final ParameterBuilder parameterBuilder;
 
-    public DefaultMethodInjector(Method method, ParameterBuilder<T> parameterBuilder) {
+    DefaultMethodInjector(Method method, ParameterBuilder<T> parameterBuilder) {
         methodRef = new MethodRefImpl(method);
         this.parameterBuilder = parameterBuilder;
     }

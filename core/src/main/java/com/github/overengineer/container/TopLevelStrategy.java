@@ -7,7 +7,7 @@ public class TopLevelStrategy<T> implements ComponentStrategy<T> {
 
     private final ComponentStrategy<T> delegateStrategy;
 
-    public TopLevelStrategy(ComponentStrategy<T> delegateStrategy) {
+    TopLevelStrategy(ComponentStrategy<T> delegateStrategy) {
         this.delegateStrategy = delegateStrategy;
     }
 

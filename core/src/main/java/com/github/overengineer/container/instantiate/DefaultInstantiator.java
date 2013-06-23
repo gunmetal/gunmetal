@@ -14,7 +14,7 @@ public class DefaultInstantiator<T> implements Instantiator<T> {
     private final ConstructorRef<T> constructorRef;
     private final ParameterBuilder<T> parameterBuilder;
 
-    public DefaultInstantiator(Class<T> type, ConstructorRef<T> constructorRef, ParameterBuilder<T> parameterBuilder) {
+    DefaultInstantiator(Class<T> type, ConstructorRef<T> constructorRef, ParameterBuilder<T> parameterBuilder) {
         this.type = type;
         this.constructorRef = constructorRef;
         this.parameterBuilder = parameterBuilder;

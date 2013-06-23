@@ -15,7 +15,7 @@ public class InstanceStrategy<T> implements ComponentStrategy<T> {
     private final List<ComponentInitializationListener> initializationListeners;
     private boolean initialized = false;
 
-    public InstanceStrategy(T instance, ComponentInjector<T> injector, Object qualifier, List<ComponentInitializationListener> initializationListeners) {
+    InstanceStrategy(T instance, ComponentInjector<T> injector, Object qualifier, List<ComponentInitializationListener> initializationListeners) {
         this.instance = instance;
         this.injector = injector;
         this.qualifier = qualifier;

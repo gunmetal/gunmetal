@@ -11,7 +11,7 @@ public class DefaultComponentInjector<T> implements ComponentInjector<T> {
 
     private final List<MethodInjector<T>> injectors;
 
-    public DefaultComponentInjector(List<MethodInjector<T>> injectors) {
+    DefaultComponentInjector(List<MethodInjector<T>> injectors) {
          this.injectors = injectors;
     }
 
