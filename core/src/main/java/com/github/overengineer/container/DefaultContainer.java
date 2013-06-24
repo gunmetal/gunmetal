@@ -12,8 +12,6 @@ import com.github.overengineer.container.scope.Scopes;
 import com.github.overengineer.container.util.Order;
 import com.github.overengineer.container.util.ParameterRef;
 import com.github.overengineer.container.key.Qualifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
@@ -24,8 +22,6 @@ import java.util.*;
  * @author rees.byars
  */
 public class DefaultContainer implements Container {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultContainer.class);
 
     private final Map<Key<?>, SortedSet<ComponentStrategy<?>>> strategies = new HashMap<Key<?>, SortedSet<ComponentStrategy<?>>>();
     private final List<Container> cascadingContainers = new ArrayList<Container>();
@@ -44,7 +40,6 @@ public class DefaultContainer implements Container {
 
     @Override
     public void verify() throws WiringException {
-        LOG.info("Verifying container.");
         try {
             for (Key<?> key : strategies.keySet()) {
                 get(key);
@@ -58,7 +53,6 @@ public class DefaultContainer implements Container {
         for (Container cascader : cascadingContainers) {
             cascader.verify();
         }
-        LOG.info("Container verified.");
     }
 
     @Override
