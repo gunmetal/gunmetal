@@ -3,6 +3,7 @@ package com.github.overengineer.container;
 import com.github.overengineer.container.key.ClassKey;
 import com.github.overengineer.container.key.Generic;
 import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Locksmith;
 import com.github.overengineer.container.metadata.*;
 import com.github.overengineer.container.proxy.HotSwapException;
 import com.github.overengineer.container.proxy.HotSwappableContainer;
@@ -772,7 +773,7 @@ public class DefaultContainerTest implements Serializable {
 
     int threads = 4;
     long duration = 5000;
-    long primingRuns = 10000;
+    long primingRuns = 1000000;
 
     private void printComparison(long mine, long theirs, String theirName) {
         System.out.println(mine/(theirs * 1.0d) + " times faster than " + theirName);
@@ -781,13 +782,15 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testContainerCreationSpeed() throws Exception {
 
+        final Key<IBean> key = Locksmith.makeKey(IBean.class, com.github.overengineer.container.key.Qualifier.NONE);
+
         long mines = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
                 Clarence.please().gimmeThatTainer()
                         .add(IBean.class, Bean.class)
                         .add(IBean2.class, Bean2.class)
-                        .get(IBean.class);
+                        .get(key);
             }
         }, threads).run(duration, primingRuns, "my container creation");
 

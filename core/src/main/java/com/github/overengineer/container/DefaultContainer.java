@@ -31,6 +31,28 @@ public class DefaultContainer implements Container {
     private final MetadataAdapter metadataAdapter;
     private final List<ComponentInitializationListener> componentInitializationListeners;
 
+    private final StrategyComparator strategyComparator = new StrategyComparator() {
+        @Override
+        public int compare(ComponentStrategy<?> strategy, ComponentStrategy<?> strategy2) {
+            if (strategy.equals(strategy2) ||
+                    //TODO need a better way to ensure only one composite/delegating service etc is allowed
+                    (strategy.getComponentType().equals(strategy2.getComponentType())
+                            && strategy.getQualifier().equals(strategy2.getQualifier()
+                    ) && !Proxy.isProxyClass(strategy.getComponentType()))) {
+                return Order.EXCLUDE;
+            } else if (strategy instanceof TopLevelStrategy) {
+                return Order.PREPEND;
+            } else if (strategy2 instanceof TopLevelStrategy) {
+                return Order.APPEND;
+            } else if (strategy.isDecorator()) {
+                return Order.PREPEND;
+            } else if (strategy2.isDecorator()) {
+                return Order.APPEND;
+            }
+            return Order.PREPEND;
+        }
+    };
+
     public DefaultContainer(ComponentStrategyFactory strategyFactory, DynamicComponentFactory dynamicComponentFactory, MetadataAdapter metadataAdapter, List<ComponentInitializationListener> componentInitializationListeners) {
         this.strategyFactory = strategyFactory;
         this.dynamicComponentFactory = dynamicComponentFactory;
@@ -533,27 +555,7 @@ public class DefaultContainer implements Container {
     protected void putStrategy(Key key, ComponentStrategy<?> strategy) {
         SortedSet<ComponentStrategy<?>> strategySet = strategies.get(key);
         if (strategySet == null) {
-            strategySet = new TreeSet<ComponentStrategy<?>>(new StrategyComparator() {
-                @Override
-                public int compare(ComponentStrategy<?> strategy, ComponentStrategy<?> strategy2) {
-                    if (strategy.equals(strategy2) ||
-                            //TODO need a better way to ensure only one composite/delegating service etc is allowed
-                            (strategy.getComponentType().equals(strategy2.getComponentType())
-                                    && strategy.getQualifier().equals(strategy2.getQualifier()
-                            ) && !Proxy.isProxyClass(strategy.getComponentType()))) {
-                        return Order.EXCLUDE;
-                    } else if (strategy instanceof TopLevelStrategy) {
-                        return Order.PREPEND;
-                    } else if (strategy2 instanceof TopLevelStrategy) {
-                        return Order.APPEND;
-                    } else if (strategy.isDecorator()) {
-                        return Order.PREPEND;
-                    } else if (strategy2.isDecorator()) {
-                        return Order.APPEND;
-                    }
-                    return Order.PREPEND;
-                }
-            });
+            strategySet = new TreeSet<ComponentStrategy<?>>(strategyComparator);
             strategies.put(key, strategySet);
         }
         strategySet.add(strategy);
