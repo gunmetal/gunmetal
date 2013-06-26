@@ -1,15 +1,18 @@
-##eclipse
+# eclipse #
+###########
 .classpath
 .project
 .settings
 eclipsebin
 
-##intellij
+# intellij #
+############
 .idea
 *.iml
 classes
 
-##maven, ant, build dirs
+# maven, ant, build dirs #
+##########################
 bin
 gen
 build
@@ -17,9 +20,11 @@ out
 lib
 target
 
-##release plugin
+# release plugin #
+##################
 pom.xml.*
 release.properties
 
-##mac
+# mac #
+#######
 .DS_Store
