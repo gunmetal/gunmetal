@@ -1,45 +1,25 @@
-# Compiled source #
-###################
-*.com
-*.class
-*.dll
-*.exe
-*.o
-*.so
+##eclipse
+.classpath
+.project
+.settings
+eclipsebin
 
-# Packages #
-############
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
-
-# Logs and databases #
-######################
-*.log
-*.sql
-*.sqlite
-
-# OS generated files #
-######################
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-Icon?
-ehthumbs.db
-Thumbs.db
-
-# Maven Targets #
-################
-*target/*
-
-# IntelliJ #
-############
-*.idea*
+##intellij
+.idea
 *.iml
+classes
+
+##maven, ant, build dirs
+bin
+gen
+build
+out
+lib
+target
+
+##release plugin
+pom.xml.*
+release.properties
+
+##mac
+.DS_Store
