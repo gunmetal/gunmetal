@@ -4,7 +4,11 @@ import com.github.overengineer.container.key.Key;
 import com.github.overengineer.container.key.KeyUtil;
 import com.github.overengineer.container.key.Locksmith;
 import com.github.overengineer.container.metadata.MetadataAdapter;
-import com.github.overengineer.container.util.*;
+import com.github.overengineer.container.util.ConstructorRefImpl;
+import com.github.overengineer.container.util.MethodRefImpl;
+import com.github.overengineer.container.util.ParameterRef;
+import com.github.overengineer.container.util.ParameterRefImpl;
+import com.github.overengineer.container.util.ParameterizedFunction;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;

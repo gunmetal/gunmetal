@@ -10,7 +10,7 @@ import java.lang.reflect.Type;
  */
 public abstract class Locksmith {
 
-    private Locksmith(){}
+    private Locksmith() { }
 
     public static <T> Key<T> makeKey(Class<T> cls) {
         return new ClassKey<T>(cls);

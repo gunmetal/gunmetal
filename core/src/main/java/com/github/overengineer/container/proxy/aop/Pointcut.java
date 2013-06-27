@@ -1,6 +1,12 @@
 package com.github.overengineer.container.proxy.aop;
 
-import java.lang.annotation.*;
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author rees.byars
@@ -10,17 +16,17 @@ import java.lang.annotation.*;
 @Documented
 public @interface Pointcut {
 
-    Class[] classes() default {};
+    Class[] classes() default { };
 
     Class<?> returnType() default PlaceHolder.class;
 
     Class[] paramterTypes() default PlaceHolder.class;
 
-    Class<? extends Annotation>[] annotations() default {};
+    Class<? extends Annotation>[] annotations() default { };
 
     String methodNameExpression() default "";
 
     String classNameExpression() default "";
 
-    public @interface PlaceHolder {}
+    public @interface PlaceHolder { }
 }

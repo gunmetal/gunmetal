@@ -16,7 +16,16 @@ import com.github.overengineer.container.key.Qualifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author rees.byars
@@ -34,11 +43,11 @@ public class DefaultContainer implements Container {
     private final StrategyComparator strategyComparator = new StrategyComparator() {
         @Override
         public int compare(ComponentStrategy<?> strategy, ComponentStrategy<?> strategy2) {
-            if (strategy.equals(strategy2) ||
+            if (strategy.equals(strategy2)
                     //TODO need a better way to ensure only one composite/delegating service etc is allowed
-                    (strategy.getComponentType().equals(strategy2.getComponentType())
-                            && strategy.getQualifier().equals(strategy2.getQualifier()
-                    ) && !Proxy.isProxyClass(strategy.getComponentType()))) {
+                    || (strategy.getComponentType().equals(strategy2.getComponentType())
+                            && strategy.getQualifier().equals(strategy2.getQualifier())
+                            && !Proxy.isProxyClass(strategy.getComponentType()))) {
                 return Order.EXCLUDE;
             } else if (strategy instanceof TopLevelStrategy) {
                 return Order.PREPEND;

@@ -1,6 +1,10 @@
 package com.github.overengineer.container.proxy;
 
-import com.github.overengineer.container.*;
+import com.github.overengineer.container.Container;
+import com.github.overengineer.container.ComponentInitializationListener;
+import com.github.overengineer.container.ComponentStrategy;
+import com.github.overengineer.container.ComponentStrategyFactory;
+import com.github.overengineer.container.DefaultContainer;
 import com.github.overengineer.container.dynamic.DynamicComponentFactory;
 import com.github.overengineer.container.key.Key;
 import com.github.overengineer.container.key.Locksmith;

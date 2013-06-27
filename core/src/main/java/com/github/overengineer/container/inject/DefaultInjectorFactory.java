@@ -51,6 +51,6 @@ public class DefaultInjectorFactory implements InjectorFactory {
 
     static class EmptyInjector<T> implements ComponentInjector<T> {
         @Override
-        public void inject(T component, Provider provider) {}
+        public void inject(T component, Provider provider) { }
     }
 }

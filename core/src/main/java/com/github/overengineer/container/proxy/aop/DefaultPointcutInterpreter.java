@@ -19,11 +19,12 @@ public class DefaultPointcutInterpreter implements PointcutInterpreter {
         try {
             Pointcut rules = aspectClass.getAnnotation(Pointcut.class);
             return
-                    methodNameMatches(method.getName(), rules.methodNameExpression()) &&
-                            returnTypeMatches(method.getReturnType(), rules.returnType()) &&
-                            classMatches(targetClass, rules.classes(), rules.classNameExpression()) &&
-                            parametersMatch(method.getParameterTypes(), rules.paramterTypes()) &&
-                            annotationsMatch(method, rules.annotations());
+                    methodNameMatches(method.getName(), rules.methodNameExpression())
+                    && returnTypeMatches(method.getReturnType(), rules.returnType())
+                    && classMatches(targetClass, rules.classes(), rules.classNameExpression())
+                    && parametersMatch(method.getParameterTypes(), rules.paramterTypes())
+                    && annotationsMatch(method, rules.annotations());
+
         } catch (NullPointerException e) {
             return true;
         }

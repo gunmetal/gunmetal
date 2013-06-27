@@ -4,7 +4,10 @@ import com.github.overengineer.container.key.ClassKey;
 import com.github.overengineer.container.key.Generic;
 import com.github.overengineer.container.key.Key;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author rees.byars

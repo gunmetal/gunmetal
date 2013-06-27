@@ -33,7 +33,7 @@ public class DynamicNonManagedComponentFactory<T> implements InvocationHandler, 
         } else if ("hashCode".equals(methodName)) {
             return System.identityHashCode(proxy);
         } else if ("toString".equals(methodName)) {
-            return proxy.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + "$DynamicNonManagedComponentFactory$[" + factoryInterface.getName() + "][" + concreteProducedType.getName() + "]" ;
+            return proxy.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + "$DynamicNonManagedComponentFactory$[" + factoryInterface.getName() + "][" + concreteProducedType.getName() + "]";
         }
         return instantiator.getInstance(provider, objects);
     }

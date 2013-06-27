@@ -10,6 +10,6 @@ public interface HotSwappableProxyStrategy<T> extends ComponentStrategy<T> {
 
     ComponentProxyHandler<T> getProxyHandler();
 
-    public void swap(ComponentProxyHandler<T> proxyHandler, Provider provider);
+    void swap(ComponentProxyHandler<T> proxyHandler, Provider provider);
 
 }

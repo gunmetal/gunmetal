@@ -23,6 +23,6 @@ public class AopModule extends BaseModule {
         use(AdvisedInvocationFactory.class).forType(JoinPointInvocationFactory.class);
         use(DefaultPointcutInterpreter.class).forType(PointcutInterpreter.class);
         use(DefaultAopContainer.class).forType(AopContainer.class);
-        use(new ArrayList<Aspect>()).forType(new Generic<List<Aspect>>(){});
+        use(new ArrayList<Aspect>()).forType(new Generic<List<Aspect>>() { });
     }
 }
