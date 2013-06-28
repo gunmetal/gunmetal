@@ -87,8 +87,7 @@ public class DefaultContainer implements Container {
     }
 
     @Override
-    public <M extends Module> Container loadModule(Class<M> moduleClass) {
-        Module module = strategyFactory.create(moduleClass, Qualifier.NONE, Scopes.PROTOTYPE).get(this);
+    public <M extends Module> Container loadModule(M module) {
         for (Mapping<?> mapping : module.getMappings()) {
             Class<?> implementationType = mapping.getImplementationType();
             Object qualifier = mapping.getQualifier();
@@ -117,6 +116,11 @@ public class DefaultContainer implements Container {
             registerNonManagedComponentFactory(entry.getKey(), entry.getValue());
         }
         return this;
+    }
+
+    @Override
+    public <M extends Module> Container loadModule(Class<M> moduleClass) {
+        return loadModule(strategyFactory.create(moduleClass, Qualifier.NONE, Scopes.PROTOTYPE).get(this));
     }
 
     @Override

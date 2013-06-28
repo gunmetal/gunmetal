@@ -3,11 +3,14 @@ package com.github.overengineer.container;
 import com.github.overengineer.container.key.ClassKey;
 import com.github.overengineer.container.key.Key;
 import com.github.overengineer.container.key.Locksmith;
+import com.github.overengineer.container.key.Qualifier;
+import com.github.overengineer.container.module.BaseModule;
+import com.github.overengineer.container.module.Module;
 import com.github.overengineer.container.proxy.HotSwapException;
+import com.github.overengineer.container.scope.Scopes;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Scopes;
 import dagger.ObjectGraph;
 import org.picocontainer.DefaultPicoContainer;
 import org.picocontainer.MutablePicoContainer;
@@ -34,7 +37,7 @@ public class BenchMarks {
 
     int threads = 4;
     long duration = 5000;
-    long primingRuns = 10000;
+    long primingRuns = 1000000;
 
     private void printComparison(long mine, long theirs, String theirName) {
         System.out.println(mine/(theirs * 1.0d) + " times faster than " + theirName);
@@ -43,22 +46,31 @@ public class BenchMarks {
     @Test
     public void testContainerCreationSpeed() throws Exception {
 
-        final Key<IBean> key = Locksmith.makeKey(IBean.class, com.github.overengineer.container.key.Qualifier.NONE);
+        final Key<IBean> key = Locksmith.makeKey(IBean.class, Qualifier.NONE);
+
+        final Module module = new BaseModule() {
+            @Override
+            protected void configure() {
+                use(Bean.class).withScope(Scopes.PROTOTYPE).forType(IBean.class);
+                use(Bean2.class).withScope(Scopes.PROTOTYPE).forType(IBean2.class);
+            }
+        };
 
         long mines = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                Clarence.please().gimmeThatTainer()
-                        .add(IBean.class, Bean.class)
-                        .add(IBean2.class, Bean2.class)
+                Clarence.please().withFastMetadata().gimmeThatTainer()
+                        .loadModule(module)
                         .get(key);
             }
         }, threads).run(duration, primingRuns, "my container creation");
 
+        final DaggerIBeanModule daggerIBeanModule = new DaggerIBeanModule();
+
         long daggers = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                ObjectGraph.create(new DaggerIBeanModule()).get(IBean.class);
+                ObjectGraph.create(daggerIBeanModule).get(IBean.class);
             }
         }, threads).run(duration, primingRuns, "dagger container creation");
 
@@ -292,8 +304,8 @@ public class BenchMarks {
         final Injector injector3 = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(ISingleton.class).to(Singleton.class).in(Scopes.SINGLETON);
-                bind(ISingleton2.class).to(Singleton2.class).in(Scopes.SINGLETON);
+                bind(ISingleton.class).to(Singleton.class).in(com.google.inject.Scopes.SINGLETON);
+                bind(ISingleton2.class).to(Singleton2.class).in(com.google.inject.Scopes.SINGLETON);
             }
         });
 

@@ -12,6 +12,8 @@ public interface Container extends Provider {
 
     void verify() throws WiringException;
 
+    <M extends Module> Container loadModule(M module);
+
     <M extends Module> Container loadModule(Class<M> module);
 
     Container addCascadingContainer(Container container);
