@@ -50,35 +50,35 @@ public class BenchMarks {
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                Clarence.please().withFastMetadata().gimmeThatTainer().loadModule(new BenchMarkModule()).get(A.class);
+                Clarence.please().withFastMetadata().gimmeThatTainer().loadModule(new BenchMarkModule()).get(AA.class);
             }
         }, threads).run(duration, primingRuns, "my container creation");
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                ObjectGraph.create(new DaggerBenchMarkModule()).get(A.class);
+                ObjectGraph.create(new DaggerBenchMarkModule()).get(AA.class);
             }
         }, threads).run(duration, primingRuns, "dagger container creation");
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                Bootstrap.injector(SilkBenchMarkModule.class).resolve(Dependency.dependency(A.class));
+                Bootstrap.injector(SilkBenchMarkModule.class).resolve(Dependency.dependency(AA.class));
             }
         }, threads).run(duration, primingRuns, "silk container creation");
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                new PicoBenchMarkModule().get().getComponent(A.class);
+                new PicoBenchMarkModule().get().getComponent(AA.class);
             }
         }, threads).run(duration, primingRuns, "pico container creation");
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                Guice.createInjector(new GuiceBenchMarkModule()).getInstance(A.class);
+                Guice.createInjector(new GuiceBenchMarkModule()).getInstance(AA.class);
             }
         }, threads).run(duration, primingRuns, "guice container creation");
 

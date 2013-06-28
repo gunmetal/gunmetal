@@ -3,8 +3,16 @@ package com.github.overengineer.container.benchmark;
 import dagger.Module;
 import dagger.Provides;
 
-@Module(library = true, injects = A.class)
+@Module(library = true, injects = AA.class)
 public class DaggerBenchMarkModule {
+
+    @Provides AA aa(A a, BB bb, R r, E e, E ee, S s) {
+        return new AA(a, bb, r, e, ee, s);
+    }
+
+    @Provides BB bb(B b, R r, E e, E ee, S s) {
+        return new BB(b, r, e, ee, s);
+    }
 
     @Provides A a(B b) {
         return new A(b);

@@ -8,6 +8,8 @@ import com.google.inject.AbstractModule;
 public class GuiceBenchMarkModule extends AbstractModule {
     @Override
     protected void configure() {
+        bind(AA.class);
+        bind(BB.class);
         bind(A.class);
         bind(B.class);
         bind(C.class);

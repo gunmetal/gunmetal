@@ -8,6 +8,8 @@ import se.jbee.inject.bind.BinderModule;
 public class SilkBenchMarkModule extends BinderModule {
     @Override
     protected void declare() {
+        bind(AA.class).toConstructor();
+        bind(BB.class).toConstructor();
         bind(A.class).toConstructor();
         bind(B.class).toConstructor();
         bind(C.class).toConstructor();

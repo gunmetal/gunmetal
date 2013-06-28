@@ -10,6 +10,8 @@ public class PicoBenchMarkModule {
 
     public PicoContainer get() {
         return new TransientPicoContainer()
+            .addComponent(AA.class)
+            .addComponent(BB.class)
             .addComponent(A.class)
             .addComponent(B.class)
             .addComponent(C.class)

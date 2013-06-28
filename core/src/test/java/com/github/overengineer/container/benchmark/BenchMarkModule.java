@@ -9,6 +9,8 @@ import com.github.overengineer.container.scope.Scopes;
 public class BenchMarkModule extends BaseModule {
     @Override
     protected void configure() {
+        use(AA.class).withScope(Scopes.PROTOTYPE).forType(AA.class);
+        use(BB.class).withScope(Scopes.PROTOTYPE).forType(BB.class);
         use(A.class).withScope(Scopes.PROTOTYPE).forType(A.class);
         use(B.class).withScope(Scopes.PROTOTYPE).forType(B.class);
         use(C.class).withScope(Scopes.PROTOTYPE).forType(C.class);
