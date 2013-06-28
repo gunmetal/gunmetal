@@ -1,5 +1,8 @@
 package com.github.overengineer.container;
 
+import com.github.overengineer.container.benchmark.A;
+import com.github.overengineer.container.benchmark.BenchMarkModule;
+import com.github.overengineer.container.benchmark.DaggerBenchMarkModule;
 import com.github.overengineer.container.key.ClassKey;
 import com.github.overengineer.container.key.Key;
 import com.github.overengineer.container.key.Locksmith;
@@ -41,6 +44,54 @@ public class BenchMarks {
 
     private void printComparison(long mine, long theirs, String theirName) {
         System.out.println(mine/(theirs * 1.0d) + " times faster than " + theirName);
+    }
+
+    @Test
+    public void testContainerCreationSpeed_x() throws Exception {
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                Clarence.please().withFastMetadata().gimmeThatTainer().loadModule(new BenchMarkModule());
+            }
+        }, threads).run(duration, primingRuns, "my container creation");
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                ObjectGraph.create(new DaggerBenchMarkModule());
+            }
+        }, threads).run(duration, primingRuns, "dagger container creation");
+
+    }
+
+    @Test
+    public void testPrototypeSpeed_x() throws Exception {
+
+        final Key<A> key = Locksmith.makeKey(A.class, Qualifier.NONE);
+
+        final Module module = new BenchMarkModule();
+
+        final Container container = Clarence.please().withFastMetadata().gimmeThatTainer().loadModule(module);
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                container.get(key);
+            }
+        }, threads).run(duration, primingRuns, "my prototype creation");
+
+        final DaggerBenchMarkModule daggerBenchMarkModule = new DaggerBenchMarkModule();
+
+        final ObjectGraph objectGraph = ObjectGraph.create(daggerBenchMarkModule);
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                objectGraph.get(A.class);
+            }
+        }, threads).run(duration, primingRuns, "dagger prototype creation");
+
     }
 
     @Test
