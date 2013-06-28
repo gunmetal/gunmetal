@@ -1,8 +1,11 @@
 package com.github.overengineer.container.benchmark;
 
+import javax.inject.Inject;
+
 /**
  * @author rees.byars
  */
 public class B {
-    B(C c) { }
+    @Inject
+    public B(C c) { }
 }

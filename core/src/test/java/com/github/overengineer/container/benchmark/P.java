@@ -5,7 +5,7 @@ import javax.inject.Inject;
 /**
  * @author rees.byars
  */
-public class L {
+public class P {
     @Inject
-    public L(M m) { }
+    public P(Q q) { }
 }

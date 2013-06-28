@@ -1,8 +1,6 @@
 package com.github.overengineer.container;
 
-import com.github.overengineer.container.benchmark.A;
-import com.github.overengineer.container.benchmark.BenchMarkModule;
-import com.github.overengineer.container.benchmark.DaggerBenchMarkModule;
+import com.github.overengineer.container.benchmark.*;
 import com.github.overengineer.container.key.ClassKey;
 import com.github.overengineer.container.key.Key;
 import com.github.overengineer.container.key.Locksmith;
@@ -40,7 +38,7 @@ public class BenchMarks {
 
     int threads = 4;
     long duration = 5000;
-    long primingRuns = 1000000;
+    long primingRuns = 100000;
 
     private void printComparison(long mine, long theirs, String theirName) {
         System.out.println(mine/(theirs * 1.0d) + " times faster than " + theirName);
@@ -52,16 +50,37 @@ public class BenchMarks {
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                Clarence.please().withFastMetadata().gimmeThatTainer().loadModule(new BenchMarkModule());
+                Clarence.please().withFastMetadata().gimmeThatTainer().loadModule(new BenchMarkModule()).get(A.class);
             }
         }, threads).run(duration, primingRuns, "my container creation");
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() throws HotSwapException {
-                ObjectGraph.create(new DaggerBenchMarkModule());
+                ObjectGraph.create(new DaggerBenchMarkModule()).get(A.class);
             }
         }, threads).run(duration, primingRuns, "dagger container creation");
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                Bootstrap.injector(SilkBenchMarkModule.class).resolve(Dependency.dependency(A.class));
+            }
+        }, threads).run(duration, primingRuns, "silk container creation");
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                new PicoBenchMarkModule().get().getComponent(A.class);
+            }
+        }, threads).run(duration, primingRuns, "pico container creation");
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() throws HotSwapException {
+                Guice.createInjector(new GuiceBenchMarkModule()).getInstance(A.class);
+            }
+        }, threads).run(duration, primingRuns, "guice container creation");
 
     }
 

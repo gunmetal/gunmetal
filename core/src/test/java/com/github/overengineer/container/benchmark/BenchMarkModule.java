@@ -21,5 +21,19 @@ public class BenchMarkModule extends BaseModule {
         use(J.class).withScope(Scopes.PROTOTYPE).forType(J.class);
         use(K.class).withScope(Scopes.PROTOTYPE).forType(K.class);
         use(L.class).withScope(Scopes.PROTOTYPE).forType(L.class);
+        use(M.class).withScope(Scopes.PROTOTYPE).forType(M.class);
+        use(N.class).withScope(Scopes.PROTOTYPE).forType(N.class);
+        use(O.class).withScope(Scopes.PROTOTYPE).forType(O.class);
+        use(P.class).withScope(Scopes.PROTOTYPE).forType(P.class);
+        use(Q.class).withScope(Scopes.PROTOTYPE).forType(Q.class);
+        use(R.class).withScope(Scopes.PROTOTYPE).forType(R.class);
+        use(S.class).withScope(Scopes.PROTOTYPE).forType(S.class);
+        use(T.class).withScope(Scopes.PROTOTYPE).forType(T.class);
+        use(U.class).withScope(Scopes.PROTOTYPE).forType(U.class);
+        use(V.class).withScope(Scopes.PROTOTYPE).forType(V.class);
+        use(W.class).withScope(Scopes.PROTOTYPE).forType(W.class);
+        use(X.class).withScope(Scopes.PROTOTYPE).forType(X.class);
+        use(Y.class).withScope(Scopes.PROTOTYPE).forType(Y.class);
+        use(Z.class).withScope(Scopes.PROTOTYPE).forType(Z.class);
     }
 }

@@ -50,8 +50,64 @@ public class DaggerBenchMarkModule {
         return new K(l);
     }
 
-    @Provides L l() {
-        return new L();
+    @Provides L l(M m) {
+        return new L(m);
+    }
+
+    @Provides M m(N n) {
+        return new M(n);
+    }
+
+    @Provides N n(O o) {
+        return new N(o);
+    }
+
+    @Provides O o(P p) {
+        return new O(p);
+    }
+
+    @Provides P p(Q q) {
+        return new P(q);
+    }
+
+    @Provides Q q(R r) {
+        return new Q(r);
+    }
+
+    @Provides R r(S s) {
+        return new R(s);
+    }
+
+    @Provides S s(T t) {
+        return new S(t);
+    }
+
+    @Provides T t(U u) {
+        return new T(u);
+    }
+
+    @Provides U u(V v) {
+        return new U(v);
+    }
+
+    @Provides V v(W w) {
+        return new V(w);
+    }
+
+    @Provides W w(X x) {
+        return new W(x);
+    }
+
+    @Provides X x(Y y) {
+        return new X(y);
+    }
+
+    @Provides Y y(Z z) {
+        return new Y(z);
+    }
+
+    @Provides Z z() {
+        return new Z();
     }
 
 }
