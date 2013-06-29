@@ -3,6 +3,9 @@ package com.github.overengineer.container.module;
 import com.github.overengineer.container.key.ClassKey;
 import com.github.overengineer.container.key.Generic;
 import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Qualifier;
+import com.github.overengineer.container.scope.Scope;
+import com.github.overengineer.container.scope.Scopes;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -16,6 +19,8 @@ public abstract class BaseModule implements Module {
 
     private final List<Mapping<?>> mappings = new LinkedList<Mapping<?>>();
     private final Map<Key, Class> nonManagedComponentFactories = new HashMap<Key, Class>();
+    private Scope defaultScope = Scopes.SINGLETON;
+    private Object defaultQualifier = Qualifier.NONE;
 
     public BaseModule() {
         configure();
@@ -36,18 +41,24 @@ public abstract class BaseModule implements Module {
     protected  <V> MutableMapping<V> use(Class<V> implementationClass) {
         TypeMapping<V> mapping = new TypeMapping<V>(implementationClass);
         mappings.add(mapping);
+        mapping.withScope(defaultScope);
+        mapping.withQualifier(defaultQualifier);
         return mapping;
     }
 
     protected  <V> MutableMapping<V> use(Generic<V> implementationGeneric) {
         TypeMapping<V> mapping = new GenericMapping<V>(implementationGeneric);
         mappings.add(mapping);
+        mapping.withScope(defaultScope);
+        mapping.withQualifier(defaultQualifier);
         return mapping;
     }
 
     protected  <V> MutableMapping<V> use(V implementation) {
         InstanceMappingImpl<V> mapping = new InstanceMappingImpl<V>(implementation);
         mappings.add(mapping);
+        mapping.withScope(defaultScope);
+        mapping.withQualifier(defaultQualifier);
         return mapping;
     }
 
@@ -66,6 +77,16 @@ public abstract class BaseModule implements Module {
         public void toProduce(Class value) {
             nonManagedComponentFactories.put(key, value);
         }
+    }
+
+    public BaseModule defaultScope(Scope scope) {
+        defaultScope = scope;
+        return this;
+    }
+
+    public BaseModule defaultQualifier(Object qualifier) {
+        defaultQualifier = qualifier;
+        return this;
     }
 
 }

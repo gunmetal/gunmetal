@@ -10,8 +10,12 @@ public class DaggerBenchMarkModule {
         return new AA(a, bb, r, e, ee, s);
     }
 
-    @Provides BB bb(B b, R r, E e, E ee, S s) {
-        return new BB(b, r, e, ee, s);
+    @Provides BB bb(B b, CC cc, R r, E e, E ee, S s) {
+        return new BB(b, cc, r, e, ee, s);
+    }
+
+    @Provides CC cc(C c, R r, E e, E ee, S s) {
+        return new CC(c, r, e, ee, s);
     }
 
     @Provides A a(B b) {

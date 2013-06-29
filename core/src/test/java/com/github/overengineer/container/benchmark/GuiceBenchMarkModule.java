@@ -10,6 +10,7 @@ public class GuiceBenchMarkModule extends AbstractModule {
     protected void configure() {
         bind(AA.class);
         bind(BB.class);
+        bind(CC.class);
         bind(A.class);
         bind(B.class);
         bind(C.class);
