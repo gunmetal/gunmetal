@@ -24,10 +24,10 @@
  **********************************************************************************************************************/
 package scope.monitor;
 
-import com.github.overengineer.container.metadata.Inject;
-import com.github.overengineer.container.metadata.Named;
-import com.github.overengineer.container.metadata.PostConstructable;
-import com.github.overengineer.container.metadata.Prototype;
+import com.github.overengineer.gunmetal.metadata.Inject;
+import com.github.overengineer.gunmetal.metadata.Named;
+import com.github.overengineer.gunmetal.metadata.PostConstructable;
+import com.github.overengineer.gunmetal.metadata.Prototype;
 import scope.CommonConstants;
 
 import java.io.IOException;

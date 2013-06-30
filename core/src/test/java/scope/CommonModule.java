@@ -1,7 +1,7 @@
 package scope;
 
-import com.github.overengineer.container.key.Generic;
-import com.github.overengineer.container.module.BaseModule;
+import com.github.overengineer.gunmetal.key.Generic;
+import com.github.overengineer.gunmetal.module.BaseModule;
 import scope.monitor.*;
 
 import java.util.Collections;

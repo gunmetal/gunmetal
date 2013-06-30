@@ -1,0 +1,13 @@
+package com.github.overengineer.gunmetal.benchmark;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+/**
+ * @author rees.byars
+ */
+@Singleton
+public class E {
+    @Inject
+    public E(F f) { }
+}
