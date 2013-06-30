@@ -1,6 +1,6 @@
 package com.github.overengineer.container.module;
 
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 
 import java.io.Serializable;
 import java.util.List;
@@ -15,6 +15,6 @@ public interface Module extends Serializable {
 
     List<Mapping<?>> getMappings();
 
-    Map<Key, Class> getNonManagedComponentFactories();
+    Map<Dependency, Class> getNonManagedComponentFactories();
 
 }

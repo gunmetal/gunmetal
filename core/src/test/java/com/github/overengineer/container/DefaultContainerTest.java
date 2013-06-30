@@ -1,7 +1,7 @@
 package com.github.overengineer.container;
 
 import com.github.overengineer.container.key.Generic;
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 import com.github.overengineer.container.metadata.*;
 import com.github.overengineer.container.proxy.HotSwapException;
 import com.github.overengineer.container.proxy.HotSwappableContainer;
@@ -43,13 +43,8 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testLoadModule() {
 
-        Container container = Gunmetal.raw().load();
-
-        container.loadModule(CommonModule.class);
-
-        TimeoutMonitor monitor = container.get(TimeoutMonitor.class);
-
-        assertNotNull(monitor);
+        assertNotNull(
+                Gunmetal.create(new CommonModule()).get(TimeoutMonitor.class));
 
     }
 
@@ -300,7 +295,7 @@ public class DefaultContainerTest implements Serializable {
 
         Container container = Gunmetal.raw().load();
 
-        Key<NonManagedComponentFactory<NamedComponent>> factoryKey = new Generic<NonManagedComponentFactory<NamedComponent>>() {};
+        Dependency<NonManagedComponentFactory<NamedComponent>> factoryKey = new Generic<NonManagedComponentFactory<NamedComponent>>() {};
 
         container.registerNonManagedComponentFactory(factoryKey, NonManagedComponent.class);
 

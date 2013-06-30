@@ -1,12 +1,25 @@
 package com.github.overengineer.container.util;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  */
 public class ReflectionUtil {
+
+    @SuppressWarnings("unchecked")
+    public static <T> Class<? super T> getRawClass(Type type) {
+        if (type instanceof Class) {
+            return (Class) type;
+        } else if (type instanceof ParameterizedType) {
+            return (Class) ((ParameterizedType) type).getRawType();
+        } else {
+            throw new UnsupportedOperationException("The type [" + type + "] is currently unsupported");
+        }
+    }
 
     public static boolean isPublicSetter(Method method) {
         return method.getName().startsWith("set") && method.getParameterTypes().length == 1 && method.getReturnType() == Void.TYPE;

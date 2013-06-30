@@ -8,8 +8,8 @@ import com.github.overengineer.container.key.Generic;
 public class GenericMapping<T> extends TypeMapping<T> {
 
     @SuppressWarnings("unchecked")
-    public GenericMapping(Generic<? extends T> genericKey) {
-        super((Class<T>) genericKey.getTargetClass());
+    public GenericMapping(Generic<? extends T> generic) {
+        super((Class<T>) generic.getTypeKey().getRaw());
     }
 
 }

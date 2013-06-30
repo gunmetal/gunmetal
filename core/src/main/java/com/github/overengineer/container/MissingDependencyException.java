@@ -1,12 +1,12 @@
 package com.github.overengineer.container;
 
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 
 /**
  * @author rees.byars
  */
 public class MissingDependencyException extends RuntimeException {
-    public MissingDependencyException(Key key) {
-        super("No components of type [" + key.getType() + "] with qualifier [" + key.getQualifier() + "] have been registered with the container");
+    public MissingDependencyException(Dependency dependency) {
+        super("No components of type [" + dependency.getTypeKey().getType() + "] with qualifier [" + dependency.getQualifier() + "] have been registered with the container");
     }
 }

@@ -1,7 +1,7 @@
 package com.github.overengineer.container.module;
 
+import com.github.overengineer.container.key.Dependency;
 import com.github.overengineer.container.key.Generic;
-import com.github.overengineer.container.key.Key;
 import com.github.overengineer.container.scope.Scope;
 import com.github.overengineer.container.util.ReflectionUtil;
 
@@ -18,7 +18,7 @@ public class TypeMapping<T> implements Mapping<T>, MutableMapping<T> {
     private Scope scope;
     private Object qualifier;
     private List<Class<?>> targetClasses = new LinkedList<Class<?>>();
-    private List<Key> targetKeys = new LinkedList<Key>();
+    private List<Dependency> targetDependencies = new LinkedList<Dependency>();
 
     public TypeMapping(Class<T> implementationType) {
         this.implementationType = implementationType;
@@ -41,8 +41,8 @@ public class TypeMapping<T> implements Mapping<T>, MutableMapping<T> {
     }
 
     @Override
-    public MutableMapping<T> forType(Generic<? super T> targetKey) {
-        targetKeys.add(targetKey);
+    public MutableMapping<T> forType(Generic<? super T> targetDependency) {
+        targetDependencies.add(targetDependency);
         return this;
     }
 
@@ -69,8 +69,8 @@ public class TypeMapping<T> implements Mapping<T>, MutableMapping<T> {
     }
 
     @Override
-    public List<Key> getTargetKeys() {
-        return targetKeys;
+    public List<Dependency> getTargetDependencies() {
+        return targetDependencies;
     }
 
     @Override

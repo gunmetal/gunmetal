@@ -2,7 +2,7 @@ package com.github.overengineer.container.dynamic;
 
 import com.github.overengineer.container.Provider;
 import com.github.overengineer.container.inject.MethodInjector;
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 
 import java.io.Serializable;
 
@@ -11,17 +11,17 @@ import java.io.Serializable;
  */
 public class ServiceDelegateInvoker<T> implements Serializable {
 
-    private final Key<T> serviceDelegateKey;
+    private final Dependency<T> serviceDelegateDependency;
     private final MethodInjector<T> methodInjector;
     private final Provider provider;
 
-    ServiceDelegateInvoker(Key<T> serviceDelegateKey, MethodInjector<T> methodInjector, Provider provider) {
-        this.serviceDelegateKey = serviceDelegateKey;
+    ServiceDelegateInvoker(Dependency<T> serviceDelegateDependency, MethodInjector<T> methodInjector, Provider provider) {
+        this.serviceDelegateDependency = serviceDelegateDependency;
         this.methodInjector = methodInjector;
         this.provider = provider;
     }
 
     public Object invoke(Object[] providedArgs) {
-        return methodInjector.inject(provider.get(serviceDelegateKey), provider, providedArgs);
+        return methodInjector.inject(provider.get(serviceDelegateDependency), provider, providedArgs);
     }
 }

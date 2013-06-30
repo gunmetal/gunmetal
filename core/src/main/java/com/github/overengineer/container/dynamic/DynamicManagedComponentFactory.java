@@ -1,7 +1,7 @@
 package com.github.overengineer.container.dynamic;
 
 import com.github.overengineer.container.Provider;
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -13,13 +13,13 @@ import java.lang.reflect.Method;
 public class DynamicManagedComponentFactory<T> implements InvocationHandler, Serializable {
 
     private final Class<T> factoryInterface;
-    private final Key<?> producedTypeKey;
+    private final Dependency<?> producedTypeDependency;
     private final Provider provider;
     T proxy;
 
-    DynamicManagedComponentFactory(Class<T> factoryInterface, Key producedTypeKey, Provider provider) {
+    DynamicManagedComponentFactory(Class<T> factoryInterface, Dependency producedTypeDependency, Provider provider) {
         this.factoryInterface = factoryInterface;
-        this.producedTypeKey = producedTypeKey;
+        this.producedTypeDependency = producedTypeDependency;
         this.provider = provider;
     }
 
@@ -31,8 +31,8 @@ public class DynamicManagedComponentFactory<T> implements InvocationHandler, Ser
         } else if ("hashCode".equals(methodName)) {
             return System.identityHashCode(proxy);
         } else if ("toString".equals(methodName)) {
-            return proxy.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + "$DynamicManagedComponentFactory$[" + factoryInterface + "][" + producedTypeKey.getType() + "]";
+            return proxy.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + "$DynamicManagedComponentFactory$[" + factoryInterface + "][" + producedTypeDependency.getTypeKey().getType() + "]";
         }
-        return provider.get(producedTypeKey);
+        return provider.get(producedTypeDependency);
     }
 }

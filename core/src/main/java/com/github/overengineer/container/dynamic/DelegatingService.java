@@ -3,7 +3,7 @@ package com.github.overengineer.container.dynamic;
 import com.github.overengineer.container.Provider;
 import com.github.overengineer.container.inject.InjectorFactory;
 import com.github.overengineer.container.inject.MethodInjector;
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 import com.github.overengineer.container.metadata.MetadataAdapter;
 import com.github.overengineer.container.parameter.ParameterMatchingUtil;
 
@@ -56,8 +56,8 @@ public class DelegatingService<T> implements InvocationHandler, Serializable {
     private void initCache() {
         delegateInvokerCache = new HashMap<Method, ServiceDelegateInvoker>();
         for (Method serviceMethod : serviceInterface.getDeclaredMethods()) {
-            Key delegateKey = metadataAdapter.getDelegateKey(serviceMethod);
-            Class<?> delegateClass = delegateKey.getTargetClass();
+            Dependency delegateKey = metadataAdapter.getDelegateDependency(serviceMethod);
+            Class<?> delegateClass = delegateKey.getTypeKey().getRaw();
             Class[] providedArgs = serviceMethod.getParameterTypes();
             Method delegateMethod = null;
             for (Method delegateCandidateMethod : delegateClass.getDeclaredMethods()) {

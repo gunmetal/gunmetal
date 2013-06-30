@@ -11,7 +11,7 @@ import java.io.Serializable;
 public interface MutableMapping<T> extends Serializable {
     MutableMapping<T> forAllTypes();
     MutableMapping<T> forType(Class<? super T> targetClass);
-    MutableMapping<T> forType(Generic<? super T> targetKey);
+    MutableMapping<T> forType(Generic<? super T> targetDependency);
     MutableMapping<T> withScope(Scope scope);
     MutableMapping<T> withQualifier(Object qualifier);
 }

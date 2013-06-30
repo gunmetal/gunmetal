@@ -1,7 +1,7 @@
 package com.github.overengineer.container.metadata;
 
-import com.github.overengineer.container.key.Key;
-import com.github.overengineer.container.key.Locksmith;
+import com.github.overengineer.container.key.Dependency;
+import com.github.overengineer.container.key.Smithy;
 import com.github.overengineer.container.scope.Scope;
 import com.github.overengineer.container.scope.ScopedComponentStrategyProvider;
 import com.github.overengineer.container.scope.Scopes;
@@ -151,16 +151,16 @@ public class DefaultMetadataAdapter implements MetadataAdapter {
      * {@inheritDoc}
      */
     @Override
-    public Key<?> getDelegateKey(Method method) {
+    public Dependency<?> getDelegateDependency(Method method) {
         if (!method.isAnnotationPresent(ImplementedBy.class)) {
             throw new MetadataException("There was an exception creating a delegated service", new IllegalArgumentException("The method [" + method.getName() + "] of class [" + method.getDeclaringClass() + "] must be annotated with an @Delegate annotation"));
         }
         ImplementedBy delegate = method.getAnnotation(ImplementedBy.class);
         String name = delegate.name();
         if ("".equals(name)) {
-            return Locksmith.makeKey(delegate.value(), com.github.overengineer.container.key.Qualifier.NONE);
+            return Smithy.forge(delegate.value(), com.github.overengineer.container.key.Qualifier.NONE);
         }
-        return Locksmith.makeKey(delegate.value(), name);
+        return Smithy.forge(delegate.value(), name);
     }
 
     @Override

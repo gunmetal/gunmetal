@@ -6,8 +6,8 @@ import com.github.overengineer.container.ComponentStrategy;
 import com.github.overengineer.container.ComponentStrategyFactory;
 import com.github.overengineer.container.DefaultContainer;
 import com.github.overengineer.container.dynamic.DynamicComponentFactory;
-import com.github.overengineer.container.key.Key;
-import com.github.overengineer.container.key.Locksmith;
+import com.github.overengineer.container.key.Dependency;
+import com.github.overengineer.container.key.Smithy;
 import com.github.overengineer.container.metadata.MetadataAdapter;
 import com.github.overengineer.container.scope.Scopes;
 
@@ -31,9 +31,9 @@ public class DefaultHotSwappableContainer extends DefaultContainer implements Ho
     @Override
     public synchronized  <T> void swap(Class<T> target, Class<? extends T> implementationType) throws HotSwapException {
 
-        Key targetKey = Locksmith.makeKey(target);
+        Dependency dependency = Smithy.forge(target);
 
-        ComponentStrategy<T> currentStrategy = (ComponentStrategy<T>) getStrategy(targetKey);
+        ComponentStrategy<T> currentStrategy = (ComponentStrategy<T>) getStrategy(dependency);
 
         if (!(currentStrategy instanceof HotSwappableProxyStrategy)) {
             throw new HotSwapException(target, currentStrategy.getComponentType(), implementationType);
@@ -41,7 +41,7 @@ public class DefaultHotSwappableContainer extends DefaultContainer implements Ho
 
         ComponentProxyHandler<T> proxyHandler = ((HotSwappableProxyStrategy) currentStrategy).getProxyHandler();
 
-        ComponentStrategy<T> newStrategy = (ComponentStrategy<T>) strategyFactory.create(implementationType, targetKey.getQualifier(), Scopes.SINGLETON);
+        ComponentStrategy<T> newStrategy = (ComponentStrategy<T>) strategyFactory.create(implementationType, dependency.getQualifier(), Scopes.SINGLETON);
 
         if (!(newStrategy instanceof HotSwappableProxyStrategy)) {
             throw new HotSwapException(target, newStrategy.getComponentType(), implementationType);
@@ -61,9 +61,9 @@ public class DefaultHotSwappableContainer extends DefaultContainer implements Ho
     @Override
     public synchronized  <T, I extends T> void swap(Class<T> target, I implementation) throws HotSwapException {
 
-        Key targetKey = Locksmith.makeKey(target);
+        Dependency dependency = Smithy.forge(target);
 
-        ComponentStrategy<T> currentStrategy = (ComponentStrategy<T>) getStrategy(targetKey);
+        ComponentStrategy<T> currentStrategy = (ComponentStrategy<T>) getStrategy(dependency);
 
         if (!(currentStrategy instanceof HotSwappableProxyStrategy)) {
             throw new HotSwapException(target, currentStrategy.getComponentType(), implementation.getClass());
@@ -71,7 +71,7 @@ public class DefaultHotSwappableContainer extends DefaultContainer implements Ho
 
         ComponentProxyHandler<T> proxyHandler = ((HotSwappableProxyStrategy) currentStrategy).getProxyHandler();
 
-        ComponentStrategy<T> newStrategy = (ComponentStrategy<T>) strategyFactory.createInstanceStrategy(implementation, targetKey.getQualifier());
+        ComponentStrategy<T> newStrategy = (ComponentStrategy<T>) strategyFactory.createInstanceStrategy(implementation, dependency.getQualifier());
 
         if (!(newStrategy instanceof HotSwappableProxyStrategy)) {
             throw new HotSwapException(target, newStrategy.getComponentType(), implementation.getClass());

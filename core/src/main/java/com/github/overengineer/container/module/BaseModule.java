@@ -1,9 +1,9 @@
 package com.github.overengineer.container.module;
 
-import com.github.overengineer.container.key.ClassKey;
+import com.github.overengineer.container.key.Dependency;
 import com.github.overengineer.container.key.Generic;
-import com.github.overengineer.container.key.Key;
 import com.github.overengineer.container.key.Qualifier;
+import com.github.overengineer.container.key.Smithy;
 import com.github.overengineer.container.scope.Scope;
 import com.github.overengineer.container.scope.Scopes;
 
@@ -18,7 +18,7 @@ import java.util.Map;
 public abstract class BaseModule implements Module {
 
     private final List<Mapping<?>> mappings = new LinkedList<Mapping<?>>();
-    private final Map<Key, Class> nonManagedComponentFactories = new HashMap<Key, Class>();
+    private final Map<Dependency, Class> nonManagedComponentFactories = new HashMap<Dependency, Class>();
     private Scope defaultScope = Scopes.SINGLETON;
     private Object defaultQualifier = Qualifier.NONE;
     private boolean useAutoMapping = false;
@@ -29,7 +29,7 @@ public abstract class BaseModule implements Module {
     }
 
     @Override
-    public Map<Key, Class> getNonManagedComponentFactories() {
+    public Map<Dependency, Class> getNonManagedComponentFactories() {
         return nonManagedComponentFactories;
     }
 
@@ -60,15 +60,15 @@ public abstract class BaseModule implements Module {
     }
 
     public class NonManagedComponentFactoryMapper {
-        private final Key<?> key;
+        private final Dependency<?> dependency;
         public <T> NonManagedComponentFactoryMapper(Class<T> key) {
-            this.key = new ClassKey<T>(key);
+            this.dependency = Smithy.forge(key);
         }
-        public NonManagedComponentFactoryMapper(Key key) {
-            this.key = key;
+        public NonManagedComponentFactoryMapper(Dependency dependency) {
+            this.dependency = dependency;
         }
         public void toProduce(Class value) {
-            nonManagedComponentFactories.put(key, value);
+            nonManagedComponentFactories.put(dependency, value);
         }
     }
 

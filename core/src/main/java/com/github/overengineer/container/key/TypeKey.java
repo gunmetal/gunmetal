@@ -6,8 +6,7 @@ import java.lang.reflect.Type;
 /**
  * @author rees.byars
  */
-public interface Key<T> extends Serializable {
-    Object getQualifier();
+public interface TypeKey<T> extends Serializable {
     Type getType();
-    Class<? super T> getTargetClass();
+    Class<? super T> getRaw();
 }

@@ -1,14 +1,13 @@
 package com.github.overengineer.container.benchmark;
 
 import com.github.overengineer.container.*;
-import com.github.overengineer.container.key.Key;
-import com.github.overengineer.container.key.Locksmith;
+import com.github.overengineer.container.key.Dependency;
+import com.github.overengineer.container.key.Smithy;
 import com.github.overengineer.container.key.Qualifier;
 import com.github.overengineer.container.testutil.ConcurrentExecutionAssistant;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import dagger.ObjectGraph;
-import se.jbee.inject.Dependency;
 import se.jbee.inject.bootstrap.Bootstrap;
 
 import org.junit.Test;
@@ -50,7 +49,7 @@ public class BenchMarks {
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() {
-                Bootstrap.injector(SilkBenchMarkModule.class).resolve(Dependency.dependency(AA.class));
+                Bootstrap.injector(SilkBenchMarkModule.class).resolve(se.jbee.inject.Dependency.dependency(AA.class));
             }
         }, threads).run(duration, primingRuns, "silk container creation");
 
@@ -75,7 +74,7 @@ public class BenchMarks {
     @Test
     public void testPrototypeSpeed() throws Exception {
 
-        final Key<R> key = Locksmith.makeKey(R.class, Qualifier.NONE);
+        final Dependency<R> key = Smithy.forge(R.class, Qualifier.NONE);
 
         final Container container = Gunmetal.jsr330().load(new BenchMarkModule());
 
@@ -109,7 +108,7 @@ public class BenchMarks {
     @Test
     public void testSingletonSpeed() throws Exception {
 
-        final Key<E> key = Locksmith.makeKey(E.class, Qualifier.NONE);
+        final Dependency<E> key = Smithy.forge(E.class, Qualifier.NONE);
 
         final Container container = Gunmetal.jsr330().load(new BenchMarkModule());
 

@@ -1,14 +1,14 @@
 package com.github.overengineer.container.parameter;
 
-import com.github.overengineer.container.key.Key;
-import com.github.overengineer.container.key.KeyUtil;
-import com.github.overengineer.container.key.Locksmith;
+import com.github.overengineer.container.key.Dependency;
+import com.github.overengineer.container.key.Smithy;
 import com.github.overengineer.container.metadata.MetadataAdapter;
 import com.github.overengineer.container.util.ConstructorRefImpl;
 import com.github.overengineer.container.util.MethodRefImpl;
 import com.github.overengineer.container.util.ParameterRef;
-import com.github.overengineer.container.util.ParameterRefImpl;
 import com.github.overengineer.container.util.ParameterizedFunction;
+import com.github.overengineer.container.util.ParameterRefImpl;
+import com.github.overengineer.container.util.ReflectionUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -58,13 +58,13 @@ public class PrecedingArgsParameterBuilderFactory implements ParameterBuilderFac
 
         Type parameterType = parameterRef.getType();
 
-        Key key = Locksmith.makeKey(parameterRef, metadataAdapter.getQualifier(parameterType, annotations));
+        Dependency dependency = Smithy.forge(parameterRef, metadataAdapter.getQualifier(parameterType, annotations));
 
-        if (KeyUtil.getClass(parameterType).isAssignableFrom(injectionTarget)) {
-            return new DecoratorParameterProxy<T>(key, injectionTarget);
+        if (ReflectionUtil.getRawClass(parameterType).isAssignableFrom(injectionTarget)) {
+            return new DecoratorParameterProxy<T>(dependency, injectionTarget);
         }
 
-        return new ComponentParameterProxy<T>(key);
+        return new ComponentParameterProxy<T>(dependency);
 
     }
 

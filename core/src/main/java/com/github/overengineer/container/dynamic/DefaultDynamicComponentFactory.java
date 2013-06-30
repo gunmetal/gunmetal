@@ -3,7 +3,7 @@ package com.github.overengineer.container.dynamic;
 import com.github.overengineer.container.Provider;
 import com.github.overengineer.container.inject.InjectorFactory;
 import com.github.overengineer.container.instantiate.InstantiatorFactory;
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 import com.github.overengineer.container.metadata.MetadataAdapter;
 
 import java.io.Serializable;
@@ -26,7 +26,7 @@ public class DefaultDynamicComponentFactory implements DynamicComponentFactory {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T createManagedComponentFactory(final Class factoryInterface, final Key producedTypeKey, final Provider provider) {
+    public <T> T createManagedComponentFactory(final Class factoryInterface, final Dependency producedTypeKey, final Provider provider) {
         DynamicManagedComponentFactory<T> dynamicFactory = new DynamicManagedComponentFactory<T>(factoryInterface, producedTypeKey, provider);
         T proxy = (T) Proxy.newProxyInstance(
                 provider.getClass().getClassLoader(),

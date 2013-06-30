@@ -1,6 +1,6 @@
 package com.github.overengineer.container.metadata;
 
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 import com.github.overengineer.container.scope.Scope;
 import com.github.overengineer.container.scope.ScopedComponentStrategyProvider;
 
@@ -31,7 +31,7 @@ public interface MetadataAdapter extends Serializable {
 
     Method getCustomProviderMethod(Class<?> cls);
 
-    Key<?> getDelegateKey(Method method);
+    Dependency<?> getDelegateDependency(Method method);
 
     Class<?> getProviderClass();
 

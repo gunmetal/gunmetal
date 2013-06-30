@@ -1,6 +1,6 @@
 package com.github.overengineer.container;
 
-import com.github.overengineer.container.key.Key;
+import com.github.overengineer.container.key.Dependency;
 import com.github.overengineer.container.module.Module;
 
 import java.util.List;
@@ -28,35 +28,35 @@ public interface Container extends Provider {
 
     <T> Container add(Class<T> componentType, Object qualifier, Class<? extends T> implementationType);
 
-    <T> Container add(Key<T> key, Class<? extends T> implementationType);
+    <T> Container add(Dependency<T> dependency, Class<? extends T> implementationType);
 
     <T, I extends T> Container addInstance(Class<T> componentType, I implementation);
 
     <T, I extends T> Container addInstance(Class<T> componentType, Object qualifier, I implementation);
 
-    <T, I extends T> Container addInstance(Key<T> key, I implementation);
+    <T, I extends T> Container addInstance(Dependency<T> dependency, I implementation);
 
     Container addCustomProvider(Class<?> providedType, Class<?> customProviderType);
 
-    Container addCustomProvider(Key<?> providedTypeKey, Class<?> customProviderType);
+    Container addCustomProvider(Dependency<?> providedTypeDependency, Class<?> customProviderType);
 
     Container addCustomProvider(Class<?> providedType, Object customProvider);
 
-    Container addCustomProvider(Key<?> providedTypeKey, Object customProvider);
+    Container addCustomProvider(Dependency<?> providedTypeDependency, Object customProvider);
 
-    Container registerNonManagedComponentFactory(Key<?> factoryKey, Class producedType);
+    Container registerNonManagedComponentFactory(Dependency<?> factoryDependency, Class producedType);
 
     Container registerCompositeTarget(Class<?> targetInterface);
 
     Container registerCompositeTarget(Class<?> targetInterface, Object qualifier);
 
-    Container registerCompositeTarget(Key<?> targetKey);
+    Container registerCompositeTarget(Dependency<?> targetDependency);
 
     Container registerDeconstructedApi(Class<?> targetInterface);
 
     Container registerDeconstructedApi(Class<?> targetInterface, Object qualifier);
 
-    Container registerDeconstructedApi(Key<?> targetKey);
+    Container registerDeconstructedApi(Dependency<?> targetDependency);
 
     List<ComponentInitializationListener> getInitializationListeners();
 
@@ -68,9 +68,9 @@ public interface Container extends Provider {
 
     Container getReal();
 
-    <T> ComponentStrategy<T> getStrategy(Key<T> key, SelectionAdvisor ... advisors);
+    <T> ComponentStrategy<T> getStrategy(Dependency<T> key, SelectionAdvisor ... advisors);
 
-    <T> List<ComponentStrategy<T>> getAllStrategies(Key<T> key, SelectionAdvisor... advisors);
+    <T> List<ComponentStrategy<T>> getAllStrategies(Dependency<T> dependency, SelectionAdvisor... advisors);
 
     Container makeInjectable();
 
