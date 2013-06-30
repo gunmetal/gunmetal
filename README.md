@@ -1,4 +1,4 @@
-Clarence
+GunMetal
 ========
 
-Clarence is an ultra-light and blazingly-fast dependency injection and application modularisation tool for Java.
+GunMetal is light and fast dependency injection and application modularisation tool for Java.
