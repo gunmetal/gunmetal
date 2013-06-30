@@ -4,6 +4,7 @@ import com.github.overengineer.container.*;
 import com.github.overengineer.container.key.Key;
 import com.github.overengineer.container.key.Locksmith;
 import com.github.overengineer.container.key.Qualifier;
+import com.github.overengineer.container.testutil.ConcurrentExecutionAssistant;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import dagger.ObjectGraph;
@@ -27,7 +28,7 @@ public class BenchMarks {
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() {
-                GunMetal.jsr330().load(new BenchMarkModule()).get(AA.class);
+                Gunmetal.jsr330().load(new BenchMarkModule()).get(AA.class);
             }
         }, threads).run(duration, primingRuns, "my container creation");
 
@@ -76,7 +77,7 @@ public class BenchMarks {
 
         final Key<R> key = Locksmith.makeKey(R.class, Qualifier.NONE);
 
-        final Container container = GunMetal.jsr330().load(new BenchMarkModule());
+        final Container container = Gunmetal.jsr330().load(new BenchMarkModule());
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
@@ -110,7 +111,7 @@ public class BenchMarks {
 
         final Key<E> key = Locksmith.makeKey(E.class, Qualifier.NONE);
 
-        final Container container = GunMetal.jsr330().load(new BenchMarkModule());
+        final Container container = Gunmetal.jsr330().load(new BenchMarkModule());
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override

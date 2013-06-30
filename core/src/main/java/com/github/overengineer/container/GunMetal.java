@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-public class GunMetal implements Serializable {
+public class Gunmetal implements Serializable {
 
     private boolean setterInjection = false;
 
@@ -58,20 +58,20 @@ public class GunMetal implements Serializable {
         return builder;
     }
 
-    public static GunMetal raw() {
-        return new GunMetal();
+    public static Gunmetal raw() {
+        return new Gunmetal();
     }
 
     public static Container create(Module... modules) {
-        Container container = new GunMetal().getBuilder();
+        Container container = new Gunmetal().getBuilder();
         for (Module module : modules) {
             container.loadModule(module);
         }
         return container;
     }
 
-    public static GunMetal jsr330() {
-        GunMetal gunMetal = new GunMetal();
+    public static Gunmetal jsr330() {
+        Gunmetal gunMetal = new Gunmetal();
         gunMetal.metadataAdapter = new Jsr330MetadataAdapter();
         return gunMetal;
     }
@@ -92,12 +92,12 @@ public class GunMetal implements Serializable {
         return container;
     }
 
-    public GunMetal withSetterInjection() {
+    public Gunmetal withSetterInjection() {
         setterInjection = true;
         return this;
     }
 
-    public GunMetal makeYourStuffInjectable() {
+    public Gunmetal makeYourStuffInjectable() {
         getBuilder()
                 .makeInjectable()
                 .addInstance(MetadataAdapter.class, metadataAdapter)

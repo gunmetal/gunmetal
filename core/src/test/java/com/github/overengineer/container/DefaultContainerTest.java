@@ -10,6 +10,8 @@ import com.github.overengineer.container.proxy.aop.Aspect;
 import com.github.overengineer.container.proxy.aop.JoinPoint;
 import com.github.overengineer.container.proxy.aop.Pointcut;
 import com.github.overengineer.container.scope.ScopedComponentStrategyProvider;
+import com.github.overengineer.container.testutil.ConcurrentExecutionAssistant;
+import com.github.overengineer.container.testutil.SerializationTestingUtil;
 import org.junit.Test;
 import scope.CommonConstants;
 import scope.CommonModule;
@@ -41,7 +43,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testLoadModule() {
 
-        Container container = GunMetal.raw().load();
+        Container container = Gunmetal.raw().load();
 
         container.loadModule(CommonModule.class);
 
@@ -54,7 +56,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testSerialization() {
 
-        AopContainer container = GunMetal.raw().gimmeThatAopTainer();
+        AopContainer container = Gunmetal.raw().gimmeThatAopTainer();
 
         container.add(IBean.class, Bean3.class);
 
@@ -90,7 +92,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testVerify_positive() throws WiringException {
 
-        Container container = GunMetal.raw().load();
+        Container container = Gunmetal.raw().load();
 
         container.verify();
 
@@ -103,7 +105,7 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = WiringException.class)
     public void testVerify_negative() throws WiringException {
 
-        Container container = GunMetal.raw().withSetterInjection().load();
+        Container container = Gunmetal.raw().withSetterInjection().load();
 
         container.add(TimeoutMonitor.class, ScheduledExecutorTimeoutMonitor.class);
 
@@ -116,11 +118,11 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddChild() {
 
-        Container master = GunMetal.raw().load();
+        Container master = Gunmetal.raw().load();
 
-        Container common = GunMetal.raw().load();
+        Container common = Gunmetal.raw().load();
 
-        Container sibling = GunMetal.raw().load();
+        Container sibling = Gunmetal.raw().load();
 
         common.loadModule(CommonModule.class);
 
@@ -138,7 +140,7 @@ public class DefaultContainerTest implements Serializable {
              //sup
         }
 
-        Container cascadeFuck = GunMetal.raw().load();
+        Container cascadeFuck = Gunmetal.raw().load();
 
         master.addCascadingContainer(cascadeFuck);
 
@@ -158,7 +160,7 @@ public class DefaultContainerTest implements Serializable {
             //sup
         }
 
-        Container global = GunMetal.raw().load();
+        Container global = Gunmetal.raw().load();
 
         global.add(ISingleton.class, Singleton.class);
 
@@ -185,7 +187,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddAndGetComponent() {
 
-        Container container = GunMetal.raw().load();
+        Container container = Gunmetal.raw().load();
 
         container.add(SchedulerProvider.class, Bro.class, DefaultSchedulerProvider.class);
 
@@ -204,7 +206,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddAndGetInstance() {
 
-        Container container = GunMetal.raw().load();
+        Container container = Gunmetal.raw().load();
 
         SchedulerProvider given = new DefaultSchedulerProvider();
 
@@ -221,7 +223,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddAndGetProperty() {
 
-        Container container = GunMetal.raw().gimmeThatAopTainer();
+        Container container = Gunmetal.raw().gimmeThatAopTainer();
 
         container.addInstance(Long.class, "test", 69L);
 
@@ -234,7 +236,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddAndGetGeneric() {
 
-        Container container = GunMetal.raw().load();
+        Container container = Gunmetal.raw().load();
 
         List<? extends String> strings = new ArrayList<String>();
 
@@ -264,7 +266,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testRegisterFactory() {
 
-        Container container = GunMetal.raw().load();
+        Container container = Gunmetal.raw().load();
 
         container.loadModule(CommonModule.class);
 
@@ -296,7 +298,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testNonManagedComponentFactory() {
 
-        Container container = GunMetal.raw().load();
+        Container container = Gunmetal.raw().load();
 
         Key<NonManagedComponentFactory<NamedComponent>> factoryKey = new Generic<NonManagedComponentFactory<NamedComponent>>() {};
 
@@ -349,7 +351,7 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = Assertion.class)
     public void testAddListener() throws Throwable {
 
-        Container container = GunMetal.raw().withSetterInjection().load().makeInjectable()
+        Container container = Gunmetal.raw().withSetterInjection().load().makeInjectable()
                 .addListener(Listener.class)
                 .add(SchedulerProvider.class, DefaultSchedulerProvider.class)
                 .addInstance(Integer.class, CommonConstants.Properties.MONITORING_THREAD_POOL_SIZE, 4);
@@ -378,7 +380,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testCyclicRef() {
 
-        HotSwappableContainer container = GunMetal.raw().gimmeThatProxyTainer();
+        HotSwappableContainer container = Gunmetal.raw().gimmeThatProxyTainer();
 
         container
                 .add(ICyclicRef.class, CyclicTest.class)
@@ -410,7 +412,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testCyclicRef2() {
 
-        HotSwappableContainer container = GunMetal.raw().gimmeThatProxyTainer();
+        HotSwappableContainer container = Gunmetal.raw().gimmeThatProxyTainer();
 
         container
                 .add(ICyclicRef.class, CyclicTest.class)
@@ -429,7 +431,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testHotSwapping() throws HotSwapException {
 
-        HotSwappableContainer container = GunMetal.raw().gimmeThatProxyTainer();
+        HotSwappableContainer container = Gunmetal.raw().gimmeThatProxyTainer();
 
         container
                 .add(ICyclicRef.class, CyclicTest.class)
@@ -447,7 +449,7 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = Assertion.class)
     public void testIntercept() throws HotSwapException {
 
-        AopContainer c = GunMetal.raw().gimmeThatAopTainer().makeInjectable().get(AopContainer.class);
+        AopContainer c = Gunmetal.raw().gimmeThatAopTainer().makeInjectable().get(AopContainer.class);
 
         c.loadModule(CommonModule.class);
 
@@ -498,7 +500,7 @@ public class DefaultContainerTest implements Serializable {
 
     @Test
     public void testNewEmptyClone() {
-        final Container container = GunMetal.raw().makeYourStuffInjectable().load()
+        final Container container = Gunmetal.raw().makeYourStuffInjectable().load()
                 .addListener(L.class);
 
         //assert container.newEmptyClone().getAllComponents().size() == 1;
@@ -513,7 +515,7 @@ public class DefaultContainerTest implements Serializable {
 
     @Test
     public void testAddCustomProvider() throws Exception {
-        final Container container = GunMetal.raw().load().makeInjectable()
+        final Container container = Gunmetal.raw().load().makeInjectable()
                 .addCustomProvider(ProvidedType.class, Provider.class);
 
         assert container.get(ProvidedType.class) != null;
@@ -555,7 +557,7 @@ public class DefaultContainerTest implements Serializable {
 
         final AtomicInteger calls = new AtomicInteger();
 
-        GunMetal.raw().withSetterInjection().gimmeThatAopTainer()
+        Gunmetal.raw().withSetterInjection().gimmeThatAopTainer()
                 .addAspect(StartAspect.class)
                 .addInstance(StartListener.class, new StartListener() {
 
@@ -618,7 +620,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testServiceDelegate() throws Exception {
 
-        final StartListener startListener = GunMetal.raw()
+        final StartListener startListener = Gunmetal.raw()
                 .makeYourStuffInjectable().load()
                 .registerDeconstructedApi(StartListener.class)
                 .add(StartDelegate.class, StartDelegate.class)
@@ -645,7 +647,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testScopeProvider() throws Exception {
 
-        final Container container = GunMetal.raw().makeYourStuffInjectable().load();
+        final Container container = Gunmetal.raw().makeYourStuffInjectable().load();
 
         MetadataAdapter metadataAdapter = container.get(MetadataAdapter.class);
 
@@ -719,7 +721,7 @@ public class DefaultContainerTest implements Serializable {
     public void testCollection() {
 
         assert
-                GunMetal.raw().load()
+                Gunmetal.raw().load()
                     .addInstance(StartListener.class, new StartListener() {
                         @Override
                         public void onStart(String processName) {
