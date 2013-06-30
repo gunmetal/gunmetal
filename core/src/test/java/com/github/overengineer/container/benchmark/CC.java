@@ -7,5 +7,5 @@ import javax.inject.Inject;
  */
 public class CC {
     @Inject
-    public CC(C c, DD dd, R r, E e, E ee, S s) { }
+    public CC(C c, @BenchMarkModule.Member DD dd, R r, E e, E ee, S s) { }
 }

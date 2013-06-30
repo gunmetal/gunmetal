@@ -11,6 +11,8 @@ import java.util.Map;
  */
 public interface Module extends Serializable {
 
+    void configure();
+
     List<Mapping<?>> getMappings();
 
     Map<Key, Class> getNonManagedComponentFactories();

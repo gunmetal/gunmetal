@@ -10,11 +10,20 @@ import com.github.overengineer.container.DefaultComponentStrategyFactory;
 public class ProxyModule extends BaseModule {
 
     @Override
-    protected void configure() {
-        use(JdkProxyHandlerFactory.class).forType(ProxyHandlerFactory.class);
-        use(DefaultComponentStrategyFactory.class).forType(ComponentStrategyFactory.class);
-        use(ProxyComponentStrategyFactory.class).forType(ComponentStrategyFactory.class);
-        use(DefaultHotSwappableContainer.class).forType(HotSwappableContainer.class);
+    public void configure() {
+
+        use(JdkProxyHandlerFactory.class)
+                .forType(ProxyHandlerFactory.class);
+
+        use(DefaultComponentStrategyFactory.class)
+                .forType(ComponentStrategyFactory.class);
+
+        use(ProxyComponentStrategyFactory.class)
+                .forType(ComponentStrategyFactory.class);
+
+        use(DefaultHotSwappableContainer.class)
+                .forType(HotSwappableContainer.class);
+
     }
 
 }

@@ -23,10 +23,6 @@ public abstract class BaseModule implements Module {
     private Object defaultQualifier = Qualifier.NONE;
     private boolean useAutoMapping = false;
 
-    public BaseModule() {
-        configure();
-    }
-
     @Override
     public final List<Mapping<?>> getMappings() {
         return mappings;
@@ -36,8 +32,6 @@ public abstract class BaseModule implements Module {
     public Map<Key, Class> getNonManagedComponentFactories() {
         return nonManagedComponentFactories;
     }
-
-    protected abstract void configure();
 
     protected  <V> MutableMapping<V> use(Class<V> implementationClass) {
         return prepare(new TypeMapping<V>(implementationClass));

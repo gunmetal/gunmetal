@@ -13,7 +13,7 @@ import java.util.Set;
 public class CommonModule extends BaseModule {
 
     @Override
-    protected void configure() {
+    public void configure() {
 
         use(EmptyActionProvider.class).forType(ActionProvider.class);
 

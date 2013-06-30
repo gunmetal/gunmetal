@@ -88,6 +88,7 @@ public class DefaultContainer implements Container {
 
     @Override
     public <M extends Module> Container loadModule(M module) {
+        module.configure();
         for (Mapping<?> mapping : module.getMappings()) {
             Class<?> implementationType = mapping.getImplementationType();
             Object qualifier = mapping.getQualifier();

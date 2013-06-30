@@ -1,17 +1,30 @@
 package com.github.overengineer.container.benchmark;
 
+import com.github.overengineer.container.metadata.Qualifier;
 import com.github.overengineer.container.module.BaseModule;
 import com.github.overengineer.container.scope.Scopes;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 
 /**
  * @author rees.byars
  */
 public class BenchMarkModule extends BaseModule {
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @Qualifier
+    public @interface Member { }
+
     @Override
-    protected void configure() {
+    public void configure() {
         
         defaultScope(Scopes.PROTOTYPE);
+
+        defaultQualifier(Member.class);
 
         use(AA.class);
         use(BB.class);

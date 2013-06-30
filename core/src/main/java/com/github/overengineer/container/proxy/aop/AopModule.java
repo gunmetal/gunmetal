@@ -16,13 +16,28 @@ import java.util.List;
 public class AopModule extends BaseModule {
 
     @Override
-    protected void configure() {
-        use(JdkProxyHandlerFactory.class).forType(ProxyHandlerFactory.class);
-        use(ProxyComponentStrategyFactory.class).forType(ComponentStrategyFactory.class);
-        use(JdkAopProxyHandlerFactory.class).forType(ProxyHandlerFactory.class);
-        use(AdvisedInvocationFactory.class).forType(JoinPointInvocationFactory.class);
-        use(DefaultPointcutInterpreter.class).forType(PointcutInterpreter.class);
-        use(DefaultAopContainer.class).forType(AopContainer.class);
-        use(new ArrayList<Aspect>()).forType(new Generic<List<Aspect>>() { });
+    public void configure() {
+
+        use(JdkProxyHandlerFactory.class)
+                .forType(ProxyHandlerFactory.class);
+
+        use(ProxyComponentStrategyFactory.class)
+                .forType(ComponentStrategyFactory.class);
+
+        use(JdkAopProxyHandlerFactory.class)
+                .forType(ProxyHandlerFactory.class);
+
+        use(AdvisedInvocationFactory.class)
+                .forType(JoinPointInvocationFactory.class);
+
+        use(DefaultPointcutInterpreter.class)
+                .forType(PointcutInterpreter.class);
+
+        use(DefaultAopContainer.class)
+                .forType(AopContainer.class);
+
+        use(new ArrayList<Aspect>())
+                .forType(new Generic<List<Aspect>>() { });
+
     }
 }

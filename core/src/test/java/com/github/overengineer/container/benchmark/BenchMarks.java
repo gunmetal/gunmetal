@@ -129,7 +129,7 @@ public class BenchMarks {
 
         final Module module = new BaseModule() {
             @Override
-            protected void configure() {
+            public void configure() {
                 use(Bean.class).withScope(Scopes.PROTOTYPE).forType(IBean.class);
                 use(Bean2.class).withScope(Scopes.PROTOTYPE).forType(IBean2.class);
             }
