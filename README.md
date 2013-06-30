@@ -14,3 +14,11 @@ Nice things about Gunmetal:
 The initial release of Gunmetal to the Maven Central Repo is anticipated for the 3rd quarter of 2013.  
 
 Where's the user guide and javadoc??  It's coming, just give us a little time.
+
+
+
+*For Spring IoC fanboys*:  
+Gunmetal is approximately infinity times faster than old-man Spring and requires 1/1000th the amount of boiler-plate.
+If a few of you will admit that the only feature of Spring you really like is @Transactional, then I will post an 
+example of how to implement @Transactional using Gunmetal.  
+
