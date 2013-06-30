@@ -5,7 +5,7 @@ import javax.inject.Inject;
 /**
  * @author rees.byars
  */
-public class CC {
+public class DD {
     @Inject
-    public CC(C c, DD dd, R r, E e, E ee, S s) { }
+    public DD(D d, R r, E e, E ee, S s) { }
 }

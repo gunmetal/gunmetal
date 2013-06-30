@@ -3,6 +3,7 @@ package com.github.overengineer.container.benchmark;
 import com.github.overengineer.container.module.BaseModule;
 import com.github.overengineer.container.scope.Scopes;
 
+
 /**
  * @author rees.byars
  */
@@ -11,10 +12,11 @@ public class BenchMarkModule extends BaseModule {
     protected void configure() {
         
         defaultScope(Scopes.PROTOTYPE);
-        
+
         use(AA.class);
         use(BB.class);
         use(CC.class);
+        use(DD.class);
         use(A.class);
         use(B.class);
         use(C.class);

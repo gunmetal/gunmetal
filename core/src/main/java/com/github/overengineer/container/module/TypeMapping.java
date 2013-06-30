@@ -2,10 +2,11 @@ package com.github.overengineer.container.module;
 
 import com.github.overengineer.container.key.Generic;
 import com.github.overengineer.container.key.Key;
-import com.github.overengineer.container.key.Qualifier;
 import com.github.overengineer.container.scope.Scope;
-import com.github.overengineer.container.scope.Scopes;
+import com.github.overengineer.container.util.ReflectionUtil;
 
+import java.io.Serializable;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -15,14 +16,23 @@ import java.util.List;
 public class TypeMapping<T> implements Mapping<T>, MutableMapping<T> {
 
     private final Class<T> implementationType;
-    private Scope scope = Scopes.SINGLETON;
-    private Object qualifier = Qualifier.NONE;
+    private Scope scope;
+    private Object qualifier;
     private List<Class<?>> targetClasses = new LinkedList<Class<?>>();
     private List<Key> targetKeys = new LinkedList<Key>();
 
     public TypeMapping(Class<T> implementationType) {
         this.implementationType = implementationType;
         targetClasses.add(implementationType);
+    }
+
+    @Override
+    public MutableMapping<T> forAllTypes() {
+        targetClasses.clear();
+        targetClasses.addAll(ReflectionUtil.getAllClasses(implementationType));
+        targetClasses.remove(Object.class);
+        targetClasses.remove(Serializable.class);
+        return this;
     }
 
     @Override

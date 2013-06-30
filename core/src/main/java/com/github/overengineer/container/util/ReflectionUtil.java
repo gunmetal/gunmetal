@@ -27,11 +27,24 @@ public class ReflectionUtil {
     }
 
     public static void getAllInterfaces(Class<?> cls, Set<Class<?>> interfacesFound) {
+        getAllClasses(cls, interfacesFound, false);
+    }
+
+    public static Set<Class<?>> getAllClasses(Class<?> cls) {
+        Set<Class<?>> interfaces = new HashSet<Class<?>>();
+        getAllClasses(cls, interfaces, true);
+        return interfaces;
+    }
+
+    public static void getAllClasses(Class<?> cls, Set<Class<?>> classesFound, boolean addClass) {
         while (cls != null) {
+            if (addClass) {
+                classesFound.add(cls);
+            }
             Class<?>[] interfaces = cls.getInterfaces();
             for (Class<?> i : interfaces) {
-                if (interfacesFound.add(i)) {
-                    getAllInterfaces(i, interfacesFound);
+                if (classesFound.add(i)) {
+                    getAllClasses(i, classesFound, addClass);
                 }
             }
             cls = cls.getSuperclass();

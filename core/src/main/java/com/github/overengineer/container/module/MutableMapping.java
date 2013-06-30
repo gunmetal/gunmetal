@@ -9,6 +9,7 @@ import java.io.Serializable;
  * @author rees.byars
  */
 public interface MutableMapping<T> extends Serializable {
+    MutableMapping<T> forAllTypes();
     MutableMapping<T> forType(Class<? super T> targetClass);
     MutableMapping<T> forType(Generic<? super T> targetKey);
     MutableMapping<T> withScope(Scope scope);

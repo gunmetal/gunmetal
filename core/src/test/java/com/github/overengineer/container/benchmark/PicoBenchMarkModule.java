@@ -13,6 +13,7 @@ public class PicoBenchMarkModule {
             .addComponent(AA.class)
             .addComponent(BB.class)
             .addComponent(CC.class)
+            .addComponent(DD.class)
             .addComponent(A.class)
             .addComponent(B.class)
             .addComponent(C.class)

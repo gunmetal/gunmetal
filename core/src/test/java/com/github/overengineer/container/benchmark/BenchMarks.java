@@ -1,5 +1,6 @@
-package com.github.overengineer.container;
+package com.github.overengineer.container.benchmark;
 
+import com.github.overengineer.container.*;
 import com.github.overengineer.container.benchmark.*;
 import com.github.overengineer.container.key.ClassKey;
 import com.github.overengineer.container.key.Key;
@@ -49,35 +50,43 @@ public class BenchMarks {
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 Clarence.please().withFastMetadata().gimmeThatTainer().loadModule(new BenchMarkModule()).get(AA.class);
             }
         }, threads).run(duration, primingRuns, "my container creation");
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
+                ObjectGraph.create(new DaggerSlimBenchMarkModule()).get(AA.class);
+            }
+        }, threads).run(duration, primingRuns, "dagger slim container creation");
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() {
                 ObjectGraph.create(new DaggerBenchMarkModule()).get(AA.class);
             }
         }, threads).run(duration, primingRuns, "dagger container creation");
 
+
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 Bootstrap.injector(SilkBenchMarkModule.class).resolve(Dependency.dependency(AA.class));
             }
         }, threads).run(duration, primingRuns, "silk container creation");
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 new PicoBenchMarkModule().get().getComponent(AA.class);
             }
         }, threads).run(duration, primingRuns, "pico container creation");
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 Guice.createInjector(new GuiceBenchMarkModule()).getInstance(AA.class);
             }
         }, threads).run(duration, primingRuns, "guice container creation");
@@ -95,7 +104,7 @@ public class BenchMarks {
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 container.get(key);
             }
         }, threads).run(duration, primingRuns, "my prototype creation");
@@ -106,7 +115,7 @@ public class BenchMarks {
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 objectGraph.get(A.class);
             }
         }, threads).run(duration, primingRuns, "dagger prototype creation");
@@ -128,7 +137,7 @@ public class BenchMarks {
 
         long mines = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 Clarence.please().withFastMetadata().gimmeThatTainer()
                         .loadModule(module)
                         .get(key);
@@ -139,14 +148,14 @@ public class BenchMarks {
 
         long daggers = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 ObjectGraph.create(daggerIBeanModule).get(IBean.class);
             }
         }, threads).run(duration, primingRuns, "dagger container creation");
 
         long picos = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 new TransientPicoContainer()
                         .addComponent(IBean.class, Bean.class)
                         .addComponent(IBean2.class, Bean2.class)
@@ -156,7 +165,7 @@ public class BenchMarks {
 
         long guices = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 Guice.createInjector(new AbstractModule() {
                     @Override
                     protected void configure() {
@@ -169,7 +178,7 @@ public class BenchMarks {
 
         long springs = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
 
                 DefaultListableBeanFactory applicationContext = new DefaultListableBeanFactory();
 
@@ -192,7 +201,7 @@ public class BenchMarks {
 
         long silks = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 Bootstrap.injector(PrototypeSilkBeans.class).resolve(Dependency.dependency(IBean.class));
             }
         }, threads).run(duration, primingRuns, "silk container creation");
@@ -223,7 +232,7 @@ public class BenchMarks {
 
         long mines = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 container3.get(key).stuff();
             }
         }, threads).run(duration, primingRuns, "my plain prototype");
@@ -233,7 +242,7 @@ public class BenchMarks {
 
         long daggers = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 objectGraph.get(IBean.class).stuff();
             }
         }, threads).run(duration, primingRuns, "dagger plain prototype");
@@ -244,7 +253,7 @@ public class BenchMarks {
 
         long picos = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 picoContainer.getComponent(IBean.class).stuff();
             }
         }, threads).run(duration, primingRuns, "pico plain prototype");
@@ -263,7 +272,7 @@ public class BenchMarks {
 
         long guices = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 injector.getInstance(gKey).stuff();
             }
         }, threads).run(duration, primingRuns, "guice plain prototypes");
@@ -272,7 +281,7 @@ public class BenchMarks {
 
         long springs = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 applicationContext.getBean(Bean.class).stuff();
             }
         }, threads).run(duration, primingRuns, "spring plain prototypes");
@@ -282,7 +291,7 @@ public class BenchMarks {
 
         long silks = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 silk.resolve(iBeanDependency).stuff();
             }
         }, threads).run(duration, primingRuns, "silk container creation");
@@ -314,7 +323,7 @@ public class BenchMarks {
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 container2.get(ISingleton.class).yo();
                 container2.get(ISingleton2.class).yo();
                 container2.get(ISingleton.class).yo();
@@ -328,7 +337,7 @@ public class BenchMarks {
 
         long mines = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 container2.get(key).yo();
             }
         }, threads).run(duration, primingRuns, "my singleton");
@@ -337,7 +346,7 @@ public class BenchMarks {
 
         long daggers = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 objectGraph.get(ISingleton.class).yo();
             }
         }, threads).run(duration, primingRuns, "dagger singleton");
@@ -349,7 +358,7 @@ public class BenchMarks {
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 picoContainer3.getComponent(ISingleton.class).yo();
                 picoContainer3.getComponent(ISingleton2.class).yo();
                 picoContainer3.getComponent(ISingleton.class).yo();
@@ -363,7 +372,7 @@ public class BenchMarks {
 
         long picos = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 picoContainer3.getComponent(ISingleton.class).yo();
             }
         }, threads).run(duration, primingRuns, "pico singleton");
@@ -381,7 +390,7 @@ public class BenchMarks {
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 injector3.getInstance(ISingleton.class).yo();
                 injector3.getInstance(ISingleton2.class).yo();
                 injector3.getInstance(ISingleton.class).yo();
@@ -395,7 +404,7 @@ public class BenchMarks {
 
         long guices = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 injector3.getInstance(ISingleton.class).yo();
             }
         }, threads).run(duration, primingRuns, "guice singleton");
@@ -404,7 +413,7 @@ public class BenchMarks {
 
         long springs = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 applicationContext.getBean(Singleton.class).yo();
             }
         }, threads).run(duration, primingRuns, "spring singleton");
@@ -414,7 +423,7 @@ public class BenchMarks {
 
         long silks = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 silk.resolve(iSingletonDependency).yo();
             }
         }, threads).run(duration, primingRuns, "silk singleton");
@@ -436,7 +445,7 @@ public class BenchMarks {
 
         long mines= new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 container.get(ICyclicRef2.class);
             }
         }, threads).run(duration, primingRuns, "my cyclic refs");
@@ -452,7 +461,7 @@ public class BenchMarks {
 
         long guices = new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
-            public void execute() throws HotSwapException {
+            public void execute() {
                 injector2.getInstance(ICyclicRef2.class);
             }
         }, threads).run(duration, primingRuns, "guice cyclic refs");

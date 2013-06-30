@@ -11,6 +11,7 @@ public class GuiceBenchMarkModule extends AbstractModule {
         bind(AA.class);
         bind(BB.class);
         bind(CC.class);
+        bind(DD.class);
         bind(A.class);
         bind(B.class);
         bind(C.class);
@@ -36,6 +37,5 @@ public class GuiceBenchMarkModule extends AbstractModule {
         bind(W.class);
         bind(X.class);
         bind(Y.class);
-        bind(Z.class);
     }
 }
