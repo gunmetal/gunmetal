@@ -11,13 +11,13 @@
         <version>7</version>
     </parent>
 
-    <groupId>com.github.overengineer.clarence</groupId>
+    <groupId>com.github.overengineer.gunmetal</groupId>
     <artifactId>parent</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1-BETA</version>
 
-    <name>Clarence</name>
-    <description>A sweet-ass JSR-330 dependency injection library for Java.</description>
+    <name>GunMetal</name>
+    <description>A sleek JSR-330 dependency injection library for Java.</description>
     <url>https://github.com/overengineer/clarence</url>
     <inceptionYear>2013</inceptionYear>
 
@@ -43,12 +43,6 @@
     <developers>
         <developer>
             <name>Rees Byars</name>
-            <roles>
-                <role>
-                    Creator
-                </role>
-            </roles>
-            <timezone>-4</timezone>
             <email>reesDOTbyarsATG00GLEMAIL</email>
         </developer>
     </developers>

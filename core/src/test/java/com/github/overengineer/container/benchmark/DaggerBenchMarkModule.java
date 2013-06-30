@@ -3,7 +3,9 @@ package com.github.overengineer.container.benchmark;
 import dagger.Module;
 import dagger.Provides;
 
-@Module(library = true, injects = AA.class)
+import javax.inject.Singleton;
+
+@Module(library = true, injects = { AA.class, E.class, R.class } )
 public class DaggerBenchMarkModule {
 
     @Provides AA aa(A a, BB bb, R r, E e, E ee, S s) {
@@ -38,7 +40,7 @@ public class DaggerBenchMarkModule {
         return new D(e);
     }
 
-    @Provides E e(F f) {
+    @Singleton @Provides E e(F f) {
         return new E(f);
     }
 

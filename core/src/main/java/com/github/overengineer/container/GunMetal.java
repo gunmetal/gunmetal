@@ -10,9 +10,9 @@ import com.github.overengineer.container.instantiate.DefaultConstructorResolver;
 import com.github.overengineer.container.instantiate.InstantiatorFactory;
 import com.github.overengineer.container.key.Generic;
 import com.github.overengineer.container.metadata.DefaultMetadataAdapter;
-import com.github.overengineer.container.metadata.FastMetadataAdapter;
 import com.github.overengineer.container.metadata.Jsr330MetadataAdapter;
 import com.github.overengineer.container.metadata.MetadataAdapter;
+import com.github.overengineer.container.module.Module;
 import com.github.overengineer.container.parameter.ParameterBuilderFactory;
 import com.github.overengineer.container.parameter.PrecedingArgsParameterBuilderFactory;
 import com.github.overengineer.container.proxy.HotSwappableContainer;
@@ -28,7 +28,9 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-public class Clarence implements Serializable {
+public class GunMetal implements Serializable {
+
+    private boolean setterInjection = false;
 
     private MetadataAdapter metadataAdapter;
     private ParameterBuilderFactory parameterBuilderFactory;
@@ -45,19 +47,33 @@ public class Clarence implements Serializable {
             return builder;
         }
         metadataAdapter = metadataAdapter != null ? metadataAdapter : new DefaultMetadataAdapter();
-        parameterBuilderFactory = parameterBuilderFactory != null ? parameterBuilderFactory : new PrecedingArgsParameterBuilderFactory(metadataAdapter);
-        injectorFactory = injectorFactory != null ? injectorFactory : new DefaultInjectorFactory(metadataAdapter, parameterBuilderFactory);
-        constructorResolver = constructorResolver != null ? constructorResolver : new DefaultConstructorResolver(metadataAdapter);
-        instantiatorFactory = instantiatorFactory != null ? instantiatorFactory : new DefaultInstantiatorFactory(constructorResolver, parameterBuilderFactory);
-        initializationListeners = initializationListeners != null ? initializationListeners : new ArrayList<ComponentInitializationListener>();
-        strategyFactory = strategyFactory != null ? strategyFactory :  new DefaultComponentStrategyFactory(metadataAdapter, injectorFactory, instantiatorFactory, initializationListeners);
-        dynamicComponentFactory = dynamicComponentFactory != null ? dynamicComponentFactory : new DefaultDynamicComponentFactory(instantiatorFactory, injectorFactory, metadataAdapter);
+        parameterBuilderFactory = new PrecedingArgsParameterBuilderFactory(metadataAdapter);
+        injectorFactory = setterInjection ? new DefaultInjectorFactory(metadataAdapter, parameterBuilderFactory) : new FalseInjectorFactory(parameterBuilderFactory);
+        constructorResolver = new DefaultConstructorResolver(metadataAdapter);
+        instantiatorFactory = new DefaultInstantiatorFactory(constructorResolver, parameterBuilderFactory);
+        initializationListeners = new ArrayList<ComponentInitializationListener>();
+        strategyFactory = new DefaultComponentStrategyFactory(metadataAdapter, injectorFactory, instantiatorFactory, initializationListeners);
+        dynamicComponentFactory = new DefaultDynamicComponentFactory(instantiatorFactory, injectorFactory, metadataAdapter);
         builder = new DefaultContainer(strategyFactory, dynamicComponentFactory, metadataAdapter, initializationListeners);
         return builder;
     }
 
-    public static Clarence please() {
-        return new Clarence();
+    public static GunMetal raw() {
+        return new GunMetal();
+    }
+
+    public static Container create(Module... modules) {
+        Container container = new GunMetal().getBuilder();
+        for (Module module : modules) {
+            container.loadModule(module);
+        }
+        return container;
+    }
+
+    public static GunMetal jsr330() {
+        GunMetal gunMetal = new GunMetal();
+        gunMetal.metadataAdapter = new Jsr330MetadataAdapter();
+        return gunMetal;
     }
 
     public HotSwappableContainer gimmeThatProxyTainer() {
@@ -68,23 +84,20 @@ public class Clarence implements Serializable {
         return (AopContainer) makeYourStuffInjectable().getBuilder().loadModule(new AopModule()).get(AopContainer.class).addCascadingContainer(getBuilder());
     }
 
-    public Container gimmeThatTainer() {
-        return getBuilder();
+    public Container load(Module... modules) {
+        Container container = getBuilder();
+        for (Module module : modules) {
+            container.loadModule(module);
+        }
+        return container;
     }
 
-    public Clarence withJsr330Metadata() {
-        metadataAdapter = new Jsr330MetadataAdapter();
+    public GunMetal withSetterInjection() {
+        setterInjection = true;
         return this;
     }
 
-    public Clarence withFastMetadata() {
-        //TODO the fluid api design is some ghetto shit, as illustrated by this method
-        metadataAdapter = new FastMetadataAdapter();
-        injectorFactory = new FalseInjectorFactory(new PrecedingArgsParameterBuilderFactory(metadataAdapter));
-        return this;
-    }
-
-    public Clarence makeYourStuffInjectable() {
+    public GunMetal makeYourStuffInjectable() {
         getBuilder()
                 .makeInjectable()
                 .addInstance(MetadataAdapter.class, metadataAdapter)

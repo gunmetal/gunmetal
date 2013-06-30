@@ -1,9 +1,7 @@
 package com.github.overengineer.container;
 
-import com.github.overengineer.container.key.ClassKey;
 import com.github.overengineer.container.key.Generic;
 import com.github.overengineer.container.key.Key;
-import com.github.overengineer.container.key.Locksmith;
 import com.github.overengineer.container.metadata.*;
 import com.github.overengineer.container.proxy.HotSwapException;
 import com.github.overengineer.container.proxy.HotSwappableContainer;
@@ -12,32 +10,13 @@ import com.github.overengineer.container.proxy.aop.Aspect;
 import com.github.overengineer.container.proxy.aop.JoinPoint;
 import com.github.overengineer.container.proxy.aop.Pointcut;
 import com.github.overengineer.container.scope.ScopedComponentStrategyProvider;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Scopes;
-import dagger.ObjectGraph;
 import org.junit.Test;
-import org.picocontainer.DefaultPicoContainer;
-import org.picocontainer.MutablePicoContainer;
-import org.picocontainer.PicoContainer;
-import org.picocontainer.behaviors.Caching;
-import org.picocontainer.containers.TransientPicoContainer;
-import org.springframework.beans.factory.config.ConstructorArgumentValues;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 import scope.CommonConstants;
 import scope.CommonModule;
 import scope.monitor.DefaultSchedulerProvider;
 import scope.monitor.ScheduledExecutorTimeoutMonitor;
 import scope.monitor.SchedulerProvider;
 import scope.monitor.TimeoutMonitor;
-import se.jbee.inject.Dependency;
-import se.jbee.inject.bind.BinderModule;
-import se.jbee.inject.bootstrap.*;
-import se.jbee.inject.util.Scoped;
 
 import java.io.Serializable;
 import java.lang.annotation.*;
@@ -62,7 +41,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testLoadModule() {
 
-        Container container = Clarence.please().gimmeThatTainer();
+        Container container = GunMetal.raw().load();
 
         container.loadModule(CommonModule.class);
 
@@ -75,7 +54,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testSerialization() {
 
-        AopContainer container = Clarence.please().gimmeThatAopTainer();
+        AopContainer container = GunMetal.raw().gimmeThatAopTainer();
 
         container.add(IBean.class, Bean3.class);
 
@@ -111,7 +90,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testVerify_positive() throws WiringException {
 
-        Container container = Clarence.please().gimmeThatTainer();
+        Container container = GunMetal.raw().load();
 
         container.verify();
 
@@ -124,7 +103,7 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = WiringException.class)
     public void testVerify_negative() throws WiringException {
 
-        Container container = Clarence.please().gimmeThatTainer();
+        Container container = GunMetal.raw().withSetterInjection().load();
 
         container.add(TimeoutMonitor.class, ScheduledExecutorTimeoutMonitor.class);
 
@@ -137,11 +116,11 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddChild() {
 
-        Container master = Clarence.please().gimmeThatTainer();
+        Container master = GunMetal.raw().load();
 
-        Container common = Clarence.please().gimmeThatTainer();
+        Container common = GunMetal.raw().load();
 
-        Container sibling = Clarence.please().gimmeThatTainer();
+        Container sibling = GunMetal.raw().load();
 
         common.loadModule(CommonModule.class);
 
@@ -159,7 +138,7 @@ public class DefaultContainerTest implements Serializable {
              //sup
         }
 
-        Container cascadeFuck = Clarence.please().gimmeThatTainer();
+        Container cascadeFuck = GunMetal.raw().load();
 
         master.addCascadingContainer(cascadeFuck);
 
@@ -179,7 +158,7 @@ public class DefaultContainerTest implements Serializable {
             //sup
         }
 
-        Container global = Clarence.please().gimmeThatTainer();
+        Container global = GunMetal.raw().load();
 
         global.add(ISingleton.class, Singleton.class);
 
@@ -206,7 +185,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddAndGetComponent() {
 
-        Container container = Clarence.please().gimmeThatTainer();
+        Container container = GunMetal.raw().load();
 
         container.add(SchedulerProvider.class, Bro.class, DefaultSchedulerProvider.class);
 
@@ -225,7 +204,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddAndGetInstance() {
 
-        Container container = Clarence.please().gimmeThatTainer();
+        Container container = GunMetal.raw().load();
 
         SchedulerProvider given = new DefaultSchedulerProvider();
 
@@ -242,7 +221,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddAndGetProperty() {
 
-        Container container = Clarence.please().gimmeThatAopTainer();
+        Container container = GunMetal.raw().gimmeThatAopTainer();
 
         container.addInstance(Long.class, "test", 69L);
 
@@ -255,7 +234,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testAddAndGetGeneric() {
 
-        Container container = Clarence.please().gimmeThatTainer();
+        Container container = GunMetal.raw().load();
 
         List<? extends String> strings = new ArrayList<String>();
 
@@ -285,7 +264,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testRegisterFactory() {
 
-        Container container = Clarence.please().gimmeThatTainer();
+        Container container = GunMetal.raw().load();
 
         container.loadModule(CommonModule.class);
 
@@ -317,7 +296,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testNonManagedComponentFactory() {
 
-        Container container = Clarence.please().gimmeThatTainer();
+        Container container = GunMetal.raw().load();
 
         Key<NonManagedComponentFactory<NamedComponent>> factoryKey = new Generic<NonManagedComponentFactory<NamedComponent>>() {};
 
@@ -370,7 +349,7 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = Assertion.class)
     public void testAddListener() throws Throwable {
 
-        Container container = Clarence.please().gimmeThatTainer().makeInjectable()
+        Container container = GunMetal.raw().withSetterInjection().load().makeInjectable()
                 .addListener(Listener.class)
                 .add(SchedulerProvider.class, DefaultSchedulerProvider.class)
                 .addInstance(Integer.class, CommonConstants.Properties.MONITORING_THREAD_POOL_SIZE, 4);
@@ -399,7 +378,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testCyclicRef() {
 
-        HotSwappableContainer container = Clarence.please().gimmeThatProxyTainer();
+        HotSwappableContainer container = GunMetal.raw().gimmeThatProxyTainer();
 
         container
                 .add(ICyclicRef.class, CyclicTest.class)
@@ -431,7 +410,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testCyclicRef2() {
 
-        HotSwappableContainer container = Clarence.please().gimmeThatProxyTainer();
+        HotSwappableContainer container = GunMetal.raw().gimmeThatProxyTainer();
 
         container
                 .add(ICyclicRef.class, CyclicTest.class)
@@ -450,7 +429,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testHotSwapping() throws HotSwapException {
 
-        HotSwappableContainer container = Clarence.please().gimmeThatProxyTainer();
+        HotSwappableContainer container = GunMetal.raw().gimmeThatProxyTainer();
 
         container
                 .add(ICyclicRef.class, CyclicTest.class)
@@ -468,7 +447,7 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = Assertion.class)
     public void testIntercept() throws HotSwapException {
 
-        AopContainer c = Clarence.please().gimmeThatAopTainer().makeInjectable().get(AopContainer.class);
+        AopContainer c = GunMetal.raw().gimmeThatAopTainer().makeInjectable().get(AopContainer.class);
 
         c.loadModule(CommonModule.class);
 
@@ -519,7 +498,7 @@ public class DefaultContainerTest implements Serializable {
 
     @Test
     public void testNewEmptyClone() {
-        final Container container = Clarence.please().makeYourStuffInjectable().gimmeThatTainer()
+        final Container container = GunMetal.raw().makeYourStuffInjectable().load()
                 .addListener(L.class);
 
         //assert container.newEmptyClone().getAllComponents().size() == 1;
@@ -534,7 +513,7 @@ public class DefaultContainerTest implements Serializable {
 
     @Test
     public void testAddCustomProvider() throws Exception {
-        final Container container = Clarence.please().gimmeThatTainer().makeInjectable()
+        final Container container = GunMetal.raw().load().makeInjectable()
                 .addCustomProvider(ProvidedType.class, Provider.class);
 
         assert container.get(ProvidedType.class) != null;
@@ -576,7 +555,7 @@ public class DefaultContainerTest implements Serializable {
 
         final AtomicInteger calls = new AtomicInteger();
 
-        Clarence.please().gimmeThatAopTainer()
+        GunMetal.raw().withSetterInjection().gimmeThatAopTainer()
                 .addAspect(StartAspect.class)
                 .addInstance(StartListener.class, new StartListener() {
 
@@ -639,8 +618,8 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testServiceDelegate() throws Exception {
 
-        final StartListener startListener = Clarence.please()
-                .makeYourStuffInjectable().gimmeThatTainer()
+        final StartListener startListener = GunMetal.raw()
+                .makeYourStuffInjectable().load()
                 .registerDeconstructedApi(StartListener.class)
                 .add(StartDelegate.class, StartDelegate.class)
                 .get(StartListener.class);
@@ -666,7 +645,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testScopeProvider() throws Exception {
 
-        final Container container = Clarence.please().makeYourStuffInjectable().gimmeThatTainer();
+        final Container container = GunMetal.raw().makeYourStuffInjectable().load();
 
         MetadataAdapter metadataAdapter = container.get(MetadataAdapter.class);
 
@@ -740,7 +719,7 @@ public class DefaultContainerTest implements Serializable {
     public void testCollection() {
 
         assert
-                Clarence.please().gimmeThatTainer()
+                GunMetal.raw().load()
                     .addInstance(StartListener.class, new StartListener() {
                         @Override
                         public void onStart(String processName) {
@@ -822,18 +801,6 @@ public class DefaultContainerTest implements Serializable {
         }
     }
 
-    @Prototype
-    public static class PCyclicTest extends CyclicTest {
-        @com.google.inject.Inject
-        public PCyclicTest(ICyclicRef3 cyclicTest3) {
-            super(cyclicTest3);
-        }
-        @Override
-        public int calls() {
-            return 69;
-        }
-    }
-
     public static class CyclicTestHot extends CyclicTest {
         @com.google.inject.Inject
         public CyclicTestHot(ICyclicRef3 cyclicTest3) {
@@ -890,14 +857,6 @@ public class DefaultContainerTest implements Serializable {
     public interface ISingleton{void yo();}
 
     public static class Singleton implements ISingleton {
-        @Override
-        public void yo() {
-        }
-    }
-
-    public interface ISingleton2{void yo();}
-
-    public static class Singleton2 implements ISingleton2 {
         @Override
         public void yo() {
         }

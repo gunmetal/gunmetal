@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.overengineer.clarence</groupId>
+        <groupId>com.github.overengineer.gunmetal</groupId>
         <artifactId>parent</artifactId>
         <version>0.0.1-BETA</version>
     </parent>

@@ -55,12 +55,7 @@ public class Jsr330MetadataAdapter implements MetadataAdapter {
         }
 
         //TODO only allow on a single constructor - up to the resolver?? :/
-        for (Annotation annotation : constructor.getAnnotations()) {
-            if (annotation instanceof javax.inject.Inject) {
-                return true;
-            }
-        }
-        return false;
+        return true; //constructor.isAnnotationPresent(javax.inject.Inject.class);
     }
 
     /**

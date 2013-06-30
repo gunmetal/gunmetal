@@ -34,11 +34,7 @@ public class DefaultComponentStrategyFactory implements ComponentStrategyFactory
         ComponentInjector<T> injector = injectorFactory.create(implementationType);
         Instantiator<T> instantiator = instantiatorFactory.create(implementationType);
         Scope theScope = metadataAdapter.getScope(implementationType);
-        if (theScope != null) {
-            if (!Scopes.SINGLETON.equals(scope)) {
-                throw new IllegalStateException("The class [" + implementationType.getName() + "] is annotated with a scope but also has a scope specified in a module.  One approach must be chosen.");
-            }
-        } else {
+        if (theScope == null) {
             theScope = scope;
         }
         if (Scopes.PROTOTYPE.equals(theScope)) {
