@@ -21,6 +21,7 @@ public abstract class BaseModule implements Module {
     private final Map<Key, Class> nonManagedComponentFactories = new HashMap<Key, Class>();
     private Scope defaultScope = Scopes.SINGLETON;
     private Object defaultQualifier = Qualifier.NONE;
+    private boolean useAutoMapping = false;
 
     public BaseModule() {
         configure();
@@ -39,31 +40,29 @@ public abstract class BaseModule implements Module {
     protected abstract void configure();
 
     protected  <V> MutableMapping<V> use(Class<V> implementationClass) {
-        TypeMapping<V> mapping = new TypeMapping<V>(implementationClass);
-        mappings.add(mapping);
-        mapping.withScope(defaultScope);
-        mapping.withQualifier(defaultQualifier);
-        return mapping;
+        return prepare(new TypeMapping<V>(implementationClass));
     }
 
     protected  <V> MutableMapping<V> use(Generic<V> implementationGeneric) {
-        TypeMapping<V> mapping = new GenericMapping<V>(implementationGeneric);
-        mappings.add(mapping);
-        mapping.withScope(defaultScope);
-        mapping.withQualifier(defaultQualifier);
-        return mapping;
+        return prepare(new GenericMapping<V>(implementationGeneric));
     }
 
     protected  <V> MutableMapping<V> use(V implementation) {
-        InstanceMappingImpl<V> mapping = new InstanceMappingImpl<V>(implementation);
-        mappings.add(mapping);
-        mapping.withScope(defaultScope);
-        mapping.withQualifier(defaultQualifier);
-        return mapping;
+        return prepare(new InstanceMappingImpl<V>(implementation));
     }
 
     protected NonManagedComponentFactoryMapper registerNonManagedComponentFactory(Class<?> factoryType) {
         return new NonManagedComponentFactoryMapper(factoryType);
+    }
+
+    private <V> MutableMapping<V> prepare(MutableMapping<V> mapping) {
+        mappings.add((Mapping) mapping);
+        mapping.withScope(defaultScope);
+        mapping.withQualifier(defaultQualifier);
+        if (useAutoMapping) {
+            mapping.forAllTypes();
+        }
+        return mapping;
     }
 
     public class NonManagedComponentFactoryMapper {
@@ -79,13 +78,18 @@ public abstract class BaseModule implements Module {
         }
     }
 
-    public BaseModule defaultScope(Scope scope) {
+    protected BaseModule defaultScope(Scope scope) {
         defaultScope = scope;
         return this;
     }
 
-    public BaseModule defaultQualifier(Object qualifier) {
+    protected BaseModule defaultQualifier(Object qualifier) {
         defaultQualifier = qualifier;
+        return this;
+    }
+
+    protected BaseModule useAutoMapping() {
+        useAutoMapping = true;
         return this;
     }
 
