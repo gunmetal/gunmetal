@@ -6,6 +6,6 @@ import java.lang.reflect.Type;
 /**
  * @author rees.byars
  */
-public interface ParameterRef extends Serializable {
+public interface TypeRef extends Serializable {
     Type getType();
 }

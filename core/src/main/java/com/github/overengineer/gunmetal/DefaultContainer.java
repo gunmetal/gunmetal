@@ -11,7 +11,7 @@ import com.github.overengineer.gunmetal.module.Module;
 import com.github.overengineer.gunmetal.scope.Scope;
 import com.github.overengineer.gunmetal.scope.Scopes;
 import com.github.overengineer.gunmetal.util.Order;
-import com.github.overengineer.gunmetal.util.ParameterRef;
+import com.github.overengineer.gunmetal.util.TypeRef;
 import com.github.overengineer.gunmetal.key.Qualifier;
 
 import java.lang.reflect.ParameterizedType;
@@ -388,7 +388,7 @@ public class DefaultContainer implements Container {
         }
 
         //TODO this is slow, refactor to cache the type in the key and to reuse the strategy
-        Dependency parameterizedKey = Smithy.forge(new ParameterRef() {
+        Dependency parameterizedKey = Smithy.forge(new TypeRef() {
             @Override
             public Type getType() {
                 return ((ParameterizedType) dependency.getTypeKey().getType()).getActualTypeArguments()[0];

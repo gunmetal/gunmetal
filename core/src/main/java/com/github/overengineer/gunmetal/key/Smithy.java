@@ -1,6 +1,6 @@
 package com.github.overengineer.gunmetal.key;
 
-import com.github.overengineer.gunmetal.util.ParameterRef;
+import com.github.overengineer.gunmetal.util.TypeRef;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -20,12 +20,12 @@ public abstract class Smithy {
         return new ClassDependency<T>(cls, qualifier);
     }
 
-    public static <T> Dependency<T> forge(ParameterRef parameterRef) {
+    public static <T> Dependency<T> forge(TypeRef parameterRef) {
         return forge(parameterRef, null);
     }
 
     @SuppressWarnings("unchecked")
-    public static  <T> Dependency<T> forge(ParameterRef parameterRef, Object qualifier) {
+    public static  <T> Dependency<T> forge(TypeRef parameterRef, Object qualifier) {
         Type type = parameterRef.getType();
         if (type instanceof Class) {
             return forge((Class<T>) type, qualifier);

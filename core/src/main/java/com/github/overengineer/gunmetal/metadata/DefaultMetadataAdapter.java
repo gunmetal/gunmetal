@@ -9,6 +9,7 @@ import com.github.overengineer.gunmetal.util.ReflectionUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -105,6 +106,14 @@ public class DefaultMetadataAdapter implements MetadataAdapter {
     @Override
     public boolean isSetter(Method method) {
         return ReflectionUtil.isPublicSetter(method) && method.isAnnotationPresent(Inject.class);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean shouldInject(Field field) {
+        return field.isAnnotationPresent(Inject.class);
     }
 
     /**

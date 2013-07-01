@@ -5,10 +5,10 @@ import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.metadata.MetadataAdapter;
 import com.github.overengineer.gunmetal.util.ConstructorRefImpl;
 import com.github.overengineer.gunmetal.util.MethodRefImpl;
-import com.github.overengineer.gunmetal.util.ParameterRef;
 import com.github.overengineer.gunmetal.util.ParameterizedFunction;
-import com.github.overengineer.gunmetal.util.ParameterRefImpl;
+import com.github.overengineer.gunmetal.util.ParameterTypeRef;
 import com.github.overengineer.gunmetal.util.ReflectionUtil;
+import com.github.overengineer.gunmetal.util.TypeRef;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -46,7 +46,7 @@ public class PrecedingArgsParameterBuilderFactory implements ParameterBuilderFac
         ParameterProxy[] parameterProxies = new ParameterProxy[genericParameterTypes.length - providedArgs.length];
         for (int i = 0; i < parameterProxies.length; i++) {
             int parameterIndex = i + providedArgs.length;
-            ParameterRef parameterRef = new ParameterRefImpl(parameterizedFunction, parameterIndex);
+            TypeRef parameterRef = new ParameterTypeRef(parameterizedFunction, parameterIndex);
             parameterProxies[i] = createProxy(injectionTarget, parameterRef, annotations[i + providedArgs.length]);
         }
 
@@ -54,7 +54,7 @@ public class PrecedingArgsParameterBuilderFactory implements ParameterBuilderFac
     }
 
     @SuppressWarnings("unchecked")
-    protected  <T> ParameterProxy<T> createProxy(Class<?> injectionTarget, ParameterRef parameterRef, Annotation[] annotations) {
+    protected  <T> ParameterProxy<T> createProxy(Class<?> injectionTarget, TypeRef parameterRef, Annotation[] annotations) {
 
         Type parameterType = parameterRef.getType();
 

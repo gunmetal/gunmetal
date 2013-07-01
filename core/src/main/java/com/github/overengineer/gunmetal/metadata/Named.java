@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target(ElementType.PARAMETER)
+@Target({ ElementType.PARAMETER, ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Qualifier

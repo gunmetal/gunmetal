@@ -3,9 +3,6 @@ package com.github.overengineer.gunmetal.inject;
 import com.github.overengineer.gunmetal.Provider;
 import com.github.overengineer.gunmetal.parameter.ParameterBuilder;
 import com.github.overengineer.gunmetal.util.MethodRef;
-import com.github.overengineer.gunmetal.util.MethodRefImpl;
-
-import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
@@ -15,8 +12,8 @@ public class DefaultMethodInjector<T> implements MethodInjector<T> {
     private final MethodRef methodRef;
     private final ParameterBuilder parameterBuilder;
 
-    DefaultMethodInjector(Method method, ParameterBuilder<T> parameterBuilder) {
-        methodRef = new MethodRefImpl(method);
+    DefaultMethodInjector(MethodRef methodRef, ParameterBuilder<T> parameterBuilder) {
+        this.methodRef = methodRef;
         this.parameterBuilder = parameterBuilder;
     }
 

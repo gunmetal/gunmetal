@@ -556,6 +556,8 @@ public class DefaultContainerTest implements Serializable {
                 .addAspect(StartAspect.class)
                 .addInstance(StartListener.class, new StartListener() {
 
+                    @Inject
+                    @Bro
                     StartListener bro;
 
                     @Inject

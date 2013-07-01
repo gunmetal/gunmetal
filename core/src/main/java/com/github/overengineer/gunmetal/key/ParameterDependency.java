@@ -1,6 +1,6 @@
 package com.github.overengineer.gunmetal.key;
 
-import com.github.overengineer.gunmetal.util.ParameterRef;
+import com.github.overengineer.gunmetal.util.TypeRef;
 import com.github.overengineer.gunmetal.util.ReflectionUtil;
 
 import java.lang.reflect.Type;
@@ -11,12 +11,12 @@ import java.lang.reflect.Type;
 public class ParameterDependency<T> implements Dependency<T> {
 
     private final Object qualifier;
-    private final ParameterRef parameterRef;
+    private final TypeRef parameterRef;
     private final Class<? super T> targetClass;
     private final int typeKeyHash;
     private final TypeKey<T> typeKey = new ParameterTypeKey();
 
-    public ParameterDependency(ParameterRef parameterRef) {
+    public ParameterDependency(TypeRef parameterRef) {
         this.parameterRef = parameterRef;
         qualifier = Qualifier.NONE;
         Type type = parameterRef.getType();
@@ -24,7 +24,7 @@ public class ParameterDependency<T> implements Dependency<T> {
         typeKeyHash = type.hashCode();
     }
 
-    public ParameterDependency(ParameterRef parameterRef, Object qualifier) {
+    public ParameterDependency(TypeRef parameterRef, Object qualifier) {
         this.parameterRef = parameterRef;
         this.qualifier = qualifier;
         Type type = parameterRef.getType();

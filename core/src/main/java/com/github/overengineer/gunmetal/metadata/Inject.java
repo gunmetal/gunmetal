@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target({ ElementType.METHOD, ElementType.CONSTRUCTOR })
+@Target({ ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Inject { }

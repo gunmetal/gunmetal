@@ -9,6 +9,7 @@ import com.github.overengineer.gunmetal.scope.Scopes;
 import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -111,6 +112,14 @@ public class Jsr330MetadataAdapter implements MetadataAdapter {
     @Override
     public boolean isSetter(Method method) {
         return method.isAnnotationPresent(javax.inject.Inject.class);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean shouldInject(Field field) {
+        return field.isAnnotationPresent(javax.inject.Inject.class);
     }
 
     /**

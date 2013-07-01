@@ -7,6 +7,7 @@ import com.github.overengineer.gunmetal.scope.ScopedComponentStrategyProvider;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
@@ -26,6 +27,8 @@ public interface MetadataAdapter extends Serializable {
     Method getInitMethod(Class<?> cls);
 
     boolean isSetter(Method method);
+
+    boolean shouldInject(Field field);
 
     Object getQualifier(Type type, Annotation[] annotations);
 

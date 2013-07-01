@@ -5,13 +5,13 @@ import java.lang.reflect.Type;
 /**
  * @author rees.byars
  */
-public class ParameterRefImpl implements ParameterRef {
+public class ParameterTypeRef implements TypeRef {
 
     private final ParameterizedFunction parameterizedFunction;
     private final int parameterIndex;
     private transient volatile Type type;
 
-    public ParameterRefImpl(ParameterizedFunction parameterizedFunction, int parameterIndex) {
+    public ParameterTypeRef(ParameterizedFunction parameterizedFunction, int parameterIndex) {
         this.parameterizedFunction = parameterizedFunction;
         this.parameterIndex = parameterIndex;
     }
