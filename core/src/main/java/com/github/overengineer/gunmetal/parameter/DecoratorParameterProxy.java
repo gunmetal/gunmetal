@@ -12,6 +12,7 @@ public class DecoratorParameterProxy<T> implements ParameterProxy<T> {
 
     private final Dependency<T> dependency;
     private final Class<?> injectionTarget;
+    private volatile ComponentStrategy<T> strategy;
 
     DecoratorParameterProxy(Dependency<T> dependency, Class<?> injectionTarget) {
         this.dependency = dependency;
@@ -20,12 +21,19 @@ public class DecoratorParameterProxy<T> implements ParameterProxy<T> {
 
     @Override
     public T get(Provider provider) {
-        return provider.get(dependency, new SelectionAdvisor() {
-            @Override
-            public boolean validSelection(ComponentStrategy<?> candidateStrategy) {
-                return candidateStrategy.getComponentType() != injectionTarget; //TODO this prevents self injection.  OK??
+        if (strategy == null) {
+            synchronized (this) {
+                if (strategy == null) {
+                    strategy = provider.getStrategy(dependency, new SelectionAdvisor() {
+                        @Override
+                        public boolean validSelection(ComponentStrategy<?> candidateStrategy) {
+                            return candidateStrategy.getComponentType() != injectionTarget; //TODO this prevents self injection.  OK??
+                        }
+                    });
+                }
             }
-        });
+        }
+        return strategy.get(provider);
     }
 
 }

@@ -68,10 +68,6 @@ public interface Container extends Provider {
 
     Container getReal();
 
-    <T> ComponentStrategy<T> getStrategy(Dependency<T> key, SelectionAdvisor ... advisors);
-
-    <T> List<ComponentStrategy<T>> getAllStrategies(Dependency<T> dependency, SelectionAdvisor... advisors);
-
     Container makeInjectable();
 
 }

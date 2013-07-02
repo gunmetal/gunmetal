@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.dynamic;
 
 import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.key.Dependency;
 
 import java.io.Serializable;
@@ -33,6 +34,6 @@ public class DynamicManagedComponentFactory<T> implements InvocationHandler, Ser
         } else if ("toString".equals(methodName)) {
             return proxy.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + "$DynamicManagedComponentFactory$[" + factoryInterface + "][" + producedTypeDependency.getTypeKey().getType() + "]";
         }
-        return provider.get(producedTypeDependency);
+        return provider.get(producedTypeDependency, SelectionAdvisor.NONE);
     }
 }

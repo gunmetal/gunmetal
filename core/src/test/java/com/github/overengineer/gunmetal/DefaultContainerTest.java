@@ -3,6 +3,7 @@ package com.github.overengineer.gunmetal;
 import com.github.overengineer.gunmetal.key.Generic;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.metadata.*;
+import com.github.overengineer.gunmetal.module.BaseModule;
 import com.github.overengineer.gunmetal.proxy.HotSwapException;
 import com.github.overengineer.gunmetal.proxy.HotSwappableContainer;
 import com.github.overengineer.gunmetal.proxy.aop.AopContainer;
@@ -12,6 +13,8 @@ import com.github.overengineer.gunmetal.proxy.aop.Pointcut;
 import com.github.overengineer.gunmetal.scope.ScopedComponentStrategyProvider;
 import com.github.overengineer.gunmetal.testutil.ConcurrentExecutionAssistant;
 import com.github.overengineer.gunmetal.testutil.SerializationTestingUtil;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
 import org.junit.Test;
 import scope.CommonConstants;
 import scope.CommonModule;
@@ -51,7 +54,7 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testSerialization() {
 
-        AopContainer container = Gunmetal.raw().gimmeThatAopTainer();
+        AopContainer container = Gunmetal.raw().withSetterInjection().gimmeThatAopTainer();
 
         container.add(IBean.class, Bean3.class);
 
@@ -372,75 +375,6 @@ public class DefaultContainerTest implements Serializable {
         }
     }
 
-    @Test
-    public void testCyclicRef() {
-
-        HotSwappableContainer container = Gunmetal.raw().gimmeThatProxyTainer();
-
-        container
-                .add(ICyclicRef.class, CyclicTest.class)
-                .add(ICyclicRef2.class, CyclicTest2.class)
-                .add(ICyclicRef3.class, CyclicTest3.class);
-
-        ICyclicRef c = container.get(ICyclicRef.class);
-
-        assertNotNull(c.getRef());
-
-        c.getRef().getRef();
-
-        ICyclicRef2 c2 = container.get(ICyclicRef2.class);
-
-        assertNotNull(c2.getRef());
-
-        assertEquals(2, c2.getRef().calls());
-
-        assertEquals(2, c2.calls()); //one because its a prototype
-
-        ICyclicRef3 c3 = container.get(ICyclicRef3.class);
-
-        assertNotNull(c3.getRef());
-
-        assertEquals(1, c.getRef().calls());
-
-    }
-
-    @Test
-    public void testCyclicRef2() {
-
-        HotSwappableContainer container = Gunmetal.raw().gimmeThatProxyTainer();
-
-        container
-                .add(ICyclicRef.class, CyclicTest.class)
-                .add(ICyclicRef2.class, CyclicTest2.class)
-                .add(ICyclicRef3.class, CyclicTest3.class);
-
-        ICyclicRef c = container.get(ICyclicRef.class);
-
-        assertEquals(1, c.getRef().getRef().getRef().calls());
-
-        container.get(ICyclicRef2.class);
-        container.get(ICyclicRef2.class);
-        container.get(ICyclicRef2.class);
-    }
-
-    @Test
-    public void testHotSwapping() throws HotSwapException {
-
-        HotSwappableContainer container = Gunmetal.raw().gimmeThatProxyTainer();
-
-        container
-                .add(ICyclicRef.class, CyclicTest.class)
-                .add(ICyclicRef2.class, CyclicTest2.class)
-                .add(ICyclicRef3.class, CyclicTest3.class);
-
-        ICyclicRef c = container.get(ICyclicRef.class);
-
-        container.swap(ICyclicRef.class, CyclicTestHot.class);
-
-        assertEquals(69, c.calls());
-
-    }
-
     @Test(expected = Assertion.class)
     public void testIntercept() throws HotSwapException {
 
@@ -558,12 +492,12 @@ public class DefaultContainerTest implements Serializable {
 
                     @Inject
                     @Bro
-                    StartListener bro;
+                    final StartListener bro = null;
 
                     @Inject
                     public void setMaster(@Bro StartListener bro) {
                         System.out.println("bro " + bro);
-                        this.bro = bro;
+                        //this.bro = bro;
                     }
 
                     @Override
@@ -763,6 +697,77 @@ public class DefaultContainerTest implements Serializable {
         }
     }
 
+
+
+    @Test
+    public void testCyclicRef2() {
+
+        HotSwappableContainer container = Gunmetal.raw().gimmeThatProxyTainer();
+
+        container
+                .add(ICyclicRef.class, CyclicTest.class)
+                .add(ICyclicRef2.class, CyclicTest2.class)
+                .add(ICyclicRef3.class, CyclicTest3.class);
+
+        ICyclicRef c = container.get(ICyclicRef.class);
+
+        assertEquals(1, c.getRef().getRef().getRef().calls());
+
+        container.get(ICyclicRef2.class);
+        container.get(ICyclicRef2.class);
+        container.get(ICyclicRef2.class);
+    }
+
+    @Test
+    public void testHotSwapping() throws HotSwapException {
+
+        HotSwappableContainer container = Gunmetal.raw().gimmeThatProxyTainer();
+
+        container
+                .add(ICyclicRef.class, CyclicTest.class)
+                .add(ICyclicRef2.class, CyclicTest2.class)
+                .add(ICyclicRef3.class, CyclicTest3.class);
+
+        ICyclicRef c = container.get(ICyclicRef.class);
+
+        container.swap(ICyclicRef.class, CyclicTestHot.class);
+
+        assertEquals(69, c.calls());
+
+    }
+
+    @Test
+    public void testCyclicRef() {
+
+        HotSwappableContainer container = Gunmetal.raw().withSetterInjection().gimmeThatProxyTainer();
+
+        container
+                .add(ICyclicRef.class, CyclicTest.class)
+                .add(ICyclicRef2.class, CyclicTest2.class)
+                .add(ICyclicRef3.class, CyclicTest3.class);
+
+        ICyclicRef c = container.get(ICyclicRef.class);
+
+        assertNotNull(c.getRef());
+
+        c.getRef().getRef();
+
+        ICyclicRef2 c2 = container.get(ICyclicRef2.class);
+
+        assertNotNull(c2.getRef());
+
+        assertEquals(2, c2.getRef().calls());
+
+        assertEquals(2, c2.calls());
+
+        ICyclicRef3 c3 = container.get(ICyclicRef3.class);
+
+        assertNotNull(c3.getRef());
+
+        assertEquals(1, c.getRef().calls());
+
+    }
+
     public interface ICyclicRef {
         ICyclicRef3 getRef();
         int calls();
@@ -862,5 +867,24 @@ public class DefaultContainerTest implements Serializable {
     }
 
     public static class Assertion extends RuntimeException {}
+
+    @Test
+    public void testCyclicFields() {
+        Gunmetal.jsr330().withSetterInjection().load(new BaseModule() {
+            @Override
+            public void configure() {
+                use(A.class);
+                use(B.class);
+            }
+        }).get(A.class).b.toString();
+    }
+
+    static class A implements C {
+        @javax.inject.Inject B b;
+    }
+    static class B {
+        @javax.inject.Inject A a;
+    }
+    interface C {}
 
 }

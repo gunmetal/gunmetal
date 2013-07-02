@@ -22,6 +22,7 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
         this.initializationListeners = initializationListeners;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T get(Provider provider) {
         T component = instantiator.getInstance(provider);

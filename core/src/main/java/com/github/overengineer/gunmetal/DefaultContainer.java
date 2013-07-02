@@ -47,8 +47,8 @@ public class DefaultContainer implements Container {
             if (strategy.equals(strategy2)
                     //TODO need a better way to ensure only one composite/delegating service etc is allowed
                     || (strategy.getComponentType().equals(strategy2.getComponentType())
-                            && strategy.getQualifier().equals(strategy2.getQualifier())
-                            && !Proxy.isProxyClass(strategy.getComponentType()))) {
+                    && strategy.getQualifier().equals(strategy2.getQualifier())
+                    && !Proxy.isProxyClass(strategy.getComponentType()))) {
                 return Order.EXCLUDE;
             } else if (strategy instanceof TopLevelStrategy) {
                 return Order.PREPEND;
@@ -227,7 +227,7 @@ public class DefaultContainer implements Container {
     public Container addCustomProvider(Dependency<?> providedTypeDependency, Class<?> customProviderType) {
         Object qualifier = providedTypeDependency.getQualifier();
         Dependency<?> providerDependency = Smithy.forge(customProviderType, qualifier);
-        ComponentStrategy providerStrategy = getStrategy(providerDependency);
+        ComponentStrategy providerStrategy = tryGetStrategy(providerDependency, SelectionAdvisor.NONE);
         if (providerStrategy == null) {
             providerStrategy = strategyFactory.create(customProviderType, qualifier, Scopes.SINGLETON);
         }
@@ -246,7 +246,7 @@ public class DefaultContainer implements Container {
     public Container addCustomProvider(Dependency<?> providedTypeDependency, Object customProvider) {
         Object qualifier = providedTypeDependency.getQualifier();
         Dependency<?> providerDependency = Smithy.forge(customProvider.getClass(), qualifier);
-        ComponentStrategy providerStrategy = getStrategy(providerDependency);
+        ComponentStrategy providerStrategy = tryGetStrategy(providerDependency, SelectionAdvisor.NONE);
         if (providerStrategy == null) {
             providerStrategy = strategyFactory.createInstanceStrategy(customProvider, qualifier);
         }
@@ -360,7 +360,6 @@ public class DefaultContainer implements Container {
         return get(Smithy.forge(clazz), advisors);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T get(Class<T> clazz, Object qualifier, SelectionAdvisor ... advisors) {
         return get(Smithy.forge(clazz, qualifier), advisors);
@@ -368,76 +367,7 @@ public class DefaultContainer implements Container {
 
     @Override
     public <T> T get(final Dependency<T> dependency, SelectionAdvisor ... advisors) {
-
-        @SuppressWarnings("unchecked")
-        ComponentStrategy<T> strategy = getStrategy(dependency, advisors);
-
-        if (strategy != null) {
-            return strategy.get(this);
-        }
-
-        Class<?> targetClass = dependency.getTypeKey().getRaw();
-        Type targetType = dependency.getTypeKey().getType();
-
-        if (!(targetType instanceof ParameterizedType)) {
-            throw new MissingDependencyException(dependency);
-        }
-
-        if (((ParameterizedType) targetType).getActualTypeArguments().length > 1) {
-            throw new MissingDependencyException(dependency);
-        }
-
-        //TODO this is slow, refactor to cache the type in the key and to reuse the strategy
-        Dependency parameterizedKey = Smithy.forge(new TypeRef() {
-            @Override
-            public Type getType() {
-                return ((ParameterizedType) dependency.getTypeKey().getType()).getActualTypeArguments()[0];
-            }
-        }, dependency.getQualifier());
-
-        if (metadataAdapter.getProviderClass().isAssignableFrom(targetClass)) {
-
-            T instance = dynamicComponentFactory.createManagedComponentFactory(metadataAdapter.getProviderClass(), parameterizedKey, this);
-            strategy = strategyFactory.createInstanceStrategy(instance, Qualifier.NONE);
-            putStrategy(dependency, strategy);
-
-            return strategy.get(this);
-
-        }
-
-        if (!(Collection.class.isAssignableFrom(targetClass))) {
-            throw new MissingDependencyException(dependency);
-        }
-
-        //TODO store results in an instance strategy for better perf
-
-        if (List.class.isAssignableFrom(targetClass)) {
-
-            @SuppressWarnings("unchecked")
-            T t = (T) getAll(parameterizedKey);
-            return t;
-
-        }
-
-        if (Set.class.isAssignableFrom(targetClass)) {
-
-            @SuppressWarnings("unchecked")
-            T t = (T) new HashSet(getAll(parameterizedKey));
-            return t;
-
-        }
-
-        if (Collection.class == targetClass) {
-
-            @SuppressWarnings("unchecked")
-            T t = (T) getAll(parameterizedKey);
-            return t;
-
-        }
-
-        throw new MissingDependencyException(dependency);
-
-
+        return getStrategy(dependency, advisors).get(this);
     }
 
     @Override
@@ -464,7 +394,7 @@ public class DefaultContainer implements Container {
 
         Dependency componentKey = Smithy.forge(implementationType, dependency.getQualifier());
 
-        ComponentStrategy strategy = getStrategy(componentKey, new SelectionAdvisor() {
+        ComponentStrategy strategy = tryGetStrategy(componentKey, new SelectionAdvisor() {
             @Override
             public boolean validSelection(ComponentStrategy<?> candidateStrategy) {
                 return candidateStrategy.getComponentType() == implementationType;
@@ -488,11 +418,104 @@ public class DefaultContainer implements Container {
 
     }
 
-     @Override
-     public <T> ComponentStrategy<T> getStrategy(Dependency<T> dependency, SelectionAdvisor ... advisors) {
+    @Override
+    public <T> ComponentStrategy<T> getStrategy(final Dependency<T> dependency, SelectionAdvisor ... advisors) {
+
+
+        ComponentStrategy<T> strategy = tryGetStrategy(dependency, advisors);
+
+        if (strategy != null) {
+            return strategy;
+        }
+
+        for (Container child : children) {
+            try {
+                return child.getStrategy(dependency, advisors);
+            } catch (MissingDependencyException e) {
+                //TODO this is shitty!!
+            }
+        }
+
+        for (Container container : cascadingContainers) {
+            try {
+                return container.getStrategy(dependency, advisors);
+            } catch (MissingDependencyException e) {
+                //TODO this is shitty!!
+            }
+        }
+
+        Class<?> targetClass = dependency.getTypeKey().getRaw();
+        Type targetType = dependency.getTypeKey().getType();
+
+        if (!(targetType instanceof ParameterizedType)) {
+            throw new MissingDependencyException(dependency);
+        }
+
+        if (((ParameterizedType) targetType).getActualTypeArguments().length > 1) {
+            throw new MissingDependencyException(dependency);
+        }
+
+        //TODO this is slow, refactor to cache the type in the key and to reuse the strategy
+        //TODO everything after this this should probably also by synchronized :/
+
+        Dependency parameterizedKey = Smithy.forge(new TypeRef() {
+            @Override
+            public Type getType() {
+                return ((ParameterizedType) dependency.getTypeKey().getType()).getActualTypeArguments()[0];
+            }
+        }, dependency.getQualifier());
+
+        if (metadataAdapter.getProviderClass().isAssignableFrom(targetClass)) {
+
+            T instance = dynamicComponentFactory.createManagedComponentFactory(metadataAdapter.getProviderClass(), parameterizedKey, this);
+            strategy = strategyFactory.createInstanceStrategy(instance, dependency.getQualifier());
+            putStrategy(dependency, strategy);
+
+            return strategy;
+
+        }
+
+        if (!(Collection.class.isAssignableFrom(targetClass))) {
+            throw new MissingDependencyException(dependency);
+        }
+
+        if (List.class.isAssignableFrom(targetClass)) {
+
+            @SuppressWarnings("unchecked")
+            T t = (T) getAll(parameterizedKey);
+            strategy = strategyFactory.createInstanceStrategy(t, dependency.getQualifier());
+            putStrategy(dependency, strategy);
+            return strategy;
+
+        }
+
+        if (Set.class.isAssignableFrom(targetClass)) {
+
+            @SuppressWarnings("unchecked")
+            T t = (T) new HashSet(getAll(parameterizedKey));
+            strategy = strategyFactory.createInstanceStrategy(t, dependency.getQualifier());
+            putStrategy(dependency, strategy);
+            return strategy;
+
+        }
+
+        if (Collection.class == targetClass) {
+
+            @SuppressWarnings("unchecked")
+            T t = (T) getAll(parameterizedKey);
+            strategy = strategyFactory.createInstanceStrategy(t, dependency.getQualifier());
+            putStrategy(dependency, strategy);
+            return strategy;
+
+        }
+
+        throw new MissingDependencyException(dependency);
+    }
+
+    private <T> ComponentStrategy<T> tryGetStrategy(Dependency<T> dependency, SelectionAdvisor ... advisors) {
 
         Object qualifier = dependency.getQualifier();
-        boolean qualified = !Qualifier.NONE.equals(qualifier);
+        boolean qualified = Qualifier.NONE != qualifier;
 
         SortedSet<ComponentStrategy<T>> strategySet = getStrategySet(dependency);
         if (strategySet != null) {
@@ -512,18 +535,7 @@ public class DefaultContainer implements Container {
                 }
             }
         }
-        for (Container child : children) {
-            ComponentStrategy<T> strategy = child.getStrategy(dependency);
-            if (strategy != null) {
-                return strategy;
-            }
-        }
-        for (Container container : cascadingContainers) {
-            ComponentStrategy<T> strategy = container.getStrategy(dependency);
-            if (strategy != null) {
-                return strategy;
-            }
-        }
+
         return null;
     }
 

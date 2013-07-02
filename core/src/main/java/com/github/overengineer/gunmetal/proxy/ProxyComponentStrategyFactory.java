@@ -1,5 +1,6 @@
 package com.github.overengineer.gunmetal.proxy;
 
+import com.github.overengineer.gunmetal.CircularPrototypeComponentStrategy;
 import com.github.overengineer.gunmetal.ComponentStrategy;
 import com.github.overengineer.gunmetal.ComponentStrategyFactory;
 import com.github.overengineer.gunmetal.PrototypeComponentStrategy;
@@ -25,7 +26,8 @@ public class ProxyComponentStrategyFactory implements ComponentStrategyFactory {
         if (ReflectionUtil.getAllInterfaces(implementationType).size() == 0) {
             return delegateStrategy;
         }
-        if (delegateStrategy instanceof PrototypeComponentStrategy) {
+        //TODO need a better way to determine this!!! error prone from a maintenance perspective!!
+        if (delegateStrategy instanceof CircularPrototypeComponentStrategy) {
             return new PrototypeProxyComponentStrategy<T>(implementationType, delegateStrategy, handlerFactory);
         }
         return new SingletonProxyComponentStrategy<T>(implementationType, delegateStrategy, handlerFactory);

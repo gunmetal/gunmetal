@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.dynamic;
 
 import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.inject.MethodInjector;
 import com.github.overengineer.gunmetal.key.Dependency;
 
@@ -22,6 +23,6 @@ public class ServiceDelegateInvoker<T> implements Serializable {
     }
 
     public Object invoke(Object[] providedArgs) {
-        return methodInjector.inject(provider.get(serviceDelegateDependency), provider, providedArgs);
+        return methodInjector.inject(provider.get(serviceDelegateDependency, SelectionAdvisor.NONE), provider, providedArgs);
     }
 }

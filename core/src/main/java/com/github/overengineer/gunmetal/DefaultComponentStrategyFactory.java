@@ -38,11 +38,11 @@ public class DefaultComponentStrategyFactory implements ComponentStrategyFactory
             theScope = scope;
         }
         if (Scopes.PROTOTYPE.equals(theScope)) {
-            return new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners);
+            return new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners);
         } else if (Scopes.SINGLETON.equals(theScope)) {
-            return new SingletonComponentStrategy<T>(new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
+            return new SingletonComponentStrategy<T>(new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
         } else {
-            return metadataAdapter.getStrategyProvider(theScope).get(implementationType, qualifier, new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
+            return metadataAdapter.getStrategyProvider(theScope).get(implementationType, qualifier, new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
         }
     }
 

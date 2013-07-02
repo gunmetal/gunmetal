@@ -1,6 +1,8 @@
 package com.github.overengineer.gunmetal.parameter;
 
+import com.github.overengineer.gunmetal.ComponentStrategy;
 import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.key.Dependency;
 
 /**
@@ -9,6 +11,7 @@ import com.github.overengineer.gunmetal.key.Dependency;
 public class ComponentParameterProxy<T> implements ParameterProxy<T> {
 
     private final Dependency<T> dependency;
+    private volatile ComponentStrategy<T> strategy;
 
     ComponentParameterProxy(Dependency<T> dependency) {
         this.dependency = dependency;
@@ -16,7 +19,14 @@ public class ComponentParameterProxy<T> implements ParameterProxy<T> {
 
     @Override
     public T get(Provider provider) {
-        return provider.get(dependency);
+        if (strategy == null) {
+            synchronized (this) {
+                if (strategy == null) {
+                    strategy = provider.getStrategy(dependency, SelectionAdvisor.NONE);
+                }
+            }
+        }
+        return strategy.get(provider);
     }
 
 }
