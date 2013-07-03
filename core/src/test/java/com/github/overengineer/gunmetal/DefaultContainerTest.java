@@ -868,10 +868,12 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = ConfigurationException.class)
     public void testCyclicFields() {
 
-        Gunmetal.raw().withSetterInjection().load(new BaseModule() {
+        A a = Gunmetal.raw().withSetterInjection().load(new BaseModule() {
             @Override
             public void configure() { }
-        }).get(A.class).b.c.d.toString();
+        }).get(A.class);
+
+        assert a == a.b.c.d.b.c.d.a;
 
         Guice.createInjector(new AbstractModule() {
             @Override
@@ -881,6 +883,7 @@ public class DefaultContainerTest implements Serializable {
 
     }
 
+    @Prototype
     static class A {
         @Inject @javax.inject.Inject B b;
         @javax.inject.Inject
@@ -893,17 +896,20 @@ public class DefaultContainerTest implements Serializable {
 
         @Inject
         public void setC(C c) {
-            System.out.println(c);
             this.c = c;
         }
 
     }
+    @Prototype
     static class C {
         @Inject @javax.inject.Inject D d;
-
-        public C(D d) { }
+        public C(D d, DD dd) { }
     }
     static class D {
+        @Inject @javax.inject.Inject A a;
+        @Inject @javax.inject.Inject B b;
+    }
+    static class DD {
         @Inject @javax.inject.Inject A a;
     }
 
