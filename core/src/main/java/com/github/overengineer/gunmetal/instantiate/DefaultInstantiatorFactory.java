@@ -1,7 +1,7 @@
 package com.github.overengineer.gunmetal.instantiate;
 
 import com.github.overengineer.gunmetal.parameter.ParameterBuilderFactory;
-import com.github.overengineer.gunmetal.util.ConstructorRef;
+import com.github.overengineer.gunmetal.util.ConstructorProxy;
 
 /**
  * @author rees.byars
@@ -18,11 +18,11 @@ public class DefaultInstantiatorFactory implements InstantiatorFactory {
 
     @Override
     public <T> Instantiator<T> create(Class<T> implementationType, Class ... providedArgTypes) {
-        ConstructorRef<T> constructorRef = constructorResolver.resolveConstructor(implementationType, providedArgTypes);
+        ConstructorProxy<T> constructorProxy = constructorResolver.resolveConstructor(implementationType, providedArgTypes);
         return new DefaultInstantiator<T>(
                 implementationType,
-                constructorRef,
-                parameterBuilderFactory.create(implementationType, constructorRef.getConstructor(), providedArgTypes));
+                constructorProxy,
+                parameterBuilderFactory.create(implementationType, constructorProxy, providedArgTypes));
     }
 
 }

@@ -1,8 +1,7 @@
 package com.github.overengineer.gunmetal.instantiate;
 
 import com.github.overengineer.gunmetal.metadata.MetadataAdapter;
-import com.github.overengineer.gunmetal.util.ConstructorRef;
-import com.github.overengineer.gunmetal.util.ConstructorRefImpl;
+import com.github.overengineer.gunmetal.util.ConstructorProxy;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
@@ -20,7 +19,7 @@ public class DefaultConstructorResolver implements ConstructorResolver {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> ConstructorRef<T> resolveConstructor(Class<T> type, Class ... providedArgs) {
+    public <T> ConstructorProxy<T> resolveConstructor(Class<T> type, Class ... providedArgs) {
         Type[] genericParameterTypes = {};
         Constructor<T> constructor = null;
         for (Constructor candidateConstructor : type.getDeclaredConstructors()) {
@@ -33,7 +32,7 @@ public class DefaultConstructorResolver implements ConstructorResolver {
             }
         }
         assert constructor != null : "Could not find a suitable constructor in [" + type + "]";
-        return new ConstructorRefImpl<T>(constructor);
+        return ConstructorProxy.Factory.create(constructor);
     }
 
 }

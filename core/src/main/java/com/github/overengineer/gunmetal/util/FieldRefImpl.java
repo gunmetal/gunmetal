@@ -2,7 +2,6 @@ package com.github.overengineer.gunmetal.util;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
 
 /**
  * @author rees.byars
@@ -38,10 +37,5 @@ public class FieldRefImpl implements FieldRef {
             }
         }
         return field;
-    }
-
-    @Override
-    public Type getType() {
-        return getField().getGenericType();
     }
 }

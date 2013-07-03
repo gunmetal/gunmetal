@@ -350,16 +350,11 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = Assertion.class)
     public void testAddListener() throws Throwable {
 
-        Container container = Gunmetal.raw().withSetterInjection().load().makeInjectable()
+        Gunmetal.raw().withSetterInjection().load().makeInjectable()
                 .addListener(Listener.class)
                 .add(SchedulerProvider.class, DefaultSchedulerProvider.class)
-                .addInstance(Integer.class, CommonConstants.Properties.MONITORING_THREAD_POOL_SIZE, 4);
-
-        try {
-            container.get(SchedulerProvider.class);
-        } catch (Exception e) {
-            throw e.getCause();
-        }
+                .addInstance(Integer.class, CommonConstants.Properties.MONITORING_THREAD_POOL_SIZE, 4)
+                .get(SchedulerProvider.class);
 
 
     }

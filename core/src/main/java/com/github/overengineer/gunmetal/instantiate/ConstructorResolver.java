@@ -1,6 +1,6 @@
 package com.github.overengineer.gunmetal.instantiate;
 
-import com.github.overengineer.gunmetal.util.ConstructorRef;
+import com.github.overengineer.gunmetal.util.ConstructorProxy;
 
 import java.io.Serializable;
 
@@ -9,6 +9,6 @@ import java.io.Serializable;
  */
 public interface ConstructorResolver extends Serializable {
 
-    <T> ConstructorRef<T> resolveConstructor(Class<T> type, Class ... providedArgs);
+    <T> ConstructorProxy<T> resolveConstructor(Class<T> type, Class ... providedArgs);
 
 }

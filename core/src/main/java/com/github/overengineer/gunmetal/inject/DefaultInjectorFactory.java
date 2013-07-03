@@ -4,9 +4,8 @@ import com.github.overengineer.gunmetal.Provider;
 import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.metadata.MetadataAdapter;
 import com.github.overengineer.gunmetal.parameter.ParameterBuilderFactory;
-import com.github.overengineer.gunmetal.util.FieldRef;
-import com.github.overengineer.gunmetal.util.FieldRefImpl;
-import com.github.overengineer.gunmetal.util.MethodRefImpl;
+import com.github.overengineer.gunmetal.util.FieldProxy;
+import com.github.overengineer.gunmetal.util.MethodProxy;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -32,10 +31,10 @@ public class DefaultInjectorFactory implements InjectorFactory {
         List<FieldInjector<T>> fieldInjectors = new ArrayList<FieldInjector<T>>();
         for (Field field : implementationType.getDeclaredFields()) {
             if (metadataAdapter.shouldInject(field)) {
-                FieldRef fieldRef = new FieldRefImpl(field);
+                FieldProxy fieldProxy = FieldProxy.Factory.create(field);
                 FieldInjector<T> fieldInjector = new DefaultFieldInjector<T>(
-                        fieldRef,
-                        Smithy.forge(fieldRef, metadataAdapter.getQualifier(field.getGenericType(), field.getAnnotations())));
+                        fieldProxy,
+                        Smithy.forge(fieldProxy, metadataAdapter.getQualifier(field.getGenericType(), field.getAnnotations())));
                 fieldInjectors.add(fieldInjector);
             }
         }
@@ -57,7 +56,8 @@ public class DefaultInjectorFactory implements InjectorFactory {
     @SuppressWarnings("unchecked")
     @Override
     public <T> MethodInjector<T> create(Class<T> injectionTarget, Method method, Class ... providedArgs) {
-        return new DefaultMethodInjector(new MethodRefImpl(method), parameterBuilderFactory.create(injectionTarget, method, providedArgs));
+        MethodProxy methodProxy = MethodProxy.Factory.create(method);
+        return new DefaultMethodInjector(methodProxy, parameterBuilderFactory.create(injectionTarget, methodProxy, providedArgs));
     }
 
     static class EmptyInjector<T> implements ComponentInjector<T> {

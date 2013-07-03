@@ -1,9 +1,7 @@
 package com.github.overengineer.gunmetal.util;
 
-import java.lang.annotation.Annotation;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Type;
 
 /**
  * @author rees.byars
@@ -38,15 +36,5 @@ public class ConstructorRefImpl<T> implements ConstructorRef<T> {
             }
         }
         return constructor;
-    }
-
-    @Override
-    public Type[] getParameterTypes() {
-        return getConstructor().getGenericParameterTypes();
-    }
-
-    @Override
-    public Annotation[][] getParameterAnnotations() {
-        return getConstructor().getParameterAnnotations();
     }
 }

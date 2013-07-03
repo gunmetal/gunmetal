@@ -1,6 +1,6 @@
 package com.github.overengineer.gunmetal;
 
-import com.github.overengineer.gunmetal.util.FieldRef;
+import com.github.overengineer.gunmetal.util.FieldProxy;
 
 /**
  * @author rees.byars
@@ -10,7 +10,7 @@ public class CircularReferenceException  extends RuntimeException {
     private Class<?> componentType;
     private Object qualifier;
     private ComponentStrategy<?> reverseStrategy;
-    private FieldRef fieldRef;
+    private FieldProxy fieldProxy;
 
     protected CircularReferenceException(String message) {
         super(message);
@@ -38,12 +38,12 @@ public class CircularReferenceException  extends RuntimeException {
         return reverseStrategy;
     }
 
-    public void setFieldRef(FieldRef fieldRef) {
-        this.fieldRef = fieldRef;
+    public void setFieldProxy(FieldProxy fieldProxy) {
+        this.fieldProxy = fieldProxy;
     }
 
-    public FieldRef getFieldRef() {
-        return fieldRef;
+    public FieldProxy getFieldProxy() {
+        return fieldProxy;
     }
 
 }

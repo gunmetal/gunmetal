@@ -1,7 +1,6 @@
 package com.github.overengineer.gunmetal;
 
 import com.github.overengineer.gunmetal.inject.ComponentInjector;
-import com.github.overengineer.gunmetal.inject.InjectionException;
 import com.github.overengineer.gunmetal.instantiate.Instantiator;
 
 import java.io.IOException;
@@ -47,23 +46,13 @@ public class CircularPrototypeComponentStrategy<T> implements ComponentStrategy<
             }
             return component;
         } catch (CircularReferenceException e) {
-            if (e.getComponentType() != getComponentType() || e.getQualifier() != getQualifier() && e.getReverseStrategy() == null) {
+            if (e.getComponentType() == getComponentType() && e.getQualifier() == getQualifier()) {
+                circularDependencyGuardThreadLocal.remove();
+                ComponentStrategy<?> reverseStrategy = e.getReverseStrategy();
+                Object reverseComponent = reverseStrategy.get(provider);
+                return (T) e.getFieldProxy().get(reverseComponent);
+            } else if (e.getComponentType() != getComponentType() || e.getQualifier() != getQualifier() && e.getReverseStrategy() == null) {
                 e.setReverseStrategy(this);
-            }
-            throw e;
-        } catch (InjectionException e) {
-            circularDependencyGuardThreadLocal.remove();
-            if (e.getCause() instanceof CircularReferenceException) {
-                CircularReferenceException c = (CircularReferenceException) e.getCause();
-                if (c.getComponentType() == getComponentType() && c.getQualifier() == getQualifier()) {
-                    ComponentStrategy<?> reverseStrategy = c.getReverseStrategy();
-                    Object reverseComponent = reverseStrategy.get(provider);
-                    try {
-                        return (T) c.getFieldRef().getField().get(reverseComponent);
-                    } catch (Exception e1) {
-                        throw e;
-                    }
-                }
             }
             throw e;
         } finally {

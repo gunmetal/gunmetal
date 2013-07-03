@@ -1,9 +1,7 @@
 package com.github.overengineer.gunmetal.util;
 
-import java.lang.annotation.Annotation;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 
 /**
  * @author rees.byars
@@ -40,15 +38,5 @@ public class MethodRefImpl implements MethodRef {
             }
         }
         return method;
-    }
-
-    @Override
-    public Type[] getParameterTypes() {
-        return getMethod().getGenericParameterTypes();
-    }
-
-    @Override
-    public Annotation[][] getParameterAnnotations() {
-        return getMethod().getParameterAnnotations();
     }
 }

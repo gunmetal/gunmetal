@@ -5,19 +5,19 @@ import com.github.overengineer.gunmetal.ComponentStrategy;
 import com.github.overengineer.gunmetal.Provider;
 import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.key.Dependency;
-import com.github.overengineer.gunmetal.util.FieldRef;
+import com.github.overengineer.gunmetal.util.FieldProxy;
 
 /**
  * @author rees.byars
  */
 public class DefaultFieldInjector<T> implements FieldInjector<T> {
 
-    private final FieldRef fieldRef;
+    private final FieldProxy fieldProxy;
     private final Dependency<?> dependency;
-    private transient ComponentStrategy strategy;
+    private volatile ComponentStrategy strategy;
 
-    DefaultFieldInjector(FieldRef fieldRef, Dependency<?> dependency) {
-        this.fieldRef = fieldRef;
+    DefaultFieldInjector(FieldProxy fieldProxy, Dependency<?> dependency) {
+        this.fieldProxy = fieldProxy;
         this.dependency = dependency;
     }
 
@@ -26,11 +26,11 @@ public class DefaultFieldInjector<T> implements FieldInjector<T> {
         try {
             if (strategy == null) {
                 synchronized (this) {
-                    if (strategy == null && fieldRef.getField().getType().isAssignableFrom(fieldRef.getField().getDeclaringClass())) {
+                    if (strategy == null && fieldProxy.isDecorated()) {
                         strategy = provider.getStrategy(dependency, new SelectionAdvisor() {
                             @Override
                             public boolean validSelection(ComponentStrategy<?> candidateStrategy) {
-                                return candidateStrategy.getComponentType() != fieldRef.getField().getDeclaringClass();
+                                return candidateStrategy.getComponentType() != fieldProxy.getDeclaringClass();
                             }
                         });
                     } else if (strategy == null) {
@@ -38,12 +38,10 @@ public class DefaultFieldInjector<T> implements FieldInjector<T> {
                     }
                 }
             }
-            fieldRef.getField().set(component, strategy.get(provider));
+            fieldProxy.set(component, strategy.get(provider));
         } catch (CircularReferenceException e) {
-            e.setFieldRef(fieldRef);
+            e.setFieldProxy(fieldProxy);
             throw e;
-        } catch (Exception e) {
-            throw new InjectionException("Could not inject field [" + fieldRef.getField().getName() + "] on component of type [" + component.getClass().getName() + "].", e);
         }
     }
 

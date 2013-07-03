@@ -1,7 +1,7 @@
 package com.github.overengineer.gunmetal.inject;
 
 import com.github.overengineer.gunmetal.parameter.ParameterBuilderFactory;
-import com.github.overengineer.gunmetal.util.MethodRefImpl;
+import com.github.overengineer.gunmetal.util.MethodProxy;
 
 import java.lang.reflect.Method;
 
@@ -25,6 +25,7 @@ public class FalseInjectorFactory implements InjectorFactory {
     @SuppressWarnings("unchecked")
     @Override
     public <T> MethodInjector<T> create(Class<T> injectionTarget, Method method, Class ... providedArgs) {
-        return new DefaultMethodInjector(new MethodRefImpl(method), parameterBuilderFactory.create(injectionTarget, method, providedArgs));
+        MethodProxy methodProxy = MethodProxy.Factory.create(method);
+        return new DefaultMethodInjector(methodProxy, parameterBuilderFactory.create(injectionTarget, methodProxy, providedArgs));
     }
 }
