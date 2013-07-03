@@ -33,16 +33,18 @@ public class DefaultComponentStrategyFactory implements ComponentStrategyFactory
     public <T> ComponentStrategy<T> create(Class<T> implementationType, Object qualifier, Scope scope) {
         ComponentInjector<T> injector = injectorFactory.create(implementationType);
         Instantiator<T> instantiator = instantiatorFactory.create(implementationType);
-        Scope theScope = metadataAdapter.getScope(implementationType);
-        if (theScope == null) {
-            theScope = scope;
+        if (Scopes.UNDEFINED == scope) {
+            scope = metadataAdapter.getScope(implementationType);
+            if (scope == Scopes.UNDEFINED) {
+                scope = metadataAdapter.getDefaultScope();
+            }
         }
-        if (Scopes.PROTOTYPE.equals(theScope)) {
+        if (Scopes.PROTOTYPE == scope) {
             return new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners);
-        } else if (Scopes.SINGLETON.equals(theScope)) {
+        } else if (Scopes.SINGLETON == scope) {
             return new SingletonComponentStrategy<T>(new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
         } else {
-            return metadataAdapter.getStrategyProvider(theScope).get(implementationType, qualifier, new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
+            return metadataAdapter.getStrategyProvider(scope).get(implementationType, qualifier, new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
         }
     }
 

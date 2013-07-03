@@ -19,7 +19,7 @@ public abstract class BaseModule implements Module {
 
     private final List<Mapping<?>> mappings = new LinkedList<Mapping<?>>();
     private final Map<Dependency, Class> nonManagedComponentFactories = new HashMap<Dependency, Class>();
-    private Scope defaultScope = Scopes.SINGLETON;
+    private Scope defaultScope = Scopes.UNDEFINED;
     private Object defaultQualifier = Qualifier.NONE;
     private boolean useAutoMapping = false;
 

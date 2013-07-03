@@ -79,7 +79,15 @@ public class Jsr330MetadataAdapter implements MetadataAdapter {
                 return scopes.get(annotationType);
             }
         }
-        return null;
+        return Scopes.UNDEFINED;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Scope getDefaultScope() {
+        return Scopes.PROTOTYPE;
     }
 
     /**

@@ -24,6 +24,8 @@ public interface MetadataAdapter extends Serializable {
 
     Scope getScope(Class cls);
 
+    Scope getDefaultScope();
+
     Method getInitMethod(Class<?> cls);
 
     boolean isSetter(Method method);

@@ -4,6 +4,7 @@ import com.github.overengineer.gunmetal.*;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.key.Qualifier;
+import com.github.overengineer.gunmetal.module.BaseModule;
 import com.github.overengineer.gunmetal.testutil.ConcurrentExecutionAssistant;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -35,6 +36,16 @@ public class BenchMarks {
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() {
+                Gunmetal.jsr330().load(new BaseModule() {
+                    @Override
+                    public void configure() { }
+                }).get(AA.class, SelectionAdvisor.NONE);
+            }
+        }, threads).run(duration, primingRuns, "my container creation");
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() {
                 ObjectGraph.create(new DaggerSlimBenchMarkModule()).get(AA.class);
             }
         }, threads).run(duration, primingRuns, "dagger slim container creation");
@@ -45,7 +56,6 @@ public class BenchMarks {
                 ObjectGraph.create(new DaggerBenchMarkModule()).get(AA.class);
             }
         }, threads).run(duration, primingRuns, "dagger container creation");
-
 
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
@@ -61,14 +71,12 @@ public class BenchMarks {
             }
         }, threads).run(duration, primingRuns, "pico container creation");
 
-
         new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
             @Override
             public void execute() {
                 Guice.createInjector(new GuiceBenchMarkModule()).getInstance(AA.class);
             }
         }, threads).run(duration, primingRuns, "guice container creation");
-
 
     }
 

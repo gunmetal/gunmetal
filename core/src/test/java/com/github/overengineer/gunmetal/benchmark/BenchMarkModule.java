@@ -34,7 +34,7 @@ public class BenchMarkModule extends BaseModule {
         use(B.class);
         use(C.class);
         use(D.class);
-        use(E.class);
+        use(E.class).withScope(Scopes.SINGLETON);
         use(F.class);
         use(G.class);
         use(H.class);

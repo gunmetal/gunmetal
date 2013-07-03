@@ -196,7 +196,7 @@ public class DefaultContainer implements Container {
 
     @Override
     public <T> Container add(Dependency<T> dependency, Class<? extends T> implementationType) {
-        addMapping(dependency, implementationType, Scopes.SINGLETON);
+        addMapping(dependency, implementationType, Scopes.UNDEFINED);
         return this;
     }
 
@@ -449,12 +449,8 @@ public class DefaultContainer implements Container {
         Type targetType = dependency.getTypeKey().getType();
 
         if (!targetClass.isInterface() && !Modifier.isAbstract(targetClass.getModifiers())) {
-
-            //TODO add a Scopes.UNDEFINED and use it as the default scope
-            addMapping(dependency, targetClass, Scopes.SINGLETON);
-
+            addMapping(dependency, targetClass, Scopes.UNDEFINED);
             return getStrategy(dependency, advisors);
-
         }
 
         if (!(targetType instanceof ParameterizedType)) {

@@ -73,7 +73,15 @@ public class DefaultMetadataAdapter implements MetadataAdapter {
                 return scopes.get(annotationType);
             }
         }
-        return null;
+        return Scopes.UNDEFINED;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Scope getDefaultScope() {
+        return Scopes.SINGLETON;
     }
 
     /**
