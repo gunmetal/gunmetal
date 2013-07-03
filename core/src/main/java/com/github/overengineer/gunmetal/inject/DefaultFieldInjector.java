@@ -40,7 +40,12 @@ public class DefaultFieldInjector<T> implements FieldInjector<T> {
             }
             fieldProxy.set(component, strategy.get(provider));
         } catch (CircularReferenceException e) {
-            e.setFieldProxy(fieldProxy);
+            e.addAccessor(new CircularReferenceException.TargetAccessor() {
+                @Override
+                public Object getTarget(Object reverseComponent) {
+                    return fieldProxy.get(reverseComponent);
+                }
+            });
             throw e;
         }
     }

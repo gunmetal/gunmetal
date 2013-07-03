@@ -14,6 +14,7 @@ import com.github.overengineer.gunmetal.scope.ScopedComponentStrategyProvider;
 import com.github.overengineer.gunmetal.testutil.ConcurrentExecutionAssistant;
 import com.github.overengineer.gunmetal.testutil.SerializationTestingUtil;
 import com.google.inject.AbstractModule;
+import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.ProvisionException;
 import org.junit.Test;
@@ -864,13 +865,13 @@ public class DefaultContainerTest implements Serializable {
 
     public static class Assertion extends RuntimeException {}
 
-    @Test(expected = ProvisionException.class)
+    @Test(expected = ConfigurationException.class)
     public void testCyclicFields() {
 
-        Gunmetal.jsr330().withSetterInjection().load(new BaseModule() {
+        Gunmetal.raw().withSetterInjection().load(new BaseModule() {
             @Override
             public void configure() { }
-        }).get(A.class).b.toString();
+        }).get(A.class).b.c.d.toString();
 
         Guice.createInjector(new AbstractModule() {
             @Override
@@ -880,15 +881,30 @@ public class DefaultContainerTest implements Serializable {
 
     }
 
-    static class A implements C {
-        @javax.inject.Inject B b;
+    static class A {
+        @Inject @javax.inject.Inject B b;
         @javax.inject.Inject
         public A(B b) { }
     }
     static class B {
-        @javax.inject.Inject A a;
+
+        @javax.inject.Inject
+        C c;
+
+        @Inject
+        public void setC(C c) {
+            System.out.println(c);
+            this.c = c;
+        }
 
     }
-    interface C {}
+    static class C {
+        @Inject @javax.inject.Inject D d;
+
+        public C(D d) { }
+    }
+    static class D {
+        @Inject @javax.inject.Inject A a;
+    }
 
 }

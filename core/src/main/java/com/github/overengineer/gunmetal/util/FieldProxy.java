@@ -5,6 +5,8 @@ import com.github.overengineer.gunmetal.inject.InjectionException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author rees.byars
@@ -32,7 +34,7 @@ public interface FieldProxy extends Serializable, TypeRef {
                 try {
                     fieldRef.getField().set(target, value);
                 }  catch (Exception e) {
-                    throw new InjectionException("Could not inject field [" + fieldRef.getField().getName() + "] on component of type [" + fieldRef.getField().getDeclaringClass().getName() + "].", e);
+                    throw new InjectionException("Could not inject field [" + fieldRef.getField().getName() + "] on component of type [" + target.getClass().getName() + "].", e);
                 }
             }
 
@@ -41,7 +43,7 @@ public interface FieldProxy extends Serializable, TypeRef {
                 try {
                     return fieldRef.getField().get(target);
                 }  catch (Exception e) {
-                    throw new InjectionException("Could not retrieve field [" + fieldRef.getField().getName() + "] from component of type [" + fieldRef.getField().getDeclaringClass().getName() + "].", e);
+                    throw new InjectionException("Could not retrieve field [" + fieldRef.getField().getName() + "] from component of type [" + target.getClass().getName() + "].", e);
                 }
             }
 
@@ -63,6 +65,24 @@ public interface FieldProxy extends Serializable, TypeRef {
 
         public static FieldProxy create(Field field) {
             return new Proxy(new FieldRefImpl(field));
+        }
+
+        public static FieldProxy create(MethodProxy methodProxy) {
+            Type[] paramTypes = methodProxy.getParameterTypes();
+            if (paramTypes.length != 1) {
+                return null;
+            }
+            Class<?> paramType = ReflectionUtil.getRawClass(paramTypes[0]);
+            List<Field> matchingFields = new LinkedList<Field>();
+            for (Field field : methodProxy.getDeclaringClass().getDeclaredFields()) {
+                if (field.getType().isAssignableFrom(paramType)) {
+                    matchingFields.add(field);
+                }
+            }
+            if (matchingFields.size() != 1) {
+                return null;
+            }
+            return new Proxy(new FieldRefImpl(matchingFields.get(0)));
         }
 
     }

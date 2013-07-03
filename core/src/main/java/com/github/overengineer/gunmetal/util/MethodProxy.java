@@ -12,6 +12,8 @@ import java.lang.reflect.Type;
 public interface MethodProxy extends ParameterizedFunction {
 
     Object invoke(Object target, Object[] args);
+    String getMethodName();
+    Class<?> getDeclaringClass();
 
     class Factory {
 
@@ -30,6 +32,16 @@ public interface MethodProxy extends ParameterizedFunction {
                 } catch (Exception e) {
                     throw new InjectionException("Could not inject method [" + methodRef.getMethod().getName() + "] on component of type [" + target.getClass().getName() + "].", e);
                 }
+            }
+
+            @Override
+            public String getMethodName() {
+                return methodRef.getMethod().getName();
+            }
+
+            @Override
+            public Class<?> getDeclaringClass() {
+                return methodRef.getMethod().getDeclaringClass();
             }
 
             @Override

@@ -46,12 +46,12 @@ public class CircularPrototypeComponentStrategy<T> implements ComponentStrategy<
             }
             return component;
         } catch (CircularReferenceException e) {
-            if (e.getComponentType() == getComponentType() && e.getQualifier() == getQualifier()) {
+            if (e.getComponentType() == getComponentType() && e.getQualifier() == getQualifier() && e.getTargetAccessor() != null) {
                 circularDependencyGuardThreadLocal.remove();
                 ComponentStrategy<?> reverseStrategy = e.getReverseStrategy();
                 Object reverseComponent = reverseStrategy.get(provider);
-                return (T) e.getFieldProxy().get(reverseComponent);
-            } else if (e.getComponentType() != getComponentType() || e.getQualifier() != getQualifier() && e.getReverseStrategy() == null) {
+                return (T) e.getTargetAccessor().getTarget(reverseComponent);
+            } else if ((e.getComponentType() != getComponentType() || e.getQualifier() != getQualifier()) && e.getReverseStrategy() == null) {
                 e.setReverseStrategy(this);
             }
             throw e;
