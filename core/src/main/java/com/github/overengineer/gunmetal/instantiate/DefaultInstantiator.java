@@ -9,12 +9,10 @@ import com.github.overengineer.gunmetal.util.ConstructorProxy;
  */
 public class DefaultInstantiator<T> implements Instantiator<T> {
 
-    private final Class<T> type;
     private final ConstructorProxy<T> constructorProxy;
     private final ParameterBuilder<T> parameterBuilder;
 
-    DefaultInstantiator(Class<T> type, ConstructorProxy<T> constructorProxy, ParameterBuilder<T> parameterBuilder) {
-        this.type = type;
+    DefaultInstantiator(ConstructorProxy<T> constructorProxy, ParameterBuilder<T> parameterBuilder) {
         this.constructorProxy = constructorProxy;
         this.parameterBuilder = parameterBuilder;
     }
@@ -31,7 +29,7 @@ public class DefaultInstantiator<T> implements Instantiator<T> {
 
     @Override
     public Class getProducedType() {
-        return type;
+        return constructorProxy.getDeclaringClass();
     }
 
 }

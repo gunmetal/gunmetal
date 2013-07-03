@@ -20,7 +20,6 @@ public class DefaultInstantiatorFactory implements InstantiatorFactory {
     public <T> Instantiator<T> create(Class<T> implementationType, Class ... providedArgTypes) {
         ConstructorProxy<T> constructorProxy = constructorResolver.resolveConstructor(implementationType, providedArgTypes);
         return new DefaultInstantiator<T>(
-                implementationType,
                 constructorProxy,
                 parameterBuilderFactory.create(implementationType, constructorProxy, providedArgTypes));
     }

@@ -15,7 +15,6 @@ public interface FieldProxy extends Serializable, TypeRef {
 
     void set(Object target, Object value);
     Object get(Object target);
-    Type getType();
     Class<?> getDeclaringClass();
     boolean isDecorated();
 

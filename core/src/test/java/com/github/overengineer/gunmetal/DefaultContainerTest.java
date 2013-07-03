@@ -870,7 +870,8 @@ public class DefaultContainerTest implements Serializable {
 
         A a = Gunmetal.raw().withSetterInjection().load(new BaseModule() {
             @Override
-            public void configure() { }
+            public void configure() {
+            }
         }).get(A.class);
 
         assert a == a.b.c.d.b.c.d.a;

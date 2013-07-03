@@ -12,6 +12,7 @@ import java.lang.reflect.Type;
 public interface ConstructorProxy<T> extends ParameterizedFunction {
 
     T newInstance(Object[] args);
+    Class<T> getDeclaringClass();
 
     class Factory {
 
@@ -30,6 +31,11 @@ public interface ConstructorProxy<T> extends ParameterizedFunction {
                 } catch (Exception e) {
                     throw new InjectionException("Could not create new instance of type [" + constructorRef.getConstructor().getDeclaringClass().getName() + "]", e);
                 }
+            }
+
+            @Override
+            public Class<T> getDeclaringClass() {
+                return constructorRef.getConstructor().getDeclaringClass();
             }
 
             @Override
