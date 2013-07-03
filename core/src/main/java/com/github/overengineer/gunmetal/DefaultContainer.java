@@ -14,6 +14,7 @@ import com.github.overengineer.gunmetal.util.Order;
 import com.github.overengineer.gunmetal.util.TypeRef;
 import com.github.overengineer.gunmetal.key.Qualifier;
 
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
@@ -446,6 +447,15 @@ public class DefaultContainer implements Container {
 
         Class<?> targetClass = dependency.getTypeKey().getRaw();
         Type targetType = dependency.getTypeKey().getType();
+
+        if (!targetClass.isInterface() && !Modifier.isAbstract(targetClass.getModifiers())) {
+
+            //TODO add a Scopes.UNDEFINED and use it as the default scope
+            addMapping(dependency, targetClass, Scopes.SINGLETON);
+
+            return getStrategy(dependency, advisors);
+
+        }
 
         if (!(targetType instanceof ParameterizedType)) {
             throw new MissingDependencyException(dependency);

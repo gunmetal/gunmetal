@@ -1,8 +1,6 @@
 package com.github.overengineer.gunmetal.inject;
 
-import com.github.overengineer.gunmetal.ComponentStrategy;
-import com.github.overengineer.gunmetal.Provider;
-import com.github.overengineer.gunmetal.SelectionAdvisor;
+import com.github.overengineer.gunmetal.*;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.util.FieldRef;
 
@@ -38,6 +36,9 @@ public class DefaultFieldInjector<T> implements FieldInjector<T> {
                 }
             }
             fieldRef.getField().set(component, strategy.get(provider));
+        } catch (CircularReferenceException e) {
+            e.setFieldRef(fieldRef);
+            throw e;
         } catch (Exception e) {
             throw new InjectionException("Could not inject field [" + fieldRef.getField().getName() + "] on component of type [" + component.getClass().getName() + "].", e);
         }

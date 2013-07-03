@@ -1,7 +1,11 @@
 package com.github.overengineer.gunmetal;
 
 import com.github.overengineer.gunmetal.inject.ComponentInjector;
+import com.github.overengineer.gunmetal.inject.InjectionException;
 import com.github.overengineer.gunmetal.instantiate.Instantiator;
+import com.github.overengineer.gunmetal.key.Dependency;
+import com.github.overengineer.gunmetal.key.Smithy;
+import com.github.overengineer.gunmetal.util.FieldRef;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -33,11 +37,12 @@ public class CircularPrototypeComponentStrategy<T> implements ComponentStrategy<
              if (circularDependencyGuard.holder != this) {
                  return (T) circularDependencyGuard.holder;
              }
-            throw new CircularReferenceException("The component of type [" + getComponentType().getName() + "] with qualifier [" + getQualifier() + "] was requested by a descendant dependency");
+            throw new CircularReferenceException(getComponentType(), getQualifier());
         } else {
             circularDependencyGuard.holder = this;
         }
         try {
+            //TODO implement a callback!!!
             T component = instantiator.getInstance(provider);
             circularDependencyGuard.holder = component;
             injector.inject(component, provider);
@@ -45,6 +50,26 @@ public class CircularPrototypeComponentStrategy<T> implements ComponentStrategy<
                 component = listener.onInitialization(component);
             }
             return component;
+        } catch (CircularReferenceException e) {
+            if (e.getComponentType() != getComponentType() || e.getQualifier() != getQualifier() && e.getReverseStrategy() == null) {
+                e.setReverseStrategy(this);
+            }
+            throw e;
+        } catch (InjectionException e) {
+            circularDependencyGuardThreadLocal.remove();
+            if (e.getCause() instanceof CircularReferenceException) {
+                CircularReferenceException c = (CircularReferenceException) e.getCause();
+                if (c.getComponentType() == getComponentType() && c.getQualifier() == getQualifier()) {
+                    ComponentStrategy<?> reverseStrategy = c.getReverseStrategy();
+                    Object reverseComponent = reverseStrategy.get(provider);
+                    try {
+                        return (T) c.getFieldRef().getField().get(reverseComponent);
+                    } catch (Exception e1) {
+                        throw e;
+                    }
+                }
+            }
+            throw e;
         } finally {
             circularDependencyGuardThreadLocal.remove();
         }

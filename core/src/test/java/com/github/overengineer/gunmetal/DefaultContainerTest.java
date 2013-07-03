@@ -15,6 +15,7 @@ import com.github.overengineer.gunmetal.testutil.ConcurrentExecutionAssistant;
 import com.github.overengineer.gunmetal.testutil.SerializationTestingUtil;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.ProvisionException;
 import org.junit.Test;
 import scope.CommonConstants;
 import scope.CommonModule;
@@ -868,22 +869,30 @@ public class DefaultContainerTest implements Serializable {
 
     public static class Assertion extends RuntimeException {}
 
-    @Test
+    @Test(expected = ProvisionException.class)
     public void testCyclicFields() {
+
         Gunmetal.jsr330().withSetterInjection().load(new BaseModule() {
             @Override
-            public void configure() {
-                use(A.class);
-                use(B.class);
-            }
+            public void configure() { }
         }).get(A.class).b.toString();
+
+        Guice.createInjector(new AbstractModule() {
+            @Override
+            public void configure() {
+            }
+        }).getInstance(A.class).b.toString();
+
     }
 
     static class A implements C {
         @javax.inject.Inject B b;
+        @javax.inject.Inject
+        public A(B b) { }
     }
     static class B {
         @javax.inject.Inject A a;
+
     }
     interface C {}
 
