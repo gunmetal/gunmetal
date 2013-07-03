@@ -1,6 +1,9 @@
 package com.github.overengineer.gunmetal.inject;
 
-import com.github.overengineer.gunmetal.*;
+import com.github.overengineer.gunmetal.CircularReferenceException;
+import com.github.overengineer.gunmetal.ComponentStrategy;
+import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.util.FieldRef;
 
@@ -30,7 +33,7 @@ public class DefaultFieldInjector<T> implements FieldInjector<T> {
                                 return candidateStrategy.getComponentType() != fieldRef.getField().getDeclaringClass();
                             }
                         });
-                    } else if (strategy == null){
+                    } else if (strategy == null) {
                         strategy = provider.getStrategy(dependency, SelectionAdvisor.NONE);
                     }
                 }

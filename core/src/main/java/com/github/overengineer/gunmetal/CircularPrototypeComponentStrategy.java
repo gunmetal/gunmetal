@@ -3,9 +3,6 @@ package com.github.overengineer.gunmetal;
 import com.github.overengineer.gunmetal.inject.ComponentInjector;
 import com.github.overengineer.gunmetal.inject.InjectionException;
 import com.github.overengineer.gunmetal.instantiate.Instantiator;
-import com.github.overengineer.gunmetal.key.Dependency;
-import com.github.overengineer.gunmetal.key.Smithy;
-import com.github.overengineer.gunmetal.util.FieldRef;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -42,7 +39,6 @@ public class CircularPrototypeComponentStrategy<T> implements ComponentStrategy<
             circularDependencyGuard.holder = this;
         }
         try {
-            //TODO implement a callback!!!
             T component = instantiator.getInstance(provider);
             circularDependencyGuard.holder = component;
             injector.inject(component, provider);

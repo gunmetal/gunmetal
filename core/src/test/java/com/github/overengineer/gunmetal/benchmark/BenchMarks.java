@@ -75,7 +75,7 @@ public class BenchMarks {
     @Test
     public void testPrototypeSpeed() throws Exception {
 
-        int threads = 8;
+        int threads = 20;
         long duration = 5000;
         long primingRuns = 1000000;
 
@@ -115,7 +115,7 @@ public class BenchMarks {
     @Test
     public void testSingletonSpeed() throws Exception {
 
-        int threads = 8;
+        int threads = 20;
         long duration = 5000;
         long primingRuns = 10000000;
 

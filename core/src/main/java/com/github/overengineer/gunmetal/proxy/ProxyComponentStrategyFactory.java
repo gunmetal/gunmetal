@@ -3,7 +3,6 @@ package com.github.overengineer.gunmetal.proxy;
 import com.github.overengineer.gunmetal.CircularPrototypeComponentStrategy;
 import com.github.overengineer.gunmetal.ComponentStrategy;
 import com.github.overengineer.gunmetal.ComponentStrategyFactory;
-import com.github.overengineer.gunmetal.PrototypeComponentStrategy;
 import com.github.overengineer.gunmetal.scope.Scope;
 import com.github.overengineer.gunmetal.util.ReflectionUtil;
 
