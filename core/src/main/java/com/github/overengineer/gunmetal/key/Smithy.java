@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
 /**
  * @author rees.byars
  */
-public abstract class Smithy {
+public final class Smithy {
 
     private Smithy() { }
 
@@ -18,10 +18,6 @@ public abstract class Smithy {
 
     public static <T> Dependency<T> forge(Class<T> cls, Object qualifier) {
         return new ClassDependency<T>(cls, qualifier);
-    }
-
-    public static <T> Dependency<T> forge(TypeRef parameterRef) {
-        return forge(parameterRef, null);
     }
 
     @SuppressWarnings("unchecked")
