@@ -40,11 +40,11 @@ public class DefaultComponentStrategyFactory implements ComponentStrategyFactory
             }
         }
         if (Scopes.PROTOTYPE == scope) {
-            return new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners);
+            return new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners);
         } else if (Scopes.SINGLETON == scope) {
-            return new SingletonComponentStrategy<T>(new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
+            return new SingletonComponentStrategy<T>(new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
         } else {
-            return metadataAdapter.getStrategyProvider(scope).get(implementationType, qualifier, new CircularPrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
+            return metadataAdapter.getStrategyProvider(scope).get(implementationType, qualifier, new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
         }
     }
 

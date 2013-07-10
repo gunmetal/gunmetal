@@ -85,7 +85,8 @@ public class BenchMarks {
 
         int threads = 20;
         long duration = 5000;
-        long primingRuns = 1000000;
+        long primingRuns = 2000000;
+
 
         final Dependency dependency = Smithy.forge(R.class);
 
@@ -98,14 +99,7 @@ public class BenchMarks {
             }
         }, threads).run(duration, primingRuns, "my prototype creation");
 
-        final ObjectGraph objectGraph = ObjectGraph.create(new DaggerBenchMarkModule());
 
-        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
-            @Override
-            public void execute() {
-                objectGraph.get(R.class);
-            }
-        }, threads).run(duration, primingRuns, "dagger prototype creation");
 
         final Injector injector = Guice.createInjector(new GuiceBenchMarkModule());
 
@@ -117,6 +111,19 @@ public class BenchMarks {
                 injector.getInstance(k);
             }
         }, threads).run(duration, primingRuns, "guice prototype creation");
+
+
+
+        final ObjectGraph objectGraph = ObjectGraph.create(new DaggerBenchMarkModule());
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() {
+                objectGraph.get(R.class);
+            }
+        }, threads).run(duration, primingRuns, "dagger prototype creation");
+
+
 
     }
 

@@ -765,6 +765,32 @@ public class DefaultContainerTest implements Serializable {
 
     }
 
+    @Test
+    public void testWTF() {
+
+        Gunmetal.raw().withSetterInjection().gimmeThatProxyTainer()
+                .add(IWTF.class, WTF.class)
+                .add(IWTF2.class, WTF2.class)
+                .get(IWTF.class);
+
+    }
+
+    public interface IWTF {}
+
+    public interface IWTF2 {}
+
+    public static class WTF implements IWTF {
+        WTF(IWTF2 iwtf2) {
+
+        }
+    }
+
+    public static class WTF2 implements IWTF2 {
+        WTF2(IWTF iwtf) {
+
+        }
+    }
+
     public interface ICyclicRef {
         ICyclicRef3 getRef();
         int calls();

@@ -420,6 +420,11 @@ public class DefaultContainer implements Container, InternalProvider {
     }
 
     @Override
+    public <T> T get(Dependency<T> dependency, ResolutionContext resolutionContext, SelectionAdvisor ... advisors) {
+        return getStrategy(dependency, advisors).get(this, resolutionContext);
+    }
+
+    @Override
     public <T> ComponentStrategy<T> getStrategy(final Dependency<T> dependency, SelectionAdvisor ... advisors) {
 
 
@@ -643,8 +648,4 @@ public class DefaultContainer implements Container, InternalProvider {
         return false;
     }
 
-    @Override
-    public <T> T get(Dependency<T> dependency, ResolutionContext resolutionContext, SelectionAdvisor ... advisors) {
-        return getStrategy(dependency, advisors).get(this, resolutionContext);
-    }
 }
