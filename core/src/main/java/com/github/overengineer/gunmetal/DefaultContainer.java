@@ -32,7 +32,7 @@ import java.util.TreeSet;
 /**
  * @author rees.byars
  */
-public class DefaultContainer implements Container {
+public class DefaultContainer implements Container, InternalProvider {
 
     private final Map<TypeKey<?>, SortedSet<ComponentStrategy<?>>> strategies = new HashMap<TypeKey<?>, SortedSet<ComponentStrategy<?>>>();
     private final List<Container> cascadingContainers = new ArrayList<Container>();
@@ -76,7 +76,7 @@ public class DefaultContainer implements Container {
         try {
             for (SortedSet<ComponentStrategy<?>> strategySet : strategies.values()) {
                 for (ComponentStrategy<?> strategy : strategySet) {
-                    strategy.get(this);
+                    strategy.get(this, ResolutionContext.Factory.create());
                 }
             }
         } catch (Exception e) {
@@ -125,7 +125,7 @@ public class DefaultContainer implements Container {
 
     @Override
     public <M extends Module> Container loadModule(Class<M> moduleClass) {
-        return loadModule(strategyFactory.create(moduleClass, Qualifier.NONE, Scopes.PROTOTYPE).get(this));
+        return loadModule(strategyFactory.create(moduleClass, Qualifier.NONE, Scopes.PROTOTYPE).get(this, ResolutionContext.Factory.create()));
     }
 
     @Override
@@ -172,13 +172,13 @@ public class DefaultContainer implements Container {
 
     @Override
     public Container newEmptyClone() {
-        return strategyFactory.create(this.getClass(), Qualifier.NONE, Scopes.SINGLETON).get(this);
+        return strategyFactory.create(this.getClass(), Qualifier.NONE, Scopes.SINGLETON).get(this, ResolutionContext.Factory.create());
     }
 
     @Override
     public Container addListener(Class<? extends ComponentInitializationListener> listenerClass) {
         ComponentStrategy strategy = strategyFactory.create(listenerClass, Qualifier.NONE, Scopes.SINGLETON);
-        getInitializationListeners().add((ComponentInitializationListener) strategy.get(this));
+        getInitializationListeners().add((ComponentInitializationListener) strategy.get(this, ResolutionContext.Factory.create()));
         return this;
     }
 
@@ -314,7 +314,7 @@ public class DefaultContainer implements Container {
         components.addAll(getInitializationListeners());
         for (SortedSet<ComponentStrategy<?>> strategySet : strategies.values()) {
             for (ComponentStrategy<?> strategy : strategySet) {
-                components.add(strategy.get(this));
+                components.add(strategy.get(this, ResolutionContext.Factory.create()));
             }
         }
         for (Container child : children) {
@@ -368,7 +368,7 @@ public class DefaultContainer implements Container {
 
     @Override
     public <T> T get(final Dependency<T> dependency, SelectionAdvisor ... advisors) {
-        return getStrategy(dependency, advisors).get(this);
+        return get(dependency, ResolutionContext.Factory.create(), advisors);
     }
 
     @Override
@@ -386,7 +386,7 @@ public class DefaultContainer implements Container {
         List<T> components = new LinkedList<T>();
         List<ComponentStrategy<T>> componentStrategies = getAllStrategies(dependency, advisors);
         for (ComponentStrategy<T> strategy : componentStrategies) {
-            components.add(strategy.get(this));
+            components.add(strategy.get(this, ResolutionContext.Factory.create()));
         }
         return components;
     }
@@ -643,4 +643,8 @@ public class DefaultContainer implements Container {
         return false;
     }
 
+    @Override
+    public <T> T get(Dependency<T> dependency, ResolutionContext resolutionContext, SelectionAdvisor ... advisors) {
+        return getStrategy(dependency, advisors).get(this, resolutionContext);
+    }
 }

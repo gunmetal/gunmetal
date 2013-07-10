@@ -610,10 +610,10 @@ public class DefaultContainerTest implements Serializable {
                 ThreadLocal<T> threadLocal = new ThreadLocal<T>();
 
                 @Override
-                public T get(com.github.overengineer.gunmetal.Provider provider) {
+                public T get(InternalProvider provider, ResolutionContext resolutionContext) {
                     T t = threadLocal.get();
                     if (t == null) {
-                        t = delegateStrategy.get(provider);
+                        t = delegateStrategy.get(provider, resolutionContext);
                         threadLocal.set(t);
                     }
                     return t;
@@ -865,7 +865,7 @@ public class DefaultContainerTest implements Serializable {
 
     public static class Assertion extends RuntimeException {}
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = ProvisionException.class)
     public void testCyclicFields() {
 
         A a = Gunmetal.raw().withSetterInjection().load(new BaseModule() {
@@ -874,7 +874,15 @@ public class DefaultContainerTest implements Serializable {
             }
         }).get(A.class);
 
-        assert a == a.b.c.d.b.c.d.a;
+        assert a == a.b.c.d.b.c.d.a.b.c.dd.e.f.g.e.f.a;
+
+        C c = Gunmetal.raw().withSetterInjection().load(new BaseModule() {
+            @Override
+            public void configure() {
+            }
+        }).get(C.class);
+
+        assert c == c.b.c.d.c.dd.e.f.g.e.f.a.b.c;
 
         Guice.createInjector(new AbstractModule() {
             @Override
@@ -888,7 +896,9 @@ public class DefaultContainerTest implements Serializable {
     static class A {
         @Inject @javax.inject.Inject B b;
         @javax.inject.Inject
-        public A(B b) { }
+        public A(B b) {
+            this.b = b;
+        }
     }
     static class B {
 
@@ -904,14 +914,47 @@ public class DefaultContainerTest implements Serializable {
     @Prototype
     static class C {
         @Inject @javax.inject.Inject D d;
-        public C(D d, DD dd) { }
+        @Inject @javax.inject.Inject B b;
+        DD dd;
+        @javax.inject.Inject
+        public C(D d, DD dd) {
+            this.d = d;
+            this.dd = dd;
+        }
     }
     static class D {
         @Inject @javax.inject.Inject A a;
         @Inject @javax.inject.Inject B b;
+        @Inject @javax.inject.Inject C c;
     }
     static class DD {
+        @Inject @javax.inject.Inject E e;
+        @javax.inject.Inject
+        DD(E e) {
+            this.e = e;
+        }
+    }
+    static class E {
+        @Inject @javax.inject.Inject F f;
+        @javax.inject.Inject
+        public E(F f) {
+            this.f = f;
+        }
+    }
+    static class F {
         @Inject @javax.inject.Inject A a;
+        @Inject @javax.inject.Inject G g;
+        @javax.inject.Inject
+        public F(A a) {
+            this.a = a;
+        }
+    }
+    static class G {
+        @Inject @javax.inject.Inject E e;
+        @javax.inject.Inject
+        public G(E e) {
+            this.e = e;
+        }
     }
 
 }

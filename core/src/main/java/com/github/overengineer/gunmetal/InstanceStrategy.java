@@ -23,11 +23,11 @@ public class InstanceStrategy<T> implements ComponentStrategy<T> {
     }
 
     @Override
-    public T get(Provider provider) {
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
-                    injector.inject(instance, provider);
+                    injector.inject(instance, provider, resolutionContext);
                     for (ComponentInitializationListener listener : initializationListeners) {
                         instance = listener.onInitialization(instance);
                     }

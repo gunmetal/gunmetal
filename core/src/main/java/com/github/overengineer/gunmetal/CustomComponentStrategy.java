@@ -21,8 +21,8 @@ public class CustomComponentStrategy<T> implements ComponentStrategy<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T get(Provider provider) {
-        return (T) methodInjector.inject(providerStrategy.get(provider), provider);
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
+        return (T) methodInjector.inject(providerStrategy.get(provider, resolutionContext), provider, resolutionContext);
     }
 
     @Override

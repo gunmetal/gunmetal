@@ -1,5 +1,6 @@
 package com.github.overengineer.gunmetal.dynamic;
 
+import com.github.overengineer.gunmetal.InternalProvider;
 import com.github.overengineer.gunmetal.Provider;
 import com.github.overengineer.gunmetal.key.Dependency;
 
@@ -11,8 +12,8 @@ import java.io.Serializable;
  * @author rees.byars
  */
 public interface DynamicComponentFactory extends Serializable {
-    <T> T createManagedComponentFactory(Class factoryInterface, Dependency producedTypeKey, Provider provider);
-    <T> T createNonManagedComponentFactory(Class factoryInterface, Class concreteProducedType, Provider provider);
+    <T> T createManagedComponentFactory(Class factoryInterface, Dependency producedTypeKey, InternalProvider provider);
+    <T> T createNonManagedComponentFactory(Class factoryInterface, Class concreteProducedType, InternalProvider provider);
     <T> T createCompositeHandler(Class<T> targetInterface, Provider provider);
-    <T> T createDelegatingService(Class<T> serviceInterface, Provider provider);
+    <T> T createDelegatingService(Class<T> serviceInterface, InternalProvider provider);
 }

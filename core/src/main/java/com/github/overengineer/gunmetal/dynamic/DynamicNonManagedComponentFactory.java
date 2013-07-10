@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.dynamic;
 
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.instantiate.Instantiator;
 
 import java.io.Serializable;
@@ -14,11 +15,11 @@ public class DynamicNonManagedComponentFactory<T> implements InvocationHandler, 
 
     private final Class<T> factoryInterface;
     private final Class concreteProducedType;
-    private final Provider provider;
+    private final InternalProvider provider;
     private final Instantiator instantiator;
     T proxy;
 
-    DynamicNonManagedComponentFactory(Class<T> factoryInterface, Class concreteProducedType, Provider provider, Instantiator instantiator) {
+    DynamicNonManagedComponentFactory(Class<T> factoryInterface, Class concreteProducedType, InternalProvider provider, Instantiator instantiator) {
         this.factoryInterface = factoryInterface;
         this.concreteProducedType = concreteProducedType;
         this.provider = provider;
@@ -35,6 +36,6 @@ public class DynamicNonManagedComponentFactory<T> implements InvocationHandler, 
         } else if ("toString".equals(methodName)) {
             return proxy.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + "$DynamicNonManagedComponentFactory$[" + factoryInterface.getName() + "][" + concreteProducedType.getName() + "]";
         }
-        return instantiator.getInstance(provider, objects);
+        return instantiator.getInstance(provider, ResolutionContext.Factory.create(), objects);
     }
 }

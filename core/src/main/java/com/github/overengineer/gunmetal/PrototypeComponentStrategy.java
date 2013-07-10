@@ -24,9 +24,9 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T get(Provider provider) {
-        T component = instantiator.getInstance(provider);
-        injector.inject(component, provider);
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
+        T component = instantiator.getInstance(provider, resolutionContext);
+        injector.inject(component, provider, resolutionContext);
         for (ComponentInitializationListener listener : initializationListeners) {
             component = listener.onInitialization(component);
         }

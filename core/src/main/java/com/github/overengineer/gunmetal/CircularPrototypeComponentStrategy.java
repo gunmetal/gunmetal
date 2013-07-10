@@ -3,8 +3,6 @@ package com.github.overengineer.gunmetal;
 import com.github.overengineer.gunmetal.inject.ComponentInjector;
 import com.github.overengineer.gunmetal.instantiate.Instantiator;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.List;
 
 /**
@@ -16,7 +14,6 @@ public class CircularPrototypeComponentStrategy<T> implements ComponentStrategy<
     private final Instantiator<T> instantiator;
     private final Object qualifier;
     private final List<ComponentInitializationListener> initializationListeners;
-    private transient ThreadLocal<CircularDependencyGuard> circularDependencyGuardThreadLocal = CircularDependencyGuard.local();
 
     CircularPrototypeComponentStrategy(ComponentInjector<T> injector, Instantiator<T> instantiator, Object qualifier, List<ComponentInitializationListener> initializationListeners) {
         this.injector = injector;
@@ -25,38 +22,37 @@ public class CircularPrototypeComponentStrategy<T> implements ComponentStrategy<
         this.initializationListeners = initializationListeners;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public T get(Provider provider) {
-        CircularDependencyGuard circularDependencyGuard = circularDependencyGuardThreadLocal.get();
-        if (circularDependencyGuard.holder != null) {
-             if (circularDependencyGuard.holder != this) {
-                 return (T) circularDependencyGuard.holder;
-             }
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
+        ResolutionContext.ComponentStrategyContext<T> strategyContext = resolutionContext.getStrategyContext(this);
+        if (strategyContext.state != ResolutionContext.States.NEW) {
+            if (strategyContext.state == ResolutionContext.States.PRE_INJECTION) {
+                return strategyContext.component;
+            }
             throw new CircularReferenceException(getComponentType(), getQualifier());
         } else {
-            circularDependencyGuard.holder = this;
+            strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
         }
         try {
-            T component = instantiator.getInstance(provider);
-            circularDependencyGuard.holder = component;
-            injector.inject(component, provider);
+            strategyContext.component = instantiator.getInstance(provider, resolutionContext);
+            strategyContext.state = ResolutionContext.States.PRE_INJECTION;
+            injector.inject(strategyContext.component, provider, resolutionContext);
             for (ComponentInitializationListener listener : initializationListeners) {
-                component = listener.onInitialization(component);
+                strategyContext.component = listener.onInitialization(strategyContext.component);
             }
-            return component;
+            return strategyContext.component;
         } catch (CircularReferenceException e) {
-            if (e.getComponentType() == getComponentType() && e.getQualifier() == getQualifier() && e.getTargetAccessor() != null) {
-                circularDependencyGuardThreadLocal.remove();
+            if (e.getComponentType() == getComponentType() && e.getQualifier() == getQualifier()) {
+                strategyContext.state = ResolutionContext.States.NEW;
                 ComponentStrategy<?> reverseStrategy = e.getReverseStrategy();
-                Object reverseComponent = reverseStrategy.get(provider);
-                return (T) e.getTargetAccessor().getTarget(reverseComponent);
+                reverseStrategy.get(provider, resolutionContext);
+                return strategyContext.component;
             } else if ((e.getComponentType() != getComponentType() || e.getQualifier() != getQualifier()) && e.getReverseStrategy() == null) {
                 e.setReverseStrategy(this);
             }
             throw e;
         } finally {
-            circularDependencyGuardThreadLocal.remove();
+            strategyContext.state = ResolutionContext.States.NEW;
         }
     }
 
@@ -73,25 +69,6 @@ public class CircularPrototypeComponentStrategy<T> implements ComponentStrategy<
     @Override
     public Object getQualifier() {
         return qualifier;
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
-        circularDependencyGuardThreadLocal = CircularDependencyGuard.local();
-    }
-
-    private static class CircularDependencyGuard {
-
-        Object holder;
-
-        private static ThreadLocal<CircularDependencyGuard> local() {
-            return new ThreadLocal<CircularDependencyGuard>() {
-                protected CircularDependencyGuard initialValue() {
-                    return new CircularDependencyGuard();
-                }
-            };
-        }
-
     }
 
 }

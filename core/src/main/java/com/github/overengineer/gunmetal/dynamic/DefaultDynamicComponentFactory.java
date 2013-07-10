@@ -1,5 +1,6 @@
 package com.github.overengineer.gunmetal.dynamic;
 
+import com.github.overengineer.gunmetal.InternalProvider;
 import com.github.overengineer.gunmetal.Provider;
 import com.github.overengineer.gunmetal.inject.InjectorFactory;
 import com.github.overengineer.gunmetal.instantiate.InstantiatorFactory;
@@ -26,7 +27,7 @@ public class DefaultDynamicComponentFactory implements DynamicComponentFactory {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T createManagedComponentFactory(final Class factoryInterface, final Dependency producedTypeKey, final Provider provider) {
+    public <T> T createManagedComponentFactory(final Class factoryInterface, final Dependency producedTypeKey, final InternalProvider provider) {
         DynamicManagedComponentFactory<T> dynamicFactory = new DynamicManagedComponentFactory<T>(factoryInterface, producedTypeKey, provider);
         T proxy = (T) Proxy.newProxyInstance(
                 provider.getClass().getClassLoader(),
@@ -39,7 +40,7 @@ public class DefaultDynamicComponentFactory implements DynamicComponentFactory {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T createNonManagedComponentFactory(Class factoryInterface, Class concreteProducedType, Provider provider) {
+    public <T> T createNonManagedComponentFactory(Class factoryInterface, Class concreteProducedType, InternalProvider provider) {
         DynamicNonManagedComponentFactory<T> dynamicFactory = new DynamicNonManagedComponentFactory<T>(
                 factoryInterface,
                 concreteProducedType,
@@ -70,7 +71,7 @@ public class DefaultDynamicComponentFactory implements DynamicComponentFactory {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T createDelegatingService(Class<T> serviceInterface, Provider provider) {
+    public <T> T createDelegatingService(Class<T> serviceInterface, InternalProvider provider) {
         DelegatingService<T> delegatingService = new DelegatingService<T>(serviceInterface, provider, injectorFactory, metadataAdapter);
         delegatingService.proxy = (T) Proxy.newProxyInstance(
                 this.getClass().getClassLoader(),

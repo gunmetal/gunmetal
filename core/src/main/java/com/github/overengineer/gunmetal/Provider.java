@@ -15,6 +15,4 @@ public interface Provider extends Serializable {
     <T> List<T> getAll(Class<T> clazz, SelectionAdvisor ... advisors);
     <T> List<T> getAll(Class<T> clazz, Object qualifier, SelectionAdvisor ... advisors);
     <T> List<T> getAll(Dependency<T> dependency, SelectionAdvisor ... advisors);
-    <T> ComponentStrategy<T> getStrategy(Dependency<T> key, SelectionAdvisor ... advisors);
-    <T> List<ComponentStrategy<T>> getAllStrategies(Dependency<T> dependency, SelectionAdvisor... advisors);
 }

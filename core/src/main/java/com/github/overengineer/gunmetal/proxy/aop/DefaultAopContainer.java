@@ -1,14 +1,15 @@
 package com.github.overengineer.gunmetal.proxy.aop;
 
+import com.github.overengineer.gunmetal.ComponentInitializationListener;
+import com.github.overengineer.gunmetal.ComponentStrategy;
+import com.github.overengineer.gunmetal.ComponentStrategyFactory;
 import com.github.overengineer.gunmetal.Container;
 import com.github.overengineer.gunmetal.dynamic.DynamicComponentFactory;
 import com.github.overengineer.gunmetal.key.Qualifier;
 import com.github.overengineer.gunmetal.metadata.MetadataAdapter;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.proxy.DefaultHotSwappableContainer;
 import com.github.overengineer.gunmetal.scope.Scopes;
-import com.github.overengineer.gunmetal.ComponentInitializationListener;
-import com.github.overengineer.gunmetal.ComponentStrategy;
-import com.github.overengineer.gunmetal.ComponentStrategyFactory;
 
 import java.util.List;
 
@@ -29,8 +30,8 @@ public class DefaultAopContainer extends DefaultHotSwappableContainer implements
     @Override
     public <A extends Aspect<?>> AopContainer addAspect(Class<A> interceptorClass) {
         ComponentStrategy<A> strategy = strategyFactory.create(interceptorClass, Qualifier.NONE, Scopes.SINGLETON);
-        Aspect aspect = strategy.get(this);
-        getAspects().add(strategy.get(this));
+        Aspect aspect = strategy.get(this, ResolutionContext.Factory.create());
+        getAspects().add(strategy.get(this, ResolutionContext.Factory.create()));
         for (Container container : getChildren()) {
             if (container instanceof AopContainer) {
                 ((AopContainer) container).getAspects().add(aspect);

@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.inject;
 
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 
 import java.util.List;
 
@@ -18,12 +19,12 @@ public class DefaultComponentInjector<T> implements ComponentInjector<T> {
     }
 
     @Override
-    public void inject(T component, Provider provider) {
+    public void inject(T component, InternalProvider provider, ResolutionContext resolutionContext) {
         for (FieldInjector<T> injector : fieldInjectors) {
-            injector.inject(component, provider);
+            injector.inject(component, provider, resolutionContext);
         }
         for (MethodInjector<T> injector : methodInjectors) {
-            injector.inject(component, provider);
+            injector.inject(component, provider, resolutionContext);
         }
     }
 }

@@ -1,14 +1,15 @@
 package com.github.overengineer.gunmetal.proxy;
 
-import com.github.overengineer.gunmetal.Container;
 import com.github.overengineer.gunmetal.ComponentInitializationListener;
 import com.github.overengineer.gunmetal.ComponentStrategy;
 import com.github.overengineer.gunmetal.ComponentStrategyFactory;
+import com.github.overengineer.gunmetal.Container;
 import com.github.overengineer.gunmetal.DefaultContainer;
 import com.github.overengineer.gunmetal.dynamic.DynamicComponentFactory;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.metadata.MetadataAdapter;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.scope.Scopes;
 
 import java.util.List;
@@ -47,7 +48,7 @@ public class DefaultHotSwappableContainer extends DefaultContainer implements Ho
             throw new HotSwapException(target, newStrategy.getComponentType(), implementationType);
         }
 
-        ((HotSwappableProxyStrategy) newStrategy).swap(proxyHandler, this);
+        ((HotSwappableProxyStrategy) newStrategy).swap(proxyHandler, this, ResolutionContext.Factory.create());
 
         for (Container child : getChildren()) {
             if (child instanceof HotSwappableContainer) {
@@ -77,7 +78,7 @@ public class DefaultHotSwappableContainer extends DefaultContainer implements Ho
             throw new HotSwapException(target, newStrategy.getComponentType(), implementation.getClass());
         }
 
-        ((HotSwappableProxyStrategy) newStrategy).swap(proxyHandler, this);
+        ((HotSwappableProxyStrategy) newStrategy).swap(proxyHandler, this, ResolutionContext.Factory.create());
 
         for (Container child : getChildren()) {
             if (child instanceof HotSwappableContainer) {

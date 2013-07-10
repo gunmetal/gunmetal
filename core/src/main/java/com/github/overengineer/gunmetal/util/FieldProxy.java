@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.util;
 
 import com.github.overengineer.gunmetal.inject.InjectionException;
+import com.github.overengineer.gunmetal.key.Dependency;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -74,6 +75,20 @@ public interface FieldProxy extends Serializable, TypeRef {
             Class<?> paramType = ReflectionUtil.getRawClass(paramTypes[0]);
             List<Field> matchingFields = new LinkedList<Field>();
             for (Field field : methodProxy.getDeclaringClass().getDeclaredFields()) {
+                if (field.getType().isAssignableFrom(paramType)) {
+                    matchingFields.add(field);
+                }
+            }
+            if (matchingFields.size() != 1) {
+                return null;
+            }
+            return new Proxy(new FieldRefImpl(matchingFields.get(0)));
+        }
+
+        public static FieldProxy create(Dependency dependency, Object target) {
+            Class<?> paramType = dependency.getTypeKey().getRaw();
+            List<Field> matchingFields = new LinkedList<Field>();
+            for (Field field : target.getClass().getDeclaredFields()) {
                 if (field.getType().isAssignableFrom(paramType)) {
                     matchingFields.add(field);
                 }

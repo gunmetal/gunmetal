@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-public interface Container extends Provider {
+public interface Container extends Provider, InternalProvider {
 
     void verify() throws WiringException;
 

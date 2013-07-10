@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.parameter;
 
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 
 /**
  * @author rees.byars
@@ -21,10 +22,10 @@ public class PrecedingArgsParameterBuilder<T> implements ParameterBuilder<T> {
     }
 
     @Override
-    public Object[] buildParameters(Provider provider, Object[] precedingArgs) {
+    public Object[] buildParameters(InternalProvider provider, ResolutionContext resolutionContext, Object[] precedingArgs) {
         Object[] parameters = new Object[proxies.length + precedingArgs.length];
         for (int i = precedingArgs.length; i < precedingArgs.length + proxies.length; i++) {
-            parameters[i] = proxies[i - precedingArgs.length].get(provider);
+            parameters[i] = proxies[i - precedingArgs.length].get(provider, resolutionContext);
         }
         if (precedingArgs.length > 0) {
             if (proxies.length > 0) {

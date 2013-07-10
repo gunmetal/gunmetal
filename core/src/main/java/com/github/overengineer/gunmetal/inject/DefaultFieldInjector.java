@@ -1,8 +1,8 @@
 package com.github.overengineer.gunmetal.inject;
 
-import com.github.overengineer.gunmetal.CircularReferenceException;
 import com.github.overengineer.gunmetal.ComponentStrategy;
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.util.FieldProxy;
@@ -22,32 +22,22 @@ public class DefaultFieldInjector<T> implements FieldInjector<T> {
     }
 
     @Override
-    public void inject(T component, Provider provider) {
-        try {
-            if (strategy == null) {
-                synchronized (this) {
-                    if (strategy == null && fieldProxy.isDecorated()) {
-                        strategy = provider.getStrategy(dependency, new SelectionAdvisor() {
-                            @Override
-                            public boolean validSelection(ComponentStrategy<?> candidateStrategy) {
-                                return candidateStrategy.getComponentType() != fieldProxy.getDeclaringClass();
-                            }
-                        });
-                    } else if (strategy == null) {
-                        strategy = provider.getStrategy(dependency, SelectionAdvisor.NONE);
-                    }
+    public void inject(T component, InternalProvider provider, ResolutionContext resolutionContext) {
+        if (strategy == null) {
+            synchronized (this) {
+                if (strategy == null && fieldProxy.isDecorated()) {
+                    strategy = provider.getStrategy(dependency, new SelectionAdvisor() {
+                        @Override
+                        public boolean validSelection(ComponentStrategy<?> candidateStrategy) {
+                            return candidateStrategy.getComponentType() != fieldProxy.getDeclaringClass();
+                        }
+                    });
+                } else if (strategy == null) {
+                    strategy = provider.getStrategy(dependency, SelectionAdvisor.NONE);
                 }
             }
-            fieldProxy.set(component, strategy.get(provider));
-        } catch (CircularReferenceException e) {
-            e.addAccessor(new CircularReferenceException.TargetAccessor() {
-                @Override
-                public Object getTarget(Object reverseComponent) {
-                    return fieldProxy.get(reverseComponent);
-                }
-            });
-            throw e;
         }
+        fieldProxy.set(component, strategy.get(provider, resolutionContext));
     }
 
 }

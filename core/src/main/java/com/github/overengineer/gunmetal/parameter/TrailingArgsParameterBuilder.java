@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.parameter;
 
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 
 /**
  * @author rees.byars
@@ -21,10 +22,10 @@ public class TrailingArgsParameterBuilder<T> implements ParameterBuilder<T> {
     }
 
     @Override
-    public Object[] buildParameters(Provider provider, Object[] trailingArgs) {
+    public Object[] buildParameters(InternalProvider provider, ResolutionContext resolutionContext, Object[] trailingArgs) {
         Object[] parameters = new Object[proxies.length + trailingArgs.length];
         for (int i = 0; i < proxies.length; i++) {
-            parameters[i] = proxies[i].get(provider);
+            parameters[i] = proxies[i].get(provider, resolutionContext);
         }
         if (trailingArgs.length > 0) {
             if (proxies.length > 0) {

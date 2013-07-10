@@ -1,7 +1,8 @@
 package com.github.overengineer.gunmetal.parameter;
 
 import com.github.overengineer.gunmetal.ComponentStrategy;
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.key.Dependency;
 
@@ -20,7 +21,7 @@ public class DecoratorParameterProxy<T> implements ParameterProxy<T> {
     }
 
     @Override
-    public T get(Provider provider) {
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
         if (strategy == null) {
             synchronized (this) {
                 if (strategy == null) {
@@ -33,7 +34,7 @@ public class DecoratorParameterProxy<T> implements ParameterProxy<T> {
                 }
             }
         }
-        return strategy.get(provider);
+        return strategy.get(provider, resolutionContext);
     }
 
 }

@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.inject;
 
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.metadata.MetadataAdapter;
 import com.github.overengineer.gunmetal.parameter.ParameterBuilderFactory;
@@ -62,6 +63,7 @@ public class DefaultInjectorFactory implements InjectorFactory {
 
     static class EmptyInjector<T> implements ComponentInjector<T> {
         @Override
-        public void inject(T component, Provider provider) { }
+        public void inject(T component, InternalProvider provider, ResolutionContext resolutionContext) {
+        }
     }
 }

@@ -1,6 +1,6 @@
 package com.github.overengineer.gunmetal.dynamic;
 
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
 import com.github.overengineer.gunmetal.inject.InjectorFactory;
 import com.github.overengineer.gunmetal.inject.MethodInjector;
 import com.github.overengineer.gunmetal.key.Dependency;
@@ -22,10 +22,10 @@ public class DelegatingService<T> implements InvocationHandler, Serializable {
     private transient Map<Method, ServiceDelegateInvoker> delegateInvokerCache;
     private final InjectorFactory injectorFactory;
     private final MetadataAdapter metadataAdapter;
-    private final Provider provider;
+    private final InternalProvider provider;
     T proxy;
 
-    DelegatingService(Class<T> serviceInterface, Provider provider, InjectorFactory injectorFactory, MetadataAdapter metadataAdapter) {
+    DelegatingService(Class<T> serviceInterface, InternalProvider provider, InjectorFactory injectorFactory, MetadataAdapter metadataAdapter) {
         this.serviceInterface = serviceInterface;
         this.provider = provider;
         this.injectorFactory = injectorFactory;

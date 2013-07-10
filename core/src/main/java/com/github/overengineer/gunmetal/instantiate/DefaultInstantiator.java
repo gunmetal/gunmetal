@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.instantiate;
 
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.parameter.ParameterBuilder;
 import com.github.overengineer.gunmetal.util.ConstructorProxy;
 
@@ -23,8 +24,8 @@ public class DefaultInstantiator<T> implements Instantiator<T> {
     }
 
     @Override
-    public T getInstance(Provider provider, Object ... providedArgs) {
-        return constructorProxy.newInstance(parameterBuilder.buildParameters(provider, providedArgs));
+    public T getInstance(InternalProvider provider, ResolutionContext resolutionContext, Object ... providedArgs) {
+        return constructorProxy.newInstance(parameterBuilder.buildParameters(provider, resolutionContext, providedArgs));
     }
 
     @Override

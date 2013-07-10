@@ -1,7 +1,8 @@
 package com.github.overengineer.gunmetal.proxy;
 
 import com.github.overengineer.gunmetal.ComponentStrategy;
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -23,7 +24,7 @@ public class PrototypeProxyComponentStrategy<T> implements ComponentStrategy<T> 
     }
 
     @Override
-    public T get(Provider provider) {
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
 
         ProxyHandlerHolder holder = handlerHolder.get();
 
@@ -41,7 +42,7 @@ public class PrototypeProxyComponentStrategy<T> implements ComponentStrategy<T> 
 
             handlerHolder.set(holder);
 
-            T component = delegateStrategy.get(provider);
+            T component = delegateStrategy.get(provider, resolutionContext);
 
             proxyHandler.setComponent(component);
 

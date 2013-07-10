@@ -12,8 +12,8 @@ public class TopLevelStrategy<T> implements ComponentStrategy<T> {
     }
 
     @Override
-    public T get(Provider provider) {
-        return delegateStrategy.get(provider);
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
+        return delegateStrategy.get(provider, resolutionContext);
     }
 
     @Override

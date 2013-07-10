@@ -1,7 +1,8 @@
 package com.github.overengineer.gunmetal.proxy;
 
 import com.github.overengineer.gunmetal.ComponentStrategy;
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 
 /**
  * @author rees.byars
@@ -20,7 +21,7 @@ public class SingletonProxyComponentStrategy<T> implements HotSwappableProxyStra
     }
 
     @Override
-    public T get(Provider provider) {
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
 
         if (proxyHandler == null) {
 
@@ -30,7 +31,7 @@ public class SingletonProxyComponentStrategy<T> implements HotSwappableProxyStra
 
                     proxyHandler = handlerFactory.createProxy(type);
 
-                    T component = delegateStrategy.get(provider);
+                    T component = delegateStrategy.get(provider, resolutionContext);
 
                     proxyHandler.setComponent(component);
 
@@ -55,11 +56,11 @@ public class SingletonProxyComponentStrategy<T> implements HotSwappableProxyStra
     }
 
     @Override
-    public void swap(ComponentProxyHandler<T> proxyHandler, Provider provider) {
+    public void swap(ComponentProxyHandler<T> proxyHandler, InternalProvider provider , ResolutionContext resolutionContext) {
 
         this.proxyHandler = proxyHandler;
 
-        T component = delegateStrategy.get(provider);
+        T component = delegateStrategy.get(provider, resolutionContext);
 
         proxyHandler.setComponent(component);
 

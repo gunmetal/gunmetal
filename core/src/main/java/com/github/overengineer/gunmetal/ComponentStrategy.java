@@ -7,7 +7,7 @@ import java.io.Serializable;
  */
 public interface ComponentStrategy<T> extends Serializable {
 
-    T get(Provider provider);
+    T get(InternalProvider provider, ResolutionContext resolutionContext);
 
     Class getComponentType();
 

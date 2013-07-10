@@ -13,11 +13,11 @@ public class SingletonComponentStrategy<T> implements ComponentStrategy<T> {
     }
 
     @Override
-    public T get(Provider provider) {
+    public T get(InternalProvider provider, ResolutionContext resolutionContext) {
          if (component == null) {
              synchronized (this) {
                 if (component == null) {
-                    component = delegateStrategy.get(provider);
+                    component = delegateStrategy.get(provider, resolutionContext);
                 }
              }
          }

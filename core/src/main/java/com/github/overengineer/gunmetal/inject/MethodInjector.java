@@ -1,6 +1,7 @@
 package com.github.overengineer.gunmetal.inject;
 
-import com.github.overengineer.gunmetal.Provider;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 
 import java.io.Serializable;
 
@@ -8,5 +9,5 @@ import java.io.Serializable;
  * @author rees.byars
  */
 public interface MethodInjector<T> extends Serializable {
-    Object inject(T component, Provider provider, Object ... providedArgs);
+    Object inject(T component, InternalProvider provider, ResolutionContext resolutionContext, Object ... providedArgs);
 }
