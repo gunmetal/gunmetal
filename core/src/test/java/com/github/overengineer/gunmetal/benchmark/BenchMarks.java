@@ -1,7 +1,10 @@
 package com.github.overengineer.gunmetal.benchmark;
 
-import com.github.overengineer.gunmetal.*;
+import com.github.overengineer.gunmetal.Container;
+import com.github.overengineer.gunmetal.Gunmetal;
+import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.key.Dependency;
+import com.github.overengineer.gunmetal.key.Generic;
 import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.key.Qualifier;
 import com.github.overengineer.gunmetal.module.BaseModule;
@@ -9,10 +12,14 @@ import com.github.overengineer.gunmetal.testutil.ConcurrentExecutionAssistant;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 import dagger.ObjectGraph;
 import se.jbee.inject.bootstrap.Bootstrap;
 
 import org.junit.Test;
+
+import javax.inject.Provider;
+import java.lang.reflect.TypeVariable;
 
 
 /**
@@ -126,6 +133,46 @@ public class BenchMarks {
 
 
     }
+
+
+    @Test
+    public void testProviderSpeed() throws Exception {
+
+        int threads = 20;
+        long duration = 5000;
+        long primingRuns = 2000000;
+
+
+        final Dependency<Provider<R>> dependency = new Generic<Provider<R>>() {};
+
+        final Container container = Gunmetal.jsr330().load(new BenchMarkModule());
+
+        final Provider<R> myProvider = container.get(dependency, SelectionAdvisor.NONE);
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() {
+                myProvider.get();
+            }
+        }, threads).run(duration, primingRuns, "my provider gets");
+
+
+
+        final Injector injector = Guice.createInjector(new GuiceBenchMarkModule());
+
+        final Key<Provider<R>> k = Key.get(new TypeLiteral<Provider<R>>() {});
+
+        final Provider<R> guiceProvider = injector.getInstance(k);
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() {
+                guiceProvider.get();
+            }
+        }, threads).run(duration, primingRuns, "guice provider gets");
+
+    }
+
 
     @Test
     public void testSingletonSpeed() throws Exception {

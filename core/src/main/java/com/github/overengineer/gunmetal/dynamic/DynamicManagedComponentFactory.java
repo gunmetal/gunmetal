@@ -1,5 +1,6 @@
 package com.github.overengineer.gunmetal.dynamic;
 
+import com.github.overengineer.gunmetal.ComponentStrategy;
 import com.github.overengineer.gunmetal.InternalProvider;
 import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.SelectionAdvisor;
@@ -17,12 +18,14 @@ public class DynamicManagedComponentFactory<T> implements InvocationHandler, Ser
     private final Class<T> factoryInterface;
     private final Dependency<?> producedTypeDependency;
     private final InternalProvider provider;
+    private final ComponentStrategy strategy;
     T proxy;
 
     DynamicManagedComponentFactory(Class<T> factoryInterface, Dependency producedTypeDependency, InternalProvider provider) {
         this.factoryInterface = factoryInterface;
         this.producedTypeDependency = producedTypeDependency;
         this.provider = provider;
+        this.strategy = provider.getStrategy(producedTypeDependency, SelectionAdvisor.NONE);
     }
 
     @Override
@@ -35,6 +38,6 @@ public class DynamicManagedComponentFactory<T> implements InvocationHandler, Ser
         } else if ("toString".equals(methodName)) {
             return proxy.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + "$DynamicManagedComponentFactory$[" + factoryInterface + "][" + producedTypeDependency.getTypeKey().getType() + "]";
         }
-        return provider.get(producedTypeDependency, ResolutionContext.Factory.create(), SelectionAdvisor.NONE);
+        return strategy.get(provider, ResolutionContext.Factory.create());
     }
 }
