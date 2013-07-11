@@ -20,13 +20,13 @@ public class DefaultComponentStrategyFactory implements ComponentStrategyFactory
     private final MetadataAdapter metadataAdapter;
     private final InjectorFactory injectorFactory;
     private final InstantiatorFactory instantiatorFactory;
-    private final List<ComponentInitializationListener> initializationListeners;
+    private final List<ComponentPostProcessor> postProcessors;
 
-    public DefaultComponentStrategyFactory(MetadataAdapter metadataAdapter, InjectorFactory injectorFactory, InstantiatorFactory instantiatorFactory, List<ComponentInitializationListener> initializationListeners) {
+    public DefaultComponentStrategyFactory(MetadataAdapter metadataAdapter, InjectorFactory injectorFactory, InstantiatorFactory instantiatorFactory, List<ComponentPostProcessor> postProcessors) {
         this.metadataAdapter = metadataAdapter;
         this.injectorFactory = injectorFactory;
         this.instantiatorFactory = instantiatorFactory;
-        this.initializationListeners = initializationListeners;
+        this.postProcessors = postProcessors;
     }
 
     @Override
@@ -40,11 +40,11 @@ public class DefaultComponentStrategyFactory implements ComponentStrategyFactory
             }
         }
         if (Scopes.PROTOTYPE == scope) {
-            return new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners);
+            return new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, postProcessors);
         } else if (Scopes.SINGLETON == scope) {
-            return new SingletonComponentStrategy<T>(new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
+            return new SingletonComponentStrategy<T>(new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, postProcessors));
         } else {
-            return metadataAdapter.getStrategyProvider(scope).get(implementationType, qualifier, new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, initializationListeners));
+            return metadataAdapter.getStrategyProvider(scope).get(implementationType, qualifier, new PrototypeComponentStrategy<T>(injector, instantiator, qualifier, postProcessors));
         }
     }
 
@@ -53,7 +53,7 @@ public class DefaultComponentStrategyFactory implements ComponentStrategyFactory
         @SuppressWarnings("unchecked")
         Class<T> clazz = (Class<T>) implementation.getClass();
         ComponentInjector<T> injector = injectorFactory.create(clazz);
-        return new InstanceStrategy<T>(implementation, injector, qualifier, initializationListeners);
+        return new InstanceStrategy<T>(implementation, injector, qualifier, postProcessors);
     }
 
     @Override

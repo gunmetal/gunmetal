@@ -13,13 +13,13 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
     private final ComponentInjector<T> injector;
     private final Instantiator<T> instantiator;
     private final Object qualifier;
-    private final List<ComponentInitializationListener> initializationListeners;
+    private final List<ComponentPostProcessor> postProcessors;
 
-    PrototypeComponentStrategy(ComponentInjector<T> injector, Instantiator<T> instantiator, Object qualifier, List<ComponentInitializationListener> initializationListeners) {
+    PrototypeComponentStrategy(ComponentInjector<T> injector, Instantiator<T> instantiator, Object qualifier, List<ComponentPostProcessor> postProcessors) {
         this.injector = injector;
         this.instantiator = instantiator;
         this.qualifier = qualifier;
-        this.initializationListeners = initializationListeners;
+        this.postProcessors = postProcessors;
     }
 
     @Override
@@ -37,8 +37,8 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
             strategyContext.component = instantiator.getInstance(provider, resolutionContext);
             strategyContext.state = ResolutionContext.States.PRE_INJECTION;
             injector.inject(strategyContext.component, provider, resolutionContext);
-            for (ComponentInitializationListener listener : initializationListeners) {
-                strategyContext.component = listener.onInitialization(strategyContext.component);
+            for (ComponentPostProcessor postProcessor : postProcessors) {
+                strategyContext.component = postProcessor.postProcess(strategyContext.component);
             }
             strategyContext.state = ResolutionContext.States.NEW;
             return strategyContext.component;

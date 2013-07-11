@@ -22,7 +22,7 @@ public interface Container extends Provider, InternalProvider {
 
     Container newEmptyClone();
 
-    Container addListener(Class<? extends ComponentInitializationListener> listenerClass);
+    Container addPostProcessor(Class<? extends ComponentPostProcessor> processorClass);
 
     <T> Container add(Class<T> componentType, Class<? extends T> implementationType);
 
@@ -58,7 +58,7 @@ public interface Container extends Provider, InternalProvider {
 
     Container registerDeconstructedApi(Dependency<?> targetDependency);
 
-    List<ComponentInitializationListener> getInitializationListeners();
+    List<ComponentPostProcessor> getPostProcessors();
 
     List<Object> getAllComponents();
 

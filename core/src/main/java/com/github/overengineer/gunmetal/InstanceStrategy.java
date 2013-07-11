@@ -12,14 +12,14 @@ public class InstanceStrategy<T> implements ComponentStrategy<T> {
     private T instance;
     private final ComponentInjector<T> injector;
     private final Object qualifier;
-    private final List<ComponentInitializationListener> initializationListeners;
+    private final List<ComponentPostProcessor> postProcessors;
     private volatile boolean initialized = false;
 
-    InstanceStrategy(T instance, ComponentInjector<T> injector, Object qualifier, List<ComponentInitializationListener> initializationListeners) {
+    InstanceStrategy(T instance, ComponentInjector<T> injector, Object qualifier, List<ComponentPostProcessor> postProcessors) {
         this.instance = instance;
         this.injector = injector;
         this.qualifier = qualifier;
-        this.initializationListeners = initializationListeners;
+        this.postProcessors = postProcessors;
     }
 
     @Override
@@ -28,8 +28,8 @@ public class InstanceStrategy<T> implements ComponentStrategy<T> {
             synchronized (this) {
                 if (!initialized) {
                     injector.inject(instance, provider, resolutionContext);
-                    for (ComponentInitializationListener listener : initializationListeners) {
-                        instance = listener.onInitialization(instance);
+                    for (ComponentPostProcessor postProcessor : postProcessors) {
+                        instance = postProcessor.postProcess(instance);
                     }
                     initialized = true;
                 }

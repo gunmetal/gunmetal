@@ -1,13 +1,13 @@
 package com.github.overengineer.gunmetal.proxy.aop;
 
-import com.github.overengineer.gunmetal.ComponentInitializationListener;
+import com.github.overengineer.gunmetal.ComponentPostProcessor;
 import com.github.overengineer.gunmetal.ComponentStrategy;
 import com.github.overengineer.gunmetal.ComponentStrategyFactory;
 import com.github.overengineer.gunmetal.Container;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.dynamic.DynamicComponentFactory;
 import com.github.overengineer.gunmetal.key.Qualifier;
 import com.github.overengineer.gunmetal.metadata.MetadataAdapter;
-import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.proxy.DefaultHotSwappableContainer;
 import com.github.overengineer.gunmetal.scope.Scopes;
 
@@ -21,8 +21,8 @@ public class DefaultAopContainer extends DefaultHotSwappableContainer implements
     private final ComponentStrategyFactory strategyFactory;
     private final List<Aspect> aspects;
 
-    public DefaultAopContainer(ComponentStrategyFactory strategyFactory, DynamicComponentFactory dynamicComponentFactory, MetadataAdapter metadataAdapter, List<ComponentInitializationListener> componentInitializationListeners, List<Aspect> aspects) {
-        super(strategyFactory, dynamicComponentFactory, metadataAdapter, componentInitializationListeners);
+    public DefaultAopContainer(ComponentStrategyFactory strategyFactory, DynamicComponentFactory dynamicComponentFactory, MetadataAdapter metadataAdapter, List<ComponentPostProcessor> postProcessors, List<Aspect> aspects) {
+        super(strategyFactory, dynamicComponentFactory, metadataAdapter, postProcessors);
         this.strategyFactory = strategyFactory;
         this.aspects = aspects;
     }

@@ -14,7 +14,6 @@ import com.github.overengineer.gunmetal.scope.ScopedComponentStrategyProvider;
 import com.github.overengineer.gunmetal.testutil.ConcurrentExecutionAssistant;
 import com.github.overengineer.gunmetal.testutil.SerializationTestingUtil;
 import com.google.inject.AbstractModule;
-import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.ProvisionException;
 import org.junit.Test;
@@ -352,7 +351,7 @@ public class DefaultContainerTest implements Serializable {
     public void testAddListener() throws Throwable {
 
         Gunmetal.raw().withSetterInjection().load().makeInjectable()
-                .addListener(Listener.class)
+                .addPostProcessor(Listener.class)
                 .add(SchedulerProvider.class, DefaultSchedulerProvider.class)
                 .addInstance(Integer.class, CommonConstants.Properties.MONITORING_THREAD_POOL_SIZE, 4)
                 .get(SchedulerProvider.class);
@@ -360,14 +359,14 @@ public class DefaultContainerTest implements Serializable {
 
     }
 
-    public static class Listener implements ComponentInitializationListener {
+    public static class Listener implements ComponentPostProcessor {
 
         public void postConstruct(Container container) {
             System.out.println("what up" + container);
         }
 
         @Override
-        public <T> T onInitialization(T component) {
+        public <T> T postProcess(T component) {
             throw new Assertion();
         }
     }
@@ -427,14 +426,14 @@ public class DefaultContainerTest implements Serializable {
     @Test
     public void testNewEmptyClone() {
         final Container container = Gunmetal.raw().makeYourStuffInjectable().load()
-                .addListener(L.class);
+                .addPostProcessor(L.class);
 
         //assert container.newEmptyClone().getAllComponents().size() == 1;
     }
 
-    public static class L implements ComponentInitializationListener {
+    public static class L implements ComponentPostProcessor {
         @Override
-        public <T> T onInitialization(T component) {
+        public <T> T postProcess(T component) {
             return component;
         }
     }

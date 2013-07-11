@@ -40,7 +40,7 @@ public class DefaultContainer implements Container, InternalProvider {
     private final ComponentStrategyFactory strategyFactory;
     private final DynamicComponentFactory dynamicComponentFactory;
     private final MetadataAdapter metadataAdapter;
-    private final List<ComponentInitializationListener> componentInitializationListeners;
+    private final List<ComponentPostProcessor> postProcessors;
 
     private final StrategyComparator strategyComparator = new StrategyComparator() {
         @Override
@@ -64,11 +64,11 @@ public class DefaultContainer implements Container, InternalProvider {
         }
     };
 
-    public DefaultContainer(ComponentStrategyFactory strategyFactory, DynamicComponentFactory dynamicComponentFactory, MetadataAdapter metadataAdapter, List<ComponentInitializationListener> componentInitializationListeners) {
+    public DefaultContainer(ComponentStrategyFactory strategyFactory, DynamicComponentFactory dynamicComponentFactory, MetadataAdapter metadataAdapter, List<ComponentPostProcessor> postProcessors) {
         this.strategyFactory = strategyFactory;
         this.dynamicComponentFactory = dynamicComponentFactory;
         this.metadataAdapter = metadataAdapter;
-        this.componentInitializationListeners = componentInitializationListeners;
+        this.postProcessors = postProcessors;
     }
 
     @Override
@@ -176,9 +176,9 @@ public class DefaultContainer implements Container, InternalProvider {
     }
 
     @Override
-    public Container addListener(Class<? extends ComponentInitializationListener> listenerClass) {
-        ComponentStrategy strategy = strategyFactory.create(listenerClass, Qualifier.NONE, Scopes.SINGLETON);
-        getInitializationListeners().add((ComponentInitializationListener) strategy.get(this, ResolutionContext.Factory.create()));
+    public Container addPostProcessor(Class<? extends ComponentPostProcessor> postProcessorClass) {
+        ComponentStrategy strategy = strategyFactory.create(postProcessorClass, Qualifier.NONE, Scopes.SINGLETON);
+        getPostProcessors().add((ComponentPostProcessor) strategy.get(this, ResolutionContext.Factory.create()));
         return this;
     }
 
@@ -304,14 +304,14 @@ public class DefaultContainer implements Container, InternalProvider {
     }
 
     @Override
-    public List<ComponentInitializationListener> getInitializationListeners() {
-        return componentInitializationListeners;
+    public List<ComponentPostProcessor> getPostProcessors() {
+        return postProcessors;
     }
 
     @Override
     public List<Object> getAllComponents() {
         List<Object> components = new LinkedList<Object>();
-        components.addAll(getInitializationListeners());
+        components.addAll(getPostProcessors());
         for (SortedSet<ComponentStrategy<?>> strategySet : strategies.values()) {
             for (ComponentStrategy<?> strategy : strategySet) {
                 components.add(strategy.get(this, ResolutionContext.Factory.create()));

@@ -87,18 +87,6 @@ public class BenchMarks {
         long duration = 5000;
         long primingRuns = 2000000;
 
-        final Injector injector = Guice.createInjector(new GuiceBenchMarkModule());
-
-        final Key k = Key.get(R.class);
-
-        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
-            @Override
-            public void execute() {
-                injector.getInstance(k);
-            }
-        }, threads).run(duration, primingRuns, "guice prototype creation");
-
-
 
         final Dependency dependency = Smithy.forge(R.class);
 
@@ -113,7 +101,16 @@ public class BenchMarks {
 
 
 
+        final Injector injector = Guice.createInjector(new GuiceBenchMarkModule());
 
+        final Key k = Key.get(R.class);
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() {
+                injector.getInstance(k);
+            }
+        }, threads).run(duration, primingRuns, "guice prototype creation");
 
 
 

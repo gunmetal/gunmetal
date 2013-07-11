@@ -37,7 +37,7 @@ public class Gunmetal implements Serializable {
     private InjectorFactory injectorFactory;
     private ConstructorResolver constructorResolver;
     private InstantiatorFactory instantiatorFactory;
-    private List<ComponentInitializationListener> initializationListeners;
+    private List<ComponentPostProcessor> postProcessors;
     private ComponentStrategyFactory strategyFactory;
     private DynamicComponentFactory dynamicComponentFactory;
     private Container builder;
@@ -51,10 +51,10 @@ public class Gunmetal implements Serializable {
         injectorFactory = setterInjection ? new DefaultInjectorFactory(metadataAdapter, parameterBuilderFactory) : new FalseInjectorFactory(parameterBuilderFactory);
         constructorResolver = new DefaultConstructorResolver(metadataAdapter);
         instantiatorFactory = new DefaultInstantiatorFactory(constructorResolver, parameterBuilderFactory);
-        initializationListeners = new ArrayList<ComponentInitializationListener>();
-        strategyFactory = new DefaultComponentStrategyFactory(metadataAdapter, injectorFactory, instantiatorFactory, initializationListeners);
+        postProcessors = new ArrayList<ComponentPostProcessor>();
+        strategyFactory = new DefaultComponentStrategyFactory(metadataAdapter, injectorFactory, instantiatorFactory, postProcessors);
         dynamicComponentFactory = new DefaultDynamicComponentFactory(instantiatorFactory, injectorFactory, metadataAdapter);
-        builder = new DefaultContainer(strategyFactory, dynamicComponentFactory, metadataAdapter, initializationListeners);
+        builder = new DefaultContainer(strategyFactory, dynamicComponentFactory, metadataAdapter, postProcessors);
         return builder;
     }
 
@@ -107,8 +107,8 @@ public class Gunmetal implements Serializable {
                 .addInstance(InstantiatorFactory.class, instantiatorFactory)
                 .addInstance(DynamicComponentFactory.class, dynamicComponentFactory)
                 .addInstance(ComponentStrategyFactory.class, strategyFactory)
-                .addInstance(new Generic<List<ComponentInitializationListener>>() {
-                }, initializationListeners);
+                .addInstance(new Generic<List<ComponentPostProcessor>>() {
+                }, postProcessors);
         return this;
     }
 
