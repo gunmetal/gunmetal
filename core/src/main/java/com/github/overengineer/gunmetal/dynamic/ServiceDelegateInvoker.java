@@ -24,6 +24,10 @@ public class ServiceDelegateInvoker<T> implements Serializable {
     }
 
     public Object invoke(Object[] providedArgs) {
-        return methodInjector.inject(provider.get(serviceDelegateDependency, ResolutionContext.Factory.create(), SelectionAdvisor.NONE), provider, ResolutionContext.Factory.create(), providedArgs);
+        return methodInjector.inject(
+                provider.get(serviceDelegateDependency, ResolutionContext.Factory.create(), SelectionAdvisor.NONE),
+                provider,
+                ResolutionContext.Factory.create(),
+                providedArgs);
     }
 }

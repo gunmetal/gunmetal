@@ -16,8 +16,8 @@
     <packaging>pom</packaging>
     <version>0.0.1-BETA</version>
 
-    <name>GunMetal</name>
-    <description>A sleek JSR-330 dependency injection and library for Java.</description>
+    <name>gunmetal</name>
+    <description>A sleek JSR-330 dependency injection and application modularity library for Java.</description>
     <url>https://github.com/overengineer/clarence</url>
     <inceptionYear>2013</inceptionYear>
 
@@ -49,6 +49,7 @@
 
     <modules>
         <module>core</module>
+        <module>compiler</module>
     </modules>
 
     <properties>
@@ -60,6 +61,12 @@
     <dependencyManagement>
 
         <dependencies>
+
+            <dependency>
+                <groupId>com.github.overengineer.gunmetal</groupId>
+                <artifactId>core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>javax.inject</groupId>

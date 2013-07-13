@@ -20,6 +20,9 @@ public class DefaultMethodInjector<T> implements MethodInjector<T> {
 
     @Override
     public Object inject(T component, InternalProvider provider, ResolutionContext resolutionContext, Object ... providedArgs) {
+        if (providedArgs == null) {
+            return methodProxy.invoke(component, parameterBuilder.buildParameters(provider, resolutionContext, new Object[]{}));
+        }
         return methodProxy.invoke(component, parameterBuilder.buildParameters(provider, resolutionContext, providedArgs));
     }
 

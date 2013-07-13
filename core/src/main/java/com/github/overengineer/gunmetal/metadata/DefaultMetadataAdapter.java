@@ -170,7 +170,7 @@ public class DefaultMetadataAdapter implements MetadataAdapter {
     @Override
     public Dependency<?> getDelegateDependency(Method method) {
         if (!method.isAnnotationPresent(ImplementedBy.class)) {
-            throw new MetadataException("There was an exception creating a delegated service", new IllegalArgumentException("The method [" + method.getName() + "] of class [" + method.getDeclaringClass() + "] must be annotated with an @Delegate annotation"));
+            throw new MetadataException("There was an exception creating a delegated service", new IllegalArgumentException("The method [" + method.getName() + "] of class [" + method.getDeclaringClass() + "] must be annotated with an @" + ImplementedBy.class.getSimpleName() + " annotation"));
         }
         ImplementedBy delegate = method.getAnnotation(ImplementedBy.class);
         String name = delegate.name();

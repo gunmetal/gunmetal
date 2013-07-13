@@ -18,8 +18,8 @@ import se.jbee.inject.bootstrap.Bootstrap;
 
 import org.junit.Test;
 
+import javax.inject.Inject;
 import javax.inject.Provider;
-import java.lang.reflect.TypeVariable;
 
 
 /**
@@ -90,9 +90,9 @@ public class BenchMarks {
     @Test
     public void testPrototypeSpeed() throws Exception {
 
-        int threads = 20;
+        int threads = 8;
         long duration = 5000;
-        long primingRuns = 2000000;
+        long primingRuns = 4000000;
 
 
         final Dependency dependency = Smithy.forge(R.class);
@@ -134,13 +134,15 @@ public class BenchMarks {
 
     }
 
+    @Inject
+    public Provider<R> provider;
 
     @Test
     public void testProviderSpeed() throws Exception {
 
-        int threads = 20;
+        int threads = 8;
         long duration = 5000;
-        long primingRuns = 2000000;
+        long primingRuns = 5000000;
 
 
         final Dependency<Provider<R>> dependency = new Generic<Provider<R>>() {};
@@ -160,7 +162,8 @@ public class BenchMarks {
 
         final Injector injector = Guice.createInjector(new GuiceBenchMarkModule());
 
-        final Key<Provider<R>> k = Key.get(new TypeLiteral<Provider<R>>() {});
+        final Key<Provider<R>> k = Key.get(new TypeLiteral<Provider<R>>() {
+        });
 
         final Provider<R> guiceProvider = injector.getInstance(k);
 
@@ -171,13 +174,24 @@ public class BenchMarks {
             }
         }, threads).run(duration, primingRuns, "guice provider gets");
 
+
+
+        ObjectGraph.create(new DaggerBenchMarkModule()).inject(this);
+
+        new ConcurrentExecutionAssistant.TestThreadGroup(new ConcurrentExecutionAssistant.Execution() {
+            @Override
+            public void execute() {
+                provider.get();
+            }
+        }, threads).run(duration, primingRuns, "dagger prototype creation");
+
     }
 
 
     @Test
     public void testSingletonSpeed() throws Exception {
 
-        int threads = 20;
+        int threads = 8;
         long duration = 5000;
         long primingRuns = 10000000;
 

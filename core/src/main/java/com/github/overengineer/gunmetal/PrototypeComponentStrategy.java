@@ -43,15 +43,14 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
             strategyContext.state = ResolutionContext.States.NEW;
             return strategyContext.component;
         } catch (CircularReferenceException e) {
+            strategyContext.state = ResolutionContext.States.NEW;
             if (e.getComponentType() == getComponentType() && e.getQualifier() == getQualifier()) {
-                strategyContext.state = ResolutionContext.States.NEW;
                 ComponentStrategy<?> reverseStrategy = e.getReverseStrategy();
                 reverseStrategy.get(provider, resolutionContext);
                 return strategyContext.component;
             } else if ((e.getComponentType() != getComponentType() || e.getQualifier() != getQualifier()) && e.getReverseStrategy() == null) {
                 e.setReverseStrategy(this);
             }
-            strategyContext.state = ResolutionContext.States.NEW;
             throw e;
         }
     }

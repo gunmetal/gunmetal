@@ -558,16 +558,16 @@ public class DefaultContainerTest implements Serializable {
             public void execute() {
                startListener.onStart("yo");
             }
-        }, threads).run(duration, primingRuns, "custom provider gets");
+        }, 4).run(1000, 1000000, "custom provider gets");
 
     }
 
     public static class StartDelegate {
         public void onStart(String processName, StartListener listener, StartListener listener2, Container container) {
-            System.out.println("delegate got name [" + processName + "] and even got it's momma - " + listener);
+            /*System.out.println("delegate got name [" + processName + "] and even got it's momma - " + listener);
             if (processName.equals("yo")) {
                 listener.onStart("shit");
-            }
+            }*/
         }
     }
 
