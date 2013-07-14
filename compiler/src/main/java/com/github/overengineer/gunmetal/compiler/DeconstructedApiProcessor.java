@@ -10,6 +10,9 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.tools.Diagnostic;
 import java.util.Set;
 
@@ -25,14 +28,31 @@ public class DeconstructedApiProcessor extends AbstractProcessor {
     }
 
     @Override
-    public boolean process(Set<? extends TypeElement> typeElements, RoundEnvironment roundEnvironment) {
+    public boolean process(Set<? extends TypeElement> typeElements, final RoundEnvironment roundEnvironment) {
+        boolean result = true;
         Set<? extends Element> elements = roundEnvironment.getElementsAnnotatedWith(DeconstructedApi.class);
-        for (Element classElement : elements) {
+        for (final Element classElement : elements) {
             if (classElement.getKind() != ElementKind.INTERFACE) {
                 processingEnv.getMessager().printMessage(
                         Diagnostic.Kind.ERROR,
                         "The class [" + classElement + "] has an @" + DeconstructedApi.class.getSimpleName() + " but it is not an interface");
                 return false;
+            }
+            TypeElement typeElement = (TypeElement) classElement;
+            for (TypeMirror interfaceMirror : typeElement.getInterfaces()) {
+                result = interfaceMirror.accept(new SimpleTypeVisitor6<Boolean, Void>() {
+                    public Boolean visitDeclared(DeclaredType interfaceType, Void v) {
+                        for (Element interfaceChild : interfaceType.asElement().getEnclosedElements()) {
+                            if (interfaceChild.getKind() == ElementKind.METHOD) {
+                                processingEnv.getMessager().printMessage(
+                                        Diagnostic.Kind.ERROR,
+                                        "The Deconstructed API [" + classElement + "] illegally extends another interface that contains methods [" + interfaceChild + "]");
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }, null);
             }
             for (Element childElement : classElement.getEnclosedElements()) {
                 if (childElement.getKind() == ElementKind.METHOD) {
@@ -41,12 +61,12 @@ public class DeconstructedApiProcessor extends AbstractProcessor {
                         processingEnv.getMessager().printMessage(
                                 Diagnostic.Kind.ERROR,
                                 "The class [" + classElement + "] has an @" + DeconstructedApi.class.getSimpleName() + " annotation but the method [" + childElement.getSimpleName() + "] does not have the @" + ImplementedBy.class.getSimpleName() + " annotation");
-                        return false;
+                        result = false;
                     }
                 }
             }
         }
-        return true;
+        return result;
     }
 
 }

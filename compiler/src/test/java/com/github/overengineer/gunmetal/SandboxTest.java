@@ -13,17 +13,30 @@ import java.io.Serializable;
  */
 public class SandboxTest implements Serializable {
 
-
     @DeconstructedApi
-    public interface Sandbox {
+    public interface Sandbox extends Serializable {
+
         @ImplementedBy(SandboxImpl.class)
         void fill(String message);
+
+        @ImplementedBy(SandboxImpl2.class)
+        void fill(String message, int index);
+
     }
 
     public static final class SandboxImpl {
 
         public void fill(String message, Sandbox sandbox) {
             System.out.println(message + sandbox);
+        }
+
+    }
+
+    public static final class SandboxImpl2 {
+
+        public void fill(String message, int index, Sandbox sandbox) {
+            System.out.println(message + index + sandbox);
+            sandbox.fill(message);
         }
 
     }
@@ -37,13 +50,15 @@ public class SandboxTest implements Serializable {
     }
 
     @Test
-    public void testLoadModule() {
+    public void testSandox() {
 
-        Gunmetal.raw().gimmeThatAopTainer()
+        Sandbox sandbox =
+                Gunmetal.raw().gimmeThatAopTainer()
                 .addAspect(SandySpect.class)
                 .registerDeconstructedApi(Sandbox.class)
-                .get(Sandbox.class).fill("blah blah blah");
+                .get(Sandbox.class);
 
+        sandbox.fill("blah blah blah", 2);
     }
 
 }
