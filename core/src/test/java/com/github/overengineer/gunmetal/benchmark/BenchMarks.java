@@ -5,8 +5,8 @@ import com.github.overengineer.gunmetal.Gunmetal;
 import com.github.overengineer.gunmetal.SelectionAdvisor;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.key.Generic;
-import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.key.Qualifier;
+import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.module.BaseModule;
 import com.github.overengineer.gunmetal.testutil.ConcurrentExecutionAssistant;
 import com.google.inject.Guice;
@@ -14,9 +14,8 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import dagger.ObjectGraph;
-import se.jbee.inject.bootstrap.Bootstrap;
-
 import org.junit.Test;
+import se.jbee.inject.bootstrap.Bootstrap;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -29,7 +28,7 @@ public class BenchMarks {
     @Test
     public void testContainerCreationSpeed() throws Exception {
 
-        int threads = 4;
+        int threads = 1;
         long duration = 5000;
         long primingRuns = 100000;
 

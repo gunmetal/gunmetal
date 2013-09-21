@@ -421,12 +421,16 @@ public class DefaultContainer implements Container, InternalProvider {
 
     @Override
     public <T> T get(Dependency<T> dependency, ResolutionContext resolutionContext, SelectionAdvisor ... advisors) {
+        //TODO this creates potential weirdness wherein the strategy could come from a child or cascading container and
+        // then it gets passed this container as its internal provider....
+        // either solve by moving internal provider as param to strategy factory, thereby allowing the strategies
+        // to save the reference to "their" container at the time they are created, are refactor this method
+        // to call get() on on child and cascaders instead of handling that part in getStrategy
         return getStrategy(dependency, advisors).get(this, resolutionContext);
     }
 
     @Override
     public <T> ComponentStrategy<T> getStrategy(final Dependency<T> dependency, SelectionAdvisor ... advisors) {
-
 
         ComponentStrategy<T> strategy = tryGetStrategy(dependency, advisors);
 

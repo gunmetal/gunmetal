@@ -7,11 +7,10 @@
     <parent>
         <groupId>com.github.overengineer.gunmetal</groupId>
         <artifactId>parent</artifactId>
-        <version>0.0.1-BETA</version>
+        <version>0.0.1-BETA-SNAPSHOT</version>
     </parent>
 
     <artifactId>compiler</artifactId>
-    <version>0.0.1-BETA</version>
 
     <dependencies>
 

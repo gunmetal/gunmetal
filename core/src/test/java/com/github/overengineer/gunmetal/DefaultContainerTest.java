@@ -893,15 +893,25 @@ public class DefaultContainerTest implements Serializable {
     @Test(expected = ProvisionException.class)
     public void testCyclicFields() {
 
-        A a = Gunmetal.raw().withSetterInjection().load(new BaseModule() {
+        Container container =  Gunmetal.raw().withSetterInjection().load(new BaseModule() {
             @Override
             public void configure() {
             }
-        }).get(A.class);
+        });
+
+        A a = container.get(A.class);
 
         assert a == a.b.c.d.b.c.d.a.b.c.dd.e.f.g.e.f.a;
 
-        C c = Gunmetal.raw().withSetterInjection().load(new BaseModule() {
+        C c = container.get(C.class);
+
+        assert c != c.b.c.d.c.dd.e.f.g.e.f.a.b.c;
+
+        F f = container.get(F.class);
+
+        assert f == f.a.b.c.dd.e.f.g.e.f.a.b.c.b.c.d.a.b.c.d.c.dd.e.f;
+
+        c = Gunmetal.raw().withSetterInjection().load(new BaseModule() {
             @Override
             public void configure() {
             }
@@ -947,6 +957,7 @@ public class DefaultContainerTest implements Serializable {
             this.dd = dd;
         }
     }
+    @Prototype
     static class D {
         @Inject @javax.inject.Inject A a;
         @Inject @javax.inject.Inject B b;

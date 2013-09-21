@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.github.overengineer.gunmetal</groupId>
         <artifactId>parent</artifactId>
-        <version>0.0.1-BETA</version>
+        <version>0.0.1-BETA-SNAPSHOT</version>
     </parent>
 
     <artifactId>core</artifactId>
@@ -70,5 +70,66 @@
 
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>benchmarks</id>
+            <dependencies>
+                <!-- currently using local snapshot builds until next caliper release -->
+                <dependency>
+                    <groupId>com.google.caliper</groupId>
+                    <artifactId>caliper</artifactId>
+                    <version>1.0-beta-SNAPSHOT</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>add-test-source</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/benchmark/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>caliper</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <classpathScope>test</classpathScope>
+                                    <mainClass>com.google.caliper.runner.CaliperMain</mainClass>
+                                    <arguments>
+                                        <argument>com.github.overengineer.gunmetal.benchmark.CaliperBenchmarks</argument>
+                                        <argument>--instrument</argument>
+                                        <argument>runtime</argument>
+                                        <argument>-Cinstrument.allocation.options.trackAllocations=false</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
