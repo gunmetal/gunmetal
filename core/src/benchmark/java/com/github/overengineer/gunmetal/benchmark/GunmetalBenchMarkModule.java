@@ -1,30 +1,18 @@
 package com.github.overengineer.gunmetal.benchmark;
 
-import com.github.overengineer.gunmetal.metadata.Qualifier;
 import com.github.overengineer.gunmetal.module.BaseModule;
 import com.github.overengineer.gunmetal.scope.Scopes;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 
 /**
  * @author rees.byars
  */
-public class BenchMarkModule extends BaseModule {
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    @Qualifier
-    public @interface Member { }
+public class GunmetalBenchMarkModule extends BaseModule {
 
     @Override
     public void configure() {
         
         defaultScope(Scopes.PROTOTYPE);
-
-        defaultQualifier(Member.class);
 
         use(AA.class);
         use(BB.class);

@@ -120,7 +120,7 @@
                                     <arguments>
                                         <argument>com.github.overengineer.gunmetal.benchmark.CaliperBenchmarks</argument>
                                         <argument>--instrument</argument>
-                                        <argument>runtime</argument>
+                                        <argument>allocation,runtime</argument>
                                         <argument>-Cinstrument.allocation.options.trackAllocations=false</argument>
                                     </arguments>
                                 </configuration>
