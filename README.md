@@ -9,6 +9,7 @@ Nice things about Gunmetal:
     - full JSR-330 support
     - generics injection
     - incredibly fast build-deploy cycles
+    - unmatched wiring. if you can wire it by hand, gunmteal can wire it. period.
     - powerful extensibility through component post-processors, aspects, and custom component scopes
     - a couple of new DI features (dynamic composites and deconstructed APIs are nice)
 
