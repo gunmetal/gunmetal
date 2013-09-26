@@ -13,23 +13,12 @@ public class ParameterDependency<T> implements Dependency<T> {
     private final Object qualifier;
     private final TypeRef parameterRef;
     private final Class<? super T> targetClass;
-    private final int typeKeyHash;
     private final TypeKey<T> typeKey = new ParameterTypeKey();
-
-    public ParameterDependency(TypeRef parameterRef) {
-        this.parameterRef = parameterRef;
-        qualifier = Qualifier.NONE;
-        Type type = parameterRef.getType();
-        targetClass = ReflectionUtil.getRawClass(type);
-        typeKeyHash = type.hashCode();
-    }
 
     public ParameterDependency(TypeRef parameterRef, Object qualifier) {
         this.parameterRef = parameterRef;
         this.qualifier = qualifier;
-        Type type = parameterRef.getType();
-        targetClass = ReflectionUtil.getRawClass(type);
-        typeKeyHash = type.hashCode();
+        targetClass = ReflectionUtil.getRawClass(parameterRef.getType());
     }
 
     @Override
@@ -68,7 +57,7 @@ public class ParameterDependency<T> implements Dependency<T> {
 
         @Override
         public int hashCode() {
-            return typeKeyHash;
+            return parameterRef.getType().hashCode();
         }
 
         @Override

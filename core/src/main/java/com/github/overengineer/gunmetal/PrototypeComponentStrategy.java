@@ -37,8 +37,9 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
             strategyContext.component = instantiator.getInstance(provider, resolutionContext);
             strategyContext.state = ResolutionContext.States.PRE_INJECTION;
             injector.inject(strategyContext.component, provider, resolutionContext);
-            for (ComponentPostProcessor postProcessor : postProcessors) {
-                strategyContext.component = postProcessor.postProcess(strategyContext.component);
+            //using index instead of iterator to save on the iterator allocation
+            for (int i = 0; i < postProcessors.size(); i++) {
+                strategyContext.component = postProcessors.get(i).postProcess(strategyContext.component);
             }
             strategyContext.state = ResolutionContext.States.NEW;
             return strategyContext.component;

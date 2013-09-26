@@ -20,11 +20,13 @@ public class DefaultComponentInjector<T> implements ComponentInjector<T> {
 
     @Override
     public void inject(T component, InternalProvider provider, ResolutionContext resolutionContext) {
-        for (FieldInjector<T> injector : fieldInjectors) {
-            injector.inject(component, provider, resolutionContext);
+        //using indices instead of iterators to save on the iterator allocations
+        int i = 0;
+        for (; i < fieldInjectors.size(); i++) {
+            fieldInjectors.get(i).inject(component, provider, resolutionContext);
         }
-        for (MethodInjector<T> injector : methodInjectors) {
-            injector.inject(component, provider, resolutionContext);
+        for (i = 0; i < methodInjectors.size(); i++) {
+            methodInjectors.get(i).inject(component, provider, resolutionContext);
         }
     }
 }

@@ -44,12 +44,10 @@ public class ClassDependency<T> implements Dependency<T> {
 
     static class ClassTypeKey<T> implements TypeKey<T> {
 
-        private final int hash;
         private final Class<T> targetClass;
 
         ClassTypeKey(Class<T> targetClass) {
             this.targetClass = targetClass;
-            hash = targetClass.hashCode();
         }
 
         @Override
@@ -64,7 +62,7 @@ public class ClassDependency<T> implements Dependency<T> {
 
         @Override
         public int hashCode() {
-            return hash;
+            return targetClass.hashCode();
         }
 
         @Override

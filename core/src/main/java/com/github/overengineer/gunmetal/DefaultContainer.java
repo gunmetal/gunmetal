@@ -482,8 +482,10 @@ public class DefaultContainer implements Container, InternalProvider {
 
         if (metadataAdapter.getProviderClass().isAssignableFrom(targetClass)) {
 
-            T instance = dynamicComponentFactory.createManagedComponentFactory(metadataAdapter.getProviderClass(), parameterizedKey, this);
-            strategy = strategyFactory.createInstanceStrategy(instance, dependency.getQualifier());
+            final ComponentStrategy delegate = getStrategy(parameterizedKey, SelectionAdvisor.NONE);
+            @SuppressWarnings("unchecked")
+            T provider = (T) metadataAdapter.createProvider(this, delegate);
+            strategy = strategyFactory.createInstanceStrategy(provider, dependency.getQualifier());
             putStrategy(dependency, strategy);
 
             return strategy;

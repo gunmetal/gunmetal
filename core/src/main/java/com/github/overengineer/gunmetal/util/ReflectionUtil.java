@@ -1,6 +1,5 @@
 package com.github.overengineer.gunmetal.util;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -63,23 +62,6 @@ public class ReflectionUtil {
             }
             cls = cls.getSuperclass();
         }
-    }
-
-    //TODO this is dogass temp code
-    //replace by storing target accessors in a map with the impl types as the keys
-    public static <T> T getField(Object target, Class<T> type) {
-        for (Field field : target.getClass().getDeclaredFields()) {
-            try {
-                field.setAccessible(true);
-                Object result = field.get(target);
-                if (result != null && result.getClass() == type) {
-                    return (T) result;
-                }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
     }
 
 }

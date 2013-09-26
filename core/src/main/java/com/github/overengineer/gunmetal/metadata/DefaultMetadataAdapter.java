@@ -1,5 +1,8 @@
 package com.github.overengineer.gunmetal.metadata;
 
+import com.github.overengineer.gunmetal.ComponentStrategy;
+import com.github.overengineer.gunmetal.InternalProvider;
+import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.key.Smithy;
 import com.github.overengineer.gunmetal.scope.Scope;
@@ -183,6 +186,18 @@ public class DefaultMetadataAdapter implements MetadataAdapter {
     @Override
     public Class<?> getProviderClass() {
         return Provider.class;
+    }
+
+    @Override
+    public Object createProvider(final InternalProvider provider, final ComponentStrategy<?> providedTypeStrategy) {
+        return new com.github.overengineer.gunmetal.metadata.Provider() {
+
+            @Override
+            public Object get() {
+                return providedTypeStrategy.get(provider, ResolutionContext.Factory.create());
+            }
+
+        };
     }
 
 }

@@ -23,19 +23,19 @@ import javax.inject.Provider;
  */
 public class CaliperBenchmarks {
 
-    static final Dependency<R> PROTOTYPE_DEPENDENCY = Smithy.forge(R.class, Qualifier.NONE);
+    static final Dependency<N> PROTOTYPE_DEPENDENCY = Smithy.forge(N.class, Qualifier.NONE);
     static final Dependency<E> SINGLETON_DEPENDENCY  = Smithy.forge(E.class, Qualifier.NONE);
-    Provider<R> gunmetalProvider;
+    Provider<N> gunmetalProvider;
     static final Container CONTAINER = Gunmetal.jsr330().load(new GunmetalBenchMarkModule());
-    @Inject public Provider<R> daggerProvider;
+    @Inject public Provider<N> daggerProvider;
     static final ObjectGraph OBJECT_GRAPH = ObjectGraph.create(new DaggerBenchMarkModule());
-    static final Key<R> PROTOTYPE_KEY = Key.get(R.class);
+    static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
     static final Key<E> SINGLETON_KEY = Key.get(E.class);
-    Provider<R> guiceProvider;
+    Provider<N> guiceProvider;
     static final Injector INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
 
     @BeforeExperiment() void setUp() {
-        gunmetalProvider = CONTAINER.get(new Generic<Provider<R>>() { });
+        gunmetalProvider = CONTAINER.get(new Generic<Provider<N>>() { });
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
     }
@@ -82,7 +82,7 @@ public class CaliperBenchmarks {
 
     @Benchmark long gunmetalPrototype(int reps) {
         Container container = CONTAINER;
-        Dependency<R> dependency = PROTOTYPE_DEPENDENCY;
+        Dependency<N> dependency = PROTOTYPE_DEPENDENCY;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= container.get(dependency, SelectionAdvisor.NONE).hashCode();
@@ -94,14 +94,14 @@ public class CaliperBenchmarks {
         ObjectGraph objectGraph = OBJECT_GRAPH;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= objectGraph.get(R.class).hashCode();
+            dummy |= objectGraph.get(N.class).hashCode();
         }
         return dummy;
     }
 
     @Benchmark long guicePrototype(int reps) {
         Injector injector = INJECTOR;
-        Key<R> key = PROTOTYPE_KEY;
+        Key<N> key = PROTOTYPE_KEY;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= injector.getInstance(key).hashCode();
@@ -139,7 +139,7 @@ public class CaliperBenchmarks {
     }
 
     @Benchmark long gunmetalProvider(int reps) {
-        Provider<R> provider = gunmetalProvider;
+        Provider<N> provider = gunmetalProvider;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= provider.get().hashCode();
@@ -148,7 +148,7 @@ public class CaliperBenchmarks {
     }
 
     @Benchmark long daggerProvider(int reps) {
-        Provider<R> provider = daggerProvider;
+        Provider<N> provider = daggerProvider;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= provider.get().hashCode();
@@ -157,7 +157,7 @@ public class CaliperBenchmarks {
     }
 
     @Benchmark long guiceProvider(int reps) {
-        Provider<R> provider = guiceProvider;
+        Provider<N> provider = guiceProvider;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= provider.get().hashCode();

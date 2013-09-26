@@ -1,5 +1,7 @@
 package com.github.overengineer.gunmetal.metadata;
 
+import com.github.overengineer.gunmetal.ComponentStrategy;
+import com.github.overengineer.gunmetal.InternalProvider;
 import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.scope.Scope;
 import com.github.overengineer.gunmetal.scope.ScopedComponentStrategyProvider;
@@ -39,5 +41,7 @@ public interface MetadataAdapter extends Serializable {
     Dependency<?> getDelegateDependency(Method method);
 
     Class<?> getProviderClass();
+
+    Object createProvider(InternalProvider provider, ComponentStrategy<?> providedTypeStrategy);
 
 }

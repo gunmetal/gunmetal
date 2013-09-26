@@ -5,7 +5,7 @@ import dagger.Provides;
 
 import javax.inject.Singleton;
 
-@Module(library = true, injects = { AA.class, E.class, F.class, R.class, CaliperBenchmarks.class } )
+@Module(library = true, injects = { AA.class, E.class, F.class, N.class, R.class, CaliperBenchmarks.class } )
 public class DaggerBenchMarkModule {
 
     @Provides AA aa(A a, BB bb, R r, E e, E ee, S s) {

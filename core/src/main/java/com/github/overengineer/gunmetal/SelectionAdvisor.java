@@ -5,5 +5,5 @@ package com.github.overengineer.gunmetal;
  */
 public interface SelectionAdvisor {
     boolean validSelection(ComponentStrategy<?> candidateStrategy);
-    SelectionAdvisor[] NONE = new SelectionAdvisor[]{};
+    SelectionAdvisor[] NONE = {};
 }

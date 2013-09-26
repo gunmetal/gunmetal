@@ -75,6 +75,11 @@
             <id>benchmarks</id>
             <dependencies>
                 <!-- currently using local snapshot builds until next caliper release -->
+                <!--
+
+                    mvn clean install -D skipTests -Dbenchmark.instruments=runtime "-Dbenchmark.args=- -benchmark guicePrototype,gunmetalPrototype" -P benchmarks
+
+                -->
                 <dependency>
                     <groupId>com.google.caliper</groupId>
                     <artifactId>caliper</artifactId>
@@ -117,18 +122,17 @@
                                 <configuration>
                                     <classpathScope>test</classpathScope>
                                     <mainClass>com.google.caliper.runner.CaliperMain</mainClass>
-                                    <arguments>
-                                        <argument>com.github.overengineer.gunmetal.benchmark.CaliperBenchmarks</argument>
-                                        <argument>--instrument</argument>
-                                        <argument>allocation,runtime</argument>
-                                        <argument>-Cinstrument.allocation.options.trackAllocations=false</argument>
-                                    </arguments>
+                                    <commandlineArgs>com.github.overengineer.gunmetal.benchmark.CaliperBenchmarks --instrument ${benchmark.instruments} ${benchmark.args} -Cinstrument.allocation.options.trackAllocations=false</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
                 </plugins>
             </build>
+            <properties>
+                <benchmark.instruments>allocation,runtime</benchmark.instruments>
+                <benchmark.args> </benchmark.args>
+            </properties>
         </profile>
     </profiles>
 
