@@ -18,19 +18,19 @@
 
     <name>gunmetal</name>
     <description>A sleek JSR-330 dependency injection and application modularity library for Java.</description>
-    <url>https://github.com/overengineer/clarence</url>
+    <url>https://github.com/overengineer/gunmetal</url>
     <inceptionYear>2013</inceptionYear>
 
     <scm>
-        <url>http://github.com/overengineer/clarence/</url>
-        <connection>scm:git:git://github.com/overengineer/clarence.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/overengineer/clarence.git</developerConnection>
+        <url>http://github.com/overengineer/gunmetal/</url>
+        <connection>scm:git:git://github.com/overengineer/gunmetal.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/overengineer/gunmetal.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>http://github.com/overengineer/clarence/issues</url>
+        <url>http://github.com/overengineer/gunmetal/issues</url>
     </issueManagement>
 
     <licenses>
