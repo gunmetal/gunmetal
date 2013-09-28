@@ -8,6 +8,7 @@ import java.util.Map;
  */
 public class JdkProxyHandlerFactory implements ProxyHandlerFactory {
 
+    private static final long serialVersionUID = -906764935370910993L;
     private final Map<Class<?>, JdkProxyFactory> proxyFactories = new HashMap<Class<?>, JdkProxyFactory>();
 
     @Override

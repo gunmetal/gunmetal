@@ -18,6 +18,7 @@ import java.util.List;
  */
 public class DefaultAopContainer extends DefaultHotSwappableContainer implements AopContainer {
 
+    private static final long serialVersionUID = 25618994750980801L;
     private final ComponentStrategyFactory strategyFactory;
     private final List<Aspect> aspects;
 

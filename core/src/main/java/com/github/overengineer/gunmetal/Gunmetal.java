@@ -30,8 +30,8 @@ import java.util.List;
  */
 public class Gunmetal implements Serializable {
 
+    private static final long serialVersionUID = -6439871900942495614L;
     private boolean setterInjection = false;
-
     private MetadataAdapter metadataAdapter;
     private ParameterBuilderFactory parameterBuilderFactory;
     private InjectorFactory injectorFactory;
@@ -108,6 +108,9 @@ public class Gunmetal implements Serializable {
                 .addInstance(DynamicComponentFactory.class, dynamicComponentFactory)
                 .addInstance(ComponentStrategyFactory.class, strategyFactory)
                 .addInstance(new Generic<List<ComponentPostProcessor>>() {
+
+                    private static final long serialVersionUID = 1L;
+
                 }, postProcessors);
         return this;
     }

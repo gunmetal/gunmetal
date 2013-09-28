@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class DefaultComponentInjector<T> implements ComponentInjector<T> {
 
+    private static final long serialVersionUID = 8249251919444493316L;
     private final List<FieldInjector<T>> fieldInjectors;
     private final List<MethodInjector<T>> methodInjectors;
 

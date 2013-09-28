@@ -18,11 +18,12 @@ import java.util.Map;
  */
 public class DelegatingService<T> implements InvocationHandler, Serializable {
 
+    private static final long serialVersionUID = -3099731975989475024L;
     private final Class<T> serviceInterface;
-    private transient Map<Method, ServiceDelegateInvoker> delegateInvokerCache;
     private final InjectorFactory injectorFactory;
     private final MetadataAdapter metadataAdapter;
     private final InternalProvider provider;
+    private transient volatile Map<Method, ServiceDelegateInvoker> delegateInvokerCache;
     T proxy;
 
     DelegatingService(Class<T> serviceInterface, InternalProvider provider, InjectorFactory injectorFactory, MetadataAdapter metadataAdapter) {

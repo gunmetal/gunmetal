@@ -15,6 +15,8 @@ import java.util.List;
  */
 public class AopModule extends BaseModule {
 
+    private static final long serialVersionUID = -3574152504964488937L;
+
     @Override
     public void configure() {
 
@@ -37,7 +39,11 @@ public class AopModule extends BaseModule {
                 .forType(AopContainer.class);
 
         use(new ArrayList<Aspect>())
-                .forType(new Generic<List<Aspect>>() { });
+                .forType(new Generic<List<Aspect>>() {
+
+                    private static final long serialVersionUID = 1L;
+
+                });
 
     }
 }

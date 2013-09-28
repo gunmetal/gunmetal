@@ -16,6 +16,7 @@ import java.lang.reflect.Type;
  */
 public class PrecedingArgsParameterBuilderFactory implements ParameterBuilderFactory {
 
+    private static final long serialVersionUID = -882200538480248040L;
     private final MetadataAdapter metadataAdapter;
 
     public PrecedingArgsParameterBuilderFactory(MetadataAdapter metadataAdapter) {

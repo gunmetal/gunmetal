@@ -13,6 +13,7 @@ import java.util.Map;
  */
 public class AdvisedInvocationFactory implements JoinPointInvocationFactory {
 
+    private static final long serialVersionUID = -7354297518624412637L;
     private final List<Aspect> aspects;
     private final PointcutInterpreter rulesInterpretor;
     private transient Map<AspectCacheKey, List<Aspect>> cache = new HashMap<AspectCacheKey, List<Aspect>>();

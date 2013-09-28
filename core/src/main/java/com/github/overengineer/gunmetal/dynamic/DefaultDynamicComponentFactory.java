@@ -15,6 +15,7 @@ import java.lang.reflect.Proxy;
  */
 public class DefaultDynamicComponentFactory implements DynamicComponentFactory {
 
+    private static final long serialVersionUID = -5350003330737714686L;
     private final InstantiatorFactory instantiatorFactory;
     private final InjectorFactory injectorFactory;
     private final MetadataAdapter metadataAdapter;

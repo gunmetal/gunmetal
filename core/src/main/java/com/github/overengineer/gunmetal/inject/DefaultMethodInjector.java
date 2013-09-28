@@ -10,6 +10,7 @@ import com.github.overengineer.gunmetal.util.MethodProxy;
  */
 public class DefaultMethodInjector<T> implements MethodInjector<T> {
 
+    private static final long serialVersionUID = -1920186851757750774L;
     private final MethodProxy methodProxy;
     private final ParameterBuilder parameterBuilder;
 

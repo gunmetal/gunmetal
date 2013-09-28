@@ -9,6 +9,7 @@ import java.util.List;
  */
 public class InstanceStrategy<T> implements ComponentStrategy<T> {
 
+    private static final long serialVersionUID = 4734423823727022129L;
     private T instance;
     private final ComponentInjector<T> injector;
     private final Object qualifier;

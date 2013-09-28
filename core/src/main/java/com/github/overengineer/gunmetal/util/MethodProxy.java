@@ -19,6 +19,7 @@ public interface MethodProxy extends ParameterizedFunction {
 
         private static class Proxy implements MethodProxy {
 
+            private static final long serialVersionUID = 7828023800285665079L;
             final MethodRef methodRef;
 
             Proxy(MethodRef methodRef) {

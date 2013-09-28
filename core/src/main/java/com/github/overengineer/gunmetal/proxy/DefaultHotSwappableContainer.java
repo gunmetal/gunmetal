@@ -21,6 +21,7 @@ import java.util.List;
  */
 public class DefaultHotSwappableContainer extends DefaultContainer implements HotSwappableContainer {
 
+    private static final long serialVersionUID = 2789559227141976597L;
     private final ComponentStrategyFactory strategyFactory;
 
     public DefaultHotSwappableContainer(ComponentStrategyFactory strategyFactory, DynamicComponentFactory dynamicComponentFactory, MetadataAdapter metadataAdapter, List<ComponentPostProcessor> postProcessors) {

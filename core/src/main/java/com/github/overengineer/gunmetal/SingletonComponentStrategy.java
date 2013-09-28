@@ -5,6 +5,7 @@ package com.github.overengineer.gunmetal;
  */
 public class SingletonComponentStrategy<T> implements ComponentStrategy<T> {
 
+    private static final long serialVersionUID = 3253838484064171796L;
     private volatile T component;
     private final ComponentStrategy<T> delegateStrategy;
 

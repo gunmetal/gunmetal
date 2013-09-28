@@ -5,6 +5,7 @@ package com.github.overengineer.gunmetal;
  */
 public class TopLevelStrategy<T> implements ComponentStrategy<T> {
 
+    private static final long serialVersionUID = -2925894461059990202L;
     private final ComponentStrategy<T> delegateStrategy;
 
     TopLevelStrategy(ComponentStrategy<T> delegateStrategy) {

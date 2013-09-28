@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
  */
 public class JdkAopProxyHandler<T> extends JdkComponentProxyHandler<T> implements AopProxyHandler<T> {
 
+    private static final long serialVersionUID = -3332414889605676278L;
     private final JoinPointInvocationFactory invocationFactory;
 
     public JdkAopProxyHandler(JdkProxyFactory factory, JoinPointInvocationFactory invocationFactory) {

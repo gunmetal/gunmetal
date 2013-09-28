@@ -13,6 +13,7 @@ import java.util.Map;
  */
 public class JdkAopProxyHandlerFactory implements ProxyHandlerFactory {
 
+    private static final long serialVersionUID = 4470315660622138302L;
     private final Map<Class<?>, JdkProxyFactory> proxyFactories = new HashMap<Class<?>, JdkProxyFactory>();
     private final JoinPointInvocationFactory invocationFactory;
 

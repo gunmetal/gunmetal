@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
  */
 public class FalseInjectorFactory implements InjectorFactory {
 
+    private static final long serialVersionUID = 8664682537287331082L;
     private final ParameterBuilderFactory parameterBuilderFactory;
 
     public FalseInjectorFactory(ParameterBuilderFactory parameterBuilderFactory) {

@@ -5,6 +5,7 @@ package com.github.overengineer.gunmetal.module;
  */
 public class InstanceMappingImpl<T> extends TypeMapping<T> implements InstanceMapping<T> {
 
+    private static final long serialVersionUID = 8864612805295327892L;
     private final T instance;
 
     @SuppressWarnings("unchecked")

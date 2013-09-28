@@ -17,6 +17,7 @@ import java.util.List;
  */
 public class DefaultComponentStrategyFactory implements ComponentStrategyFactory {
 
+    private static final long serialVersionUID = -3605896311361401709L;
     private final MetadataAdapter metadataAdapter;
     private final InjectorFactory injectorFactory;
     private final InstantiatorFactory instantiatorFactory;

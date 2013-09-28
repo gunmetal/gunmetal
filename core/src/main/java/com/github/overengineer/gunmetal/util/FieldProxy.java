@@ -23,6 +23,7 @@ public interface FieldProxy extends Serializable, TypeRef {
 
         private static class Proxy implements FieldProxy {
 
+            private static final long serialVersionUID = -699981356150321799L;
             final FieldRef fieldRef;
 
             Proxy(FieldRef fieldRef) {

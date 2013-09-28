@@ -9,6 +9,8 @@ import com.github.overengineer.gunmetal.DefaultComponentStrategyFactory;
  */
 public class ProxyModule extends BaseModule {
 
+    private static final long serialVersionUID = 3008168720237925540L;
+
     @Override
     public void configure() {
 
