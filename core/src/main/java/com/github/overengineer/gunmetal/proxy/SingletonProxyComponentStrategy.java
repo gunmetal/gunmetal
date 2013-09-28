@@ -9,6 +9,7 @@ import com.github.overengineer.gunmetal.ResolutionContext;
  */
 public class SingletonProxyComponentStrategy<T> implements HotSwappableProxyStrategy<T> {
 
+    private static final long serialVersionUID = 3934732289971215228L;
     private volatile ComponentProxyHandler<T> proxyHandler;
     private final Class<?> type;
     private final ComponentStrategy<T> delegateStrategy;

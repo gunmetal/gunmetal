@@ -18,6 +18,7 @@ import java.util.List;
  */
 public class DefaultInjectorFactory implements InjectorFactory {
 
+    private static final long serialVersionUID = 1178240459251565885L;
     private final MetadataAdapter metadataAdapter;
     private final ParameterBuilderFactory parameterBuilderFactory;
 

@@ -151,6 +151,8 @@
                         <compilerArgument>-Xlint:all</compilerArgument>
                         <showWarnings>true</showWarnings>
                         <showDeprecation>true</showDeprecation>
+                        <fork>true</fork>
+                        <testCompilerArgument>-Xlint:deprecation</testCompilerArgument>
                     </configuration>
                 </plugin>
 
@@ -183,6 +185,9 @@
                         <goals>
                             <goal>checkstyle</goal>
                         </goals>
+                        <configuration>
+                            <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

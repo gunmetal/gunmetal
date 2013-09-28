@@ -13,6 +13,7 @@ import java.lang.reflect.Type;
  */
 public abstract class Generic<T> implements Dependency<T> {
 
+    private static final long serialVersionUID = 3042368194047117914L;
     private final Object qualifier;
     private transient Type type;
     private transient Class<? super T> targetClass;
@@ -69,6 +70,8 @@ public abstract class Generic<T> implements Dependency<T> {
     }
 
     class GenericTypeKey implements TypeKey<T> {
+
+        private static final long serialVersionUID = 2486921007555625428L;
 
         @Override
         public Type getType() {

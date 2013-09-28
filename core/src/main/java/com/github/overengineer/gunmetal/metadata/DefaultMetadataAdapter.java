@@ -23,6 +23,7 @@ import java.util.Map;
  */
 public class DefaultMetadataAdapter implements MetadataAdapter {
 
+    private static final long serialVersionUID = -2754376468103047870L;
     private final Map<Class<? extends Annotation>, Scope> scopes = new HashMap<Class<? extends Annotation>, Scope>();
     private final Map<Scope, ScopedComponentStrategyProvider> strategyProviders = new HashMap<Scope, ScopedComponentStrategyProvider>();
 

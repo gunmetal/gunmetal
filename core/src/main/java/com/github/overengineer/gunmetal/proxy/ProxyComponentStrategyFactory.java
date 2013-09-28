@@ -11,6 +11,7 @@ import com.github.overengineer.gunmetal.util.ReflectionUtil;
  */
 public class ProxyComponentStrategyFactory implements ComponentStrategyFactory {
 
+    private static final long serialVersionUID = 7837370478874785415L;
     private final ComponentStrategyFactory delegateFactory;
     private final ProxyHandlerFactory handlerFactory;
 

@@ -34,6 +34,7 @@ import java.util.TreeSet;
  */
 public class DefaultContainer implements Container, InternalProvider {
 
+    private static final long serialVersionUID = -5830103969812929459L;
     private final Map<TypeKey<?>, SortedSet<ComponentStrategy<?>>> strategies = new HashMap<TypeKey<?>, SortedSet<ComponentStrategy<?>>>();
     private final List<Container> cascadingContainers = new ArrayList<Container>();
     private final List<Container> children = new ArrayList<Container>();
@@ -391,11 +392,11 @@ public class DefaultContainer implements Container, InternalProvider {
         return components;
     }
 
-    protected synchronized void addMapping(Dependency dependency, final Class<?> implementationType, Scope scope) {
+    protected synchronized void addMapping(Dependency<?> dependency, final Class<?> implementationType, Scope scope) {
 
-        Dependency componentKey = Smithy.forge(implementationType, dependency.getQualifier());
+        Dependency<?> componentKey = Smithy.forge(implementationType, dependency.getQualifier());
 
-        ComponentStrategy strategy = tryGetStrategy(componentKey, new SelectionAdvisor() {
+        ComponentStrategy<?> strategy = tryGetStrategy(componentKey, new SelectionAdvisor() {
             @Override
             public boolean validSelection(ComponentStrategy<?> candidateStrategy) {
                 return candidateStrategy.getComponentType() == implementationType;

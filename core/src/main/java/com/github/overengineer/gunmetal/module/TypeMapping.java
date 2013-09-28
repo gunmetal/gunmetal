@@ -14,6 +14,7 @@ import java.util.List;
  */
 public class TypeMapping<T> implements Mapping<T>, MutableMapping<T> {
 
+    private static final long serialVersionUID = -6244281044359184211L;
     private final Class<T> implementationType;
     private Scope scope;
     private Object qualifier;

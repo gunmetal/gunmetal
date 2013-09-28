@@ -7,6 +7,7 @@ import java.lang.reflect.Type;
  */
 public class ClassDependency<T> implements Dependency<T> {
 
+    private static final long serialVersionUID = 7615604513983329357L;
     private final Object qualifier;
     private final TypeKey<T> typeKey;
 
@@ -44,6 +45,7 @@ public class ClassDependency<T> implements Dependency<T> {
 
     static class ClassTypeKey<T> implements TypeKey<T> {
 
+        private static final long serialVersionUID = -2168167674628687604L;
         private final Class<T> targetClass;
 
         ClassTypeKey(Class<T> targetClass) {

@@ -16,6 +16,7 @@ import java.lang.reflect.Type;
  */
 public class TrailingsArgsParameterBuilderFactory implements ParameterBuilderFactory {
 
+    private static final long serialVersionUID = -3930085781079137727L;
     private final MetadataAdapter metadataAdapter;
 
     public TrailingsArgsParameterBuilderFactory(MetadataAdapter metadataAdapter) {

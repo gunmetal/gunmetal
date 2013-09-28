@@ -23,6 +23,7 @@ import java.util.Map;
  */
 public class Jsr330MetadataAdapter implements MetadataAdapter {
 
+    private static final long serialVersionUID = -8391455240721401589L;
     private final Map<Class<? extends Annotation>, Scope> scopes = new HashMap<Class<? extends Annotation>, Scope>();
     private final Map<Scope, ScopedComponentStrategyProvider> strategyProviders = new HashMap<Scope, ScopedComponentStrategyProvider>();
 
@@ -68,7 +69,7 @@ public class Jsr330MetadataAdapter implements MetadataAdapter {
     @Override
     public Scope getScope(Class cls) {
         for (Annotation annotation : cls.getAnnotations()) {
-            Class annotationType = annotation.annotationType();
+            Class<? extends Annotation> annotationType = annotation.annotationType();
             if (annotationType.isAnnotationPresent(javax.inject.Scope.class)) {
                 for (Method method : annotationType.getMethods()) {
                     if (method.getName().equals("value") && Scope.class.isAssignableFrom(method.getReturnType())) {
@@ -139,7 +140,7 @@ public class Jsr330MetadataAdapter implements MetadataAdapter {
     @Override
     public Object getQualifier(Type type, Annotation[] annotations) {
         for (Annotation annotation : annotations) {
-            Class annotationType = annotation.annotationType();
+            Class<? extends Annotation> annotationType = annotation.annotationType();
             if (annotationType.isAnnotationPresent(javax.inject.Qualifier.class)) {
                 for (Method method : annotationType.getMethods()) {
                     if (method.getName().equals("value")) {

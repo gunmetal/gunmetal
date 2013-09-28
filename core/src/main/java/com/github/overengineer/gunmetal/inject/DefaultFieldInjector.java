@@ -12,6 +12,7 @@ import com.github.overengineer.gunmetal.util.FieldProxy;
  */
 public class DefaultFieldInjector<T> implements FieldInjector<T> {
 
+    private static final long serialVersionUID = 3765168230740501039L;
     private final FieldProxy fieldProxy;
     private final Dependency<?> dependency;
     private volatile ComponentStrategy strategy;

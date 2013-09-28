@@ -17,6 +17,7 @@ import java.util.Map;
  */
 public abstract class BaseModule implements Module {
 
+    private static final long serialVersionUID = -7026114912364040588L;
     private final List<Mapping<?>> mappings = new LinkedList<Mapping<?>>();
     private final Map<Dependency, Class> nonManagedComponentFactories = new HashMap<Dependency, Class>();
     private Scope defaultScope = Scopes.UNDEFINED;

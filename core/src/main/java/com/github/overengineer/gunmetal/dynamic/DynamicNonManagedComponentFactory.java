@@ -13,6 +13,7 @@ import java.lang.reflect.Method;
  */
 public class DynamicNonManagedComponentFactory<T> implements InvocationHandler, Serializable {
 
+    private static final long serialVersionUID = 891084950495905266L;
     private final Class<T> factoryInterface;
     private final Class concreteProducedType;
     private final InternalProvider provider;

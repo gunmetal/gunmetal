@@ -7,6 +7,7 @@ import java.lang.reflect.Type;
  */
 public class ParameterTypeRef implements TypeRef {
 
+    private static final long serialVersionUID = 8750412550931356481L;
     private final ParameterizedFunction parameterizedFunction;
     private final int parameterIndex;
     private transient volatile Type type;

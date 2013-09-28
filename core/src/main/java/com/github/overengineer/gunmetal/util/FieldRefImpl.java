@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
  */
 public class FieldRefImpl implements FieldRef {
 
+    private static final long serialVersionUID = 3185062415189391733L;
     private transient volatile SoftReference<Field> fieldRef;
     private final String fieldName;
     private final Class<?> fieldDeclarer;

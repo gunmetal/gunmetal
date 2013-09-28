@@ -15,6 +15,8 @@ import java.util.List;
  */
 public class AopModule extends BaseModule {
 
+    private static final long serialVersionUID = -3574152504964488937L;
+
     @Override
     public void configure() {
 

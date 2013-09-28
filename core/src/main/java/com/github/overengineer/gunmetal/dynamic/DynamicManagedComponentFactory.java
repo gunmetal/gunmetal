@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
  */
 public class DynamicManagedComponentFactory<T> implements InvocationHandler, Serializable {
 
+    private static final long serialVersionUID = -2962658880306788721L;
     private final Class<T> factoryInterface;
     private final Dependency<?> producedTypeDependency;
     private final InternalProvider provider;

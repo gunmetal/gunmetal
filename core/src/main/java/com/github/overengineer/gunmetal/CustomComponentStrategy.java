@@ -7,6 +7,7 @@ import com.github.overengineer.gunmetal.inject.MethodInjector;
  */
 public class CustomComponentStrategy<T> implements ComponentStrategy<T> {
 
+    private static final long serialVersionUID = -395644679590133058L;
     private final ComponentStrategy<?> providerStrategy;
     private final MethodInjector methodInjector;
     private final Class providedType;
