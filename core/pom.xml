@@ -75,11 +75,6 @@
             <id>benchmarks</id>
             <dependencies>
                 <!-- currently using local snapshot builds until next caliper release -->
-                <!--
-
-                    mvn clean install -D skipTests -Dbenchmark.instruments=runtime "-Dbenchmark.args=- -benchmark guicePrototype,gunmetalPrototype" -P benchmarks
-
-                -->
                 <dependency>
                     <groupId>com.google.caliper</groupId>
                     <artifactId>caliper</artifactId>

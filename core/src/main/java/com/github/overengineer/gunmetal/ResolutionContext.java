@@ -10,14 +10,14 @@ public interface ResolutionContext {
 
     <T> ComponentStrategyContext<T> getStrategyContext(ComponentStrategy<T> strategy);
 
-    interface State { }
-
-    enum States implements State {
-        NEW, PRE_INSTANTIATION, PRE_INJECTION
+    interface States  {
+        byte NEW = 0;
+        byte PRE_INSTANTIATION = 1;
+        byte PRE_INJECTION = 2;
     }
 
     class ComponentStrategyContext<T> {
-        State state = States.NEW;
+        byte state = States.NEW;
         T component;
     }
 

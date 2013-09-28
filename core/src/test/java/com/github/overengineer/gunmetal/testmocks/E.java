@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.benchmark;
+package com.github.overengineer.gunmetal.testmocks;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

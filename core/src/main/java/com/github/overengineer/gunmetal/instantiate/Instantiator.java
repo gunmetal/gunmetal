@@ -12,6 +12,8 @@ public interface Instantiator<T> extends Serializable {
 
     boolean isDecorator();
 
+    T getInstance(InternalProvider provider, ResolutionContext resolutionContext);
+
     T getInstance(InternalProvider provider, ResolutionContext resolutionContext, Object ... providedArgs);
 
     Class getProducedType();

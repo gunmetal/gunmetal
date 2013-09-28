@@ -30,9 +30,8 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
                 return strategyContext.component;
             }
             throw new CircularReferenceException(getComponentType(), getQualifier());
-        } else {
-            strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
         }
+        strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
         try {
             strategyContext.component = instantiator.getInstance(provider, resolutionContext);
             strategyContext.state = ResolutionContext.States.PRE_INJECTION;

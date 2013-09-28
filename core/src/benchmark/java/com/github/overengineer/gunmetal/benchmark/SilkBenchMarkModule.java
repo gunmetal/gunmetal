@@ -1,5 +1,7 @@
 package com.github.overengineer.gunmetal.benchmark;
 
+import com.github.overengineer.gunmetal.testmocks.*;
+
 import se.jbee.inject.bind.BinderModule;
 import se.jbee.inject.util.Scoped;
 
@@ -9,7 +11,7 @@ import se.jbee.inject.util.Scoped;
 public class SilkBenchMarkModule extends BinderModule {
 
     public SilkBenchMarkModule() {
-        super(Scoped.APPLICATION);
+        super(Scoped.INJECTION);
     }
     
     @Override
@@ -22,7 +24,7 @@ public class SilkBenchMarkModule extends BinderModule {
         bind(B.class).toConstructor();
         bind(C.class).toConstructor();
         bind(D.class).toConstructor();
-        per(Scoped.APPLICATION).bind(E.class).toConstructor();
+        per(Scoped.INJECTION).bind(E.class).toConstructor();
         bind(F.class).toConstructor();
         bind(G.class).toConstructor();
         bind(H.class).toConstructor();

@@ -10,5 +10,6 @@ import java.io.Serializable;
  */
 public interface ParameterBuilder<T> extends Serializable {
     boolean isDecorator();
+    Object[] buildParameters(InternalProvider provider, ResolutionContext resolutionContext);
     Object[] buildParameters(InternalProvider provider, ResolutionContext resolutionContext, Object[] providedArgs);
 }

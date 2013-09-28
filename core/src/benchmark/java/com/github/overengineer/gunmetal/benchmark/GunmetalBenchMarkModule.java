@@ -1,5 +1,6 @@
 package com.github.overengineer.gunmetal.benchmark;
 
+import com.github.overengineer.gunmetal.testmocks.*;
 import com.github.overengineer.gunmetal.module.BaseModule;
 import com.github.overengineer.gunmetal.scope.Scopes;
 

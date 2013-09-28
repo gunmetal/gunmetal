@@ -22,6 +22,15 @@ public class PrecedingArgsParameterBuilder<T> implements ParameterBuilder<T> {
     }
 
     @Override
+    public Object[] buildParameters(InternalProvider provider, ResolutionContext resolutionContext) {
+        Object[] parameters = new Object[proxies.length];
+        for (int i = 0; i < proxies.length; i++) {
+            parameters[i] = proxies[i].get(provider, resolutionContext);
+        }
+        return parameters;
+    }
+
+    @Override
     public Object[] buildParameters(InternalProvider provider, ResolutionContext resolutionContext, Object[] precedingArgs) {
         Object[] parameters = new Object[proxies.length + precedingArgs.length];
         for (int i = precedingArgs.length; i < precedingArgs.length + proxies.length; i++) {

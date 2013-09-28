@@ -7,6 +7,7 @@ import com.github.overengineer.gunmetal.key.Dependency;
 import com.github.overengineer.gunmetal.key.Generic;
 import com.github.overengineer.gunmetal.key.Qualifier;
 import com.github.overengineer.gunmetal.key.Smithy;
+import com.github.overengineer.gunmetal.testmocks.*;
 import com.google.caliper.BeforeExperiment;
 import com.google.caliper.Benchmark;
 import com.google.inject.Guice;

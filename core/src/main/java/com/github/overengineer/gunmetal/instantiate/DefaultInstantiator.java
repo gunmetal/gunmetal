@@ -24,6 +24,11 @@ public class DefaultInstantiator<T> implements Instantiator<T> {
     }
 
     @Override
+    public T getInstance(InternalProvider provider, ResolutionContext resolutionContext) {
+        return constructorProxy.newInstance(parameterBuilder.buildParameters(provider, resolutionContext));
+    }
+
+    @Override
     public T getInstance(InternalProvider provider, ResolutionContext resolutionContext, Object ... providedArgs) {
         return constructorProxy.newInstance(parameterBuilder.buildParameters(provider, resolutionContext, providedArgs));
     }
