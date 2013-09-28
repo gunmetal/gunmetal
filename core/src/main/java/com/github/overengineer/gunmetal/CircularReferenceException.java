@@ -5,6 +5,7 @@ package com.github.overengineer.gunmetal;
  */
 public class CircularReferenceException  extends RuntimeException {
 
+    private static final long serialVersionUID = 5969611824229305011L;
     private Class<?> componentType;
     private Object qualifier;
     private ComponentStrategy<?> reverseStrategy;

@@ -44,6 +44,9 @@ public class DefaultContainer implements Container, InternalProvider {
     private final List<ComponentPostProcessor> postProcessors;
 
     private final StrategyComparator strategyComparator = new StrategyComparator() {
+
+        private static final long serialVersionUID = 8870374917826123551L;
+
         @Override
         public int compare(ComponentStrategy<?> strategy, ComponentStrategy<?> strategy2) {
             if (strategy.equals(strategy2)
@@ -474,7 +477,10 @@ public class DefaultContainer implements Container, InternalProvider {
         //TODO this is slow, refactor to cache the type in the key and to reuse the strategy
         //TODO everything after this this should probably also by synchronized :/
 
-        Dependency parameterizedKey = Smithy.forge(new TypeRef() {
+        Dependency<?> parameterizedKey = Smithy.forge(new TypeRef() {
+
+            private static final long serialVersionUID = 4472541500115938444L;
+
             @Override
             public Type getType() {
                 return ((ParameterizedType) dependency.getTypeKey().getType()).getActualTypeArguments()[0];
@@ -483,7 +489,7 @@ public class DefaultContainer implements Container, InternalProvider {
 
         if (metadataAdapter.getProviderClass().isAssignableFrom(targetClass)) {
 
-            final ComponentStrategy delegate = getStrategy(parameterizedKey, SelectionAdvisor.NONE);
+            final ComponentStrategy<?> delegate = getStrategy(parameterizedKey, SelectionAdvisor.NONE);
             @SuppressWarnings("unchecked")
             T provider = (T) metadataAdapter.createProvider(this, delegate);
             strategy = strategyFactory.createInstanceStrategy(provider, dependency.getQualifier());

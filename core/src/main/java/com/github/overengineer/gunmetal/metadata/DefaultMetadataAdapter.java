@@ -63,7 +63,7 @@ public class DefaultMetadataAdapter implements MetadataAdapter {
     @Override
     public Scope getScope(Class cls) {
         for (Annotation annotation : cls.getAnnotations()) {
-            Class annotationType = annotation.annotationType();
+            Class<? extends Annotation> annotationType = annotation.annotationType();
             if (annotationType.isAnnotationPresent(com.github.overengineer.gunmetal.metadata.Scope.class)) {
                 for (Method method : annotationType.getMethods()) {
                     if (method.getName().equals("value") && Scope.class.isAssignableFrom(method.getReturnType())) {
@@ -134,7 +134,7 @@ public class DefaultMetadataAdapter implements MetadataAdapter {
     @Override
     public Object getQualifier(Type type, Annotation[] annotations) {
         for (Annotation annotation : annotations) {
-            Class annotationType = annotation.annotationType();
+            Class<? extends Annotation> annotationType = annotation.annotationType();
             if (annotationType.isAnnotationPresent(com.github.overengineer.gunmetal.metadata.Qualifier.class)) {
                 for (Method method : annotationType.getMethods()) {
                     if (method.getName().equals("value")) {
@@ -192,6 +192,8 @@ public class DefaultMetadataAdapter implements MetadataAdapter {
     @Override
     public Object createProvider(final InternalProvider provider, final ComponentStrategy<?> providedTypeStrategy) {
         return new com.github.overengineer.gunmetal.metadata.Provider() {
+
+            private static final long serialVersionUID = -3751983654628908354L;
 
             @Override
             public Object get() {

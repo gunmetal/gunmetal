@@ -63,6 +63,9 @@ public class DefaultInjectorFactory implements InjectorFactory {
     }
 
     static class EmptyInjector<T> implements ComponentInjector<T> {
+
+        private static final long serialVersionUID = -413829047541406773L;
+
         @Override
         public void inject(T component, InternalProvider provider, ResolutionContext resolutionContext) {
         }

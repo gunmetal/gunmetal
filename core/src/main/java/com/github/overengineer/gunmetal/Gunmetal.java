@@ -108,6 +108,9 @@ public class Gunmetal implements Serializable {
                 .addInstance(DynamicComponentFactory.class, dynamicComponentFactory)
                 .addInstance(ComponentStrategyFactory.class, strategyFactory)
                 .addInstance(new Generic<List<ComponentPostProcessor>>() {
+
+                    private static final long serialVersionUID = 1L;
+
                 }, postProcessors);
         return this;
     }

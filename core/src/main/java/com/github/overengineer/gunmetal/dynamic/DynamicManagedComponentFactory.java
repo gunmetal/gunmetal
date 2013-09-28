@@ -22,7 +22,7 @@ public class DynamicManagedComponentFactory<T> implements InvocationHandler, Ser
     private final ComponentStrategy strategy;
     T proxy;
 
-    DynamicManagedComponentFactory(Class<T> factoryInterface, Dependency producedTypeDependency, InternalProvider provider) {
+    DynamicManagedComponentFactory(Class<T> factoryInterface, Dependency<?> producedTypeDependency, InternalProvider provider) {
         this.factoryInterface = factoryInterface;
         this.producedTypeDependency = producedTypeDependency;
         this.provider = provider;

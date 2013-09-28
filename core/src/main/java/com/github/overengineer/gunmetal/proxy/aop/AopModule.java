@@ -39,7 +39,11 @@ public class AopModule extends BaseModule {
                 .forType(AopContainer.class);
 
         use(new ArrayList<Aspect>())
-                .forType(new Generic<List<Aspect>>() { });
+                .forType(new Generic<List<Aspect>>() {
+
+                    private static final long serialVersionUID = 1L;
+
+                });
 
     }
 }
