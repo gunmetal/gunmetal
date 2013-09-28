@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor;
  */
 public class ConstructorRefImpl<T> implements ConstructorRef<T> {
 
+    private static final long serialVersionUID = -2390708637997147408L;
     private transient volatile SoftReference<Constructor<T>> constructorRef;
     private final Class<T> constructorDeclarer;
     private final Class[] parameterTypes;

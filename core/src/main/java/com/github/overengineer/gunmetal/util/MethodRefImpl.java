@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
  */
 public class MethodRefImpl implements MethodRef {
 
+    private static final long serialVersionUID = 9181151015633665121L;
     private transient volatile SoftReference<Method> methodRef;
     private final String methodName;
     private final Class<?> methodDeclarer;

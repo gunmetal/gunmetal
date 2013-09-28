@@ -13,6 +13,7 @@ import java.io.Serializable;
  */
 public class ServiceDelegateInvoker<T> implements Serializable {
 
+    private static final long serialVersionUID = -8700679354932085756L;
     private final Dependency<T> serviceDelegateDependency;
     private final MethodInjector<T> methodInjector;
     private final InternalProvider provider;

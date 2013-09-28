@@ -9,6 +9,7 @@ import com.github.overengineer.gunmetal.ResolutionContext;
  */
 public class PrototypeProxyComponentStrategy<T> implements ComponentStrategy<T> {
 
+    private static final long serialVersionUID = -5177215615100616841L;
     private final Class<?> type;
     private final ComponentStrategy<T> delegateStrategy;
     private final ProxyHandlerFactory handlerFactory;

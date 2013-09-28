@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
  */
 public class JdkComponentProxyHandler<T> implements ComponentProxyHandler<T>, InvocationHandler {
 
+    private static final long serialVersionUID = -5538704022052712782L;
     protected T component;
     private final T proxy;
 

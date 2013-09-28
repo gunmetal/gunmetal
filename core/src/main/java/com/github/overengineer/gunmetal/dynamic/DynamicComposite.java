@@ -16,10 +16,11 @@ import java.util.List;
  */
 public class DynamicComposite<T> implements InvocationHandler, Serializable {
 
-    private List<T> components;
-    T proxy;
+    private static final long serialVersionUID = 4463243954034425681L;
     private final Class<T> componentInterface;
     private final Provider provider;
+    private List<T> components;
+    T proxy;
 
     DynamicComposite(Class<T> componentInterface, final Provider provider) {
         this.componentInterface = componentInterface;

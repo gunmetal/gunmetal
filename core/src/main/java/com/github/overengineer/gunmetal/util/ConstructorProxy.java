@@ -18,6 +18,7 @@ public interface ConstructorProxy<T> extends ParameterizedFunction {
 
         private static class Proxy<T> implements ConstructorProxy<T> {
 
+            private static final long serialVersionUID = -4789756799066945902L;
             final ConstructorRef<T> constructorRef;
 
             Proxy(ConstructorRef<T> constructorRef) {

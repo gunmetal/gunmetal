@@ -10,6 +10,8 @@ import java.lang.reflect.Method;
  */
 public class DefaultPointcutInterpreter implements PointcutInterpreter {
 
+    private static final long serialVersionUID = -4492738974928272706L;
+
     @Override
     public boolean appliesToMethod(Aspect aspect, Class targetClass, Method method) {
         Class<?> aspectClass = ProxyUtil.getRealComponent(aspect).getClass();

@@ -10,6 +10,7 @@ import com.github.overengineer.gunmetal.util.ConstructorProxy;
  */
 public class DefaultInstantiator<T> implements Instantiator<T> {
 
+    private static final long serialVersionUID = 3787040143095057204L;
     private final ConstructorProxy<T> constructorProxy;
     private final ParameterBuilder<T> parameterBuilder;
 

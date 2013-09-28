@@ -11,6 +11,7 @@ import com.github.overengineer.gunmetal.key.Dependency;
  */
 public class DecoratorParameterProxy<T> implements ParameterProxy<T> {
 
+    private static final long serialVersionUID = -9035971670343332284L;
     private final Dependency<T> dependency;
     private final Class<?> injectionTarget;
     private volatile ComponentStrategy<T> strategy;

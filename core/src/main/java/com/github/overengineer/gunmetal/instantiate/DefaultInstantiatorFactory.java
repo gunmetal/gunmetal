@@ -8,6 +8,7 @@ import com.github.overengineer.gunmetal.util.ConstructorProxy;
  */
 public class DefaultInstantiatorFactory implements InstantiatorFactory {
 
+    private static final long serialVersionUID = 6001231500272122553L;
     private final ConstructorResolver constructorResolver;
     private final ParameterBuilderFactory parameterBuilderFactory;
 

@@ -11,6 +11,7 @@ import com.github.overengineer.gunmetal.key.Dependency;
  */
 public class ComponentParameterProxy<T> implements ParameterProxy<T> {
 
+    private static final long serialVersionUID = -1276921210275146880L;
     private final Dependency<T> dependency;
     private volatile ComponentStrategy<T> strategy;
 

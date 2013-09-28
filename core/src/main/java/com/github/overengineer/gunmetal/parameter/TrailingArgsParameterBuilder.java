@@ -8,6 +8,7 @@ import com.github.overengineer.gunmetal.ResolutionContext;
  */
 public class TrailingArgsParameterBuilder<T> implements ParameterBuilder<T> {
 
+    private static final long serialVersionUID = -5628096865518677243L;
     private final ParameterProxy[] proxies;
     private final boolean decorator;
 

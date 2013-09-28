@@ -34,6 +34,7 @@ import java.util.TreeSet;
  */
 public class DefaultContainer implements Container, InternalProvider {
 
+    private static final long serialVersionUID = -5830103969812929459L;
     private final Map<TypeKey<?>, SortedSet<ComponentStrategy<?>>> strategies = new HashMap<TypeKey<?>, SortedSet<ComponentStrategy<?>>>();
     private final List<Container> cascadingContainers = new ArrayList<Container>();
     private final List<Container> children = new ArrayList<Container>();
@@ -43,6 +44,9 @@ public class DefaultContainer implements Container, InternalProvider {
     private final List<ComponentPostProcessor> postProcessors;
 
     private final StrategyComparator strategyComparator = new StrategyComparator() {
+
+        private static final long serialVersionUID = 8870374917826123551L;
+
         @Override
         public int compare(ComponentStrategy<?> strategy, ComponentStrategy<?> strategy2) {
             if (strategy.equals(strategy2)
@@ -391,11 +395,11 @@ public class DefaultContainer implements Container, InternalProvider {
         return components;
     }
 
-    protected synchronized void addMapping(Dependency dependency, final Class<?> implementationType, Scope scope) {
+    protected synchronized void addMapping(Dependency<?> dependency, final Class<?> implementationType, Scope scope) {
 
-        Dependency componentKey = Smithy.forge(implementationType, dependency.getQualifier());
+        Dependency<?> componentKey = Smithy.forge(implementationType, dependency.getQualifier());
 
-        ComponentStrategy strategy = tryGetStrategy(componentKey, new SelectionAdvisor() {
+        ComponentStrategy<?> strategy = tryGetStrategy(componentKey, new SelectionAdvisor() {
             @Override
             public boolean validSelection(ComponentStrategy<?> candidateStrategy) {
                 return candidateStrategy.getComponentType() == implementationType;
@@ -473,7 +477,10 @@ public class DefaultContainer implements Container, InternalProvider {
         //TODO this is slow, refactor to cache the type in the key and to reuse the strategy
         //TODO everything after this this should probably also by synchronized :/
 
-        Dependency parameterizedKey = Smithy.forge(new TypeRef() {
+        Dependency<?> parameterizedKey = Smithy.forge(new TypeRef() {
+
+            private static final long serialVersionUID = 4472541500115938444L;
+
             @Override
             public Type getType() {
                 return ((ParameterizedType) dependency.getTypeKey().getType()).getActualTypeArguments()[0];
@@ -482,7 +489,7 @@ public class DefaultContainer implements Container, InternalProvider {
 
         if (metadataAdapter.getProviderClass().isAssignableFrom(targetClass)) {
 
-            final ComponentStrategy delegate = getStrategy(parameterizedKey, SelectionAdvisor.NONE);
+            final ComponentStrategy<?> delegate = getStrategy(parameterizedKey, SelectionAdvisor.NONE);
             @SuppressWarnings("unchecked")
             T provider = (T) metadataAdapter.createProvider(this, delegate);
             strategy = strategyFactory.createInstanceStrategy(provider, dependency.getQualifier());

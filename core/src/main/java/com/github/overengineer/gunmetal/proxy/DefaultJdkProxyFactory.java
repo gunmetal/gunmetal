@@ -16,6 +16,7 @@ import java.util.List;
  */
 public class DefaultJdkProxyFactory implements JdkProxyFactory {
 
+    private static final long serialVersionUID = 5171224305469087215L;
     private final Class<?> targetClass;
     private final Class[] interfaces;
     private transient volatile SoftReference<Constructor> constructorReference;

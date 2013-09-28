@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
  */
 public class DefaultConstructorResolver implements ConstructorResolver {
 
+    private static final long serialVersionUID = 8924169648536416290L;
     private final MetadataAdapter metadataAdapter;
 
     public DefaultConstructorResolver(MetadataAdapter metadataAdapter) {

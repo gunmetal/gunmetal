@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
 
+    private static final long serialVersionUID = -849101999277185632L;
     private final ComponentInjector<T> injector;
     private final Instantiator<T> instantiator;
     private final Object qualifier;

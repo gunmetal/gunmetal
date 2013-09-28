@@ -10,6 +10,7 @@ import java.lang.reflect.Type;
  */
 public class ParameterDependency<T> implements Dependency<T> {
 
+    private static final long serialVersionUID = 6474512506734622330L;
     private final Object qualifier;
     private final TypeRef parameterRef;
     private final Class<? super T> targetClass;
@@ -44,6 +45,8 @@ public class ParameterDependency<T> implements Dependency<T> {
     }
 
     class ParameterTypeKey implements TypeKey<T> {
+
+        private static final long serialVersionUID = 2189269158106746796L;
 
         @Override
         public Type getType() {
