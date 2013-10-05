@@ -64,7 +64,8 @@ public interface VisibilityAdapter {
 
                     @Override
                     public boolean isVisibleTo(Class<?> classOfResourceRequestingAccess) {
-                        return classOfResourceBeingRequested.getPackage() == classOfResourceRequestingAccess.getPackage();
+                        return (classOfResourceBeingRequested.getPackage() == classOfResourceRequestingAccess.getPackage())
+                                || classOfResourceBeingRequested.isAssignableFrom(classOfResourceRequestingAccess);
                     }
 
                 };
