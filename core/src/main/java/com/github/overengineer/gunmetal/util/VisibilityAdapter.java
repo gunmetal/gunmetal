@@ -111,21 +111,20 @@ public interface VisibilityAdapter {
 
             Class<?> declaringClass = method.getDeclaringClass();
 
-            final VisibilityAdapter classLevelAdapter =
-                    AccessLevel
-                            .get(declaringClass.getModifiers())
-                            .newVisibilityAdapter(declaringClass);
+            final VisibilityAdapter classLevelAdapter = getAdapter(declaringClass);
 
             final VisibilityAdapter methodLevelAdapter =
                     AccessLevel
                             .get(method.getModifiers())
                             .newVisibilityAdapter(declaringClass);
 
+            final boolean isPublic = classLevelAdapter.isPublic() && methodLevelAdapter.isPublic();
+
             return new VisibilityAdapter() {
 
                 @Override
                 public boolean isPublic() {
-                    return classLevelAdapter.isPublic() && methodLevelAdapter.isPublic();
+                    return isPublic;
                 }
 
                 @Override
@@ -139,29 +138,28 @@ public interface VisibilityAdapter {
 
         public static VisibilityAdapter getAdapter(Class cls) {
 
-            Class<?> declaringClass = cls.getDeclaringClass();
+            Class<?> enclosingClass = cls.getEnclosingClass();
 
-            if (declaringClass == null) {
+            if (enclosingClass == null) {
                 return AccessLevel
                         .get(cls.getModifiers())
                         .newVisibilityAdapter(cls);
             }
 
-            final VisibilityAdapter outerAdapter =
-                    AccessLevel
-                            .get(declaringClass.getModifiers())
-                            .newVisibilityAdapter(declaringClass);
+            final VisibilityAdapter outerAdapter = getAdapter(enclosingClass);
 
             final VisibilityAdapter innerAdapter =
                     AccessLevel
                             .get(cls.getModifiers())
-                            .newVisibilityAdapter(declaringClass);
+                            .newVisibilityAdapter(enclosingClass);
+
+            final boolean isPublic = outerAdapter.isPublic() && innerAdapter.isPublic();
 
             return new VisibilityAdapter() {
 
                 @Override
                 public boolean isPublic() {
-                    return outerAdapter.isPublic() && innerAdapter.isPublic();
+                    return isPublic;
                 }
 
                 @Override
