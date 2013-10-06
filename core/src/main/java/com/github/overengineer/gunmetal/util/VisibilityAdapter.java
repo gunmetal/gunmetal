@@ -15,8 +15,24 @@ public interface VisibilityAdapter {
     enum AccessLevel {
 
         PRIVATE {
+
+            Class<?> getHighestEnclosingClose(Class<?> cls) {
+
+                Class<?> enclosingClass = cls.getEnclosingClass();
+
+                if (enclosingClass == null) {
+                    return cls;
+                }
+
+                return getHighestEnclosingClose(enclosingClass);
+
+            }
+
             @Override
             public VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
+
+                final Class<?> resourceEnclosingClass = getHighestEnclosingClose(classOfResourceBeingRequested);
+
                 return new VisibilityAdapter() {
 
                     @Override
@@ -25,8 +41,9 @@ public interface VisibilityAdapter {
                     }
 
                     @Override
-                    public boolean isVisibleTo(Class<?> classOfResourceRequestingAccess) {
-                        return classOfResourceBeingRequested == classOfResourceRequestingAccess;
+                    public boolean isVisibleTo(final Class<?> classOfResourceRequestingAccess) {
+                        return classOfResourceBeingRequested == classOfResourceRequestingAccess
+                                || resourceEnclosingClass == getHighestEnclosingClose(classOfResourceRequestingAccess);
                     }
 
                 };
@@ -35,7 +52,10 @@ public interface VisibilityAdapter {
 
         PACKAGE_PRIVATE {
             @Override
-            public VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
+            public VisibilityAdapter newVisibilityAdapter(Class<?> classOfResourceBeingRequested) {
+
+                final Package packageOfResourceBeingRequested = classOfResourceBeingRequested.getPackage();
+
                 return new VisibilityAdapter() {
 
                     @Override
@@ -45,7 +65,7 @@ public interface VisibilityAdapter {
 
                     @Override
                     public boolean isVisibleTo(Class<?> classOfResourceRequestingAccess) {
-                        return classOfResourceBeingRequested.getPackage() == classOfResourceRequestingAccess.getPackage();
+                        return packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage();
                     }
 
                 };
@@ -55,6 +75,9 @@ public interface VisibilityAdapter {
         PROTECTED {
             @Override
             public VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
+
+                final Package packageOfResourceBeingRequested = classOfResourceBeingRequested.getPackage();
+
                 return new VisibilityAdapter() {
 
                     @Override
@@ -64,7 +87,7 @@ public interface VisibilityAdapter {
 
                     @Override
                     public boolean isVisibleTo(Class<?> classOfResourceRequestingAccess) {
-                        return (classOfResourceBeingRequested.getPackage() == classOfResourceRequestingAccess.getPackage())
+                        return (packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage())
                                 || classOfResourceBeingRequested.isAssignableFrom(classOfResourceRequestingAccess);
                     }
 
