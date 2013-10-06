@@ -16,7 +16,7 @@ public interface VisibilityAdapter {
 
         PRIVATE {
             @Override
-            public  VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
+            public VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
                 return new VisibilityAdapter() {
 
                     @Override
@@ -35,7 +35,7 @@ public interface VisibilityAdapter {
 
         PACKAGE_PRIVATE {
             @Override
-            public  VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
+            public VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
                 return new VisibilityAdapter() {
 
                     @Override
@@ -54,7 +54,7 @@ public interface VisibilityAdapter {
 
         PROTECTED {
             @Override
-            public  VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
+            public VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
                 return new VisibilityAdapter() {
 
                     @Override
@@ -74,7 +74,7 @@ public interface VisibilityAdapter {
 
         PUBLIC {
             @Override
-            public  VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
+            public VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
                 return new VisibilityAdapter() {
 
                     @Override
@@ -91,7 +91,7 @@ public interface VisibilityAdapter {
             }
         };
 
-        abstract  VisibilityAdapter newVisibilityAdapter(Class<?>  cls);
+        abstract VisibilityAdapter newVisibilityAdapter(Class<?>  cls);
 
         static AccessLevel get(int modifiers) {
             if (Modifier.isPublic(modifiers)) {
@@ -108,7 +108,7 @@ public interface VisibilityAdapter {
 
     class Factory {
 
-        public static  VisibilityAdapter getAdapter(Method method) {
+        public static VisibilityAdapter getAdapter(Method method) {
 
             Class<?> declaringClass = method.getDeclaringClass();
 
@@ -119,13 +119,15 @@ public interface VisibilityAdapter {
                             .get(method.getModifiers())
                             .newVisibilityAdapter(declaringClass);
 
-            final boolean isPublic = classLevelAdapter.isPublic() && methodLevelAdapter.isPublic();
+            if (classLevelAdapter.isPublic() && methodLevelAdapter.isPublic()) {
+                return AccessLevel.PUBLIC.newVisibilityAdapter(declaringClass);
+            }
 
             return new VisibilityAdapter() {
 
                 @Override
                 public boolean isPublic() {
-                    return isPublic;
+                    return false;
                 }
 
                 @Override
@@ -154,13 +156,15 @@ public interface VisibilityAdapter {
                             .get(cls.getModifiers())
                             .newVisibilityAdapter(enclosingClass);
 
-            final boolean isPublic = outerAdapter.isPublic() && innerAdapter.isPublic();
+            if (outerAdapter.isPublic() && innerAdapter.isPublic()) {
+                return AccessLevel.PUBLIC.newVisibilityAdapter(cls);
+            }
 
             return new VisibilityAdapter() {
 
                 @Override
                 public boolean isPublic() {
-                    return isPublic;
+                    return false;
                 }
 
                 @Override
