@@ -12,166 +12,44 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author rees.byars
  */
-public class VisibilityAdapterTest {
-
-    public static class PublicClass {
-
-        public void publicMethod() { }
-        protected void protectedMethod() { }
-        private void privateMethod() { }
-        void packagePrivateMethod() { }
-
-        protected static class ProtectedClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-        private static class PrivateClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-        static class PackagePrivateClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-    }
-
-    protected static class ProtectedClass {
-
-        public void publicMethod() { }
-        protected void protectedMethod() { }
-        private void privateMethod() { }
-        void packagePrivateMethod() { }
-
-        public static class PublicClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-        private static class PrivateClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-        static class PackagePrivateClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-    }
-
-    private static class PrivateClass {
-
-        public void publicMethod() { }
-        protected void protectedMethod() { }
-        private void privateMethod() { }
-        void packagePrivateMethod() { }
-
-        public static class PublicClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-        protected static class ProtectedClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-        static class PackagePrivateClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-    }
-
-    static class PackagePrivateClass {
-
-        public void publicMethod() { }
-        protected void protectedMethod() { }
-        private void privateMethod() { }
-        void packagePrivateMethod() { }
-
-        public static class PublicClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-        protected static class ProtectedClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-        private static class PrivateClass {
-            public void publicMethod() { }
-            protected void protectedMethod() { }
-            private void privateMethod() { }
-            void packagePrivateMethod() { }
-        }
-
-    }
-
-    
+public class VisibilityAdapterTest {    
 
     @Test
     public void testGetMethodAdapter_public() {
-        assertPublicMethodOn(PublicClass.class)
+        assertPublicMethodOn(VisibilityTestBean.PublicClass.class)
                 .isPublic()
-                .isVisibleTo(PrivateClass.class)
-                .isVisibleTo(ProtectedClass.class)
-                .isVisibleTo(PackagePrivateClass.class)
-                .isVisibleTo(PublicClass.class)
-                .isVisibleTo(VisibilityAdapterTest.class)
+                .isVisibleTo(VisibilityTestBean.getPrivate())
+                .isVisibleTo(VisibilityTestBean.getProtected())
+                .isVisibleTo(VisibilityTestBean.getPackagePrivate())
+                .isVisibleTo(VisibilityTestBean.PublicClass.class)
+                .isVisibleTo(VisibilityTestBean.class)
                 .isVisibleTo(VisibilityAdapter.class)
                 .isVisibleTo(Gunmetal.class);
     }
 
     @Test
     public void testGetMethodAdapter_private() {
-        assertPrivateMethodOn(PublicClass.class)
+        assertPrivateMethodOn(VisibilityTestBean.PublicClass.class)
                 .isNotPublic()
-                .isVisibleTo(PrivateClass.class)
-                .isVisibleTo(ProtectedClass.class)
-                .isVisibleTo(PackagePrivateClass.class)
-                .isVisibleTo(PublicClass.class)
-                .isVisibleTo(VisibilityAdapterTest.class)
+                .isVisibleTo(VisibilityTestBean.getPrivate())
+                .isVisibleTo(VisibilityTestBean.getProtected())
+                .isVisibleTo(VisibilityTestBean.getPackagePrivate())
+                .isVisibleTo(VisibilityTestBean.PublicClass.class)
+                .isVisibleTo(VisibilityTestBean.class)
                 .isNotVisibleTo(VisibilityAdapter.class)
                 .isNotVisibleTo(Gunmetal.class);
     }
 
     @Test
     public void testGetMethodAdapter_packagePrivate() {
-        assertPackagePrivateMethodOn(PublicClass.class)
+        assertPackagePrivateMethodOn(VisibilityTestBean.PublicClass.class)
                 .isNotPublic()
-                .isVisibleTo(PrivateClass.class)
-                .isVisibleTo(ProtectedClass.class)
-                .isVisibleTo(PackagePrivateClass.class)
-                .isVisibleTo(PublicClass.class)
-                .isVisibleTo(VisibilityAdapterTest.class)
-                .isVisibleTo(VisibilityAdapter.class)
+                .isVisibleTo(VisibilityTestBean.getPrivate())
+                .isVisibleTo(VisibilityTestBean.getProtected())
+                .isVisibleTo(VisibilityTestBean.getPackagePrivate())
+                .isVisibleTo(VisibilityTestBean.PublicClass.class)
+                .isVisibleTo(VisibilityTestBean.class)
+                .isVisibleTo(VisibilityTestBean2.class)
                 .isNotVisibleTo(Gunmetal.class);
     }
 
@@ -179,11 +57,7 @@ public class VisibilityAdapterTest {
     public void testGetMethodAdapter_protected() {
         assertProtectedMethodOn(VisibilityTestBean.PublicClass.class)
                 .isNotPublic()
-                .isNotVisibleTo(PrivateClass.class)
-                .isNotVisibleTo(ProtectedClass.class)
-                .isNotVisibleTo(PackagePrivateClass.class)
-                .isNotVisibleTo(PublicClass.class)
-                .isNotVisibleTo(VisibilityAdapterTest.class)
+                .isVisibleTo(VisibilityTestBean2.getPrivate())
                 .isNotVisibleTo(VisibilityAdapter.class)
                 .isNotVisibleTo(Gunmetal.class)
                 .isNotVisibleTo(new VisibilityTestBean() { }.getClass())
@@ -192,40 +66,40 @@ public class VisibilityAdapterTest {
 
     @Test
     public void testGetClassAdapter_public() {
-        assertClass(PublicClass.class)
+        assertClass(VisibilityTestBean.PublicClass.class)
                 .isPublic()
-                .isVisibleTo(PrivateClass.class)
-                .isVisibleTo(ProtectedClass.class)
-                .isVisibleTo(PackagePrivateClass.class)
-                .isVisibleTo(PublicClass.class)
-                .isVisibleTo(VisibilityAdapterTest.class)
+                .isVisibleTo(VisibilityTestBean.getPrivate())
+                .isVisibleTo(VisibilityTestBean.getProtected())
+                .isVisibleTo(VisibilityTestBean.getPackagePrivate())
+                .isVisibleTo(VisibilityTestBean.PublicClass.class)
+                .isVisibleTo(VisibilityTestBean.class)
                 .isVisibleTo(VisibilityAdapter.class)
                 .isVisibleTo(Gunmetal.class);
     }
 
     @Test
     public void testGetClassAdapter_private() {
-        VisibilityAdapter publicPrivate = VisibilityAdapter.Factory.getAdapter(PrivateClass.class);
+        VisibilityAdapter publicPrivate = VisibilityAdapter.Factory.getAdapter(VisibilityTestBean.getPrivate());
         assertFalse(publicPrivate.isPublic());
-        assertTrue(publicPrivate.isVisibleTo(PrivateClass.class));
-        assertTrue(publicPrivate.isVisibleTo(ProtectedClass.class));
-        assertTrue(publicPrivate.isVisibleTo(PackagePrivateClass.class));
-        assertTrue(publicPrivate.isVisibleTo(PublicClass.class));
-        assertTrue(publicPrivate.isVisibleTo(VisibilityAdapterTest.class));
+        assertTrue(publicPrivate.isVisibleTo(VisibilityTestBean.getPrivate()));
+        assertTrue(publicPrivate.isVisibleTo(VisibilityTestBean.getProtected()));
+        assertTrue(publicPrivate.isVisibleTo(VisibilityTestBean.getPackagePrivate()));
+        assertTrue(publicPrivate.isVisibleTo(VisibilityTestBean.PublicClass.class));
+        assertTrue(publicPrivate.isVisibleTo(VisibilityTestBean.class));
         assertFalse(publicPrivate.isVisibleTo(VisibilityAdapter.class));
         assertFalse(publicPrivate.isVisibleTo(Gunmetal.class));
     }
 
     @Test
     public void testGetClassAdapter_packagePrivate() {
-        VisibilityAdapter publicPackagePrivate = VisibilityAdapter.Factory.getAdapter(PackagePrivateClass.class);
+        VisibilityAdapter publicPackagePrivate = VisibilityAdapter.Factory.getAdapter(VisibilityTestBean.getPackagePrivate());
         assertFalse(publicPackagePrivate.isPublic());
-        assertTrue(publicPackagePrivate.isVisibleTo(PrivateClass.class));
-        assertTrue(publicPackagePrivate.isVisibleTo(ProtectedClass.class));
-        assertTrue(publicPackagePrivate.isVisibleTo(PackagePrivateClass.class));
-        assertTrue(publicPackagePrivate.isVisibleTo(PublicClass.class));
-        assertTrue(publicPackagePrivate.isVisibleTo(VisibilityAdapterTest.class));
-        assertTrue(publicPackagePrivate.isVisibleTo(VisibilityAdapter.class));
+        assertTrue(publicPackagePrivate.isVisibleTo(VisibilityTestBean.getPrivate()));
+        assertTrue(publicPackagePrivate.isVisibleTo(VisibilityTestBean.getProtected()));
+        assertTrue(publicPackagePrivate.isVisibleTo(VisibilityTestBean.getPackagePrivate()));
+        assertTrue(publicPackagePrivate.isVisibleTo(VisibilityTestBean.PublicClass.class));
+        assertTrue(publicPackagePrivate.isVisibleTo(VisibilityTestBean.class));
+        assertTrue(publicPackagePrivate.isVisibleTo(VisibilityTestBean2.class));
         assertFalse(publicPackagePrivate.isVisibleTo(Gunmetal.class));
     }
 
@@ -233,11 +107,7 @@ public class VisibilityAdapterTest {
     public void testGetClassAdapter_protected() {
         VisibilityAdapter publicProtected = VisibilityAdapter.Factory.getAdapter(VisibilityTestBean.getProtected());
         assertFalse(publicProtected.isPublic());
-        assertFalse(publicProtected.isVisibleTo(PrivateClass.class));
-        assertFalse(publicProtected.isVisibleTo(ProtectedClass.class));
-        assertFalse(publicProtected.isVisibleTo(PackagePrivateClass.class));
-        assertFalse(publicProtected.isVisibleTo(PublicClass.class));
-        assertFalse(publicProtected.isVisibleTo(VisibilityAdapterTest.class));
+        assertTrue(publicProtected.isVisibleTo(VisibilityTestBean2.getPrivate()));
         assertFalse(publicProtected.isVisibleTo(VisibilityAdapter.class));
         assertFalse(publicProtected.isVisibleTo(Gunmetal.class));
         assertTrue(publicProtected.isVisibleTo(new VisibilityTestBean() { }.getClass()));
@@ -247,24 +117,24 @@ public class VisibilityAdapterTest {
     @Test
     public void testEdges() {
 
-        VisibilityAdapter publicPrivatePublic = VisibilityAdapter.Factory.getAdapter(PrivateClass.PublicClass.class);
+        VisibilityAdapter publicPrivatePublic = VisibilityAdapter.Factory.getAdapter(VisibilityTestBean.getPrivatePublic());
         assertFalse(publicPrivatePublic.isPublic());
-        assertTrue(publicPrivatePublic.isVisibleTo(PrivateClass.class));
-        assertTrue(publicPrivatePublic.isVisibleTo(ProtectedClass.class));
-        assertTrue(publicPrivatePublic.isVisibleTo(PackagePrivateClass.class));
-        assertTrue(publicPrivatePublic.isVisibleTo(PublicClass.class));
-        assertTrue(publicPrivatePublic.isVisibleTo(VisibilityAdapterTest.class));
+        assertTrue(publicPrivatePublic.isVisibleTo(VisibilityTestBean.getPrivate()));
+        assertTrue(publicPrivatePublic.isVisibleTo(VisibilityTestBean.getProtected()));
+        assertTrue(publicPrivatePublic.isVisibleTo(VisibilityTestBean.getPackagePrivate()));
+        assertTrue(publicPrivatePublic.isVisibleTo(VisibilityTestBean.PublicClass.class));
+        assertTrue(publicPrivatePublic.isVisibleTo(VisibilityTestBean.class));
         assertFalse(publicPrivatePublic.isVisibleTo(VisibilityAdapter.class));
         assertFalse(publicPrivatePublic.isVisibleTo(Gunmetal.class));
 
-        VisibilityAdapter publicPackagePrivatePublic = VisibilityAdapter.Factory.getAdapter(PackagePrivateClass.PublicClass.class);
+        VisibilityAdapter publicPackagePrivatePublic = VisibilityAdapter.Factory.getAdapter(VisibilityTestBean.getPackagePrivatePublic());
         assertFalse(publicPackagePrivatePublic.isPublic());
-        assertTrue(publicPackagePrivatePublic.isVisibleTo(PrivateClass.class));
-        assertTrue(publicPackagePrivatePublic.isVisibleTo(ProtectedClass.class));
-        assertTrue(publicPackagePrivatePublic.isVisibleTo(PackagePrivateClass.class));
-        assertTrue(publicPackagePrivatePublic.isVisibleTo(PublicClass.class));
-        assertTrue(publicPackagePrivatePublic.isVisibleTo(VisibilityAdapterTest.class));
-        assertTrue(publicPackagePrivatePublic.isVisibleTo(VisibilityAdapter.class));
+        assertTrue(publicPackagePrivatePublic.isVisibleTo(VisibilityTestBean.getPrivate()));
+        assertTrue(publicPackagePrivatePublic.isVisibleTo(VisibilityTestBean.getProtected()));
+        assertTrue(publicPackagePrivatePublic.isVisibleTo(VisibilityTestBean.getPackagePrivate()));
+        assertTrue(publicPackagePrivatePublic.isVisibleTo(VisibilityTestBean.PublicClass.class));
+        assertTrue(publicPackagePrivatePublic.isVisibleTo(VisibilityTestBean.class));
+        assertTrue(publicPackagePrivatePublic.isVisibleTo(VisibilityTestBean2.class));
         assertFalse(publicPackagePrivatePublic.isVisibleTo(Gunmetal.class));
 
         VisibilityAdapter publicProtectedPublic = VisibilityAdapter.Factory.getAdapter(VisibilityTestBean.getProtectedPublic());

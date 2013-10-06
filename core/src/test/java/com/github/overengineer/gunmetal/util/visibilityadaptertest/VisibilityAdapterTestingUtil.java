@@ -75,12 +75,12 @@ public class VisibilityAdapterTestingUtil {
         }
 
         public VisibilityAssertion isVisibleTo(Class<?> cls) {
-            assertTrue(visibilityAdapter.isVisibleTo(cls));
+            assertTrue("failed on " + cls.toString(), visibilityAdapter.isVisibleTo(cls));
             return this;
         }
 
         public VisibilityAssertion isNotVisibleTo(Class<?> cls) {
-            assertFalse(visibilityAdapter.isVisibleTo(cls));
+            assertFalse("failed on " + cls.toString(), visibilityAdapter.isVisibleTo(cls));
             return this;
         }
 
