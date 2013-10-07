@@ -12,7 +12,7 @@ public interface VisibilityAdapter {
 
     boolean isVisibleTo(Class<?> cls);
 
-    enum AccessLevel {
+    enum AccessLevel implements Factory.AdapterProvider {
 
         PRIVATE {
 
@@ -114,8 +114,6 @@ public interface VisibilityAdapter {
             }
         };
 
-        abstract VisibilityAdapter newVisibilityAdapter(Class<?>  cls);
-
         static AccessLevel get(int modifiers) {
             if (Modifier.isPublic(modifiers)) {
                 return PUBLIC;
@@ -130,6 +128,10 @@ public interface VisibilityAdapter {
     }
 
     class Factory {
+
+        private interface AdapterProvider {
+            VisibilityAdapter newVisibilityAdapter(Class<?>  cls);
+        }
 
         public static VisibilityAdapter getAdapter(Method method) {
 
