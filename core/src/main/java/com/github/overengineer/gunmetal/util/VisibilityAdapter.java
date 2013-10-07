@@ -164,6 +164,20 @@ public interface VisibilityAdapter {
 
         public static VisibilityAdapter getAdapter(Class cls) {
 
+            if (cls.isLocalClass()) {
+                return new VisibilityAdapter() {
+                    @Override
+                    public boolean isPublic() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isVisibleTo(Class<?> cls) {
+                        return false;
+                    }
+                };
+            }
+
             Class<?> enclosingClass = cls.getEnclosingClass();
 
             if (enclosingClass == null) {

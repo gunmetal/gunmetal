@@ -10,10 +10,11 @@ import static com.github.overengineer.gunmetal.util.visibilityadaptertest.Visibi
 /**
  * @author rees.byars
  */
-public class VisibilityAdapterTest {    
+public class VisibilityAdapterTest {
 
     @Test
     public void testGetMethodAdapter_public() {
+
         assertPublicMethodOn(VisibilityTestBean.PublicClass.class)
                 .isPublic()
                 .isVisibleTo(VisibilityTestBean.getPrivate())
@@ -27,6 +28,7 @@ public class VisibilityAdapterTest {
 
     @Test
     public void testGetMethodAdapter_private() {
+
         assertPrivateMethodOn(VisibilityTestBean.PublicClass.class)
                 .isNotPublic()
                 .isVisibleTo(VisibilityTestBean.getPrivate())
@@ -60,6 +62,21 @@ public class VisibilityAdapterTest {
                 .isNotVisibleTo(Gunmetal.class)
                 .isNotVisibleTo(new VisibilityTestBean() { }.getClass())
                 .isVisibleTo(new VisibilityTestBean.PublicClass() { }.getClass());
+    }
+
+    @Test
+    public void testGetMethodAdapter_local() {
+
+        class Local {
+            public void publicMethod() { }
+        }
+
+        assertPublicMethodOn(Local.class)
+                .isNotPublic()
+                .isNotVisibleTo(VisibilityTestBean2.getPrivate())
+                .isNotVisibleTo(VisibilityAdapter.class)
+                .isNotVisibleTo(Gunmetal.class)
+                .isNotVisibleTo(getClass());
     }
 
     @Test
@@ -110,6 +127,19 @@ public class VisibilityAdapterTest {
                 .isNotVisibleTo(Gunmetal.class)
                 .isVisibleTo(new VisibilityTestBean() { }.getClass())
                 .isNotVisibleTo(new VisibilityTestBean.PublicClass() { }.getClass());
+    }
+
+    @Test
+    public void testGetClassAdapter_local() {
+
+        class Local { }
+
+        assertClass(Local.class)
+                .isNotPublic()
+                .isNotVisibleTo(VisibilityTestBean2.getPrivate())
+                .isNotVisibleTo(VisibilityAdapter.class)
+                .isNotVisibleTo(Gunmetal.class)
+                .isNotVisibleTo(getClass());
     }
 
     @Test
