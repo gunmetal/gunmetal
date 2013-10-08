@@ -17,3 +17,6 @@ The initial release of Gunmetal to the Maven Central Repo is some time in 2014.
 
 Where's the user guide and javadoc??  It's coming, just give us a little time.  The API isn't yet in stone.
 
+Currently the API is being finalized after spending most of the time so far on internal performance and 
+capabilities. There isn't much explanation of anything, but some of the ideas being actively developed can 
+be found here for the interested:  http://github.com/overengineer/gunmetal/wiki/API-Design-Scratch-Pad
