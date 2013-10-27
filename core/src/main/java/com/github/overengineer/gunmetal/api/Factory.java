@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.metadata;
+package com.github.overengineer.gunmetal.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -9,10 +9,8 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target({ ElementType.PARAMETER, ElementType.FIELD, ElementType.TYPE, ElementType.METHOD })
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Qualifier
-public @interface Named {
-    String value();
+public @interface Factory {
 }

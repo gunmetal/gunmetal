@@ -16,7 +16,7 @@ public interface VisibilityAdapter {
 
         PRIVATE {
 
-            Class<?> getHighestEnclosingClose(Class<?> cls) {
+            Class<?> getHighestEnclosingClass(Class<?> cls) {
 
                 Class<?> enclosingClass = cls.getEnclosingClass();
 
@@ -24,14 +24,14 @@ public interface VisibilityAdapter {
                     return cls;
                 }
 
-                return getHighestEnclosingClose(enclosingClass);
+                return getHighestEnclosingClass(enclosingClass);
 
             }
 
             @Override
             public VisibilityAdapter newVisibilityAdapter(final Class<?> classOfResourceBeingRequested) {
 
-                final Class<?> resourceEnclosingClass = getHighestEnclosingClose(classOfResourceBeingRequested);
+                final Class<?> resourceEnclosingClass = getHighestEnclosingClass(classOfResourceBeingRequested);
 
                 return new VisibilityAdapter() {
 
@@ -43,7 +43,7 @@ public interface VisibilityAdapter {
                     @Override
                     public boolean isVisibleTo(final Class<?> classOfResourceRequestingAccess) {
                         return classOfResourceBeingRequested == classOfResourceRequestingAccess
-                                || resourceEnclosingClass == getHighestEnclosingClose(classOfResourceRequestingAccess);
+                                || resourceEnclosingClass == getHighestEnclosingClass(classOfResourceRequestingAccess);
                     }
 
                 };
