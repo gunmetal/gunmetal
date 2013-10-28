@@ -112,6 +112,13 @@ public interface VisibilityAdapter {
 
                 };
             }
+        },
+
+        UNDEFINED {
+            @Override
+            public VisibilityAdapter newVisibilityAdapter(Class<?> cls) {
+                throw new UnsupportedOperationException("AccessLevel.UNDEFINED should be used only as a placeholder");
+            }
         };
 
         static AccessLevel get(int modifiers) {
