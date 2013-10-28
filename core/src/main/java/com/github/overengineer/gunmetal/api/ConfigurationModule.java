@@ -15,11 +15,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface ApplicationModule {
-    Option[] options() default {};
+public @interface ConfigurationModule {
+    Option[] requiresOptions() default {};
     Class<? extends Aspect>[] aspects() default {};
     Class<? extends ComponentPostProcessor>[] postProcessors() default {};
     ScopeHandler[] scopes() default {};
     Class<?>[] modules() default {};
-    Class<?>[] configurationModules() default {};
 }
