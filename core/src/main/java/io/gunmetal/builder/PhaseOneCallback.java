@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.builder;
+package io.gunmetal.builder;
 
 import com.github.overengineer.gunmetal.InternalProvider;
 

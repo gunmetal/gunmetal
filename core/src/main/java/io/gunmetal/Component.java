@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.api;
+package io.gunmetal;
 
 import com.github.overengineer.gunmetal.metadata.Scope;
 import com.github.overengineer.gunmetal.util.VisibilityAdapter;
@@ -20,5 +20,5 @@ public @interface Component {
     Class<?> type();
     Class<? extends Annotation> scope() default Scope.class; //undefined scope
     VisibilityAdapter.AccessLevel access() default VisibilityAdapter.AccessLevel.UNDEFINED;
-    Class<?>[] targets() default {};
+    Class<?>[] targets() default { };
 }

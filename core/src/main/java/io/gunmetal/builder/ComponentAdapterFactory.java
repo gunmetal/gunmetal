@@ -1,8 +1,8 @@
-package com.github.overengineer.gunmetal.builder;
+package io.gunmetal.builder;
 
-import com.github.overengineer.gunmetal.adapter.ComponentAdapter;
-import com.github.overengineer.gunmetal.adapter.ModuleAdapter;
-import com.github.overengineer.gunmetal.adapter.QualifierAdapter;
+import io.gunmetal.adapter.ComponentAdapter;
+import io.gunmetal.adapter.ModuleAdapter;
+import io.gunmetal.adapter.QualifierAdapter;
 import com.github.overengineer.gunmetal.scope.Scope;
 
 import java.lang.reflect.Method;

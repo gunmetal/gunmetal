@@ -1,6 +1,6 @@
-package com.github.overengineer.gunmetal.builder;
+package io.gunmetal.builder;
 
-import com.github.overengineer.gunmetal.adapter.ModuleAdapter;
+import io.gunmetal.adapter.ModuleAdapter;
 
 /**
  * @author rees.byars

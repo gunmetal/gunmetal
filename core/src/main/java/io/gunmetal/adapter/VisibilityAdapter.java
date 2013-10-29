@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.adapter;
+package io.gunmetal.adapter;
 
 /**
  * @author rees.byars

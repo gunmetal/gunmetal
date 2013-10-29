@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.adapter;
+package io.gunmetal.adapter;
 
 import com.github.overengineer.gunmetal.InternalProvider;
 import com.github.overengineer.gunmetal.ResolutionContext;

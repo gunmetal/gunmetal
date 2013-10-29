@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.api;
+package io.gunmetal;
 
 import com.github.overengineer.gunmetal.key.Dependency;
 

@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.api;
+package io.gunmetal;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -12,7 +12,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Module {
-    Component[] components() default {};
-    Class[] dependsOn() default {};
+public @interface Factory {
+    Class<?> type();
 }

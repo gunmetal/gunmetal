@@ -1,4 +1,4 @@
-package com.github.overengineer.gunmetal.adapter;
+package io.gunmetal.adapter;
 
 import java.util.Arrays;
 
@@ -13,6 +13,7 @@ public interface QualifierAdapter {
         public static QualifierAdapter create(final Object[] qualifiers) {
             Arrays.sort(qualifiers);
             return new QualifierAdapter() {
+                int hashCode = Arrays.hashCode(qualifiers);
                 @Override
                 public Object[] getQualifiers() {
                     return qualifiers;
@@ -20,6 +21,10 @@ public interface QualifierAdapter {
                 @Override
                 public boolean equals(Object o) {
                     return o instanceof QualifierAdapter && Arrays.equals(((QualifierAdapter) o).getQualifiers(), qualifiers);
+                }
+                @Override
+                public int hashCode() {
+                    return hashCode;
                 }
             };
         }

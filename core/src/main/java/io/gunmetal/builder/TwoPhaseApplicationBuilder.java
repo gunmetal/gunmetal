@@ -1,6 +1,6 @@
-package com.github.overengineer.gunmetal.builder;
+package io.gunmetal.builder;
 
-import com.github.overengineer.gunmetal.api.ApplicationContainer;
+import io.gunmetal.ApplicationContainer;
 
 /**
  * @author rees.byars
