@@ -8,6 +8,8 @@ import java.util.Map;
  */
 public interface ResolutionContext {
 
+    // TODO change to DependencyRequest
+
     <T> ComponentStrategyContext<T> getStrategyContext(ComponentStrategy<T> strategy);
 
     interface States  {
