@@ -1,11 +1,11 @@
-package io.gunmetal.adapter;
+package io.gunmetal.builder;
 
 import java.util.Arrays;
 
 /**
  * @author rees.byars
  */
-public interface QualifierAdapter {
+interface QualifierAdapter {
 
     Object[] getQualifiers();
 

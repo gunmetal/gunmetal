@@ -1,7 +1,5 @@
 package io.gunmetal.builder;
 
-import io.gunmetal.adapter.ModuleAdapter;
-
 /**
  * @author rees.byars
  */
@@ -14,7 +12,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
     }
 
     @Override
-    public ModuleAdapter build(Class<?> module) {
+    public ModuleAdapter build(Class<?> module, InternalProvider internalProvider) {
         return null;
     }
 
