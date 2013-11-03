@@ -7,49 +7,49 @@ import java.lang.reflect.Method;
 /**
  * @author rees.byars
  */
-interface VisibilityAdapter<T> {
+interface AccessFilter<T> {
 
-    boolean isVisibleTo(T target);
+    boolean isAccessibleFrom(T target);
 
     class Factory {
 
-        private interface ClassVisibilityAdapter extends VisibilityAdapter<Class<?>> {
+        private interface ClassAccessFilter extends AccessFilter<Class<?>> {
             boolean isPublic();
         }
 
-        static VisibilityAdapter<Class<?>> getVisibilityAdapter(Method method) {
+        static AccessFilter<Class<?>> getAccessFilter(Method method) {
 
             Class<?> declaringClass = method.getDeclaringClass();
 
-            final ClassVisibilityAdapter classLevelAdapter = getAdapter(declaringClass);
+            final ClassAccessFilter classLevelFilter = getFilter(declaringClass);
 
-            final ClassVisibilityAdapter methodLevelAdapter =
-                    getClassVisibilityAdapterForAccessLevel(AccessLevel
+            final ClassAccessFilter methodLevelFilter =
+                    getClassAccessFilterForAccessLevel(AccessLevel
                             .get(method.getModifiers()), declaringClass);
 
-            if (classLevelAdapter.isPublic() && methodLevelAdapter.isPublic()) {
-                return getClassVisibilityAdapterForAccessLevel(AccessLevel.PUBLIC, declaringClass);
+            if (classLevelFilter.isPublic() && methodLevelFilter.isPublic()) {
+                return getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, declaringClass);
             }
 
-            return new VisibilityAdapter<Class<?>>() {
+            return new AccessFilter<Class<?>>() {
 
                 @Override
-                public boolean isVisibleTo(Class<?> cls) {
-                    return classLevelAdapter.isVisibleTo(cls) && methodLevelAdapter.isVisibleTo(cls);
+                public boolean isAccessibleFrom(Class<?> cls) {
+                    return classLevelFilter.isAccessibleFrom(cls) && methodLevelFilter.isAccessibleFrom(cls);
                 }
 
             };
 
         }
 
-        static VisibilityAdapter<Class<?>> getVisibilityAdapter(Class<?> cls) {
-            return getAdapter(cls);
+        static AccessFilter<Class<?>> getAccessFilter(Class<?> cls) {
+            return getFilter(cls);
         }
 
-        private static ClassVisibilityAdapter getAdapter(Class<?> cls) {
+        private static ClassAccessFilter getFilter(Class<?> cls) {
 
             if (cls.isLocalClass()) {
-                return new ClassVisibilityAdapter() {
+                return new ClassAccessFilter() {
 
                     @Override
                     public boolean isPublic() {
@@ -57,7 +57,7 @@ interface VisibilityAdapter<T> {
                     }
 
                     @Override
-                    public boolean isVisibleTo(Class<?> cls) {
+                    public boolean isAccessibleFrom(Class<?> cls) {
                         return false;
                     }
                 };
@@ -66,19 +66,19 @@ interface VisibilityAdapter<T> {
             Class<?> enclosingClass = cls.getEnclosingClass();
 
             if (enclosingClass == null) {
-                return getClassVisibilityAdapterForAccessLevel(AccessLevel.get(cls.getModifiers()), cls);
+                return getClassAccessFilterForAccessLevel(AccessLevel.get(cls.getModifiers()), cls);
             }
 
-            final ClassVisibilityAdapter outerAdapter = getAdapter(enclosingClass);
+            final ClassAccessFilter outerFilter = getFilter(enclosingClass);
 
-            final ClassVisibilityAdapter innerAdapter =
-                    getClassVisibilityAdapterForAccessLevel(AccessLevel.get(cls.getModifiers()), enclosingClass);
+            final ClassAccessFilter innerFilter =
+                    getClassAccessFilterForAccessLevel(AccessLevel.get(cls.getModifiers()), enclosingClass);
 
-            if (outerAdapter.isPublic() && innerAdapter.isPublic()) {
-                return getClassVisibilityAdapterForAccessLevel(AccessLevel.PUBLIC, cls);
+            if (outerFilter.isPublic() && innerFilter.isPublic()) {
+                return getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, cls);
             }
 
-            return new ClassVisibilityAdapter() {
+            return new ClassAccessFilter() {
 
                 @Override
                 public boolean isPublic() {
@@ -86,14 +86,14 @@ interface VisibilityAdapter<T> {
                 }
 
                 @Override
-                public boolean isVisibleTo(Class<?> cls) {
-                    return outerAdapter.isVisibleTo(cls) && innerAdapter.isVisibleTo(cls);
+                public boolean isAccessibleFrom(Class<?> cls) {
+                    return outerFilter.isAccessibleFrom(cls) && innerFilter.isAccessibleFrom(cls);
                 }
             };
 
         }
 
-        static ClassVisibilityAdapter getClassVisibilityAdapterForAccessLevel(AccessLevel accessLevel, final Class<?> classOfResourceBeingRequested) {
+        private static ClassAccessFilter getClassAccessFilterForAccessLevel(AccessLevel accessLevel, final Class<?> classOfResourceBeingRequested) {
 
             switch (accessLevel) {
 
@@ -117,7 +117,7 @@ interface VisibilityAdapter<T> {
 
                     final Class<?> resourceEnclosingClass = new EnclosingUtil().getHighestEnclosingClass(classOfResourceBeingRequested);
 
-                    return new ClassVisibilityAdapter() {
+                    return new ClassAccessFilter() {
 
                         @Override
                         public boolean isPublic() {
@@ -125,7 +125,7 @@ interface VisibilityAdapter<T> {
                         }
 
                         @Override
-                        public boolean isVisibleTo(final Class<?> classOfResourceRequestingAccess) {
+                        public boolean isAccessibleFrom(final Class<?> classOfResourceRequestingAccess) {
                             return classOfResourceBeingRequested == classOfResourceRequestingAccess
                                     || resourceEnclosingClass ==new EnclosingUtil().getHighestEnclosingClass(classOfResourceRequestingAccess);
                         }
@@ -137,7 +137,7 @@ interface VisibilityAdapter<T> {
 
                     final Package packageOfResourceBeingRequested = classOfResourceBeingRequested.getPackage();
 
-                    return new ClassVisibilityAdapter() {
+                    return new ClassAccessFilter() {
 
                         @Override
                         public boolean isPublic() {
@@ -145,7 +145,7 @@ interface VisibilityAdapter<T> {
                         }
 
                         @Override
-                        public boolean isVisibleTo(Class<?> classOfResourceRequestingAccess) {
+                        public boolean isAccessibleFrom(Class<?> classOfResourceRequestingAccess) {
                             return (packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage())
                                     || classOfResourceBeingRequested.isAssignableFrom(classOfResourceRequestingAccess);
                         }
@@ -158,7 +158,7 @@ interface VisibilityAdapter<T> {
 
                     final Package packageOfResourceBeingRequested = classOfResourceBeingRequested.getPackage();
 
-                    return new ClassVisibilityAdapter() {
+                    return new ClassAccessFilter() {
 
                         @Override
                         public boolean isPublic() {
@@ -166,7 +166,7 @@ interface VisibilityAdapter<T> {
                         }
 
                         @Override
-                        public boolean isVisibleTo(Class<?> classOfResourceRequestingAccess) {
+                        public boolean isAccessibleFrom(Class<?> classOfResourceRequestingAccess) {
                             return packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage();
                         }
 
@@ -176,7 +176,7 @@ interface VisibilityAdapter<T> {
 
                 case PUBLIC: {
 
-                    return new ClassVisibilityAdapter() {
+                    return new ClassAccessFilter() {
 
                         @Override
                         public boolean isPublic() {
@@ -184,7 +184,7 @@ interface VisibilityAdapter<T> {
                         }
 
                         @Override
-                        public boolean isVisibleTo(Class<?> classOfResourceRequestingAccess) {
+                        public boolean isAccessibleFrom(Class<?> classOfResourceRequestingAccess) {
                             return true;
                         }
 

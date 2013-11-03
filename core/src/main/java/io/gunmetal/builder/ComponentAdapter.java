@@ -5,7 +5,7 @@ import com.github.overengineer.gunmetal.scope.Scope;
 /**
  * @author rees.byars
  */
-interface ComponentAdapter<T> extends VisibilityAdapter<ComponentAdapter>, ProvisionStrategy<T>, QualifierAdapter {
+interface ComponentAdapter<T> extends AccessFilter<ComponentAdapter>, ProvisionStrategy<T>, QualifierAdapter {
 
     // TODO instead of making visibility adapter accessible, add Dependency to ResolutionContext,
     // TODO and add requesting ComponentAdapter to Dependency?
