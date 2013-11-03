@@ -15,4 +15,6 @@ import java.lang.annotation.Target;
 public @interface Module {
     Component[] components() default { };
     Class[] dependsOn() default { };
+    Class<? extends AccessRestrictions.NotAccessibleFrom> notAccessibleFrom() default AccessRestrictions.NotAccessibleFrom.class;
+    Class<? extends AccessRestrictions.OnlyAccessibleFrom> onlyAccessibleFrom() default AccessRestrictions.OnlyAccessibleFrom.class;
 }
