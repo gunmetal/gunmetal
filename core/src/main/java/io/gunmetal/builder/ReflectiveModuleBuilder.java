@@ -34,9 +34,11 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
         final AccessFilter<Class<?>> moduleClassAccessFilter =
                 AccessFilter.Factory.getAccessFilter(moduleClass);
 
-        return new ModuleAdapter() {
+        Object[] qualifiers = ReflectionUtils.getQualifiers(moduleClass, metadataAdapter.getQualifierAnnotation());
 
-            final Object[] qualifiers = ReflectionUtils.getQualifiers(moduleClass, metadataAdapter.getQualifierAnnotation());
+        final CompositeQualifier compositeQualifier = CompositeQualifier.Factory.create(qualifiers);
+
+        return new ModuleAdapter() {
 
             @Override
             public Class<?> getModuleClass() {
@@ -50,8 +52,8 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             }
 
             @Override
-            public Object[] getQualifiers() {
-                return qualifiers;
+            public CompositeQualifier getCompositeQualifier() {
+                return compositeQualifier;
             }
 
             @Override
@@ -104,14 +106,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                         return false;
                     }
                 }
-                for (Object targetQualifier : target.getQualifiers()) {
-                    for (Object blackListQualifier : blackListQualifiers) {
-                        if (targetQualifier.equals(blackListQualifier)) {
-                            return false;
-                        }
-                    }
-                }
-                return true;
+                return !target.getCompositeQualifier().intersects(blackListQualifiers);
             }
         };
         
@@ -156,14 +151,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                         return true;
                     }
                 }
-                for (Object targetQualifier : target.getQualifiers()) {
-                    for (Object whiteListQualifier : whiteListQualifiers) {
-                        if (targetQualifier.equals(whiteListQualifier)) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
+                return target.getCompositeQualifier().intersects(whiteListQualifiers);
             }
         };
 

@@ -127,7 +127,7 @@ interface AccessFilter<T> {
                         @Override
                         public boolean isAccessibleFrom(final Class<?> classOfResourceRequestingAccess) {
                             return classOfResourceBeingRequested == classOfResourceRequestingAccess
-                                    || resourceEnclosingClass ==new EnclosingUtil().getHighestEnclosingClass(classOfResourceRequestingAccess);
+                                    || resourceEnclosingClass == new EnclosingUtil().getHighestEnclosingClass(classOfResourceRequestingAccess);
                         }
 
                     };
