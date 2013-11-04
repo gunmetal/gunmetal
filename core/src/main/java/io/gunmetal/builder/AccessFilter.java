@@ -9,6 +9,10 @@ import java.lang.reflect.Method;
  */
 interface AccessFilter<T> {
 
+    // TODO turn this into an actual filter that is applied to ComponentAdapter.get ?
+    // TODO make the filter return a report with a boolean and an error explanation in case of access failure ?
+    // TODO then the
+
     boolean isAccessibleFrom(T target);
 
     class Factory {
@@ -21,7 +25,8 @@ interface AccessFilter<T> {
 
             Class<?> declaringClass = method.getDeclaringClass();
 
-            final ClassAccessFilter classLevelFilter = getFilter(declaringClass);
+            final ClassAccessFilter classLevelFilter =
+                    getFilter(AccessLevel.get(declaringClass.getModifiers()), declaringClass);
 
             final ClassAccessFilter methodLevelFilter =
                     getClassAccessFilterForAccessLevel(AccessLevel
@@ -43,10 +48,14 @@ interface AccessFilter<T> {
         }
 
         static AccessFilter<Class<?>> getAccessFilter(Class<?> cls) {
-            return getFilter(cls);
+            return getFilter(AccessLevel.get(cls.getModifiers()), cls);
         }
 
-        private static ClassAccessFilter getFilter(Class<?> cls) {
+        static AccessFilter<Class<?>> getAccessFilter(AccessLevel accessLevel, Class<?> cls) {
+            return getFilter(accessLevel, cls);
+        }
+
+        private static ClassAccessFilter getFilter(AccessLevel clsAccessLevel, Class<?> cls) {
 
             if (cls.isLocalClass()) {
                 return new ClassAccessFilter() {
@@ -66,13 +75,13 @@ interface AccessFilter<T> {
             Class<?> enclosingClass = cls.getEnclosingClass();
 
             if (enclosingClass == null) {
-                return getClassAccessFilterForAccessLevel(AccessLevel.get(cls.getModifiers()), cls);
+                return getClassAccessFilterForAccessLevel(clsAccessLevel, cls);
             }
 
-            final ClassAccessFilter outerFilter = getFilter(enclosingClass);
+            final ClassAccessFilter outerFilter = getFilter(AccessLevel.get(enclosingClass.getModifiers()), enclosingClass);
 
             final ClassAccessFilter innerFilter =
-                    getClassAccessFilterForAccessLevel(AccessLevel.get(cls.getModifiers()), enclosingClass);
+                    getClassAccessFilterForAccessLevel(clsAccessLevel, enclosingClass);
 
             if (outerFilter.isPublic() && innerFilter.isPublic()) {
                 return getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, cls);

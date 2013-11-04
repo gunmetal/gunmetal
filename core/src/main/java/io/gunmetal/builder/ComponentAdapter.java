@@ -5,13 +5,11 @@ import com.github.overengineer.gunmetal.scope.Scope;
 /**
  * @author rees.byars
  */
-interface ComponentAdapter<T> extends AccessFilter<ComponentAdapter>, ProvisionStrategy<T> {
-
-    // TODO instead of making visibility adapter accessible, add Dependency to ResolutionContext,
-    // TODO and add requesting ComponentAdapter to Dependency?
+interface ComponentAdapter<T> extends ProvisionStrategy<T> {
 
     Class<T> getComponentClass();
-    ModuleAdapter getModuleAdapter();
+
     Scope getScope();
+
     CompositeQualifier getCompositeQualifier();
 }

@@ -1,8 +1,10 @@
 package io.gunmetal.builder;
 
+import java.util.List;
+
 /**
  * @author rees.byars
  */
 interface ModuleBuilder {
-    ModuleAdapter build(Class<?> module, InternalProvider internalProvider);
+    List<AccessRestrictedComponentAdapter<?>> build(Class<?> module, InternalProvider internalProvider);
 }
