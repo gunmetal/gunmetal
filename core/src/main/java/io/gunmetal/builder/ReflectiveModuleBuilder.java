@@ -4,8 +4,12 @@ import com.github.overengineer.gunmetal.ResolutionContext;
 import com.github.overengineer.gunmetal.scope.Scope;
 import io.gunmetal.AccessLevel;
 import io.gunmetal.AccessRestrictions;
+import io.gunmetal.Component;
 import io.gunmetal.Module;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -36,10 +40,6 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         AccessLevel moduleAccessLevel = moduleAnnotation.access();
 
-        if (moduleAccessLevel == AccessLevel.UNDEFINED) {
-            moduleAccessLevel = AccessLevel.get(moduleClass.getModifiers());
-        }
-
         final AccessFilter<Class<?>> moduleClassAccessFilter =
                 AccessFilter.Factory.getAccessFilter(moduleAccessLevel, moduleClass);
 
@@ -68,10 +68,41 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             }
         };
 
-        // TODO get @Component and provider methods, iterate each, call ComponentAdapterFactory,
-        // TODO create class/method access filters, decorate, add to list, and return list
+        List<AccessRestrictedComponentAdapter<?>> componentAdapters = new LinkedList<AccessRestrictedComponentAdapter<?>>();
 
-        return null;
+        for (Component component : moduleAnnotation.components()) {
+
+            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(component, internalProvider);
+
+            AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(component.access(), component.type());
+
+            componentAdapters.add(decorate(componentAdapter, moduleAdapter, accessFilter));
+
+        }
+
+        for (Method method : moduleClass.getMethods()) {
+
+            int modifiers = method.getModifiers();
+
+            // TODO exception messages
+
+            if (!Modifier.isStatic(modifiers)) {
+                throw new IllegalArgumentException("TODO");
+            }
+
+            if (method.getReturnType().equals(Void.TYPE)) {
+                throw new IllegalArgumentException("TODO");
+            }
+
+            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(method, internalProvider);
+
+            AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
+
+            componentAdapters.add(decorate(componentAdapter, moduleAdapter, accessFilter));
+
+        }
+
+        return componentAdapters;
         
     }
     

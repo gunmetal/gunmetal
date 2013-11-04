@@ -52,6 +52,9 @@ interface AccessFilter<T> {
         }
 
         static AccessFilter<Class<?>> getAccessFilter(AccessLevel accessLevel, Class<?> cls) {
+            if (accessLevel == AccessLevel.UNDEFINED) {
+                return getAccessFilter(cls);
+            }
             return getFilter(accessLevel, cls);
         }
 
