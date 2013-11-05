@@ -87,14 +87,14 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
             int modifiers = method.getModifiers();
 
-            // TODO exception messages
-
             if (!Modifier.isStatic(modifiers)) {
-                throw new IllegalArgumentException("TODO");
+                throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
+                        + method.getName() +"] in module [" + moduleClass.getName() + "] is not static.");
             }
 
             if (method.getReturnType().equals(Void.TYPE)) {
-                throw new IllegalArgumentException("TODO");
+                throw new IllegalArgumentException("A module's provider methods must have a return type.  The method ["
+                        + method.getName() +"] in module [" + moduleClass.getName() + "] has a void return type.");
             }
 
             ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(method, internalProvider);
