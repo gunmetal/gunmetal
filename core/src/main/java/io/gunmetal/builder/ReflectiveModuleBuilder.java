@@ -38,7 +38,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         final AccessFilter<AccessRestrictedComponentAdapter<?>> whiteListFilter = getWhiteListFilter(moduleAnnotation);
 
-        final AccessFilter<Class<?>> dependsOnFilter = getDependsOnFilter(moduleAnnotation);
+        final AccessFilter<Class<?>> dependsOnFilter = getDependsOnFilter(moduleClass, moduleAnnotation);
 
         AccessLevel moduleAccessLevel = moduleAnnotation.access();
 
@@ -62,10 +62,14 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             }
 
             @Override
+            public boolean dependsOn(Class<?> otherModule) {
+                return dependsOnFilter.isAccessibleFrom(otherModule);
+            }
+
+            @Override
             public boolean isAccessibleFrom(AccessRestrictedComponentAdapter<?> target) {
                 return moduleClassAccessFilter.isAccessibleFrom(target.getModuleAdapter().getModuleClass()) &&
-                        // TODO moduleClassAccessFilter.isAccessibleFrom(target.getComponentClass()) &&
-                        dependsOnFilter.isAccessibleFrom(target.getModuleAdapter().getModuleClass()) &&
+                        target.getModuleAdapter().dependsOn(moduleClass) &&
                         blackListFilter.isAccessibleFrom(target) &&
                         whiteListFilter.isAccessibleFrom(target);
             }
@@ -199,7 +203,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
     }
 
-    private AccessFilter<Class<?>> getDependsOnFilter(Module moduleAnnotation) {
+    private AccessFilter<Class<?>> getDependsOnFilter(final Class<?> moduleClass, Module moduleAnnotation) {
 
         final Class<?>[] dependencies = moduleAnnotation.dependsOn();
 
@@ -223,14 +227,18 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                         return true;
                     }
                 }
-                return false;
+                throw new IllegalAccessError("The module [" + moduleClass.getName() +
+                        "] does not have access to the module [" + targetModuleClass.getName() + "].");
             }
 
         };
 
     }
 
-    private <T> AccessRestrictedComponentAdapter<T> decorate(final ComponentAdapter<T> componentAdapter, final AccessRestrictedComponentAdapter.ModuleAdapter moduleAdapter, final AccessFilter<Class<?>> componentAccessFilter) {
+    private <T> AccessRestrictedComponentAdapter<T> decorate(final ComponentAdapter<T> componentAdapter,
+                                                             final AccessRestrictedComponentAdapter.ModuleAdapter moduleAdapter,
+                                                             final AccessFilter<Class<?>> componentAccessFilter) {
+
         return new AccessRestrictedComponentAdapter<T>() {
 
             @Override
@@ -262,7 +270,9 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             public CompositeQualifier getCompositeQualifier() {
                 return componentAdapter.getCompositeQualifier();
             }
+
         };
+
     }
 
 }

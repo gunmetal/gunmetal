@@ -16,6 +16,8 @@ interface AccessRestrictedComponentAdapter<T> extends AccessFilter<AccessRestric
 
         CompositeQualifier getCompositeQualifier();
 
+        boolean dependsOn(Class<?> otherModule);
+
     }
 
 }
