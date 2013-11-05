@@ -38,7 +38,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         final AccessFilter<AccessRestrictedComponentAdapter<?>> whiteListFilter = getWhiteListFilter(moduleAnnotation);
 
-        final AccessFilter<AccessRestrictedComponentAdapter<?>> dependsOnFilter = getDependsOnFilter(moduleAnnotation);
+        final AccessFilter<Class<?>> dependsOnFilter = getDependsOnFilter(moduleAnnotation);
 
         AccessLevel moduleAccessLevel = moduleAnnotation.access();
 
@@ -65,7 +65,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             public boolean isAccessibleFrom(AccessRestrictedComponentAdapter<?> target) {
                 return moduleClassAccessFilter.isAccessibleFrom(target.getModuleAdapter().getModuleClass()) &&
                         // TODO moduleClassAccessFilter.isAccessibleFrom(target.getComponentClass()) &&
-                        dependsOnFilter.isAccessibleFrom(target) &&
+                        dependsOnFilter.isAccessibleFrom(target.getModuleAdapter().getModuleClass()) &&
                         blackListFilter.isAccessibleFrom(target) &&
                         whiteListFilter.isAccessibleFrom(target);
             }
@@ -199,31 +199,33 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
     }
 
-    private AccessFilter<AccessRestrictedComponentAdapter<?>> getDependsOnFilter(Module moduleAnnotation) {
+    private AccessFilter<Class<?>> getDependsOnFilter(Module moduleAnnotation) {
 
         final Class<?>[] dependencies = moduleAnnotation.dependsOn();
 
         if (dependencies.length == 0) {
 
-            return new AccessFilter<AccessRestrictedComponentAdapter<?>>() {
+            return new AccessFilter<Class<?>>() {
                 @Override
-                public boolean isAccessibleFrom(AccessRestrictedComponentAdapter<?> target) {
+                public boolean isAccessibleFrom(Class<?> targetModuleClass) {
                     return true;
                 }
             };
 
         }
 
-        return new AccessFilter<AccessRestrictedComponentAdapter<?>>() {
+        return new AccessFilter<Class<?>>() {
+
             @Override
-            public boolean isAccessibleFrom(AccessRestrictedComponentAdapter<?> target) {
+            public boolean isAccessibleFrom(Class<?> targetModuleClass) {
                 for (Class<?> dependency : dependencies) {
-                    if (target.getModuleAdapter().getModuleClass() == dependency) {
+                    if (targetModuleClass == dependency) {
                         return true;
                     }
                 }
                 return false;
             }
+
         };
 
     }
