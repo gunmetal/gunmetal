@@ -16,14 +16,17 @@ class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
     }
 
     @Override
-    public <T> ComponentAdapter<T> create(Component component, InternalProvider internalProvider) {
+    public <T> ComponentAdapter<T> create(Component component,
+                                          AccessFilter<DependencyRequest> accessFilter,
+                                          InternalProvider internalProvider) {
         return null;
     }
 
     @Override
-    public <T> ComponentAdapter<T> create(Method providerMethod, InternalProvider internalProvider) {
+    public <T> ComponentAdapter<T> create(Method providerMethod,
+                                          AccessFilter<DependencyRequest> accessFilter,
+                                          InternalProvider internalProvider) {
         Injector.StaticMethod injector = injectorFactory.create(providerMethod, internalProvider);
         return null;
     }
-
 }

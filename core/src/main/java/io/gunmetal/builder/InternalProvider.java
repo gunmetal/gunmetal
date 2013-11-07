@@ -1,13 +1,11 @@
 package io.gunmetal.builder;
 
-import com.github.overengineer.gunmetal.key.Dependency;
-
 /**
  * @author rees.byars
  */
 interface InternalProvider {
 
-    <T> ComponentAdapter<T> getComponentAdapter(Dependency<T> dependency);
+    <T> ComponentAdapter<T> getComponentAdapter(DependencyRequest dependencyRequest);
 
     void register(Callback callback, BuildPhase phase);
 

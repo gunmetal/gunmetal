@@ -9,8 +9,12 @@ import java.lang.reflect.Method;
  */
 interface ComponentAdapterFactory {
 
-    <T> ComponentAdapter<T> create(Component component, InternalProvider internalProvider);
+    <T> ComponentAdapter<T> create(Component component,
+                                   AccessFilter<DependencyRequest> accessFilter,
+                                   InternalProvider internalProvider);
 
-    <T> ComponentAdapter<T> create(Method providerMethod, InternalProvider internalProvider);
+    <T> ComponentAdapter<T> create(Method providerMethod,
+                                   AccessFilter<DependencyRequest> accessFilter,
+                                   InternalProvider internalProvider);
 
 }

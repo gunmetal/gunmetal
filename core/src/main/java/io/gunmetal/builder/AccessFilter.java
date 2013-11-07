@@ -9,11 +9,7 @@ import java.lang.reflect.Method;
  */
 interface AccessFilter<T> {
 
-    // TODO turn this into an actual filter that is applied to ComponentAdapter.get ?
-    // TODO make the filter return a report with a boolean and an error explanation in case of access failure ?
-    // TODO then the
-
-    boolean isAccessibleFrom(T target);
+    boolean isAccessibleTo(T target);
 
     class Factory {
 
@@ -39,8 +35,8 @@ interface AccessFilter<T> {
             return new AccessFilter<Class<?>>() {
 
                 @Override
-                public boolean isAccessibleFrom(Class<?> cls) {
-                    return classLevelFilter.isAccessibleFrom(cls) && methodLevelFilter.isAccessibleFrom(cls);
+                public boolean isAccessibleTo(Class<?> cls) {
+                    return classLevelFilter.isAccessibleTo(cls) && methodLevelFilter.isAccessibleTo(cls);
                 }
 
             };
@@ -69,7 +65,7 @@ interface AccessFilter<T> {
                     }
 
                     @Override
-                    public boolean isAccessibleFrom(Class<?> cls) {
+                    public boolean isAccessibleTo(Class<?> cls) {
                         return false;
                     }
                 };
@@ -98,8 +94,8 @@ interface AccessFilter<T> {
                 }
 
                 @Override
-                public boolean isAccessibleFrom(Class<?> cls) {
-                    return outerFilter.isAccessibleFrom(cls) && innerFilter.isAccessibleFrom(cls);
+                public boolean isAccessibleTo(Class<?> cls) {
+                    return outerFilter.isAccessibleTo(cls) && innerFilter.isAccessibleTo(cls);
                 }
             };
 
@@ -137,7 +133,7 @@ interface AccessFilter<T> {
                         }
 
                         @Override
-                        public boolean isAccessibleFrom(final Class<?> classOfResourceRequestingAccess) {
+                        public boolean isAccessibleTo(final Class<?> classOfResourceRequestingAccess) {
                             return classOfResourceBeingRequested == classOfResourceRequestingAccess
                                     || resourceEnclosingClass == new EnclosingUtil().getHighestEnclosingClass(classOfResourceRequestingAccess);
                         }
@@ -157,7 +153,7 @@ interface AccessFilter<T> {
                         }
 
                         @Override
-                        public boolean isAccessibleFrom(Class<?> classOfResourceRequestingAccess) {
+                        public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return (packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage())
                                     || classOfResourceBeingRequested.isAssignableFrom(classOfResourceRequestingAccess);
                         }
@@ -178,7 +174,7 @@ interface AccessFilter<T> {
                         }
 
                         @Override
-                        public boolean isAccessibleFrom(Class<?> classOfResourceRequestingAccess) {
+                        public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage();
                         }
 
@@ -196,7 +192,7 @@ interface AccessFilter<T> {
                         }
 
                         @Override
-                        public boolean isAccessibleFrom(Class<?> classOfResourceRequestingAccess) {
+                        public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return true;
                         }
 

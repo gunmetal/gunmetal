@@ -6,5 +6,5 @@ import java.util.List;
  * @author rees.byars
  */
 interface ModuleBuilder {
-    List<AccessRestrictedComponentAdapter<?>> build(Class<?> module, InternalProvider internalProvider);
+    List<ComponentAdapter<?>> build(Class<?> module, InternalProvider internalProvider);
 }
