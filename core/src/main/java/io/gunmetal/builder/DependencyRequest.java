@@ -10,7 +10,11 @@ import java.util.List;
  */
 interface DependencyRequest {
 
-    ComponentMetadata<?> getRequestSource();
+    Class<?> getSourceComponentClass();
+
+    CompositeQualifier getSourceQualifier();
+
+    ModuleAdapter getSourceModule();
 
     Dependency<?> getDependency();
 
@@ -18,17 +22,29 @@ interface DependencyRequest {
 
     DependencyRequest addError(String errorMessage);
 
-    class Factory {
+    final class Factory {
 
-        static DependencyRequest create(final ComponentAdapter<?> componentAdapter, final Dependency<?> dependency) {
+        private Factory() { }
+
+        static DependencyRequest create(final ComponentMetadata<?> componentMetadata, final Dependency<?> dependency) {
 
             return new DependencyRequest() {
 
                 List<String> errors;
 
                 @Override
-                public ComponentAdapter<?> getRequestSource() {
-                    return componentAdapter;
+                public Class<?> getSourceComponentClass() {
+                    return componentMetadata.getComponentClass();
+                }
+
+                @Override
+                public CompositeQualifier getSourceQualifier() {
+                    return componentMetadata.getCompositeQualifier();
+                }
+
+                @Override
+                public ModuleAdapter getSourceModule() {
+                    return componentMetadata.getModuleAdapter();
                 }
 
                 @Override

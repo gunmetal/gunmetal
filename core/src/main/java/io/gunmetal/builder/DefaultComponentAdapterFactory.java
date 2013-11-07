@@ -37,7 +37,7 @@ class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
 
         //component adapter
 
-        Injector.StaticMethod injector = injectorFactory.create(providerMethod, internalProvider);
+        //Injector.StaticMethod injector = injectorFactory.create(providerMethod, internalProvider);
         return null;
     }
 

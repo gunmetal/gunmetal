@@ -44,9 +44,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
         final AccessFilter<Class<?>> moduleClassAccessFilter =
                 AccessFilter.Factory.getAccessFilter(moduleAccessLevel, moduleClass);
 
-        Object[] qualifiers = ReflectionUtils.getQualifiers(moduleClass, metadataAdapter.getQualifierAnnotation());
-
-        final CompositeQualifier compositeQualifier = CompositeQualifier.Factory.create(qualifiers);
+        final CompositeQualifier compositeQualifier = CompositeQualifier.Factory.create(moduleClass, metadataAdapter.getQualifierAnnotation());
 
         final ModuleAdapter moduleAdapter = new ModuleAdapter() {
 
@@ -67,9 +65,8 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                ModuleAdapter requestSourceModule = dependencyRequest.getRequestSource().getModuleAdapter();
                 // we the single & because we want to process them all regardless if one fails
-                return moduleClassAccessFilter.isAccessibleTo(requestSourceModule.getModuleClass()) 
+                return moduleClassAccessFilter.isAccessibleTo(dependencyRequest.getSourceModule().getModuleClass())
                         & dependsOnFilter.isAccessibleTo(dependencyRequest)
                         & blackListFilter.isAccessibleTo(dependencyRequest)
                         & whiteListFilter.isAccessibleTo(dependencyRequest);
@@ -88,7 +85,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest) 
-                            && accessFilter.isAccessibleTo(dependencyRequest.getRequestSource().getComponentClass());
+                            && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
                 }
             }, internalProvider));
 
@@ -114,7 +111,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest) 
-                            && accessFilter.isAccessibleTo(dependencyRequest.getRequestSource().getComponentClass());
+                            && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
                 }
             }, internalProvider));
 
@@ -153,16 +150,15 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         }
 
-        final Object[] blackListQualifiers = 
-                ReflectionUtils.getQualifiers(blackListConfigClass, metadataAdapter.getQualifierAnnotation());
+        final CompositeQualifier blackListQualifier =
+                CompositeQualifier.Factory.create(blackListConfigClass, metadataAdapter.getQualifierAnnotation());
 
         return  new AccessFilter<DependencyRequest>() {
 
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                ComponentMetadata<?> requestSource = dependencyRequest.getRequestSource();
-                Class<?> requestingSourceModuleClass = requestSource.getModuleAdapter().getModuleClass();
+                Class<?> requestingSourceModuleClass = dependencyRequest.getSourceModule().getModuleClass();
 
                 for (Class<?> blackListClass : blackListClasses) {
 
@@ -177,7 +173,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
                 }
 
-                boolean qualifierMatch = requestSource.getCompositeQualifier().intersects(blackListQualifiers);
+                boolean qualifierMatch = dependencyRequest.getSourceQualifier().intersects(blackListQualifier);
 
                 if (qualifierMatch) {
                     dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName() +
@@ -221,15 +217,15 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         }
 
-        final Object[] whiteListQualifiers = ReflectionUtils.getQualifiers(whiteListConfigClass, metadataAdapter.getQualifierAnnotation());
+        final CompositeQualifier whiteListQualifier =
+                CompositeQualifier.Factory.create(whiteListConfigClass, metadataAdapter.getQualifierAnnotation());
 
         return  new AccessFilter<DependencyRequest>() {
 
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                ComponentMetadata<?> requestSource = dependencyRequest.getRequestSource();
-                Class<?> requestingSourceModuleClass = requestSource.getModuleAdapter().getModuleClass();
+                Class<?> requestingSourceModuleClass = dependencyRequest.getSourceModule().getModuleClass();
 
                 for (Class<?> whiteListClass : whiteListClasses) {
                     if (whiteListClass == requestingSourceModuleClass) {
@@ -237,7 +233,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                     }
                 }
 
-                boolean qualifierMatch = requestSource.getCompositeQualifier().intersects(whiteListQualifiers);
+                boolean qualifierMatch = dependencyRequest.getSourceQualifier().intersects(whiteListQualifier);
 
                 if (!qualifierMatch) {
 
@@ -261,7 +257,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                ModuleAdapter requestSourceModule = dependencyRequest.getRequestSource().getModuleAdapter();
+                ModuleAdapter requestSourceModule = dependencyRequest.getSourceModule();
 
                 for (Class<?> dependency : requestSourceModule.getReferencedModules()) {
                     if (moduleClass == dependency) {

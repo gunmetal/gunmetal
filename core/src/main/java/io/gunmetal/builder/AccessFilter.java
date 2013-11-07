@@ -11,7 +11,9 @@ interface AccessFilter<T> {
 
     boolean isAccessibleTo(T target);
 
-    class Factory {
+    final class Factory {
+
+        private Factory() { }
 
         private interface ClassAccessFilter extends AccessFilter<Class<?>> {
             boolean isPublic();
