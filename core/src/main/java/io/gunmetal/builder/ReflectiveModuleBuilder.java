@@ -26,7 +26,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
     @Override
     public List<ComponentAdapter<?>> build(final Class<?> moduleClass, InternalProvider internalProvider) {
 
-        Module moduleAnnotation = moduleClass.getAnnotation(Module.class);
+        final Module moduleAnnotation = moduleClass.getAnnotation(Module.class);
 
         if (moduleAnnotation == null) {
             throw new IllegalArgumentException("The module class [" + moduleClass.getName() 
@@ -37,7 +37,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         final AccessFilter<DependencyRequest> whiteListFilter = getWhiteListFilter(moduleAnnotation);
 
-        final AccessFilter<Class<?>> dependsOnFilter = getDependsOnFilter(moduleClass, moduleAnnotation);
+        final AccessFilter<DependencyRequest> dependsOnFilter = getDependsOnFilter(moduleClass);
 
         AccessLevel moduleAccessLevel = moduleAnnotation.access();
 
@@ -61,17 +61,18 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             }
 
             @Override
-            public boolean dependsOn(Class<?> otherModule) {
-                return dependsOnFilter.isAccessibleTo(otherModule);
+            public Class<?>[] getReferencedModules() {
+                return moduleAnnotation.dependsOn();
             }
 
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                 ModuleAdapter requestSourceModule = dependencyRequest.getRequestSource().getModuleAdapter();
+                // we the single & because we want to process them all regardless if one fails
                 return moduleClassAccessFilter.isAccessibleTo(requestSourceModule.getModuleClass()) 
-                        && requestSourceModule.dependsOn(moduleClass) 
-                        && blackListFilter.isAccessibleTo(dependencyRequest) 
-                        && whiteListFilter.isAccessibleTo(dependencyRequest);
+                        & dependsOnFilter.isAccessibleTo(dependencyRequest)
+                        & blackListFilter.isAccessibleTo(dependencyRequest)
+                        & whiteListFilter.isAccessibleTo(dependencyRequest);
             }
         };
 
@@ -217,32 +218,26 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
     }
 
-    private AccessFilter<Class<?>> getDependsOnFilter(final Class<?> moduleClass, Module moduleAnnotation) {
+    private AccessFilter<DependencyRequest> getDependsOnFilter(final Class<?> moduleClass) {
 
-        final Class<?>[] dependencies = moduleAnnotation.dependsOn();
-
-        if (dependencies.length == 0) {
-
-            return new AccessFilter<Class<?>>() {
-                @Override
-                public boolean isAccessibleTo(Class<?> targetModuleClass) {
-                    return true;
-                }
-            };
-
-        }
-
-        return new AccessFilter<Class<?>>() {
+        return new AccessFilter<DependencyRequest>() {
 
             @Override
-            public boolean isAccessibleTo(Class<?> targetModuleClass) {
-                for (Class<?> dependency : dependencies) {
-                    if (targetModuleClass == dependency) {
+            public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+
+                ModuleAdapter requestSourceModule = dependencyRequest.getRequestSource().getModuleAdapter();
+
+                for (Class<?> dependency : requestSourceModule.getReferencedModules()) {
+                    if (moduleClass == dependency) {
                         return true;
                     }
                 }
-                throw new IllegalAccessError("The module [" + moduleClass.getName() +
-                        "] does not have access to the module [" + targetModuleClass.getName() + "].");
+
+                dependencyRequest.addError("The module [" + requestSourceModule.getModuleClass().getName() +
+                        "] does not have access to the module [" + moduleClass.getName() + "].");
+
+                return false;
+
             }
 
         };

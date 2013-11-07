@@ -9,6 +9,6 @@ interface ModuleAdapter extends AccessFilter<DependencyRequest> {
 
     CompositeQualifier getCompositeQualifier();
 
-    boolean dependsOn(Class<?> otherModule);
+    Class<?>[] getReferencedModules();
 
 }
