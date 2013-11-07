@@ -5,7 +5,7 @@ package io.gunmetal.internal;
  */
 interface InternalProvider {
 
-    <T> ComponentAdapter<T> getComponentAdapter(DependencyRequest dependencyRequest);
+    <T> ProvisionStrategy<T> getProvisionStrategy(DependencyRequest dependencyRequest);
 
     void register(Callback callback, BuildPhase phase);
 

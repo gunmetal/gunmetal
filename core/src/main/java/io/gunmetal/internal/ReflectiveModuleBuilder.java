@@ -30,7 +30,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
         final Module moduleAnnotation = moduleClass.getAnnotation(Module.class);
 
         if (moduleAnnotation == null) {
-            throw new IllegalArgumentException("The module class [" + moduleClass.getName() 
+            throw new IllegalArgumentException("The module class [" + moduleClass.getName()
                     + "] must be annotated with @Module()");
         }
 
@@ -72,18 +72,18 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                         & blackListFilter.isAccessibleTo(dependencyRequest)
                         & whiteListFilter.isAccessibleTo(dependencyRequest);
             }
-            
+
         };
 
         for (Component component : moduleAnnotation.components()) {
 
-            final AccessFilter<Class<?>> accessFilter = 
+            final AccessFilter<Class<?>> accessFilter =
                     AccessFilter.Factory.getAccessFilter(component.access(), component.type());
 
             ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(component, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                    return moduleAdapter.isAccessibleTo(dependencyRequest) 
+                    return moduleAdapter.isAccessibleTo(dependencyRequest)
                             && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
                 }
             }, internalProvider);
@@ -102,12 +102,12 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
             if (!Modifier.isStatic(modifiers)) {
                 throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
-                        + method.getName() +"] in module [" + moduleClass.getName() + "] is not static.");
+                        + method.getName() + "] in module [" + moduleClass.getName() + "] is not static.");
             }
 
             if (method.getReturnType().equals(Void.TYPE)) {
                 throw new IllegalArgumentException("A module's provider methods must have a return type.  The method ["
-                        + method.getName() +"] in module [" + moduleClass.getName() + "] has a void return type.");
+                        + method.getName() + "] in module [" + moduleClass.getName() + "] has a void return type.");
             }
 
             final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
@@ -115,7 +115,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(method, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                    return moduleAdapter.isAccessibleTo(dependencyRequest) 
+                    return moduleAdapter.isAccessibleTo(dependencyRequest)
                             && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
                 }
             }, internalProvider);
@@ -127,7 +127,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             bindings.add(Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
 
         }
-        
+
     }
 
     private AccessFilter<DependencyRequest> getBlackListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
@@ -142,7 +142,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                     return true;
                 }
             };
-            
+
         }
 
         final Class[] blackListClasses;
@@ -173,8 +173,8 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
                     if (blackListClass == requestingSourceModuleClass) {
 
-                        dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName() +
-                                "] does not have access to the module [" + moduleClass.getName() + "].");
+                        dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
+                                + "] does not have access to the module [" + moduleClass.getName() + "].");
 
                         return false;
 
@@ -185,8 +185,8 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                 boolean qualifierMatch = dependencyRequest.getSourceQualifier().intersects(blackListQualifier);
 
                 if (qualifierMatch) {
-                    dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName() +
-                            "] does not have access to the module [" + moduleClass.getName() + "].");
+                    dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
+                            + "] does not have access to the module [" + moduleClass.getName() + "].");
                 }
 
                 return !qualifierMatch;
@@ -194,7 +194,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             }
 
         };
-        
+
     }
 
     private AccessFilter<DependencyRequest> getWhiteListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
@@ -246,8 +246,8 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
                 if (!qualifierMatch) {
 
-                    dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName() +
-                            "] does not have access to the module [" + moduleClass.getName() + "].");
+                    dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
+                            + "] does not have access to the module [" + moduleClass.getName() + "].");
 
                 }
 
@@ -274,8 +274,8 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                     }
                 }
 
-                dependencyRequest.addError("The module [" + requestSourceModule.getModuleClass().getName() +
-                        "] does not have access to the module [" + moduleClass.getName() + "].");
+                dependencyRequest.addError("The module [" + requestSourceModule.getModuleClass().getName()
+                        + "] does not have access to the module [" + moduleClass.getName() + "].");
 
                 return false;
 
