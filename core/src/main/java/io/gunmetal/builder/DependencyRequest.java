@@ -10,7 +10,7 @@ import java.util.List;
  */
 interface DependencyRequest {
 
-    ComponentAdapter<?> getRequestSource();
+    ComponentMetadata<?> getRequestSource();
 
     Dependency<?> getDependency();
 

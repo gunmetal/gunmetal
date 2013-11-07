@@ -26,7 +26,19 @@ class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
     public <T> ComponentAdapter<T> create(Method providerMethod,
                                           AccessFilter<DependencyRequest> accessFilter,
                                           InternalProvider internalProvider) {
+
+        // TODO two types of instantiators - constructor and method
+
+        internalProvider.register(new InternalProvider.Callback() {
+            @Override
+            public void call() {
+            }
+        }, InternalProvider.BuildPhase.POST_WIRING);
+
+        //component adapter
+
         Injector.StaticMethod injector = injectorFactory.create(providerMethod, internalProvider);
         return null;
     }
+
 }

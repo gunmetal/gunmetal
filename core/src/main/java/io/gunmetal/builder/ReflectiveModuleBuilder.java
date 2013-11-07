@@ -74,6 +74,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                         & blackListFilter.isAccessibleTo(dependencyRequest)
                         & whiteListFilter.isAccessibleTo(dependencyRequest);
             }
+            
         };
 
         List<ComponentAdapter<?>> componentAdapters = new LinkedList<ComponentAdapter<?>>();
@@ -160,7 +161,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                ComponentAdapter<?> requestSource = dependencyRequest.getRequestSource();
+                ComponentMetadata<?> requestSource = dependencyRequest.getRequestSource();
                 Class<?> requestingSourceModuleClass = requestSource.getModuleAdapter().getModuleClass();
 
                 for (Class<?> blackListClass : blackListClasses) {
@@ -227,7 +228,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                ComponentAdapter<?> requestSource = dependencyRequest.getRequestSource();
+                ComponentMetadata<?> requestSource = dependencyRequest.getRequestSource();
                 Class<?> requestingSourceModuleClass = requestSource.getModuleAdapter().getModuleClass();
 
                 for (Class<?> whiteListClass : whiteListClasses) {

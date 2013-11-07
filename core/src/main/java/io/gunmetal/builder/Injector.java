@@ -10,7 +10,7 @@ import java.lang.reflect.Method;
 interface Injector {
 
     interface Factory {
-        StaticMethod create(Method method, InternalProvider internalProvider);
+        StaticMethod create(Method method, ComponentMetadata componentMetadata, InternalProvider internalProvider);
     }
 
     interface StaticMethod {
