@@ -1,6 +1,4 @@
-package io.gunmetal.builder;
-
-import com.github.overengineer.gunmetal.ResolutionContext;
+package io.gunmetal.internal;
 
 /**
  * @author rees.byars

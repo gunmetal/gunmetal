@@ -1,6 +1,7 @@
-package io.gunmetal.builder;
+package io.gunmetal.internal;
 
-import com.github.overengineer.gunmetal.scope.Scope;
+import io.gunmetal.CompositeQualifier;
+import io.gunmetal.Scope;
 
 /**
  * @author rees.byars

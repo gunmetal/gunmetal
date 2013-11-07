@@ -1,4 +1,4 @@
-package io.gunmetal.builder;
+package io.gunmetal;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-interface CompositeQualifier {
+public interface CompositeQualifier {
 
     Object[] getQualifiers();
 
@@ -20,7 +20,7 @@ interface CompositeQualifier {
 
         private Factory() { }
 
-        static CompositeQualifier create(Class<?> cls, Class<? extends Annotation> qualifierAnnotation) {
+        public static CompositeQualifier create(Class<?> cls, Class<? extends Annotation> qualifierAnnotation) {
             List<Object> qualifiers = new LinkedList<Object>();
             for (Annotation annotation : cls.getAnnotations()) {
                 Class<? extends Annotation> annotationType = annotation.annotationType();
@@ -31,7 +31,7 @@ interface CompositeQualifier {
             return create(qualifiers.toArray());
         }
 
-        static CompositeQualifier create(final Object[] qualifiers) {
+        public static CompositeQualifier create(final Object[] qualifiers) {
 
             Arrays.sort(qualifiers);
 

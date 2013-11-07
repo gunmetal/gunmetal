@@ -1,6 +1,7 @@
-package io.gunmetal.builder;
+package io.gunmetal.internal;
 
-import com.github.overengineer.gunmetal.key.Dependency;
+import io.gunmetal.CompositeQualifier;
+import io.gunmetal.Dependency;
 
 import java.util.LinkedList;
 import java.util.List;

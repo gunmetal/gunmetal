@@ -1,14 +1,15 @@
-package io.gunmetal.builder;
+package io.gunmetal.internal;
 
 import io.gunmetal.AccessLevel;
 import io.gunmetal.AccessRestrictions;
 import io.gunmetal.Component;
+import io.gunmetal.CompositeQualifier;
+import io.gunmetal.Dependency;
 import io.gunmetal.Module;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.LinkedList;
-import java.util.List;
+import java.lang.reflect.Type;
 
 /**
  * @author rees.byars
@@ -24,7 +25,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
     }
 
     @Override
-    public List<ComponentAdapter<?>> build(final Class<?> moduleClass, InternalProvider internalProvider) {
+    public void addBindings(final Class<?> moduleClass, InternalProvider internalProvider, Bindings bindings) {
 
         final Module moduleAnnotation = moduleClass.getAnnotation(Module.class);
 
@@ -74,20 +75,24 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             
         };
 
-        List<ComponentAdapter<?>> componentAdapters = new LinkedList<ComponentAdapter<?>>();
-
         for (Component component : moduleAnnotation.components()) {
 
             final AccessFilter<Class<?>> accessFilter = 
                     AccessFilter.Factory.getAccessFilter(component.access(), component.type());
 
-            componentAdapters.add(componentAdapterFactory.create(component, new AccessFilter<DependencyRequest>() {
+            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(component, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest) 
                             && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
                 }
-            }, internalProvider));
+            }, internalProvider);
+
+            for (Class<?> target : component.targets()) {
+
+                bindings.add(Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
+
+            }
 
         }
 
@@ -107,17 +112,21 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
             final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
 
-            componentAdapters.add(componentAdapterFactory.create(method, new AccessFilter<DependencyRequest>() {
+            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(method, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest) 
                             && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
                 }
-            }, internalProvider));
+            }, internalProvider);
+
+            // TODO targeted return type check, better type ref impl
+
+            final Type target = method.getGenericReturnType();
+
+            bindings.add(Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
 
         }
-
-        return componentAdapters;
         
     }
 

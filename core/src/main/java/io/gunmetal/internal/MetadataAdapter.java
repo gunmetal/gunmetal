@@ -1,4 +1,4 @@
-package io.gunmetal.builder;
+package io.gunmetal.internal;
 
 import java.lang.annotation.Annotation;
 

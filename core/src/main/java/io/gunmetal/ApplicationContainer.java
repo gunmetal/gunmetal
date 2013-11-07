@@ -1,7 +1,5 @@
 package io.gunmetal;
 
-import com.github.overengineer.gunmetal.key.Dependency;
-
 import java.lang.annotation.Annotation;
 
 /**
