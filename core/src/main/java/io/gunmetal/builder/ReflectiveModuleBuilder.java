@@ -33,9 +33,9 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                     + "] must be annotated with @Module()");
         }
 
-        final AccessFilter<DependencyRequest> blackListFilter = getBlackListFilter(moduleAnnotation);
+        final AccessFilter<DependencyRequest> blackListFilter = getBlackListFilter(moduleClass, moduleAnnotation);
 
-        final AccessFilter<DependencyRequest> whiteListFilter = getWhiteListFilter(moduleAnnotation);
+        final AccessFilter<DependencyRequest> whiteListFilter = getWhiteListFilter(moduleClass, moduleAnnotation);
 
         final AccessFilter<DependencyRequest> dependsOnFilter = getDependsOnFilter(moduleClass);
 
@@ -123,11 +123,11 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
         
     }
 
-    private AccessFilter<DependencyRequest> getBlackListFilter(Module moduleAnnotation) {
+    private AccessFilter<DependencyRequest> getBlackListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
 
-        Class<? extends AccessRestrictions.NotAccessibleFrom> blackListClass = moduleAnnotation.notAccessibleFrom();
+        Class<? extends AccessRestrictions.NotAccessibleFrom> blackListConfigClass = moduleAnnotation.notAccessibleFrom();
 
-        if (blackListClass == AccessRestrictions.NotAccessibleFrom.class) {
+        if (blackListConfigClass == AccessRestrictions.NotAccessibleFrom.class) {
 
             return new AccessFilter<DependencyRequest>() {
                 @Override
@@ -140,7 +140,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         final Class[] blackListClasses;
 
-        AccessRestrictions.Modules blackListModules = blackListClass.getAnnotation(AccessRestrictions.Modules.class);
+        AccessRestrictions.Modules blackListModules = blackListConfigClass.getAnnotation(AccessRestrictions.Modules.class);
 
         if (blackListModules != null) {
 
@@ -153,29 +153,49 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
         }
 
         final Object[] blackListQualifiers = 
-                ReflectionUtils.getQualifiers(blackListClass, metadataAdapter.getQualifierAnnotation());
+                ReflectionUtils.getQualifiers(blackListConfigClass, metadataAdapter.getQualifierAnnotation());
 
         return  new AccessFilter<DependencyRequest>() {
+
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+
                 ComponentAdapter<?> requestSource = dependencyRequest.getRequestSource();
                 Class<?> requestingSourceModuleClass = requestSource.getModuleAdapter().getModuleClass();
+
                 for (Class<?> blackListClass : blackListClasses) {
+
                     if (blackListClass == requestingSourceModuleClass) {
+
+                        dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName() +
+                                "] does not have access to the module [" + moduleClass.getName() + "].");
+
                         return false;
+
                     }
+
                 }
-                return !requestSource.getCompositeQualifier().intersects(blackListQualifiers);
+
+                boolean qualifierMatch = requestSource.getCompositeQualifier().intersects(blackListQualifiers);
+
+                if (qualifierMatch) {
+                    dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName() +
+                            "] does not have access to the module [" + moduleClass.getName() + "].");
+                }
+
+                return !qualifierMatch;
+
             }
+
         };
         
     }
 
-    private AccessFilter<DependencyRequest> getWhiteListFilter(Module moduleAnnotation) {
+    private AccessFilter<DependencyRequest> getWhiteListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
 
-        Class<? extends AccessRestrictions.OnlyAccessibleFrom> whiteListClass = moduleAnnotation.onlyAccessibleFrom();
+        Class<? extends AccessRestrictions.OnlyAccessibleFrom> whiteListConfigClass = moduleAnnotation.onlyAccessibleFrom();
 
-        if (whiteListClass == AccessRestrictions.OnlyAccessibleFrom.class) {
+        if (whiteListConfigClass == AccessRestrictions.OnlyAccessibleFrom.class) {
 
             return new AccessFilter<DependencyRequest>() {
                 @Override
@@ -188,7 +208,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         final Class[] whiteListClasses;
 
-        AccessRestrictions.Modules whiteListModules = whiteListClass.getAnnotation(AccessRestrictions.Modules.class);
+        AccessRestrictions.Modules whiteListModules = whiteListConfigClass.getAnnotation(AccessRestrictions.Modules.class);
 
         if (whiteListModules != null) {
 
@@ -200,20 +220,35 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         }
 
-        final Object[] whiteListQualifiers = ReflectionUtils.getQualifiers(whiteListClass, metadataAdapter.getQualifierAnnotation());
+        final Object[] whiteListQualifiers = ReflectionUtils.getQualifiers(whiteListConfigClass, metadataAdapter.getQualifierAnnotation());
 
         return  new AccessFilter<DependencyRequest>() {
+
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+
                 ComponentAdapter<?> requestSource = dependencyRequest.getRequestSource();
                 Class<?> requestingSourceModuleClass = requestSource.getModuleAdapter().getModuleClass();
+
                 for (Class<?> whiteListClass : whiteListClasses) {
                     if (whiteListClass == requestingSourceModuleClass) {
                         return true;
                     }
                 }
-                return requestSource.getCompositeQualifier().intersects(whiteListQualifiers);
+
+                boolean qualifierMatch = requestSource.getCompositeQualifier().intersects(whiteListQualifiers);
+
+                if (!qualifierMatch) {
+
+                    dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName() +
+                            "] does not have access to the module [" + moduleClass.getName() + "].");
+
+                }
+
+                return qualifierMatch;
+
             }
+
         };
 
     }
