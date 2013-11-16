@@ -34,20 +34,31 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                     + "] must be annotated with @Module()");
         }
 
-        final AccessFilter<DependencyRequest> blackListFilter = getBlackListFilter(moduleClass, moduleAnnotation);
+        final ModuleAdapter moduleAdapter = moduleAdapter(moduleClass, moduleAnnotation);
 
-        final AccessFilter<DependencyRequest> whiteListFilter = getWhiteListFilter(moduleClass, moduleAnnotation);
+        bindComponentAnnotations(moduleAnnotation.components(), moduleAdapter, internalProvider, bindings);
 
-        final AccessFilter<DependencyRequest> dependsOnFilter = getDependsOnFilter(moduleClass);
+        bindProviderMethods(moduleClass, moduleAdapter, internalProvider, bindings);
+
+    }
+
+    private ModuleAdapter moduleAdapter(final Class<?> moduleClass, final Module moduleAnnotation) {
+
+        final AccessFilter<DependencyRequest> blackListFilter = blackListFilter(moduleClass, moduleAnnotation);
+
+        final AccessFilter<DependencyRequest> whiteListFilter = whiteListFilter(moduleClass, moduleAnnotation);
+
+        final AccessFilter<DependencyRequest> dependsOnFilter = dependsOnFilter(moduleClass);
 
         AccessLevel moduleAccessLevel = moduleAnnotation.access();
 
         final AccessFilter<Class<?>> moduleClassAccessFilter =
                 AccessFilter.Factory.getAccessFilter(moduleAccessLevel, moduleClass);
 
-        final CompositeQualifier compositeQualifier = CompositeQualifier.Factory.create(moduleClass, metadataAdapter.getQualifierAnnotation());
+        final CompositeQualifier compositeQualifier = CompositeQualifier.Factory.create(moduleClass,
+                metadataAdapter.getQualifierAnnotation());
 
-        final ModuleAdapter moduleAdapter = new ModuleAdapter() {
+        return new ModuleAdapter() {
 
             @Override
             public Class<?> getModuleClass() {
@@ -74,65 +85,12 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             }
 
         };
-
-        for (Component component : moduleAnnotation.components()) {
-
-            final AccessFilter<Class<?>> accessFilter =
-                    AccessFilter.Factory.getAccessFilter(component.access(), component.type());
-
-            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(component, new AccessFilter<DependencyRequest>() {
-                @Override
-                public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                    return moduleAdapter.isAccessibleTo(dependencyRequest)
-                            && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
-                }
-            }, internalProvider);
-
-            for (Class<?> target : component.targets()) {
-
-                bindings.add(Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
-
-            }
-
-        }
-
-        for (Method method : moduleClass.getMethods()) {
-
-            int modifiers = method.getModifiers();
-
-            if (!Modifier.isStatic(modifiers)) {
-                throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
-                        + method.getName() + "] in module [" + moduleClass.getName() + "] is not static.");
-            }
-
-            if (method.getReturnType().equals(Void.TYPE)) {
-                throw new IllegalArgumentException("A module's provider methods must have a return type.  The method ["
-                        + method.getName() + "] in module [" + moduleClass.getName() + "] has a void return type.");
-            }
-
-            final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
-
-            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(method, new AccessFilter<DependencyRequest>() {
-                @Override
-                public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                    return moduleAdapter.isAccessibleTo(dependencyRequest)
-                            && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
-                }
-            }, internalProvider);
-
-            // TODO targeted return type check, better type ref impl
-
-            final Type target = method.getGenericReturnType();
-
-            bindings.add(Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
-
-        }
-
     }
 
-    private AccessFilter<DependencyRequest> getBlackListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
+    private AccessFilter<DependencyRequest> blackListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
 
-        Class<? extends AccessRestrictions.NotAccessibleFrom> blackListConfigClass = moduleAnnotation.notAccessibleFrom();
+        Class<? extends AccessRestrictions.NotAccessibleFrom> blackListConfigClass =
+                moduleAnnotation.notAccessibleFrom();
 
         if (blackListConfigClass == AccessRestrictions.NotAccessibleFrom.class) {
 
@@ -147,7 +105,8 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         final Class[] blackListClasses;
 
-        AccessRestrictions.Modules blackListModules = blackListConfigClass.getAnnotation(AccessRestrictions.Modules.class);
+        AccessRestrictions.Modules blackListModules =
+                blackListConfigClass.getAnnotation(AccessRestrictions.Modules.class);
 
         if (blackListModules != null) {
 
@@ -197,9 +156,10 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
     }
 
-    private AccessFilter<DependencyRequest> getWhiteListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
+    private AccessFilter<DependencyRequest> whiteListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
 
-        Class<? extends AccessRestrictions.OnlyAccessibleFrom> whiteListConfigClass = moduleAnnotation.onlyAccessibleFrom();
+        Class<? extends AccessRestrictions.OnlyAccessibleFrom> whiteListConfigClass =
+                moduleAnnotation.onlyAccessibleFrom();
 
         if (whiteListConfigClass == AccessRestrictions.OnlyAccessibleFrom.class) {
 
@@ -214,7 +174,8 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         final Class[] whiteListClasses;
 
-        AccessRestrictions.Modules whiteListModules = whiteListConfigClass.getAnnotation(AccessRestrictions.Modules.class);
+        AccessRestrictions.Modules whiteListModules =
+                whiteListConfigClass.getAnnotation(AccessRestrictions.Modules.class);
 
         if (whiteListModules != null) {
 
@@ -259,7 +220,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
     }
 
-    private AccessFilter<DependencyRequest> getDependsOnFilter(final Class<?> moduleClass) {
+    private AccessFilter<DependencyRequest> dependsOnFilter(final Class<?> moduleClass) {
 
         return new AccessFilter<DependencyRequest>() {
 
@@ -282,6 +243,69 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
             }
 
         };
+
+    }
+
+    private void bindComponentAnnotations(Component[] components, final ModuleAdapter moduleAdapter,
+                                          InternalProvider internalProvider, Bindings bindings) {
+
+        for (Component component : components) {
+
+            final AccessFilter<Class<?>> accessFilter =
+                    AccessFilter.Factory.getAccessFilter(component.access(), component.type());
+
+            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(component, new AccessFilter<DependencyRequest>() {
+                @Override
+                public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+                    return moduleAdapter.isAccessibleTo(dependencyRequest)
+                            && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
+                }
+            }, internalProvider);
+
+            for (Class<?> target : component.targets()) {
+
+                bindings.add(
+                        Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
+
+            }
+
+        }
+    }
+
+    private void bindProviderMethods(Class<?> moduleClass, final ModuleAdapter moduleAdapter,
+                                     InternalProvider internalProvider, Bindings bindings) {
+
+        for (Method method : moduleClass.getMethods()) {
+
+            int modifiers = method.getModifiers();
+
+            if (!Modifier.isStatic(modifiers)) {
+                throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
+                        + method.getName() + "] in module [" + moduleClass.getName() + "] is not static.");
+            }
+
+            if (method.getReturnType().equals(Void.TYPE)) {
+                throw new IllegalArgumentException("A module's provider methods must have a return type.  The method ["
+                        + method.getName() + "] in module [" + moduleClass.getName() + "] has a void return type.");
+            }
+
+            final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
+
+            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(method, new AccessFilter<DependencyRequest>() {
+                @Override
+                public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+                    return moduleAdapter.isAccessibleTo(dependencyRequest)
+                            && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
+                }
+            }, internalProvider);
+
+            // TODO targeted return type check, better type ref impl
+
+            final Type target = method.getGenericReturnType();
+
+            bindings.add(Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
+
+        }
 
     }
 

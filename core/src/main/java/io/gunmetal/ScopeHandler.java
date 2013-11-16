@@ -14,6 +14,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface ScopeHandler {
-    Class<? extends ScopedProviderDecorator> type();
+    Class<? extends ProviderDecorator> type();
     Class<? extends Annotation> annotation();
 }
