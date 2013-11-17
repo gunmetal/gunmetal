@@ -4,7 +4,6 @@ import io.gunmetal.AccessLevel;
 import io.gunmetal.AccessRestrictions;
 import io.gunmetal.Component;
 import io.gunmetal.CompositeQualifier;
-import io.gunmetal.Dependency;
 import io.gunmetal.Module;
 
 import java.lang.reflect.Method;
@@ -14,71 +13,71 @@ import java.lang.reflect.Type;
 /**
  * @author rees.byars
  */
-public class ReflectiveModuleBuilder implements ModuleBuilder {
+class ReflectiveModuleBinder implements ModuleBinder {
 
     private final ComponentAdapterFactory componentAdapterFactory;
     private final MetadataAdapter metadataAdapter;
 
-    public ReflectiveModuleBuilder(ComponentAdapterFactory componentAdapterFactory, MetadataAdapter metadataAdapter) {
+    ReflectiveModuleBinder(ComponentAdapterFactory componentAdapterFactory, MetadataAdapter metadataAdapter) {
         this.componentAdapterFactory = componentAdapterFactory;
         this.metadataAdapter = metadataAdapter;
     }
 
     @Override
-    public void addBindings(final Class<?> moduleClass, InternalProvider internalProvider, Bindings bindings) {
+    public void bind(final Class<?> module, InternalProvider provider, Binder binder) {
 
-        final Module moduleAnnotation = moduleClass.getAnnotation(Module.class);
+        final Module moduleAnnotation = module.getAnnotation(Module.class);
 
         if (moduleAnnotation == null) {
-            throw new IllegalArgumentException("The module class [" + moduleClass.getName()
+            throw new IllegalArgumentException("The module class [" + module.getName()
                     + "] must be annotated with @Module()");
         }
 
-        final ModuleAdapter moduleAdapter = moduleAdapter(moduleClass, moduleAnnotation);
+        final ModuleAdapter moduleAdapter = moduleAdapter(module, moduleAnnotation);
 
-        bindComponentAnnotations(moduleAnnotation.components(), moduleAdapter, internalProvider, bindings);
+        bindComponentAnnotations(moduleAnnotation.components(), moduleAdapter, provider, binder);
 
-        bindProviderMethods(moduleClass, moduleAdapter, internalProvider, bindings);
+        bindProviderMethods(module, moduleAdapter, provider, binder);
 
     }
 
-    private ModuleAdapter moduleAdapter(final Class<?> moduleClass, final Module moduleAnnotation) {
+    private ModuleAdapter moduleAdapter(final Class<?> module, final Module moduleAnnotation) {
 
-        final AccessFilter<DependencyRequest> blackListFilter = blackListFilter(moduleClass, moduleAnnotation);
+        final AccessFilter<DependencyRequest> blackListFilter = blackListFilter(module, moduleAnnotation);
 
-        final AccessFilter<DependencyRequest> whiteListFilter = whiteListFilter(moduleClass, moduleAnnotation);
+        final AccessFilter<DependencyRequest> whiteListFilter = whiteListFilter(module, moduleAnnotation);
 
-        final AccessFilter<DependencyRequest> dependsOnFilter = dependsOnFilter(moduleClass);
+        final AccessFilter<DependencyRequest> dependsOnFilter = dependsOnFilter(module);
 
         AccessLevel moduleAccessLevel = moduleAnnotation.access();
 
-        final AccessFilter<Class<?>> moduleClassAccessFilter =
-                AccessFilter.Factory.getAccessFilter(moduleAccessLevel, moduleClass);
+        final AccessFilter<Class<?>> moduleAccessFilter =
+                AccessFilter.Factory.getAccessFilter(moduleAccessLevel, module);
 
-        final CompositeQualifier compositeQualifier = CompositeQualifier.Factory.create(moduleClass,
-                metadataAdapter.getQualifierAnnotation());
+        final CompositeQualifier compositeQualifier = Metadata.qualifier(module, metadataAdapter.qualifierAnnotation());
 
         return new ModuleAdapter() {
 
             @Override
-            public Class<?> getModuleClass() {
-                return moduleClass;
+            public Class<?> moduleClass() {
+                return module;
             }
 
             @Override
-            public CompositeQualifier getCompositeQualifier() {
+            public CompositeQualifier compositeQualifier() {
                 return compositeQualifier;
             }
 
             @Override
-            public Class<?>[] getReferencedModules() {
+            public Class<?>[] referencedModules() {
                 return moduleAnnotation.dependsOn();
             }
 
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                // we the single & because we want to process them all regardless if one fails
-                return moduleClassAccessFilter.isAccessibleTo(dependencyRequest.getSourceModule().getModuleClass())
+                // we use the single '&' because we want to process them all regardless if one fails
+                // in order to collect all errors and report them back
+                return moduleAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())
                         & dependsOnFilter.isAccessibleTo(dependencyRequest)
                         & blackListFilter.isAccessibleTo(dependencyRequest)
                         & whiteListFilter.isAccessibleTo(dependencyRequest);
@@ -87,7 +86,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
         };
     }
 
-    private AccessFilter<DependencyRequest> blackListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
+    private AccessFilter<DependencyRequest> blackListFilter(final Class<?> module, Module moduleAnnotation) {
 
         Class<? extends AccessRestrictions.NotAccessibleFrom> blackListConfigClass =
                 moduleAnnotation.notAccessibleFrom();
@@ -118,22 +117,22 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         }
 
-        final CompositeQualifier blackListQualifier =
-                CompositeQualifier.Factory.create(blackListConfigClass, metadataAdapter.getQualifierAnnotation());
+        final CompositeQualifier blackListQualifier = Metadata.qualifier(blackListConfigClass,
+                metadataAdapter.qualifierAnnotation());
 
         return  new AccessFilter<DependencyRequest>() {
 
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                Class<?> requestingSourceModuleClass = dependencyRequest.getSourceModule().getModuleClass();
+                Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
 
                 for (Class<?> blackListClass : blackListClasses) {
 
                     if (blackListClass == requestingSourceModuleClass) {
 
                         dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
-                                + "] does not have access to the module [" + moduleClass.getName() + "].");
+                                + "] does not have access to the module [" + module.getName() + "].");
 
                         return false;
 
@@ -141,11 +140,11 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
                 }
 
-                boolean qualifierMatch = dependencyRequest.getSourceQualifier().intersects(blackListQualifier);
+                boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(blackListQualifier);
 
                 if (qualifierMatch) {
                     dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
-                            + "] does not have access to the module [" + moduleClass.getName() + "].");
+                            + "] does not have access to the module [" + module.getName() + "].");
                 }
 
                 return !qualifierMatch;
@@ -156,7 +155,7 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
     }
 
-    private AccessFilter<DependencyRequest> whiteListFilter(final Class<?> moduleClass, Module moduleAnnotation) {
+    private AccessFilter<DependencyRequest> whiteListFilter(final Class<?> module, Module moduleAnnotation) {
 
         Class<? extends AccessRestrictions.OnlyAccessibleFrom> whiteListConfigClass =
                 moduleAnnotation.onlyAccessibleFrom();
@@ -187,15 +186,15 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
         }
 
-        final CompositeQualifier whiteListQualifier =
-                CompositeQualifier.Factory.create(whiteListConfigClass, metadataAdapter.getQualifierAnnotation());
+        final CompositeQualifier whiteListQualifier = Metadata.qualifier(whiteListConfigClass,
+                metadataAdapter.qualifierAnnotation());
 
         return  new AccessFilter<DependencyRequest>() {
 
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                Class<?> requestingSourceModuleClass = dependencyRequest.getSourceModule().getModuleClass();
+                Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
 
                 for (Class<?> whiteListClass : whiteListClasses) {
                     if (whiteListClass == requestingSourceModuleClass) {
@@ -203,12 +202,12 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
                     }
                 }
 
-                boolean qualifierMatch = dependencyRequest.getSourceQualifier().intersects(whiteListQualifier);
+                boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(whiteListQualifier);
 
                 if (!qualifierMatch) {
 
                     dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
-                            + "] does not have access to the module [" + moduleClass.getName() + "].");
+                            + "] does not have access to the module [" + module.getName() + "].");
 
                 }
 
@@ -220,23 +219,23 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
 
     }
 
-    private AccessFilter<DependencyRequest> dependsOnFilter(final Class<?> moduleClass) {
+    private AccessFilter<DependencyRequest> dependsOnFilter(final Class<?> module) {
 
         return new AccessFilter<DependencyRequest>() {
 
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                ModuleAdapter requestSourceModule = dependencyRequest.getSourceModule();
+                ModuleAdapter requestSourceModule = dependencyRequest.sourceModule();
 
-                for (Class<?> dependency : requestSourceModule.getReferencedModules()) {
-                    if (moduleClass == dependency) {
+                for (Class<?> dependency : requestSourceModule.referencedModules()) {
+                    if (module == dependency) {
                         return true;
                     }
                 }
 
-                dependencyRequest.addError("The module [" + requestSourceModule.getModuleClass().getName()
-                        + "] does not have access to the module [" + moduleClass.getName() + "].");
+                dependencyRequest.addError("The module [" + requestSourceModule.moduleClass().getName()
+                        + "] does not have access to the module [" + module.getName() + "].");
 
                 return false;
 
@@ -247,63 +246,68 @@ public class ReflectiveModuleBuilder implements ModuleBuilder {
     }
 
     private void bindComponentAnnotations(Component[] components, final ModuleAdapter moduleAdapter,
-                                          InternalProvider internalProvider, Bindings bindings) {
+                                          InternalProvider provider, Binder binder) {
 
         for (Component component : components) {
 
             final AccessFilter<Class<?>> accessFilter =
                     AccessFilter.Factory.getAccessFilter(component.access(), component.type());
 
-            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(component, new AccessFilter<DependencyRequest>() {
+            ComponentAdapter<?> componentAdapter =
+                    componentAdapterFactory.create(component, moduleAdapter, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest)
-                            && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
+                            && accessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
                 }
-            }, internalProvider);
+            }, provider);
 
             for (Class<?> target : component.targets()) {
 
-                bindings.add(
-                        Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
+                binder.bind(
+                        Metadata.dependency(target, componentAdapter.metadata().compositeQualifier()),
+                        componentAdapter);
 
             }
 
         }
     }
 
-    private void bindProviderMethods(Class<?> moduleClass, final ModuleAdapter moduleAdapter,
-                                     InternalProvider internalProvider, Bindings bindings) {
+    private void bindProviderMethods(Class<?> module, final ModuleAdapter moduleAdapter,
+                                     InternalProvider provider, Binder binder) {
 
-        for (Method method : moduleClass.getMethods()) {
+        for (Method method : module.getDeclaredMethods()) {
 
             int modifiers = method.getModifiers();
 
             if (!Modifier.isStatic(modifiers)) {
                 throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
-                        + method.getName() + "] in module [" + moduleClass.getName() + "] is not static.");
+                        + method.getName() + "] in module [" + module.getName() + "] is not static.");
             }
 
             if (method.getReturnType().equals(Void.TYPE)) {
                 throw new IllegalArgumentException("A module's provider methods must have a return type.  The method ["
-                        + method.getName() + "] in module [" + moduleClass.getName() + "] has a void return type.");
+                        + method.getName() + "] in module [" + module.getName() + "] has a void return type.");
             }
 
             final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
 
-            ComponentAdapter<?> componentAdapter = componentAdapterFactory.create(method, new AccessFilter<DependencyRequest>() {
+            ComponentAdapter<?> componentAdapter =
+                    componentAdapterFactory.create(method, moduleAdapter, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest)
-                            && accessFilter.isAccessibleTo(dependencyRequest.getSourceComponentClass());
+                            && accessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
                 }
-            }, internalProvider);
+            }, provider);
 
             // TODO targeted return type check, better type ref impl
 
             final Type target = method.getGenericReturnType();
 
-            bindings.add(Dependency.Factory.create(target, componentAdapter.getCompositeQualifier()), componentAdapter);
+            binder.bind(
+                    Metadata.dependency(target, componentAdapter.metadata().compositeQualifier()),
+                    componentAdapter);
 
         }
 

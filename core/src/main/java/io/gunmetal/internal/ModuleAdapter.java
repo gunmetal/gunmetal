@@ -7,10 +7,10 @@ import io.gunmetal.CompositeQualifier;
  */
 interface ModuleAdapter extends AccessFilter<DependencyRequest> {
 
-    Class<?> getModuleClass();
+    Class<?> moduleClass();
 
-    CompositeQualifier getCompositeQualifier();
+    CompositeQualifier compositeQualifier();
 
-    Class<?>[] getReferencedModules();
+    Class<?>[] referencedModules();
 
 }

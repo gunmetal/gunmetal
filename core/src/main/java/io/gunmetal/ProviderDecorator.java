@@ -4,5 +4,5 @@ package io.gunmetal;
  * @rees.byars
  */
 public interface ProviderDecorator {
-    <T> Provider<T> get(Dependency<T> dependency, Provider provider);
+    <T> Provider<T> decorate(Object hashKey, Provider<T> provider);
 }

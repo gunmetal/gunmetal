@@ -11,15 +11,15 @@ import java.util.List;
  */
 interface DependencyRequest {
 
-    Class<?> getSourceComponentClass();
+    Class<?> sourceOrigin();
 
-    CompositeQualifier getSourceQualifier();
+    CompositeQualifier sourceQualifier();
 
-    ModuleAdapter getSourceModule();
+    ModuleAdapter sourceModule();
 
-    Dependency<?> getDependency();
+    Dependency<?> dependency();
 
-    List<String> getErrors();
+    List<String> errors();
 
     DependencyRequest addError(String errorMessage);
 
@@ -27,34 +27,34 @@ interface DependencyRequest {
 
         private Factory() { }
 
-        static DependencyRequest create(final ComponentMetadata<?> componentMetadata, final Dependency<?> dependency) {
+        static DependencyRequest create(final ComponentMetadata componentMetadata, final Dependency<?> dependency) {
 
             return new DependencyRequest() {
 
                 List<String> errors;
 
                 @Override
-                public Class<?> getSourceComponentClass() {
-                    return componentMetadata.getComponentClass();
+                public Class<?> sourceOrigin() {
+                    return componentMetadata.originClass();
                 }
 
                 @Override
-                public CompositeQualifier getSourceQualifier() {
-                    return componentMetadata.getCompositeQualifier();
+                public CompositeQualifier sourceQualifier() {
+                    return componentMetadata.compositeQualifier();
                 }
 
                 @Override
-                public ModuleAdapter getSourceModule() {
-                    return componentMetadata.getModuleAdapter();
+                public ModuleAdapter sourceModule() {
+                    return componentMetadata.moduleAdapter();
                 }
 
                 @Override
-                public Dependency<?> getDependency() {
+                public Dependency<?> dependency() {
                     return dependency;
                 }
 
                 @Override
-                public List<String> getErrors() {
+                public List<String> errors() {
                     return errors;
                 }
 

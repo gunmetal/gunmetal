@@ -9,8 +9,6 @@ interface InternalProvider {
 
     void register(Callback callback, BuildPhase phase);
 
-    interface Callback { void call(); }
-
     enum BuildPhase {
         POST_WIRING, EAGER_INSTANTIATION
     }

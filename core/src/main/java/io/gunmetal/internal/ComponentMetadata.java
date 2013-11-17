@@ -1,19 +1,22 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.CompositeQualifier;
-import io.gunmetal.Scope;
 
 /**
  * @author rees.byars
  */
-interface ComponentMetadata<T> {
+interface ComponentMetadata {
 
-    Class<T> getComponentClass();
+    Object origin();
 
-    ModuleAdapter getModuleAdapter();
+    Class<?> originClass();
 
-    Scope getScope();
+    ModuleAdapter moduleAdapter();
 
-    CompositeQualifier getCompositeQualifier();
+    CompositeQualifier compositeQualifier();
+
+    int hashCode();
+
+    boolean equals(Object target);
 
 }

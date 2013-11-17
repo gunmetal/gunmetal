@@ -7,8 +7,8 @@ import java.lang.annotation.Annotation;
  */
 interface MetadataAdapter {
 
-    Class<? extends Annotation> getQualifierAnnotation();
+    Class<? extends Annotation> qualifierAnnotation();
 
-    Class<? extends Annotation> getScopeAnnotation();
+    Class<? extends Annotation> scopeAnnotation();
 
 }
