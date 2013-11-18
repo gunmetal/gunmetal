@@ -2,14 +2,16 @@ package io.gunmetal.internal;
 
 import io.gunmetal.CompositeQualifier;
 
+import java.lang.reflect.AnnotatedElement;
+
 /**
  * @author rees.byars
  */
 interface ComponentMetadata {
 
-    Object origin();
+    AnnotatedElement provider();
 
-    Class<?> originClass();
+    Class<?> providerClass();
 
     ModuleAdapter moduleAdapter();
 

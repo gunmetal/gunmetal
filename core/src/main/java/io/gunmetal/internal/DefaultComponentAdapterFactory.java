@@ -1,8 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.Component;
-import io.gunmetal.CompositeQualifier;
-
 import java.lang.reflect.Method;
 
 /**
@@ -11,53 +8,23 @@ import java.lang.reflect.Method;
 class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
 
     private final Injectors.Factory injectorFactory;
-    private final MetadataAdapter metadataAdapter;
     private final ProvisionStrategyDecorator strategyDecorator;
 
     DefaultComponentAdapterFactory(Injectors.Factory injectorFactory, MetadataAdapter metadataAdapter,
                                    ProvisionStrategyDecorator strategyDecorator) {
         this.injectorFactory = injectorFactory;
-        this.metadataAdapter = metadataAdapter;
         this.strategyDecorator = strategyDecorator;
     }
 
     @Override
-    public <T> ComponentAdapter<T> create(Component component, ModuleAdapter moduleAdapter,
-                                          AccessFilter<DependencyRequest> accessFilter,
-                                          InternalProvider internalProvider) {
-        return null;
-    }
-
-    @Override
-    public <T> ComponentAdapter<T> create(final Method providerMethod, final ModuleAdapter moduleAdapter,
+    public <T> ComponentAdapter<T> create(final ComponentMetadata componentMetadata,
                                           AccessFilter<DependencyRequest> accessFilter,
                                           InternalProvider internalProvider) {
 
-        final CompositeQualifier qualifier = Metadata.qualifier(providerMethod, moduleAdapter,
-                metadataAdapter.qualifierAnnotation());
 
-        ComponentMetadata componentMetadata = new ComponentMetadata() {
-
-            @Override public Object origin() {
-                return providerMethod;
-            }
-
-            @Override public Class<?> originClass() {
-                return providerMethod.getDeclaringClass();
-            }
-
-            @Override public ModuleAdapter moduleAdapter() {
-                return moduleAdapter;
-            }
-
-            @Override public CompositeQualifier compositeQualifier() {
-                return qualifier;
-            }
-
-        };
 
         Injectors.StaticInjector providerInjector =
-                injectorFactory.staticInjector(providerMethod, componentMetadata, internalProvider);
+                injectorFactory.staticInjector((Method) componentMetadata.provider(), componentMetadata, internalProvider);
 
         internalProvider.register(new Callback() {
             @Override
@@ -73,7 +40,6 @@ class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
         Injectors.Injector<T> postInjector = null;
 
         ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
-                providerMethod,
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector));
 

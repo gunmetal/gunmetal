@@ -4,7 +4,6 @@ import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
 
 /**
  * @author rees.byars
@@ -18,14 +17,16 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
     }
 
     @Override
-    public <T> ProvisionStrategy<T> decorate(final AnnotatedElement annotatedElement,
-                                             final ComponentMetadata componentMetadata,
+    public <T> ProvisionStrategy<T> decorate(final ComponentMetadata componentMetadata,
                                              final ProvisionStrategy<T> delegateStrategy) {
         return new ProvisionStrategy<T>() {
+
+            ProviderDecorator providerDecorator =
+                    decorator(Metadata.scope(componentMetadata.provider(), scopeAnnotationClass));
+
             @Override
             public T get(final InternalProvider internalProvider, final ResolutionContext resolutionContext) {
-                return decorator(Metadata.scope(annotatedElement, scopeAnnotationClass))
-                        .decorate(componentMetadata, new Provider<T>() {
+                return providerDecorator.decorate(componentMetadata, new Provider<T>() {
                             @Override
                             public T get() {
                                 return delegateStrategy.get(internalProvider, resolutionContext);
