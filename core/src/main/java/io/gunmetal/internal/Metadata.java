@@ -33,7 +33,7 @@ final class Metadata {
     static CompositeQualifier qualifier(AnnotatedElement annotatedElement, ModuleAdapter moduleAdapter,
                                      Class<? extends Annotation> qualifierAnnotation) {
         List<Object> qualifiers = new LinkedList<Object>();
-        Collections.addAll(qualifiers, moduleAdapter.getCompositeQualifier().getQualifiers());
+        Collections.addAll(qualifiers, moduleAdapter.compositeQualifier().getQualifiers());
         for (Annotation annotation : annotatedElement.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
             if (annotationType.isAnnotationPresent(qualifierAnnotation)) {

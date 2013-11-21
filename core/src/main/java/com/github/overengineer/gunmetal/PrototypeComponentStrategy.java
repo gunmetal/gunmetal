@@ -49,7 +49,7 @@ public class PrototypeComponentStrategy<T> implements ComponentStrategy<T> {
                 ComponentStrategy<?> reverseStrategy = e.getReverseStrategy();
                 reverseStrategy.get(provider, resolutionContext);
                 return strategyContext.component;
-            } else if ((e.getComponentType() != getComponentType() || e.getQualifier() != getQualifier()) && e.getReverseStrategy() == null) {
+            } else if (e.getReverseStrategy() == null) {
                 e.setReverseStrategy(this);
             }
             throw e;

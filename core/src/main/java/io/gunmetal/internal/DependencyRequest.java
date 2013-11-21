@@ -35,7 +35,7 @@ interface DependencyRequest {
 
                 @Override
                 public Class<?> sourceOrigin() {
-                    return componentMetadata.originClass();
+                    return componentMetadata.providerClass();
                 }
 
                 @Override

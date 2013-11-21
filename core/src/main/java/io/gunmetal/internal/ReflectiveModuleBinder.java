@@ -6,6 +6,7 @@ import io.gunmetal.Component;
 import io.gunmetal.CompositeQualifier;
 import io.gunmetal.Module;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -17,11 +18,12 @@ import java.lang.reflect.Type;
 class ReflectiveModuleBinder implements ModuleBinder {
 
     private final ComponentAdapterFactory componentAdapterFactory;
-    private final MetadataAdapter metadataAdapter;
+    private final Class<? extends Annotation> qualifierAnnotationType;
 
-    ReflectiveModuleBinder(ComponentAdapterFactory componentAdapterFactory, MetadataAdapter metadataAdapter) {
+    ReflectiveModuleBinder(ComponentAdapterFactory componentAdapterFactory, 
+                           Class<? extends Annotation> qualifierAnnotationType) {
         this.componentAdapterFactory = componentAdapterFactory;
-        this.metadataAdapter = metadataAdapter;
+        this.qualifierAnnotationType = qualifierAnnotationType;
     }
 
     @Override
@@ -55,7 +57,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
         final AccessFilter<Class<?>> moduleAccessFilter =
                 AccessFilter.Factory.getAccessFilter(moduleAccessLevel, module);
 
-        final CompositeQualifier compositeQualifier = Metadata.qualifier(module, metadataAdapter.qualifierAnnotation());
+        final CompositeQualifier compositeQualifier = Metadata.qualifier(module, qualifierAnnotationType);
 
         return new ModuleAdapter() {
 
@@ -119,7 +121,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
         }
 
         final CompositeQualifier blackListQualifier = Metadata.qualifier(blackListConfigClass,
-                metadataAdapter.qualifierAnnotation());
+                qualifierAnnotationType);
 
         return  new AccessFilter<DependencyRequest>() {
 
@@ -188,7 +190,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
         }
 
         final CompositeQualifier whiteListQualifier = Metadata.qualifier(whiteListConfigClass,
-                metadataAdapter.qualifierAnnotation());
+                qualifierAnnotationType);
 
         return  new AccessFilter<DependencyRequest>() {
 
@@ -252,7 +254,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
         for (final Component component : components) {
 
             final CompositeQualifier compositeQualifier = Metadata.qualifier(
-                    component.type(), moduleAdapter, metadataAdapter.qualifierAnnotation());
+                    component.type(), moduleAdapter, qualifierAnnotationType);
 
             ComponentMetadata componentMetadata = new ComponentMetadata() {
                 @Override public AnnotatedElement provider() {
@@ -310,7 +312,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
             }
 
             final CompositeQualifier compositeQualifier = Metadata.qualifier(
-                    method, moduleAdapter, metadataAdapter.qualifierAnnotation());
+                    method, moduleAdapter, qualifierAnnotationType);
 
             ComponentMetadata componentMetadata = new ComponentMetadata() {
                 @Override public AnnotatedElement provider() {

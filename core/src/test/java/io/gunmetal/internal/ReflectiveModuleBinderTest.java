@@ -1,7 +1,6 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AccessRestrictions;
-import io.gunmetal.Component;
 import io.gunmetal.Dependency;
 import io.gunmetal.Module;
 import io.gunmetal.Qualifier;
@@ -9,12 +8,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 
 import static io.gunmetal.AccessRestrictions.Modules;
 
@@ -23,32 +20,6 @@ import static io.gunmetal.AccessRestrictions.Modules;
  */
 @RunWith(JUnit4.class)
 public class ReflectiveModuleBinderTest {
-
-    ComponentAdapterFactory componentAdapterFactory = new ComponentAdapterFactory() {
-
-        @Override
-        public <T> ComponentAdapter<T> create(Component component, AccessFilter<DependencyRequest> accessFilter, InternalProvider internalProvider) {
-            return null;
-        }
-
-        @Override
-        public <T> ComponentAdapter<T> create(Method providerMethod, AccessFilter<DependencyRequest> accessFilter, InternalProvider internalProvider) {
-            return null;
-        }
-
-    };
-
-    MetadataAdapter metadataAdapter = new MetadataAdapter() {
-        @Override
-        public Class<? extends Annotation> getQualifierAnnotation() {
-            return Qualifier.class;
-        }
-
-        @Override
-        public Class<? extends Annotation> getScopeAnnotation() {
-            return null;
-        }
-    };
 
     InternalProvider internalProvider = new InternalProvider() {
         @Override
@@ -68,7 +39,7 @@ public class ReflectiveModuleBinderTest {
         }
     };
 
-    ModuleBinder moduleBinder = new ReflectiveModuleBinder(componentAdapterFactory, metadataAdapter);
+    ModuleBinder moduleBinder;
 
 
     @Target(ElementType.TYPE)
