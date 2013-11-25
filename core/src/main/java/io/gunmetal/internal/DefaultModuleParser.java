@@ -1,10 +1,11 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AccessLevel;
-import io.gunmetal.AccessRestrictions;
+import io.gunmetal.BlackList;
 import io.gunmetal.Component;
 import io.gunmetal.CompositeQualifier;
 import io.gunmetal.Module;
+import io.gunmetal.WhiteList;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -93,24 +94,22 @@ class DefaultModuleParser implements ModuleParser {
 
     private AccessFilter<DependencyRequest> blackListFilter(final Class<?> module, Module moduleAnnotation) {
 
-        Class<? extends AccessRestrictions.NotAccessibleFrom> blackListConfigClass =
+        Class<? extends BlackList> blackListConfigClass =
                 moduleAnnotation.notAccessibleFrom();
 
-        if (blackListConfigClass == AccessRestrictions.NotAccessibleFrom.class) {
-
+        if (blackListConfigClass == BlackList.class) {
             return new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return true;
                 }
             };
-
         }
 
         final Class[] blackListClasses;
 
-        AccessRestrictions.Modules blackListModules =
-                blackListConfigClass.getAnnotation(AccessRestrictions.Modules.class);
+        BlackList.Modules blackListModules =
+                blackListConfigClass.getAnnotation(BlackList.Modules.class);
 
         if (blackListModules != null) {
 
@@ -161,24 +160,22 @@ class DefaultModuleParser implements ModuleParser {
 
     private AccessFilter<DependencyRequest> whiteListFilter(final Class<?> module, Module moduleAnnotation) {
 
-        Class<? extends AccessRestrictions.OnlyAccessibleFrom> whiteListConfigClass =
+        Class<? extends WhiteList> whiteListConfigClass =
                 moduleAnnotation.onlyAccessibleFrom();
 
-        if (whiteListConfigClass == AccessRestrictions.OnlyAccessibleFrom.class) {
-
+        if (whiteListConfigClass == WhiteList.class) {
             return new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return true;
                 }
             };
-
         }
 
         final Class[] whiteListClasses;
 
-        AccessRestrictions.Modules whiteListModules =
-                whiteListConfigClass.getAnnotation(AccessRestrictions.Modules.class);
+        WhiteList.Modules whiteListModules =
+                whiteListConfigClass.getAnnotation(WhiteList.Modules.class);
 
         if (whiteListModules != null) {
 

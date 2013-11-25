@@ -1,6 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.AccessRestrictions;
 import io.gunmetal.Module;
 import io.gunmetal.Qualifier;
 import org.junit.runner.RunWith;
@@ -10,8 +9,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import static io.gunmetal.AccessRestrictions.Modules;
 
 /**
  * @author rees.byars
@@ -47,11 +44,10 @@ public class ReflectiveModuleBinderTest {
     )
     static class TestModule {
 
-        @Modules(DefaultModuleParser.class)
-        class WhiteList implements AccessRestrictions.OnlyAccessibleFrom { }
-
-        @Modules(DefaultModuleParser.class)
-        class BlackList implements AccessRestrictions.NotAccessibleFrom { }
+        @io.gunmetal.WhiteList.Modules(DefaultModuleParser.class)
+        class WhiteList implements io.gunmetal.WhiteList { }
+        @io.gunmetal.BlackList.Modules(DefaultModuleParser.class)
+        class BlackList implements io.gunmetal.BlackList { }
 
         private static TestModule module() {
             return new TestModule();

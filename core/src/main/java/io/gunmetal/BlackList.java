@@ -9,17 +9,11 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-public interface AccessRestrictions {
-
+public interface BlackList {
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     public @interface Modules {
         Class<?>[] value();
     }
-
-    interface NotAccessibleFrom { }
-
-    interface OnlyAccessibleFrom { }
-
 }
