@@ -14,9 +14,9 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-final class Metadata {
+final class Smithy {
 
-    private Metadata() { }
+    private Smithy() { }
 
     static CompositeQualifier qualifier(AnnotatedElement annotatedElement,
                                      Class<? extends Annotation> qualifierAnnotation) {

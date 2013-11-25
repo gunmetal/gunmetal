@@ -20,7 +20,6 @@ class DefaultProvisionStrategyFactory implements ProvisionStrategyFactory {
     @Override
     public <T, P extends AnnotatedElement> ProvisionStrategy<T> create(
             final ComponentMetadata<P> componentMetadata,
-            AccessFilter<DependencyRequest> accessFilter,
             InternalProvider internalProvider) {
 
 

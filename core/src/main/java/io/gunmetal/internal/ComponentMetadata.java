@@ -2,7 +2,6 @@ package io.gunmetal.internal;
 
 import io.gunmetal.CompositeQualifier;
 
-import java.lang.reflect.Type;
 import java.util.Collection;
 
 /**
@@ -18,7 +17,7 @@ interface ComponentMetadata<P> {
 
     CompositeQualifier qualifier();
 
-    Collection<Type> targets();
+    Collection<TypeKey<?>> targets();
 
     int hashCode();
 

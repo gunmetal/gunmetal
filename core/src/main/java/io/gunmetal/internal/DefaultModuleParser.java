@@ -9,8 +9,9 @@ import io.gunmetal.WhiteList;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -39,11 +40,13 @@ class DefaultModuleParser implements ModuleParser {
 
         final ModuleAdapter moduleAdapter = moduleAdapter(module, moduleAnnotation);
 
-        bindComponentAnnotations(moduleAnnotation.components(), moduleAdapter, provider);
+        List<ComponentAdapter<?>> componentAdapters = new LinkedList<ComponentAdapter<?>>();
 
-        bindProviderMethods(module, moduleAdapter, provider);
+        addForComponentAnnotations(moduleAnnotation.components(), componentAdapters, moduleAdapter, provider);
 
-        return null; // TODO
+        addForProviderMethods(module, componentAdapters, moduleAdapter, provider);
+
+        return componentAdapters;
 
     }
 
@@ -245,16 +248,27 @@ class DefaultModuleParser implements ModuleParser {
 
     }
 
-    private void bindComponentAnnotations(Component[] components,
-                                          final ModuleAdapter moduleAdapter,
-                                          InternalProvider provider) {
+    private void addForComponentAnnotations(
+            Component[] components,
+            List<ComponentAdapter<?>> componentAdapters,
+            final ModuleAdapter moduleAdapter,
+            InternalProvider provider) {
 
         for (final Component component : components) {
 
             final CompositeQualifier compositeQualifier = qualifierResolver.resolve(
                     component.type(), moduleAdapter.compositeQualifier());
 
-            ComponentMetadata<Class> componentMetadata = new ComponentMetadata<Class>() {
+            final Collection<TypeKey<?>> typeKeys;
+            Class<?>[] targets = component.targets();
+
+            if (targets.length == 0) {
+                typeKeys = Collections.<TypeKey<?>>singletonList(Types.typeKey(component.type()));
+            } else {
+                typeKeys = Types.typeKeys(targets);
+            }
+
+            final ComponentMetadata<Class> componentMetadata = new ComponentMetadata<Class>() {
                 @Override public Class<?> provider() {
                     return component.type();
                 }
@@ -267,35 +281,33 @@ class DefaultModuleParser implements ModuleParser {
                 @Override public CompositeQualifier qualifier() {
                     return compositeQualifier;
                 }
-                @Override public Collection<Type> targets() {
-                    return null;  //TODO
+                @Override public Collection<TypeKey<?>> targets() {
+                    return typeKeys;
                 }
             };
 
             final AccessFilter<Class<?>> accessFilter =
                     AccessFilter.Factory.getAccessFilter(component.access(), component.type());
 
-            ProvisionStrategy<?> provisionStrategy =
-                    provisionStrategyFactory.create(componentMetadata, new AccessFilter<DependencyRequest>() {
+            final ProvisionStrategy<?> provisionStrategy =
+                    provisionStrategyFactory.create(componentMetadata, provider);
+
+            componentAdapters.add(componentAdapter(componentMetadata, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest)
                             && accessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
                 }
-            }, provider);
-
-            for (Class<?> target : component.targets()) {
-
-                //TODO add to collection and return
-
-            }
+            }, provisionStrategy));
 
         }
     }
 
-    private void bindProviderMethods(Class<?> module,
-                                     final ModuleAdapter moduleAdapter,
-                                     InternalProvider provider) {
+    private void addForProviderMethods(
+            Class<?> module,
+            List<ComponentAdapter<?>> componentAdapters,
+            final ModuleAdapter moduleAdapter,
+            InternalProvider provider) {
 
         for (final Method method : module.getDeclaredMethods()) {
 
@@ -314,6 +326,10 @@ class DefaultModuleParser implements ModuleParser {
             final CompositeQualifier compositeQualifier =
                     qualifierResolver.resolve(method, moduleAdapter.compositeQualifier());
 
+            // TODO targeted return type check, better type ref impl
+            final Collection<TypeKey<?>> typeKeys =
+                    Collections.<TypeKey<?>>singletonList(Types.typeKey(method.getGenericReturnType()));
+
             ComponentMetadata<Method> componentMetadata = new ComponentMetadata<Method>() {
                 @Override public Method provider() {
                     return method;
@@ -327,30 +343,43 @@ class DefaultModuleParser implements ModuleParser {
                 @Override public CompositeQualifier qualifier() {
                     return compositeQualifier;
                 }
-                @Override public Collection<Type> targets() {
-                    return null;  //TODO
+                @Override public Collection<TypeKey<?>> targets() {
+                    return typeKeys;
                 }
             };
 
             final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
 
             ProvisionStrategy<?> provisionStrategy =
-                    provisionStrategyFactory.create(componentMetadata, new AccessFilter<DependencyRequest>() {
+                    provisionStrategyFactory.create(componentMetadata, provider);
+
+            componentAdapters.add(componentAdapter(componentMetadata, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest)
                             && accessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
                 }
-            }, provider);
-
-            // TODO targeted return type check, better type ref impl
-
-            final Type target = method.getGenericReturnType();
-
-            // TODO
+            }, provisionStrategy));
 
         }
 
+    }
+
+    private <T> ComponentAdapter<T> componentAdapter(
+            final ComponentMetadata<?> componentMetadata,
+            final AccessFilter<DependencyRequest> accessFilter,
+            final ProvisionStrategy<T> provisionStrategy) {
+        return new ComponentAdapter<T>() {
+            @Override public ComponentMetadata metadata() {
+                return componentMetadata;
+            }
+            @Override public AccessFilter<DependencyRequest> filter() {
+                return accessFilter;
+            }
+            @Override public ProvisionStrategy<T> provisionStrategy() {
+                return provisionStrategy;
+            }
+        };
     }
 
 }
