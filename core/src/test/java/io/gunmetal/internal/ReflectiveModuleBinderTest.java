@@ -1,10 +1,8 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AccessRestrictions;
-import io.gunmetal.Dependency;
 import io.gunmetal.Module;
 import io.gunmetal.Qualifier;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -32,14 +30,7 @@ public class ReflectiveModuleBinderTest {
         }
     };
 
-    Binder binder = new Binder() {
-        @Override
-        public <T> ComponentAdapter<T> bind(Dependency<?> dependency, ComponentAdapter<T> componentAdapter) {
-            return null;
-        }
-    };
-
-    ModuleBinder moduleBinder;
+    ModuleParser moduleParser;
 
 
     @Target(ElementType.TYPE)
@@ -51,27 +42,20 @@ public class ReflectiveModuleBinderTest {
 
     @Q
     @Module(
-            dependsOn = ReflectiveModuleBinder.class,
+            dependsOn = DefaultModuleParser.class,
             onlyAccessibleFrom = TestModule.WhiteList.class
     )
     static class TestModule {
 
-        @Modules(ReflectiveModuleBinder.class)
+        @Modules(DefaultModuleParser.class)
         class WhiteList implements AccessRestrictions.OnlyAccessibleFrom { }
 
-        @Modules(ReflectiveModuleBinder.class)
+        @Modules(DefaultModuleParser.class)
         class BlackList implements AccessRestrictions.NotAccessibleFrom { }
 
         private static TestModule module() {
             return new TestModule();
         }
-    }
-
-    @Test
-    public void testBind() {
-
-        moduleBinder.bind(TestModule.class, internalProvider, binder);
-
     }
 
 }

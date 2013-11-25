@@ -3,8 +3,12 @@ package io.gunmetal.internal;
 /**
  * @author rees.byars
  */
-interface ComponentAdapter<T> extends ProvisionStrategy<T>, AccessFilter<DependencyRequest> {
+interface ComponentAdapter<T> {
 
     ComponentMetadata metadata();
+
+    AccessFilter<DependencyRequest> filter();
+
+    ProvisionStrategy<T> provisionStrategy();
 
 }

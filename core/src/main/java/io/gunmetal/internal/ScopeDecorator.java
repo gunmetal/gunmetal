@@ -3,23 +3,26 @@ package io.gunmetal.internal;
 import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
 
+import java.lang.reflect.AnnotatedElement;
+
 /**
  * @author rees.byars
  */
 class ScopeDecorator implements ProvisionStrategyDecorator {
 
-    private final ScopeResolver scopeResolver;
+    private final AnnotationResolver<Scope> scopeResolver;
     private final ScopeBindings scopeBindings;
 
-    ScopeDecorator(ScopeResolver scopeResolver, ScopeBindings scopeBindings) {
+    ScopeDecorator(AnnotationResolver<Scope> scopeResolver, ScopeBindings scopeBindings) {
         this.scopeResolver = scopeResolver;
         this.scopeBindings = scopeBindings;
     }
 
     @Override
-    public <T> ProvisionStrategy<T> decorate(final ComponentMetadata componentMetadata,
-                                             final ProvisionStrategy<T> delegateStrategy,
-                                             final InternalProvider internalProvider) {
+    public <T, P extends AnnotatedElement> ProvisionStrategy<T> decorate(
+            final ComponentMetadata<P> componentMetadata,
+            final ProvisionStrategy<T> delegateStrategy,
+            final InternalProvider internalProvider) {
 
         final Scope scope = scopeResolver.resolve(componentMetadata.provider());
 
@@ -60,7 +63,7 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
         }
 
         return new ProvisionStrategy<T>() {
-            ProviderDecorator providerDecorator = scopeBindings.decorator(scope);
+            ProviderDecorator providerDecorator = scopeBindings.decoratorFor(scope);
             @Override
             public T get(final InternalProvider internalProvider, final ResolutionContext resolutionContext) {
                 return providerDecorator.decorate(componentMetadata, new Provider<T>() {

@@ -23,32 +23,31 @@ final class Metadata {
         List<Object> qualifiers = new LinkedList<Object>();
         for (Annotation annotation : annotatedElement.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
-            if (annotationType.isAnnotationPresent(qualifierAnnotation)) {
+            if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
                 qualifiers.add(annotation);
             }
         }
         return qualifier(qualifiers.toArray());
     }
 
-    static CompositeQualifier qualifier(AnnotatedElement annotatedElement, ModuleAdapter moduleAdapter,
+    static CompositeQualifier qualifier(AnnotatedElement annotatedElement, CompositeQualifier joiningQualifier,
                                      Class<? extends Annotation> qualifierAnnotation) {
         List<Object> qualifiers = new LinkedList<Object>();
-        Collections.addAll(qualifiers, moduleAdapter.compositeQualifier().getQualifiers());
+        Collections.addAll(qualifiers, joiningQualifier.getQualifiers());
         for (Annotation annotation : annotatedElement.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
-            if (annotationType.isAnnotationPresent(qualifierAnnotation)) {
+            if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
                 qualifiers.add(annotation);
             }
         }
         return qualifier(qualifiers.toArray());
     }
 
-    static CompositeQualifier qualifier(final Object[] qualifiers) {
-
-        Arrays.sort(qualifiers);
-
+    static CompositeQualifier qualifier(final Object[] q) {
+        Arrays.sort(q);
         return new CompositeQualifier() {
 
+            Object[] qualifiers = q;
             int hashCode = Arrays.hashCode(qualifiers);
 
             @Override public Object[] getQualifiers() {

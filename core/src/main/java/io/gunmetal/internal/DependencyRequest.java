@@ -40,7 +40,7 @@ interface DependencyRequest {
 
                 @Override
                 public CompositeQualifier sourceQualifier() {
-                    return componentMetadata.compositeQualifier();
+                    return componentMetadata.qualifier();
                 }
 
                 @Override

@@ -6,28 +6,28 @@ import io.gunmetal.Component;
 import io.gunmetal.CompositeQualifier;
 import io.gunmetal.Module;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @author rees.byars
  */
-class ReflectiveModuleBinder implements ModuleBinder {
+class DefaultModuleParser implements ModuleParser {
 
-    private final ComponentAdapterFactory componentAdapterFactory;
-    private final Class<? extends Annotation> qualifierAnnotationType;
+    private final ProvisionStrategyFactory provisionStrategyFactory;
+    private final AnnotationResolver<CompositeQualifier> qualifierResolver;
 
-    ReflectiveModuleBinder(ComponentAdapterFactory componentAdapterFactory, 
-                           Class<? extends Annotation> qualifierAnnotationType) {
-        this.componentAdapterFactory = componentAdapterFactory;
-        this.qualifierAnnotationType = qualifierAnnotationType;
+    DefaultModuleParser(ProvisionStrategyFactory provisionStrategyFactory,
+                        AnnotationResolver<CompositeQualifier> qualifierResolver) {
+        this.provisionStrategyFactory = provisionStrategyFactory;
+        this.qualifierResolver = qualifierResolver;
     }
 
     @Override
-    public void bind(final Class<?> module, InternalProvider provider, Binder binder) {
+    public List<ComponentAdapter<?>> parse(final Class<?> module, InternalProvider provider) {
 
         final Module moduleAnnotation = module.getAnnotation(Module.class);
 
@@ -38,9 +38,11 @@ class ReflectiveModuleBinder implements ModuleBinder {
 
         final ModuleAdapter moduleAdapter = moduleAdapter(module, moduleAnnotation);
 
-        bindComponentAnnotations(moduleAnnotation.components(), moduleAdapter, provider, binder);
+        bindComponentAnnotations(moduleAnnotation.components(), moduleAdapter, provider);
 
-        bindProviderMethods(module, moduleAdapter, provider, binder);
+        bindProviderMethods(module, moduleAdapter, provider);
+
+        return null; // TODO
 
     }
 
@@ -57,7 +59,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
         final AccessFilter<Class<?>> moduleAccessFilter =
                 AccessFilter.Factory.getAccessFilter(moduleAccessLevel, module);
 
-        final CompositeQualifier compositeQualifier = Metadata.qualifier(module, qualifierAnnotationType);
+        final CompositeQualifier compositeQualifier = qualifierResolver.resolve(module);
 
         return new ModuleAdapter() {
 
@@ -120,8 +122,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
 
         }
 
-        final CompositeQualifier blackListQualifier = Metadata.qualifier(blackListConfigClass,
-                qualifierAnnotationType);
+        final CompositeQualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
 
         return  new AccessFilter<DependencyRequest>() {
 
@@ -189,8 +190,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
 
         }
 
-        final CompositeQualifier whiteListQualifier = Metadata.qualifier(whiteListConfigClass,
-                qualifierAnnotationType);
+        final CompositeQualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
 
         return  new AccessFilter<DependencyRequest>() {
 
@@ -248,16 +248,17 @@ class ReflectiveModuleBinder implements ModuleBinder {
 
     }
 
-    private void bindComponentAnnotations(Component[] components, final ModuleAdapter moduleAdapter,
-                                          InternalProvider provider, Binder binder) {
+    private void bindComponentAnnotations(Component[] components,
+                                          final ModuleAdapter moduleAdapter,
+                                          InternalProvider provider) {
 
         for (final Component component : components) {
 
-            final CompositeQualifier compositeQualifier = Metadata.qualifier(
-                    component.type(), moduleAdapter, qualifierAnnotationType);
+            final CompositeQualifier compositeQualifier = qualifierResolver.resolve(
+                    component.type(), moduleAdapter.compositeQualifier());
 
-            ComponentMetadata componentMetadata = new ComponentMetadata() {
-                @Override public AnnotatedElement provider() {
+            ComponentMetadata<Class> componentMetadata = new ComponentMetadata<Class>() {
+                @Override public Class<?> provider() {
                     return component.type();
                 }
                 @Override public Class<?> providerClass() {
@@ -266,16 +267,19 @@ class ReflectiveModuleBinder implements ModuleBinder {
                 @Override public ModuleAdapter moduleAdapter() {
                     return moduleAdapter;
                 }
-                @Override public CompositeQualifier compositeQualifier() {
+                @Override public CompositeQualifier qualifier() {
                     return compositeQualifier;
+                }
+                @Override public Collection<Type> targets() {
+                    return null;  //TODO
                 }
             };
 
             final AccessFilter<Class<?>> accessFilter =
                     AccessFilter.Factory.getAccessFilter(component.access(), component.type());
 
-            ComponentAdapter<?> componentAdapter =
-                    componentAdapterFactory.create(componentMetadata, new AccessFilter<DependencyRequest>() {
+            ProvisionStrategy<?> provisionStrategy =
+                    provisionStrategyFactory.create(componentMetadata, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest)
@@ -285,17 +289,16 @@ class ReflectiveModuleBinder implements ModuleBinder {
 
             for (Class<?> target : component.targets()) {
 
-                binder.bind(
-                        Metadata.dependency(target, componentAdapter.metadata().compositeQualifier()),
-                        componentAdapter);
+                //TODO add to collection and return
 
             }
 
         }
     }
 
-    private void bindProviderMethods(Class<?> module, final ModuleAdapter moduleAdapter,
-                                     InternalProvider provider, Binder binder) {
+    private void bindProviderMethods(Class<?> module,
+                                     final ModuleAdapter moduleAdapter,
+                                     InternalProvider provider) {
 
         for (final Method method : module.getDeclaredMethods()) {
 
@@ -311,11 +314,11 @@ class ReflectiveModuleBinder implements ModuleBinder {
                         + method.getName() + "] in module [" + module.getName() + "] has a void return type.");
             }
 
-            final CompositeQualifier compositeQualifier = Metadata.qualifier(
-                    method, moduleAdapter, qualifierAnnotationType);
+            final CompositeQualifier compositeQualifier =
+                    qualifierResolver.resolve(method, moduleAdapter.compositeQualifier());
 
-            ComponentMetadata componentMetadata = new ComponentMetadata() {
-                @Override public AnnotatedElement provider() {
+            ComponentMetadata<Method> componentMetadata = new ComponentMetadata<Method>() {
+                @Override public Method provider() {
                     return method;
                 }
                 @Override public Class<?> providerClass() {
@@ -324,15 +327,18 @@ class ReflectiveModuleBinder implements ModuleBinder {
                 @Override public ModuleAdapter moduleAdapter() {
                     return moduleAdapter;
                 }
-                @Override public CompositeQualifier compositeQualifier() {
+                @Override public CompositeQualifier qualifier() {
                     return compositeQualifier;
+                }
+                @Override public Collection<Type> targets() {
+                    return null;  //TODO
                 }
             };
 
             final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
 
-            ComponentAdapter<?> componentAdapter =
-                    componentAdapterFactory.create(componentMetadata, new AccessFilter<DependencyRequest>() {
+            ProvisionStrategy<?> provisionStrategy =
+                    provisionStrategyFactory.create(componentMetadata, new AccessFilter<DependencyRequest>() {
                 @Override
                 public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                     return moduleAdapter.isAccessibleTo(dependencyRequest)
@@ -344,9 +350,7 @@ class ReflectiveModuleBinder implements ModuleBinder {
 
             final Type target = method.getGenericReturnType();
 
-            binder.bind(
-                    Metadata.dependency(target, componentAdapter.metadata().compositeQualifier()),
-                    componentAdapter);
+            // TODO
 
         }
 

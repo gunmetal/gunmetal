@@ -2,20 +2,23 @@ package io.gunmetal.internal;
 
 import io.gunmetal.CompositeQualifier;
 
-import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Type;
+import java.util.Collection;
 
 /**
  * @author rees.byars
  */
-interface ComponentMetadata {
+interface ComponentMetadata<P> {
 
-    AnnotatedElement provider();
+    P provider();
 
     Class<?> providerClass();
 
     ModuleAdapter moduleAdapter();
 
-    CompositeQualifier compositeQualifier();
+    CompositeQualifier qualifier();
+
+    Collection<Type> targets();
 
     int hashCode();
 

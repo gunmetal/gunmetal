@@ -6,5 +6,5 @@ import io.gunmetal.ProviderDecorator;
  * @author rees.byars
  */
 interface ScopeBindings {
-    ProviderDecorator decorator(Scope scope);
+    ProviderDecorator decoratorFor(Scope scope);
 }

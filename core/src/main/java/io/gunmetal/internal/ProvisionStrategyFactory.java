@@ -5,11 +5,11 @@ import java.lang.reflect.AnnotatedElement;
 /**
  * @author rees.byars
  */
-interface ProvisionStrategyDecorator {
+interface ProvisionStrategyFactory {
 
-    <T,P extends AnnotatedElement> ProvisionStrategy<T> decorate(
+    <T, P extends AnnotatedElement> ProvisionStrategy<T> create(
             ComponentMetadata<P> componentMetadata,
-            ProvisionStrategy<T> delegateStrategy,
+            AccessFilter<DependencyRequest> accessFilter,
             InternalProvider internalProvider);
 
 }

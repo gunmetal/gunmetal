@@ -1,25 +1,27 @@
 package io.gunmetal.internal;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
  */
-class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
+class DefaultProvisionStrategyFactory implements ProvisionStrategyFactory {
 
     private final Injectors.Factory injectorFactory;
     private final ProvisionStrategyDecorator strategyDecorator;
 
-    DefaultComponentAdapterFactory(Injectors.Factory injectorFactory, MetadataAdapter metadataAdapter,
-                                   ProvisionStrategyDecorator strategyDecorator) {
+    DefaultProvisionStrategyFactory(Injectors.Factory injectorFactory, MetadataAdapter metadataAdapter,
+                                    ProvisionStrategyDecorator strategyDecorator) {
         this.injectorFactory = injectorFactory;
         this.strategyDecorator = strategyDecorator;
     }
 
     @Override
-    public <T> ComponentAdapter<T> create(final ComponentMetadata componentMetadata,
-                                          AccessFilter<DependencyRequest> accessFilter,
-                                          InternalProvider internalProvider) {
+    public <T, P extends AnnotatedElement> ProvisionStrategy<T> create(
+            final ComponentMetadata<P> componentMetadata,
+            AccessFilter<DependencyRequest> accessFilter,
+            InternalProvider internalProvider) {
 
 
 
@@ -39,12 +41,10 @@ class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
 
         Injectors.Injector<T> postInjector = null;
 
-        ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
+        return strategyDecorator.decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector),
                 internalProvider);
-
-        return componentAdapter(componentMetadata, provisionStrategy, accessFilter);
     }
 
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata componentMetadata,
@@ -68,7 +68,7 @@ class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
                     return strategyContext.component;
                 } catch (CircularReferenceException e) {
                     strategyContext.state = ResolutionContext.States.NEW;
-                    if (e.metadata.equals(componentMetadata)) {
+                    if (e.metadata().equals(componentMetadata)) {
                         e.getReverseStrategy().get(internalProvider, resolutionContext);
                         return strategyContext.component;
                     } else if (e.getReverseStrategy() == null) {
@@ -79,57 +79,6 @@ class DefaultComponentAdapterFactory implements ComponentAdapterFactory {
             }
 
         };
-    }
-
-    private <T> ComponentAdapter<T> componentAdapter(final ComponentMetadata metadata,
-                                                     final ProvisionStrategy<T> provisionStrategy,
-                                                     final AccessFilter<DependencyRequest> accessFilter) {
-        return new ComponentAdapter<T>() {
-            @Override public ComponentMetadata metadata() {
-                return metadata;
-            }
-            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                return accessFilter.isAccessibleTo(dependencyRequest);
-            }
-            @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                return provisionStrategy.get(internalProvider, resolutionContext);
-            }
-        };
-    }
-    
-    private class CircularReferenceException extends RuntimeException {
-        
-        private ComponentMetadata metadata;
-        private ProvisionStrategy<?> reverseStrategy;
-
-        protected CircularReferenceException(String message) {
-            super(message);
-        }
-
-        protected CircularReferenceException(ComponentMetadata metadata) {
-            this.metadata = metadata;
-        }
-
-        public ComponentMetadata metadata() {
-            return metadata;
-        }
-
-        public void setReverseStrategy(ProvisionStrategy<?> reverseStrategy) {
-            this.reverseStrategy = reverseStrategy;
-        }
-
-        public ProvisionStrategy<?> getReverseStrategy() {
-            return reverseStrategy;
-        }
-
-        @Override
-        public String getMessage() {
-            if (reverseStrategy != null) {
-                return super.getMessage() + " of with metadata [" + metadata() + "]";
-            }
-            return super.getMessage();
-        }
-        
     }
 
 }
