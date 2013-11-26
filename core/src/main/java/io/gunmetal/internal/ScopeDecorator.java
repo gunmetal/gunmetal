@@ -3,8 +3,6 @@ package io.gunmetal.internal;
 import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
 
-import java.lang.reflect.AnnotatedElement;
-
 /**
  * @author rees.byars
  */
@@ -21,8 +19,8 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
     }
 
     @Override
-    public <T, P extends AnnotatedElement> ProvisionStrategy<T> decorate(
-            final ComponentMetadata<P> componentMetadata,
+    public <T> ProvisionStrategy<T> decorate(
+            final ComponentMetadata<?> componentMetadata,
             final ProvisionStrategy<T> delegateStrategy) {
 
         final Scope scope = scopeResolver.resolve(componentMetadata.provider());

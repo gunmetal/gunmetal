@@ -1,11 +1,12 @@
 package io.gunmetal.internal;
 
+import java.lang.reflect.AnnotatedElement;
 import java.util.Collection;
 
 /**
  * @author rees.byars
  */
-abstract class ComponentMetadata<P> {
+abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     abstract P provider();
 

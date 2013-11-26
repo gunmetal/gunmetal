@@ -1,6 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.AccessLevel;
 import io.gunmetal.BlackList;
 import io.gunmetal.Component;
 import io.gunmetal.Module;
@@ -52,37 +51,27 @@ class ModuleParserImpl implements ModuleParser {
     private ModuleAdapter moduleAdapter(final Class<?> module, final Module moduleAnnotation) {
 
         final AccessFilter<DependencyRequest> blackListFilter = blackListFilter(module, moduleAnnotation);
-
         final AccessFilter<DependencyRequest> whiteListFilter = whiteListFilter(module, moduleAnnotation);
-
         final AccessFilter<DependencyRequest> dependsOnFilter = dependsOnFilter(module);
-
-        AccessLevel moduleAccessLevel = moduleAnnotation.access();
-
         final AccessFilter<Class<?>> moduleAccessFilter =
-                AccessFilter.Factory.getAccessFilter(moduleAccessLevel, module);
-
+                AccessFilter.Factory.getAccessFilter(moduleAnnotation.access(), module);
         final Qualifier qualifier = qualifierResolver.resolve(module);
 
         return new ModuleAdapter() {
 
-            @Override
-            public Class<?> moduleClass() {
+            @Override public Class<?> moduleClass() {
                 return module;
             }
 
-            @Override
-            public Qualifier qualifier() {
+            @Override public Qualifier qualifier() {
                 return qualifier;
             }
 
-            @Override
-            public Class<?>[] referencedModules() {
+            @Override public Class<?>[] referencedModules() {
                 return moduleAnnotation.dependsOn();
             }
 
-            @Override
-            public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                 // we use the single '&' because we want to process them all regardless if one fails
                 // in order to collect all errors and report them back
                 return moduleAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())

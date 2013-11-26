@@ -5,14 +5,10 @@ package io.gunmetal.internal;
  */
 class CircularReferenceException extends RuntimeException {
 
-    private ComponentMetadata metadata;
+    private final ComponentMetadata metadata;
     private ProvisionStrategy<?> reverseStrategy;
 
-    protected CircularReferenceException(String message) {
-        super(message);
-    }
-
-    protected CircularReferenceException(ComponentMetadata metadata) {
+    CircularReferenceException(ComponentMetadata metadata) {
         this.metadata = metadata;
     }
 

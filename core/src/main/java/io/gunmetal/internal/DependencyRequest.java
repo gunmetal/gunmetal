@@ -24,7 +24,7 @@ interface DependencyRequest {
 
         private Factory() { }
 
-        static DependencyRequest create(final ComponentMetadata componentMetadata, final Dependency<?> dependency) {
+        static DependencyRequest create(final ComponentMetadata requestingComponent, final Dependency<?> dependency) {
 
             return new DependencyRequest() {
 
@@ -32,17 +32,17 @@ interface DependencyRequest {
 
                 @Override
                 public Class<?> sourceOrigin() {
-                    return componentMetadata.providerClass();
+                    return requestingComponent.providerClass();
                 }
 
                 @Override
                 public Qualifier sourceQualifier() {
-                    return componentMetadata.qualifier();
+                    return requestingComponent.qualifier();
                 }
 
                 @Override
                 public ModuleAdapter sourceModule() {
-                    return componentMetadata.moduleAdapter();
+                    return requestingComponent.moduleAdapter();
                 }
 
                 @Override
