@@ -17,13 +17,13 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class DefaultModuleParser implements ModuleParser {
+class ModuleParserImpl implements ModuleParser {
 
     private final ProvisionStrategyFactory provisionStrategyFactory;
     private final AnnotationResolver<CompositeQualifier> qualifierResolver;
 
-    DefaultModuleParser(ProvisionStrategyFactory provisionStrategyFactory,
-                        AnnotationResolver<CompositeQualifier> qualifierResolver) {
+    ModuleParserImpl(ProvisionStrategyFactory provisionStrategyFactory,
+                     AnnotationResolver<CompositeQualifier> qualifierResolver) {
         this.provisionStrategyFactory = provisionStrategyFactory;
         this.qualifierResolver = qualifierResolver;
     }

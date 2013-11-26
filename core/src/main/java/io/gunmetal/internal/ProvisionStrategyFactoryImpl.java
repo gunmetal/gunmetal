@@ -5,13 +5,13 @@ import java.lang.reflect.Method;
 /**
  * @author rees.byars
  */
-class DefaultProvisionStrategyFactory implements ProvisionStrategyFactory {
+class ProvisionStrategyFactoryImpl implements ProvisionStrategyFactory {
 
     private final Injectors.Factory injectorFactory;
     private final ProvisionStrategyDecorator strategyDecorator;
 
-    DefaultProvisionStrategyFactory(Injectors.Factory injectorFactory,
-                                    ProvisionStrategyDecorator strategyDecorator) {
+    ProvisionStrategyFactoryImpl(Injectors.Factory injectorFactory,
+                                 ProvisionStrategyDecorator strategyDecorator) {
         this.injectorFactory = injectorFactory;
         this.strategyDecorator = strategyDecorator;
     }

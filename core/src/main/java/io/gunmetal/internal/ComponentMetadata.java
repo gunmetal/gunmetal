@@ -7,20 +7,26 @@ import java.util.Collection;
 /**
  * @author rees.byars
  */
-interface ComponentMetadata<P> {
+abstract class ComponentMetadata<P> {
 
-    P provider();
+    abstract P provider();
 
-    Class<?> providerClass();
+    abstract Class<?> providerClass();
 
-    ModuleAdapter moduleAdapter();
+    abstract ModuleAdapter moduleAdapter();
 
-    CompositeQualifier qualifier();
+    abstract CompositeQualifier qualifier();
 
-    Collection<TypeKey<?>> targets();
+    abstract Collection<TypeKey<?>> targets();
 
-    int hashCode();
+    public int hashCode() {
+        return provider().hashCode() * 67 + qualifier().hashCode();
+    }
 
-    boolean equals(Object target);
+    public boolean equals(Object target) {
+        return target instanceof ComponentMetadata
+                && ((ComponentMetadata) target).qualifier().equals(qualifier())
+                && ((ComponentMetadata) target).provider().equals(provider());
+    }
 
 }

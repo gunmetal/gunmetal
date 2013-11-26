@@ -35,14 +35,14 @@ public class ReflectiveModuleBinderTest {
 
     @Q
     @Module(
-            dependsOn = DefaultModuleParser.class,
+            dependsOn = ModuleParserImpl.class,
             onlyAccessibleFrom = TestModule.WhiteList.class
     )
     static class TestModule {
 
-        @io.gunmetal.WhiteList.Modules(DefaultModuleParser.class)
+        @io.gunmetal.WhiteList.Modules(ModuleParserImpl.class)
         class WhiteList implements io.gunmetal.WhiteList { }
-        @io.gunmetal.BlackList.Modules(DefaultModuleParser.class)
+        @io.gunmetal.BlackList.Modules(ModuleParserImpl.class)
         class BlackList implements io.gunmetal.BlackList { }
 
         private static TestModule module() {
