@@ -24,9 +24,15 @@ abstract class ComponentMetadata<P> {
     }
 
     public boolean equals(Object target) {
-        return target instanceof ComponentMetadata
-                && ((ComponentMetadata) target).qualifier().equals(qualifier())
-                && ((ComponentMetadata) target).provider().equals(provider());
+        if (target == this) {
+            return true;
+        }
+        if (!(target instanceof ComponentMetadata<?>)) {
+            return false;
+        }
+        ComponentMetadata<?> componentMetadataTarget = (ComponentMetadata<?>) target;
+        return componentMetadataTarget.qualifier().equals(qualifier())
+                && componentMetadataTarget.provider().equals(provider());
     }
 
 }
