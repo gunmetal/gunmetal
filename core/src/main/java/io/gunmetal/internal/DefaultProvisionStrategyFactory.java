@@ -11,7 +11,7 @@ class DefaultProvisionStrategyFactory implements ProvisionStrategyFactory {
     private final Injectors.Factory injectorFactory;
     private final ProvisionStrategyDecorator strategyDecorator;
 
-    DefaultProvisionStrategyFactory(Injectors.Factory injectorFactory, MetadataAdapter metadataAdapter,
+    DefaultProvisionStrategyFactory(Injectors.Factory injectorFactory,
                                     ProvisionStrategyDecorator strategyDecorator) {
         this.injectorFactory = injectorFactory;
         this.strategyDecorator = strategyDecorator;
@@ -22,23 +22,21 @@ class DefaultProvisionStrategyFactory implements ProvisionStrategyFactory {
             final ComponentMetadata<P> componentMetadata,
             InternalProvider internalProvider) {
 
+        Injectors.Instantiator<T> instantiator;
+        Injectors.Injector<T> postInjector;
 
-
-        Injectors.StaticInjector providerInjector =
-                injectorFactory.staticInjector((Method) componentMetadata.provider(), componentMetadata, internalProvider);
-
-        internalProvider.register(new Callback() {
-            @Override
-            public void call() {
-            }
-        }, InternalProvider.BuildPhase.POST_WIRING);
-
-        //component adapter
-
-
-        Instantiator<T> instantiator = null;
-
-        Injectors.Injector<T> postInjector = null;
+        if (componentMetadata.providerKind() == ProviderKind.CLASS) {
+            instantiator = injectorFactory.instantiator(
+                    (Class<?>) componentMetadata.provider(), componentMetadata, internalProvider);
+            postInjector = injectorFactory.composite(componentMetadata, internalProvider);
+        } else if (componentMetadata.providerKind() == ProviderKind.METHOD) {
+            instantiator = injectorFactory.instantiator(
+                    (Method) componentMetadata.provider(), componentMetadata, internalProvider);
+            postInjector = injectorFactory.lazy(componentMetadata);
+        } else {
+            throw new UnsupportedOperationException("The ProviderKind ["
+                    + componentMetadata.providerKind() + "] is not yet supported");
+        }
 
         return strategyDecorator.decorate(
                 componentMetadata,
@@ -47,7 +45,7 @@ class DefaultProvisionStrategyFactory implements ProvisionStrategyFactory {
     }
 
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata componentMetadata,
-                                                     final Instantiator<T> instantiator,
+                                                     final Injectors.Instantiator<T> instantiator,
                                                      final Injectors.Injector<T> injector) {
         return new ProvisionStrategy<T>() {
             @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {

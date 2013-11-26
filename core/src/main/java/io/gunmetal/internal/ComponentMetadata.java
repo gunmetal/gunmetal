@@ -11,6 +11,8 @@ interface ComponentMetadata<P> {
 
     P provider();
 
+    ProviderKind providerKind();
+
     Class<?> providerClass();
 
     ModuleAdapter moduleAdapter();

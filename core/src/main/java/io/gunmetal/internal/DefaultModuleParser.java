@@ -272,6 +272,9 @@ class DefaultModuleParser implements ModuleParser {
                 @Override public Class<?> provider() {
                     return component.type();
                 }
+                @Override public ProviderKind providerKind() {
+                    return ProviderKind.CLASS;
+                }
                 @Override public Class<?> providerClass() {
                     return component.type();
                 }
@@ -333,6 +336,9 @@ class DefaultModuleParser implements ModuleParser {
             ComponentMetadata<Method> componentMetadata = new ComponentMetadata<Method>() {
                 @Override public Method provider() {
                     return method;
+                }
+                @Override public ProviderKind providerKind() {
+                    return ProviderKind.METHOD;
                 }
                 @Override public Class<?> providerClass() {
                     return method.getDeclaringClass();
