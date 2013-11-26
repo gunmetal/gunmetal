@@ -1,8 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.CompositeQualifier;
-import io.gunmetal.Dependency;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Type;
@@ -18,7 +15,7 @@ final class Smithy {
 
     private Smithy() { }
 
-    static CompositeQualifier qualifier(AnnotatedElement annotatedElement,
+    static Qualifier qualifier(AnnotatedElement annotatedElement,
                                      Class<? extends Annotation> qualifierAnnotation) {
         List<Object> qualifiers = new LinkedList<Object>();
         for (Annotation annotation : annotatedElement.getAnnotations()) {
@@ -30,10 +27,10 @@ final class Smithy {
         return qualifier(qualifiers.toArray());
     }
 
-    static CompositeQualifier qualifier(AnnotatedElement annotatedElement, CompositeQualifier joiningQualifier,
+    static Qualifier qualifier(AnnotatedElement annotatedElement, Qualifier joiningQualifier,
                                      Class<? extends Annotation> qualifierAnnotation) {
         List<Object> qualifiers = new LinkedList<Object>();
-        Collections.addAll(qualifiers, joiningQualifier.getQualifiers());
+        Collections.addAll(qualifiers, joiningQualifier.qualifiers());
         for (Annotation annotation : annotatedElement.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
             if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
@@ -43,14 +40,14 @@ final class Smithy {
         return qualifier(qualifiers.toArray());
     }
 
-    static CompositeQualifier qualifier(final Object[] q) {
+    static Qualifier qualifier(final Object[] q) {
         Arrays.sort(q);
-        return new CompositeQualifier() {
+        return new Qualifier() {
 
             Object[] qualifiers = q;
             int hashCode = Arrays.hashCode(qualifiers);
 
-            @Override public Object[] getQualifiers() {
+            @Override public Object[] qualifiers() {
                 return qualifiers;
             }
 
@@ -65,13 +62,13 @@ final class Smithy {
                 return false;
             }
 
-            @Override public boolean intersects(CompositeQualifier compositeQualifier) {
-                return intersects(compositeQualifier.getQualifiers());
+            @Override public boolean intersects(Qualifier qualifier) {
+                return intersects(qualifier.qualifiers());
             }
 
             @Override public boolean equals(Object o) {
-                return o instanceof CompositeQualifier
-                        && Arrays.equals(((CompositeQualifier) o).getQualifiers(), qualifiers);
+                return o instanceof Qualifier
+                        && Arrays.equals(((Qualifier) o).qualifiers(), qualifiers);
             }
 
             @Override public int hashCode() {
@@ -92,11 +89,11 @@ final class Smithy {
         return null;
     }
 
-    static <T> Dependency<T> dependency(Class<? super T> raw, CompositeQualifier compositeQualifier) {
+    static <T> Dependency<T> dependency(Class<? super T> raw, Qualifier qualifier) {
         return null;
     }
 
-    static <T> Dependency<T> dependency(Type type, CompositeQualifier compositeQualifier) {
+    static <T> Dependency<T> dependency(Type type, Qualifier qualifier) {
         return null;
     }
 

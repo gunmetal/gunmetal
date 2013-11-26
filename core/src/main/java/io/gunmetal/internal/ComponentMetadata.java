@@ -1,7 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.CompositeQualifier;
-
 import java.util.Collection;
 
 /**
@@ -15,7 +13,7 @@ abstract class ComponentMetadata<P> {
 
     abstract ModuleAdapter moduleAdapter();
 
-    abstract CompositeQualifier qualifier();
+    abstract Qualifier qualifier();
 
     abstract Collection<TypeKey<?>> targets();
 

@@ -11,8 +11,6 @@ abstract class TypeKey<T> {
 
     abstract Class<? super T> raw();
 
-    // TODO boolean isAssignableFrom(TypeKey<?> typeKey);
-
     @Override public int hashCode() {
         return type().hashCode();
     }

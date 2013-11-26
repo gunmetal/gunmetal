@@ -13,17 +13,6 @@ final class Types {
 
     private Types() { }
 
-    @SuppressWarnings("unchecked")
-    static <T> Class<? super T> raw(Type type) {
-        if (type instanceof Class) {
-            return (Class) type;
-        } else if (type instanceof ParameterizedType) {
-            return (Class) ((ParameterizedType) type).getRawType();
-        } else {
-            throw new UnsupportedOperationException("The type [" + type + "] is currently unsupported");
-        }
-    }
-
     static <T> TypeKey<T> typeKey(final Class<T> cls) {
         return new TypeKey<T>() {
             @Override public Type type() {
@@ -40,14 +29,15 @@ final class Types {
         if (type instanceof Class) {
             return typeKey((Class) type);
         } else if (type instanceof ParameterizedType) {
-            return typeKey(((ParameterizedType) type).getRawType());
+            return typeKey(((ParameterizedType) type));
         } else {
             throw new UnsupportedOperationException("The type [" + type + "] is currently unsupported");
         }
     }
 
+    @SuppressWarnings("unchecked")
     static <T> TypeKey<T> typeKey(final ParameterizedType type) {
-        final Class<? super T> raw = raw(type.getRawType());
+        final Class<? super T> raw = (Class<? super T>) type.getRawType();
         return new TypeKey<T>() {
             @Override public Type type() {
                 return type;

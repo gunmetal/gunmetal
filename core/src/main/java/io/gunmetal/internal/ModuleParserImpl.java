@@ -3,7 +3,6 @@ package io.gunmetal.internal;
 import io.gunmetal.AccessLevel;
 import io.gunmetal.BlackList;
 import io.gunmetal.Component;
-import io.gunmetal.CompositeQualifier;
 import io.gunmetal.Module;
 import io.gunmetal.WhiteList;
 
@@ -20,10 +19,10 @@ import java.util.List;
 class ModuleParserImpl implements ModuleParser {
 
     private final ProvisionStrategyFactory provisionStrategyFactory;
-    private final AnnotationResolver<CompositeQualifier> qualifierResolver;
+    private final AnnotationResolver<Qualifier> qualifierResolver;
 
     ModuleParserImpl(ProvisionStrategyFactory provisionStrategyFactory,
-                     AnnotationResolver<CompositeQualifier> qualifierResolver) {
+                     AnnotationResolver<Qualifier> qualifierResolver) {
         this.provisionStrategyFactory = provisionStrategyFactory;
         this.qualifierResolver = qualifierResolver;
     }
@@ -63,7 +62,7 @@ class ModuleParserImpl implements ModuleParser {
         final AccessFilter<Class<?>> moduleAccessFilter =
                 AccessFilter.Factory.getAccessFilter(moduleAccessLevel, module);
 
-        final CompositeQualifier compositeQualifier = qualifierResolver.resolve(module);
+        final Qualifier qualifier = qualifierResolver.resolve(module);
 
         return new ModuleAdapter() {
 
@@ -73,8 +72,8 @@ class ModuleParserImpl implements ModuleParser {
             }
 
             @Override
-            public CompositeQualifier compositeQualifier() {
-                return compositeQualifier;
+            public Qualifier qualifier() {
+                return qualifier;
             }
 
             @Override
@@ -124,7 +123,7 @@ class ModuleParserImpl implements ModuleParser {
 
         }
 
-        final CompositeQualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
+        final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
 
         return  new AccessFilter<DependencyRequest>() {
 
@@ -190,7 +189,7 @@ class ModuleParserImpl implements ModuleParser {
 
         }
 
-        final CompositeQualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
+        final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
 
         return  new AccessFilter<DependencyRequest>() {
 
@@ -255,8 +254,8 @@ class ModuleParserImpl implements ModuleParser {
 
         for (final Component component : components) {
 
-            final CompositeQualifier compositeQualifier = qualifierResolver.resolve(
-                    component.type(), moduleAdapter.compositeQualifier());
+            final Qualifier qualifier = qualifierResolver.resolve(
+                    component.type(), moduleAdapter.qualifier());
 
             final Collection<TypeKey<?>> typeKeys;
             Class<?>[] targets = component.targets();
@@ -277,8 +276,8 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public ModuleAdapter moduleAdapter() {
                     return moduleAdapter;
                 }
-                @Override public CompositeQualifier qualifier() {
-                    return compositeQualifier;
+                @Override public Qualifier qualifier() {
+                    return qualifier;
                 }
                 @Override public Collection<TypeKey<?>> targets() {
                     return typeKeys;
@@ -321,8 +320,8 @@ class ModuleParserImpl implements ModuleParser {
                         + method.getName() + "] in module [" + module.getName() + "] has a void return type.");
             }
 
-            final CompositeQualifier compositeQualifier =
-                    qualifierResolver.resolve(method, moduleAdapter.compositeQualifier());
+            final Qualifier qualifier =
+                    qualifierResolver.resolve(method, moduleAdapter.qualifier());
 
             // TODO targeted return type check, better type ref impl
             final Collection<TypeKey<?>> typeKeys =
@@ -338,8 +337,8 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public ModuleAdapter moduleAdapter() {
                     return moduleAdapter;
                 }
-                @Override public CompositeQualifier qualifier() {
-                    return compositeQualifier;
+                @Override public Qualifier qualifier() {
+                    return qualifier;
                 }
                 @Override public Collection<TypeKey<?>> targets() {
                     return typeKeys;

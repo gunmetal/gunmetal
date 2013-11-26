@@ -1,8 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.CompositeQualifier;
-import io.gunmetal.Dependency;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -13,7 +10,7 @@ interface DependencyRequest {
 
     Class<?> sourceOrigin();
 
-    CompositeQualifier sourceQualifier();
+    Qualifier sourceQualifier();
 
     ModuleAdapter sourceModule();
 
@@ -39,7 +36,7 @@ interface DependencyRequest {
                 }
 
                 @Override
-                public CompositeQualifier sourceQualifier() {
+                public Qualifier sourceQualifier() {
                     return componentMetadata.qualifier();
                 }
 
