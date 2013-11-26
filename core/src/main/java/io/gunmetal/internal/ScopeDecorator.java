@@ -12,17 +12,18 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
 
     private final AnnotationResolver<Scope> scopeResolver;
     private final ScopeBindings scopeBindings;
+    private final Linkers linkers;
 
-    ScopeDecorator(AnnotationResolver<Scope> scopeResolver, ScopeBindings scopeBindings) {
+    ScopeDecorator(AnnotationResolver<Scope> scopeResolver, ScopeBindings scopeBindings, Linkers linkers) {
         this.scopeResolver = scopeResolver;
         this.scopeBindings = scopeBindings;
+        this.linkers = linkers;
     }
 
     @Override
     public <T, P extends AnnotatedElement> ProvisionStrategy<T> decorate(
             final ComponentMetadata<P> componentMetadata,
-            final ProvisionStrategy<T> delegateStrategy,
-            final InternalProvider internalProvider) {
+            final ProvisionStrategy<T> delegateStrategy) {
 
         final Scope scope = scopeResolver.resolve(componentMetadata.provider());
 
@@ -34,11 +35,11 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
             return new ProvisionStrategy<T>() {
                 T singleton;
                 {
-                    internalProvider.register(new Callback() {
-                        @Override public void call() {
-                            singleton = delegateStrategy.get(internalProvider, ResolutionContext.Factory.create());
+                    linkers.add(new Linker() {
+                        @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
+                            singleton = delegateStrategy.get(internalProvider, linkingContext);
                         }
-                    }, InternalProvider.BuildPhase.EAGER_INSTANTIATION);
+                    }, LinkingPhase.EAGER_INSTANTIATION);
                 }
                 @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                     return singleton;

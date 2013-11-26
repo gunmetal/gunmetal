@@ -9,7 +9,6 @@ interface ProvisionStrategyDecorator {
 
     <T,P extends AnnotatedElement> ProvisionStrategy<T> decorate(
             ComponentMetadata<P> componentMetadata,
-            ProvisionStrategy<T> delegateStrategy,
-            InternalProvider internalProvider);
+            ProvisionStrategy<T> delegateStrategy);
 
 }

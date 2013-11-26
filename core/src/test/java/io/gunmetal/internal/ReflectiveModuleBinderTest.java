@@ -21,10 +21,6 @@ public class ReflectiveModuleBinderTest {
         public <T> ProvisionStrategy<T> getProvisionStrategy(DependencyRequest dependencyRequest) {
             return null;
         }
-
-        @Override
-        public void register(Callback callback, BuildPhase phase) {
-        }
     };
 
     ModuleParser moduleParser;

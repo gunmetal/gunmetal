@@ -1,6 +1,5 @@
 package io.gunmetal.internal;
 
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 
 /**
@@ -17,31 +16,22 @@ class DefaultProvisionStrategyFactory implements ProvisionStrategyFactory {
         this.strategyDecorator = strategyDecorator;
     }
 
-    @Override
-    public <T, P extends AnnotatedElement> ProvisionStrategy<T> create(
-            final ComponentMetadata<P> componentMetadata,
-            InternalProvider internalProvider) {
-
-        Injectors.Instantiator<T> instantiator;
-        Injectors.Injector<T> postInjector;
-
-        if (componentMetadata.providerKind() == ProviderKind.CLASS) {
-            instantiator = injectorFactory.instantiator(
-                    (Class<?>) componentMetadata.provider(), componentMetadata, internalProvider);
-            postInjector = injectorFactory.composite(componentMetadata, internalProvider);
-        } else if (componentMetadata.providerKind() == ProviderKind.METHOD) {
-            instantiator = injectorFactory.instantiator(
-                    (Method) componentMetadata.provider(), componentMetadata, internalProvider);
-            postInjector = injectorFactory.lazy(componentMetadata);
-        } else {
-            throw new UnsupportedOperationException("The ProviderKind ["
-                    + componentMetadata.providerKind() + "] is not yet supported");
-        }
-
+    @Override public <T> ProvisionStrategy<T> withClassProvider(ComponentMetadata<Class> componentMetadata) {
+        Injectors.Instantiator<T> instantiator =
+                injectorFactory.constructorInstantiator(componentMetadata);
+        Injectors.Injector<T> postInjector = injectorFactory.composite(componentMetadata);
         return strategyDecorator.decorate(
                 componentMetadata,
-                baseProvisionStrategy(componentMetadata, instantiator, postInjector),
-                internalProvider);
+                baseProvisionStrategy(componentMetadata, instantiator, postInjector));
+    }
+
+    @Override public <T> ProvisionStrategy<T> withMethodProvider(ComponentMetadata<Method> componentMetadata) {
+        Injectors.Instantiator<T> instantiator =
+                injectorFactory.methodInstantiator(componentMetadata);
+        Injectors.Injector<T> postInjector = injectorFactory.lazy(componentMetadata);
+        return strategyDecorator.decorate(
+                componentMetadata,
+                baseProvisionStrategy(componentMetadata, instantiator, postInjector));
     }
 
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata componentMetadata,

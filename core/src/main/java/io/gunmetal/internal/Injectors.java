@@ -8,17 +8,11 @@ import java.lang.reflect.Method;
 interface Injectors {
 
     interface Factory {
-        StaticInjector staticInjector(Method method,
-                                      ComponentMetadata componentMetadata,
-                                      InternalProvider internalProvider);
-        <T> Injector<T> composite(ComponentMetadata componentMetadata, InternalProvider internalProvider);
+        StaticInjector staticInjector(Method method, ComponentMetadata componentMetadata);
+        <T> Injector<T> composite(ComponentMetadata componentMetadata);
         <T> Injector<T> lazy(ComponentMetadata componentMetadata);
-        <T> Instantiator<T> instantiator(Class cls,
-                                         ComponentMetadata componentMetadata,
-                                         InternalProvider internalProvider);
-        <T> Instantiator<T> instantiator(Method method,
-                                         ComponentMetadata componentMetadata,
-                                         InternalProvider internalProvider);
+        <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class> componentMetadata);
+        <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata);
     }
 
     interface StaticInjector {

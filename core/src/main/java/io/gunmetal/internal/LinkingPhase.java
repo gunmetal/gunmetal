@@ -3,6 +3,6 @@ package io.gunmetal.internal;
 /**
  * @author rees.byars
  */
-enum ProviderKind {
-    METHOD, CLASS
+enum LinkingPhase {
+    POST_WIRING, EAGER_INSTANTIATION
 }

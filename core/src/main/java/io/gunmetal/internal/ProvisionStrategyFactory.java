@@ -1,14 +1,13 @@
 package io.gunmetal.internal;
 
-import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
  */
 interface ProvisionStrategyFactory {
 
-    <T, P extends AnnotatedElement> ProvisionStrategy<T> create(
-            ComponentMetadata<P> componentMetadata,
-            InternalProvider internalProvider);
+    <T> ProvisionStrategy<T> withClassProvider(ComponentMetadata<Class> componentMetadata);
+    <T> ProvisionStrategy<T> withMethodProvider(ComponentMetadata<Method> componentMetadata);
 
 }

@@ -13,6 +13,7 @@ final class Types {
 
     private Types() { }
 
+    @SuppressWarnings("unchecked")
     static <T> Class<? super T> raw(Type type) {
         if (type instanceof Class) {
             return (Class) type;
@@ -34,6 +35,7 @@ final class Types {
         };
     }
 
+    @SuppressWarnings("unchecked")
     static <T> TypeKey<T> typeKey(final Type type) {
         if (type instanceof Class) {
             return typeKey((Class) type);

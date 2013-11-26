@@ -29,7 +29,7 @@ class DefaultModuleParser implements ModuleParser {
     }
 
     @Override
-    public List<ComponentAdapter<?>> parse(final Class<?> module, InternalProvider provider) {
+    public List<ComponentAdapter<?>> parse(final Class<?> module) {
 
         final Module moduleAnnotation = module.getAnnotation(Module.class);
 
@@ -42,9 +42,9 @@ class DefaultModuleParser implements ModuleParser {
 
         List<ComponentAdapter<?>> componentAdapters = new LinkedList<ComponentAdapter<?>>();
 
-        addForComponentAnnotations(moduleAnnotation.components(), componentAdapters, moduleAdapter, provider);
+        addForComponentAnnotations(moduleAnnotation.components(), componentAdapters, moduleAdapter);
 
-        addForProviderMethods(module, componentAdapters, moduleAdapter, provider);
+        addForProviderMethods(module, componentAdapters, moduleAdapter);
 
         return componentAdapters;
 
@@ -251,8 +251,7 @@ class DefaultModuleParser implements ModuleParser {
     private void addForComponentAnnotations(
             Component[] components,
             List<ComponentAdapter<?>> componentAdapters,
-            final ModuleAdapter moduleAdapter,
-            InternalProvider provider) {
+            final ModuleAdapter moduleAdapter) {
 
         for (final Component component : components) {
 
@@ -272,9 +271,6 @@ class DefaultModuleParser implements ModuleParser {
                 @Override public Class<?> provider() {
                     return component.type();
                 }
-                @Override public ProviderKind providerKind() {
-                    return ProviderKind.CLASS;
-                }
                 @Override public Class<?> providerClass() {
                     return component.type();
                 }
@@ -293,7 +289,7 @@ class DefaultModuleParser implements ModuleParser {
                     AccessFilter.Factory.getAccessFilter(component.access(), component.type());
 
             final ProvisionStrategy<?> provisionStrategy =
-                    provisionStrategyFactory.create(componentMetadata, provider);
+                    provisionStrategyFactory.withClassProvider(componentMetadata);
 
             componentAdapters.add(componentAdapter(componentMetadata, new AccessFilter<DependencyRequest>() {
                 @Override
@@ -309,8 +305,7 @@ class DefaultModuleParser implements ModuleParser {
     private void addForProviderMethods(
             Class<?> module,
             List<ComponentAdapter<?>> componentAdapters,
-            final ModuleAdapter moduleAdapter,
-            InternalProvider provider) {
+            final ModuleAdapter moduleAdapter) {
 
         for (final Method method : module.getDeclaredMethods()) {
 
@@ -337,9 +332,6 @@ class DefaultModuleParser implements ModuleParser {
                 @Override public Method provider() {
                     return method;
                 }
-                @Override public ProviderKind providerKind() {
-                    return ProviderKind.METHOD;
-                }
                 @Override public Class<?> providerClass() {
                     return method.getDeclaringClass();
                 }
@@ -357,7 +349,7 @@ class DefaultModuleParser implements ModuleParser {
             final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
 
             ProvisionStrategy<?> provisionStrategy =
-                    provisionStrategyFactory.create(componentMetadata, provider);
+                    provisionStrategyFactory.withMethodProvider(componentMetadata);
 
             componentAdapters.add(componentAdapter(componentMetadata, new AccessFilter<DependencyRequest>() {
                 @Override
