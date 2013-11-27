@@ -14,31 +14,24 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal;
 
 /**
  * @author rees.byars
  */
-abstract class Dependency<T> {
+public final class Gunmetal {
 
-    abstract Qualifier qualifier();
+    private Gunmetal() { }
 
-    abstract TypeKey<T> typeKey();
-
-    public int hashCode() {
-        return typeKey().hashCode() * 67 + qualifier().hashCode();
-    }
-
-    public boolean equals(Object target) {
-        if (target == this) {
-            return true;
-        }
-        if (!(target instanceof Dependency<?>)) {
-            return false;
-        }
-        Dependency<?> dependencyTarget = (Dependency<?>) target;
-        return dependencyTarget.qualifier().equals(qualifier())
-                && dependencyTarget.typeKey().equals(typeKey());
+    public static ApplicationContainer create(Class<?> applicationModule) {
+        return new ApplicationContainer() {
+            @Override public ApplicationContainer inject(Object injectionTarget) {
+                throw new UnsupportedOperationException("not done yet :)");
+            }
+            @Override public <T, D extends Dependency<T>> T get(Class<D> dependency) {
+                throw new UnsupportedOperationException("not done yet :)");
+            }
+        };
     }
 
 }
