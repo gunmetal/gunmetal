@@ -31,15 +31,15 @@ interface Injectors {
         <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata);
     }
 
-    interface StaticInjector {
+    interface StaticInjector extends Dependent {
         Object inject(InternalProvider internalProvider, ResolutionContext resolutionContext);
     }
 
-    interface Injector<T> {
+    interface Injector<T> extends Dependent {
         Object inject(T target, InternalProvider internalProvider, ResolutionContext resolutionContext);
     }
 
-    interface Instantiator<T> {
+    interface Instantiator<T> extends Dependent {
 
         T getInstance(InternalProvider provider, ResolutionContext resolutionContext);
 

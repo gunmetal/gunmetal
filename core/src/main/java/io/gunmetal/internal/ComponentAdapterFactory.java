@@ -21,9 +21,9 @@ import java.lang.reflect.Method;
 /**
  * @author rees.byars
  */
-interface ProvisionStrategyFactory {
+interface ComponentAdapterFactory {
 
-    <T> ProvisionStrategy<T> withClassProvider(ComponentMetadata<Class> componentMetadata);
-    <T> ProvisionStrategy<T> withMethodProvider(ComponentMetadata<Method> componentMetadata);
+    <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class> componentMetadata);
+    <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata);
 
 }

@@ -33,13 +33,16 @@ import java.util.List;
  */
 class ModuleParserImpl implements ModuleParser {
 
-    private final ProvisionStrategyFactory provisionStrategyFactory;
+    private final ComponentAdapterFactory componentAdapterFactory;
     private final AnnotationResolver<Qualifier> qualifierResolver;
+    private final AnnotationResolver<Scope> scopeResolver;
 
-    ModuleParserImpl(ProvisionStrategyFactory provisionStrategyFactory,
-                     AnnotationResolver<Qualifier> qualifierResolver) {
-        this.provisionStrategyFactory = provisionStrategyFactory;
+    ModuleParserImpl(ComponentAdapterFactory componentAdapterFactory,
+                     AnnotationResolver<Qualifier> qualifierResolver,
+                     AnnotationResolver<Scope> scopeResolver) {
+        this.componentAdapterFactory = componentAdapterFactory;
         this.qualifierResolver = qualifierResolver;
+        this.scopeResolver = scopeResolver;
     }
 
     @Override
@@ -262,6 +265,8 @@ class ModuleParserImpl implements ModuleParser {
             final Qualifier qualifier = qualifierResolver.resolve(
                     component.type(), moduleAdapter.qualifier());
 
+            final Scope scope = scopeResolver.resolve(component.type());
+
             final Collection<TypeKey<?>> typeKeys;
             Class<?>[] targets = component.targets();
 
@@ -287,21 +292,12 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Collection<TypeKey<?>> targets() {
                     return typeKeys;
                 }
+                @Override Scope scope() {
+                    return scope;
+                }
             };
 
-            final AccessFilter<Class<?>> accessFilter =
-                    AccessFilter.Factory.getAccessFilter(component.access(), component.type());
-
-            final ProvisionStrategy<?> provisionStrategy =
-                    provisionStrategyFactory.withClassProvider(componentMetadata);
-
-            componentAdapters.add(componentAdapter(componentMetadata, new AccessFilter<DependencyRequest>() {
-                @Override
-                public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                    return moduleAdapter.isAccessibleTo(dependencyRequest)
-                            && accessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
-                }
-            }, provisionStrategy));
+            componentAdapters.add(componentAdapterFactory.withClassProvider(componentMetadata));
 
         }
     }
@@ -328,6 +324,8 @@ class ModuleParserImpl implements ModuleParser {
             final Qualifier qualifier =
                     qualifierResolver.resolve(method, moduleAdapter.qualifier());
 
+            final Scope scope = scopeResolver.resolve(method);
+
             // TODO targeted return type check, better type ref impl
             final Collection<TypeKey<?>> typeKeys =
                     Collections.<TypeKey<?>>singletonList(Types.typeKey(method.getGenericReturnType()));
@@ -348,40 +346,17 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Collection<TypeKey<?>> targets() {
                     return typeKeys;
                 }
+                @Override Scope scope() {
+                    return scope;
+                }
             };
 
-            final AccessFilter<Class<?>> accessFilter = AccessFilter.Factory.getAccessFilter(method);
-
-            ProvisionStrategy<?> provisionStrategy =
-                    provisionStrategyFactory.withMethodProvider(componentMetadata);
-
-            componentAdapters.add(componentAdapter(componentMetadata, new AccessFilter<DependencyRequest>() {
-                @Override
-                public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                    return moduleAdapter.isAccessibleTo(dependencyRequest)
-                            && accessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
-                }
-            }, provisionStrategy));
+            componentAdapters.add(componentAdapterFactory.withMethodProvider(componentMetadata));
 
         }
 
     }
 
-    private <T> ComponentAdapter<T> componentAdapter(
-            final ComponentMetadata<?> componentMetadata,
-            final AccessFilter<DependencyRequest> accessFilter,
-            final ProvisionStrategy<T> provisionStrategy) {
-        return new ComponentAdapter<T>() {
-            @Override public ComponentMetadata metadata() {
-                return componentMetadata;
-            }
-            @Override public AccessFilter<DependencyRequest> filter() {
-                return accessFilter;
-            }
-            @Override public ProvisionStrategy<T> provisionStrategy() {
-                return provisionStrategy;
-            }
-        };
-    }
+
 
 }

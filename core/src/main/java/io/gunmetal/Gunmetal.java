@@ -34,4 +34,15 @@ public final class Gunmetal {
         };
     }
 
+    public static ApplicationContainer create(Class<?> applicationModule, ApplicationContainer ... referencedContainers) {
+        return new ApplicationContainer() {
+            @Override public ApplicationContainer inject(Object injectionTarget) {
+                throw new UnsupportedOperationException("not done yet :)");
+            }
+            @Override public <T, D extends Dependency<T>> T get(Class<D> dependency) {
+                throw new UnsupportedOperationException("not done yet :)");
+            }
+        };
+    }
+
 }

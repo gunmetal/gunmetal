@@ -34,6 +34,10 @@ abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     abstract Collection<TypeKey<?>> targets();
 
+    abstract Scope scope();
+
+    // abstract boolean isProxy();  TODO scoped proxy invoke(..) { method.invoke(provider.get(), ...); ... }
+
     public int hashCode() {
         return provider().hashCode() * 67 + qualifier().hashCode();
     }

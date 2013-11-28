@@ -24,12 +24,10 @@ import io.gunmetal.ProviderDecorator;
  */
 class ScopeDecorator implements ProvisionStrategyDecorator {
 
-    private final AnnotationResolver<Scope> scopeResolver;
     private final ScopeBindings scopeBindings;
     private final Linkers linkers;
 
-    ScopeDecorator(AnnotationResolver<Scope> scopeResolver, ScopeBindings scopeBindings, Linkers linkers) {
-        this.scopeResolver = scopeResolver;
+    ScopeDecorator(ScopeBindings scopeBindings, Linkers linkers) {
         this.scopeBindings = scopeBindings;
         this.linkers = linkers;
     }
@@ -39,7 +37,7 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
             final ComponentMetadata<?> componentMetadata,
             final ProvisionStrategy<T> delegateStrategy) {
 
-        final Scope scope = scopeResolver.resolve(componentMetadata.provider());
+        final Scope scope = componentMetadata.scope();
 
         if (scope == Scopes.PROTOTYPE) {
             return delegateStrategy;

@@ -16,15 +16,13 @@
 
 package io.gunmetal.internal;
 
+import java.util.Collection;
+
 /**
  * @author rees.byars
  */
-interface ComponentAdapter<T> extends Dependent {
+interface Dependent {
 
-    ComponentMetadata metadata();
-
-    AccessFilter<DependencyRequest> filter();
-
-    ProvisionStrategy<T> provisionStrategy();
+    Collection<Dependency<?>> dependencies();
 
 }

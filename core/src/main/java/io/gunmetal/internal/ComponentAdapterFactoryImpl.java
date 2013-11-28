@@ -17,37 +17,52 @@
 package io.gunmetal.internal;
 
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author rees.byars
  */
-class ProvisionStrategyFactoryImpl implements ProvisionStrategyFactory {
+class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
 
     private final Injectors.Factory injectorFactory;
     private final ProvisionStrategyDecorator strategyDecorator;
 
-    ProvisionStrategyFactoryImpl(Injectors.Factory injectorFactory,
-                                 ProvisionStrategyDecorator strategyDecorator) {
+    ComponentAdapterFactoryImpl(Injectors.Factory injectorFactory,
+                                ProvisionStrategyDecorator strategyDecorator) {
         this.injectorFactory = injectorFactory;
         this.strategyDecorator = strategyDecorator;
     }
 
-    @Override public <T> ProvisionStrategy<T> withClassProvider(ComponentMetadata<Class> componentMetadata) {
+    @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class> componentMetadata) {
         Injectors.Instantiator<T> instantiator =
                 injectorFactory.constructorInstantiator(componentMetadata);
         Injectors.Injector<T> postInjector = injectorFactory.composite(componentMetadata);
-        return strategyDecorator.decorate(
+        ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector));
+        return componentAdapter(
+                componentMetadata,
+                AccessFilter.Factory.getAccessFilter(componentMetadata.provider()),
+                provisionStrategy,
+                instantiator,
+                postInjector);
     }
 
-    @Override public <T> ProvisionStrategy<T> withMethodProvider(ComponentMetadata<Method> componentMetadata) {
+    @Override public <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata) {
         Injectors.Instantiator<T> instantiator =
                 injectorFactory.methodInstantiator(componentMetadata);
         Injectors.Injector<T> postInjector = injectorFactory.lazy(componentMetadata);
-        return strategyDecorator.decorate(
+        ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector));
+        return componentAdapter(
+                componentMetadata,
+                AccessFilter.Factory.getAccessFilter(componentMetadata.provider()),
+                provisionStrategy,
+                instantiator,
+                postInjector);
     }
 
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata componentMetadata,
@@ -81,6 +96,38 @@ class ProvisionStrategyFactoryImpl implements ProvisionStrategyFactory {
                 }
             }
 
+        };
+    }
+
+    private <T> ComponentAdapter<T> componentAdapter(
+            final ComponentMetadata<?> componentMetadata,
+            final AccessFilter<Class<?>> accessFilter,
+            final ProvisionStrategy<T> provisionStrategy,
+            final Dependent ... dependents) {
+        final AccessFilter<DependencyRequest> requestAccessFilter = new AccessFilter<DependencyRequest>() {
+            @Override
+            public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+                return componentMetadata.moduleAdapter().isAccessibleTo(dependencyRequest)
+                        && accessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
+            }
+        };
+        return new ComponentAdapter<T>() {
+            @Override public ComponentMetadata metadata() {
+                return componentMetadata;
+            }
+            @Override public AccessFilter<DependencyRequest> filter() {
+                return requestAccessFilter;
+            }
+            @Override public ProvisionStrategy<T> provisionStrategy() {
+                return provisionStrategy;
+            }
+            @Override public Collection<Dependency<?>> dependencies() {
+                List<Dependency<?>> dependencies = new LinkedList<Dependency<?>>();
+                for (Dependent dependent : dependents) {
+                    dependencies.addAll(dependent.dependencies());
+                }
+                return dependencies;
+            }
         };
     }
 
