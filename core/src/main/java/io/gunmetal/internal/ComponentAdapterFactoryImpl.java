@@ -103,7 +103,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             final ComponentMetadata<?> componentMetadata,
             final AccessFilter<Class<?>> accessFilter,
             final ProvisionStrategy<T> provisionStrategy,
-            final Dependent ... dependents) {
+            final Injectors.Instantiator instantiator,
+            final Injectors.Injector<T> injector) {
         final AccessFilter<DependencyRequest> requestAccessFilter = new AccessFilter<DependencyRequest>() {
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
@@ -123,9 +124,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             }
             @Override public Collection<Dependency<?>> dependencies() {
                 List<Dependency<?>> dependencies = new LinkedList<Dependency<?>>();
-                for (Dependent dependent : dependents) {
-                    dependencies.addAll(dependent.dependencies());
-                }
+                dependencies.addAll(instantiator.dependencies());
+                dependencies.addAll(injector.dependencies());
                 return dependencies;
             }
         };
