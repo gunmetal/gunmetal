@@ -22,5 +22,5 @@ import java.util.List;
  * @author rees.byars
  */
 interface ModuleParser {
-    List<ComponentAdapter<?>> parse(Class<?> module);
+    List<ComponentAdapterProvider<?>> parse(Class<?> module);
 }

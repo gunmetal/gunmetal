@@ -28,7 +28,7 @@ abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     abstract Class<?> providerClass();
 
-    abstract ModuleAdapter moduleAdapter();
+    abstract ModuleMetadata moduleMetadata();
 
     abstract Qualifier qualifier();
 
@@ -38,11 +38,11 @@ abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     // abstract boolean isProxy();  TODO scoped proxy invoke(..) { method.invoke(provider.get(), ...); ... }
 
-    public int hashCode() {
+    @Override public int hashCode() {
         return provider().hashCode() * 67 + qualifier().hashCode();
     }
 
-    public boolean equals(Object target) {
+    @Override public boolean equals(Object target) {
         if (target == this) {
             return true;
         }

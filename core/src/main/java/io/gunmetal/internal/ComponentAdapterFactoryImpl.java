@@ -44,7 +44,6 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector));
         return componentAdapter(
                 componentMetadata,
-                AccessFilter.Factory.getAccessFilter(componentMetadata.provider()),
                 provisionStrategy,
                 instantiator,
                 postInjector);
@@ -59,7 +58,6 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector));
         return componentAdapter(
                 componentMetadata,
-                AccessFilter.Factory.getAccessFilter(componentMetadata.provider()),
                 provisionStrategy,
                 instantiator,
                 postInjector);
@@ -100,24 +98,13 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     }
 
     private <T> ComponentAdapter<T> componentAdapter(
-            final ComponentMetadata<?> componentMetadata,
-            final AccessFilter<Class<?>> accessFilter,
+            final ComponentMetadata<?> metadata,
             final ProvisionStrategy<T> provisionStrategy,
             final Injectors.Instantiator instantiator,
             final Injectors.Injector<T> injector) {
-        final AccessFilter<DependencyRequest> requestAccessFilter = new AccessFilter<DependencyRequest>() {
-            @Override
-            public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                return componentMetadata.moduleAdapter().isAccessibleTo(dependencyRequest)
-                        && accessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
-            }
-        };
         return new ComponentAdapter<T>() {
             @Override public ComponentMetadata metadata() {
-                return componentMetadata;
-            }
-            @Override public AccessFilter<DependencyRequest> filter() {
-                return requestAccessFilter;
+                return metadata;
             }
             @Override public ProvisionStrategy<T> provisionStrategy() {
                 return provisionStrategy;

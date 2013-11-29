@@ -2,6 +2,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Module;
 import io.gunmetal.Qualifier;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -13,6 +14,7 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
+@Ignore
 @RunWith(JUnit4.class)
 public class ReflectiveModuleBinderTest {
 

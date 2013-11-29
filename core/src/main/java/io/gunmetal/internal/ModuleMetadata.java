@@ -19,10 +19,20 @@ package io.gunmetal.internal;
 /**
  * @author rees.byars
  */
-interface ComponentAdapter<T> extends Dependent {
+abstract class ModuleMetadata {
 
-    ComponentMetadata metadata();
+    abstract Class<?> moduleClass();
 
-    ProvisionStrategy<T> provisionStrategy();
+    abstract Qualifier qualifier();
+
+    abstract Class<?>[] referencedModules();
+
+    @Override public int hashCode() {
+        return moduleClass().hashCode();
+    }
+
+    @Override public boolean equals(Object target) {
+        return target instanceof ModuleMetadata && target == moduleClass();
+    }
 
 }

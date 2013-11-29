@@ -46,38 +46,44 @@ class ModuleParserImpl implements ModuleParser {
     }
 
     @Override
-    public List<ComponentAdapter<?>> parse(final Class<?> module) {
-
+    public List<ComponentAdapterProvider<?>> parse(final Class<?> module) {
         final Module moduleAnnotation = module.getAnnotation(Module.class);
-
         if (moduleAnnotation == null) {
             throw new IllegalArgumentException("The module class [" + module.getName()
                     + "] must be annotated with @Module()");
         }
-
-        final ModuleAdapter moduleAdapter = moduleAdapter(module, moduleAnnotation);
-
-        List<ComponentAdapter<?>> componentAdapters = new LinkedList<ComponentAdapter<?>>();
-
-        addForComponentAnnotations(moduleAnnotation.components(), componentAdapters, moduleAdapter);
-
-        addForProviderMethods(module, componentAdapters, moduleAdapter);
-
-        return componentAdapters;
+        AccessFilter<DependencyRequest> moduleFilter = moduleFilter(module, moduleAnnotation);
+        ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
+        List<ComponentAdapterProvider<?>> componentAdapterProviders = new LinkedList<ComponentAdapterProvider<?>>();
+        addForComponentAnnotations(
+                moduleAnnotation.components(), componentAdapterProviders, moduleFilter, moduleMetadata);
+        addForProviderMethods(
+                module, componentAdapterProviders, moduleFilter, moduleMetadata);
+        return componentAdapterProviders;
 
     }
 
-    private ModuleAdapter moduleAdapter(final Class<?> module, final Module moduleAnnotation) {
-
+    private AccessFilter<DependencyRequest> moduleFilter(final Class<?> module, final Module moduleAnnotation) {
         final AccessFilter<DependencyRequest> blackListFilter = blackListFilter(module, moduleAnnotation);
         final AccessFilter<DependencyRequest> whiteListFilter = whiteListFilter(module, moduleAnnotation);
         final AccessFilter<DependencyRequest> dependsOnFilter = dependsOnFilter(module);
-        final AccessFilter<Class<?>> moduleAccessFilter =
+        final AccessFilter<Class<?>> moduleClassFilter =
                 AccessFilter.Factory.getAccessFilter(moduleAnnotation.access(), module);
+        return new AccessFilter<DependencyRequest>() {
+            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+                // we use the single '&' because we want to process them all regardless if one fails
+                // in order to collect all errors and report them back
+                return moduleClassFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())
+                        & dependsOnFilter.isAccessibleTo(dependencyRequest)
+                        & blackListFilter.isAccessibleTo(dependencyRequest)
+                        & whiteListFilter.isAccessibleTo(dependencyRequest);
+            }
+        };
+    }
+
+    private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation) {
         final Qualifier qualifier = qualifierResolver.resolve(module);
-
-        return new ModuleAdapter() {
-
+        return new ModuleMetadata() {
             @Override public Class<?> moduleClass() {
                 return module;
             }
@@ -89,16 +95,6 @@ class ModuleParserImpl implements ModuleParser {
             @Override public Class<?>[] referencedModules() {
                 return moduleAnnotation.dependsOn();
             }
-
-            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                // we use the single '&' because we want to process them all regardless if one fails
-                // in order to collect all errors and report them back
-                return moduleAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())
-                        & dependsOnFilter.isAccessibleTo(dependencyRequest)
-                        & blackListFilter.isAccessibleTo(dependencyRequest)
-                        & whiteListFilter.isAccessibleTo(dependencyRequest);
-            }
-
         };
     }
 
@@ -236,7 +232,7 @@ class ModuleParserImpl implements ModuleParser {
             @Override
             public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
 
-                ModuleAdapter requestSourceModule = dependencyRequest.sourceModule();
+                ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
 
                 for (Class<?> dependency : requestSourceModule.referencedModules()) {
                     if (module == dependency) {
@@ -257,13 +253,14 @@ class ModuleParserImpl implements ModuleParser {
 
     private void addForComponentAnnotations(
             Component[] components,
-            List<ComponentAdapter<?>> componentAdapters,
-            final ModuleAdapter moduleAdapter) {
+            List<ComponentAdapterProvider<?>> componentAdapterProviders,
+            final AccessFilter<DependencyRequest> moduleFilter,
+            final ModuleMetadata moduleMetadata) {
 
         for (final Component component : components) {
 
             final Qualifier qualifier = qualifierResolver.resolve(
-                    component.type(), moduleAdapter.qualifier());
+                    component.type(), moduleMetadata.qualifier());
 
             final Scope scope = scopeResolver.resolve(component.type());
 
@@ -283,8 +280,8 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Class<?> providerClass() {
                     return component.type();
                 }
-                @Override public ModuleAdapter moduleAdapter() {
-                    return moduleAdapter;
+                @Override public ModuleMetadata moduleMetadata() {
+                    return moduleMetadata;
                 }
                 @Override public Qualifier qualifier() {
                     return qualifier;
@@ -297,15 +294,21 @@ class ModuleParserImpl implements ModuleParser {
                 }
             };
 
-            componentAdapters.add(componentAdapterFactory.withClassProvider(componentMetadata));
+            AccessFilter<Class<?>> classAccessFilter = AccessFilter.Factory.getAccessFilter(component.type());
+
+            componentAdapterProviders.add(componentAdapterProvider(
+                    componentAdapterFactory.withClassProvider(componentMetadata),
+                    moduleFilter,
+                    classAccessFilter));
 
         }
     }
 
     private void addForProviderMethods(
             Class<?> module,
-            List<ComponentAdapter<?>> componentAdapters,
-            final ModuleAdapter moduleAdapter) {
+            List<ComponentAdapterProvider<?>> componentAdapterProviders,
+            final AccessFilter<DependencyRequest> moduleFilter,
+            final ModuleMetadata moduleMetadata) {
 
         for (final Method method : module.getDeclaredMethods()) {
 
@@ -322,7 +325,7 @@ class ModuleParserImpl implements ModuleParser {
             }
 
             final Qualifier qualifier =
-                    qualifierResolver.resolve(method, moduleAdapter.qualifier());
+                    qualifierResolver.resolve(method, moduleMetadata.qualifier());
 
             final Scope scope = scopeResolver.resolve(method);
 
@@ -337,8 +340,8 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Class<?> providerClass() {
                     return method.getDeclaringClass();
                 }
-                @Override public ModuleAdapter moduleAdapter() {
-                    return moduleAdapter;
+                @Override public ModuleMetadata moduleMetadata() {
+                    return moduleMetadata;
                 }
                 @Override public Qualifier qualifier() {
                     return qualifier;
@@ -351,12 +354,33 @@ class ModuleParserImpl implements ModuleParser {
                 }
             };
 
-            componentAdapters.add(componentAdapterFactory.withMethodProvider(componentMetadata));
-
+            final AccessFilter<Class<?>> classAccessFilter = AccessFilter.Factory.getAccessFilter(method);
+            componentAdapterProviders.add(componentAdapterProvider(
+                    componentAdapterFactory.withMethodProvider(componentMetadata),
+                    moduleFilter,
+                    classAccessFilter));
         }
 
     }
 
-
+    private <T> ComponentAdapterProvider<T> componentAdapterProvider(
+                                                     final ComponentAdapter<T> componentAdapter,
+                                                     final AccessFilter<DependencyRequest> moduleFilter,
+                                                     final AccessFilter<Class<?>> classAccessFilter) {
+        final AccessFilter<DependencyRequest> componentFilter = new AccessFilter<DependencyRequest>() {
+            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+                return moduleFilter.isAccessibleTo(dependencyRequest)
+                        && classAccessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
+            }
+        };
+        return new ComponentAdapterProvider<T>() {
+            @Override public ComponentAdapter<T> get() {
+                return componentAdapter;
+            }
+            @Override public boolean isAccessibleTo(DependencyRequest request) {
+                return componentFilter.isAccessibleTo(request);
+            }
+        };
+    }
 
 }

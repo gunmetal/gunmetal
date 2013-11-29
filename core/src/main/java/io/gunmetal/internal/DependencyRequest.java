@@ -28,7 +28,7 @@ interface DependencyRequest {
 
     Qualifier sourceQualifier();
 
-    ModuleAdapter sourceModule();
+    ModuleMetadata sourceModule();
 
     Dependency<?> dependency();
 
@@ -57,8 +57,8 @@ interface DependencyRequest {
                 }
 
                 @Override
-                public ModuleAdapter sourceModule() {
-                    return requestingComponent.moduleAdapter();
+                public ModuleMetadata sourceModule() {
+                    return requestingComponent.moduleMetadata();
                 }
 
                 @Override
