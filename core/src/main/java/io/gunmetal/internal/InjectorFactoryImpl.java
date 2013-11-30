@@ -18,11 +18,17 @@ package io.gunmetal.internal;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author rees.byars
@@ -30,65 +36,128 @@ import java.util.Collection;
 class InjectorFactoryImpl implements InjectorFactory {
 
     private final AnnotationResolver<Qualifier> qualifierResolver;
+    private final ConstructorResolver constructorResolver;
+    private final InjectionResolver injectionResolver;
     private final Linkers linkers;
 
-    InjectorFactoryImpl(AnnotationResolver<Qualifier> qualifierResolver, Linkers linkers) {
+    InjectorFactoryImpl(AnnotationResolver<Qualifier> qualifierResolver,
+                        ConstructorResolver constructorResolver,
+                        InjectionResolver injectionResolver,
+                        Linkers linkers) {
         this.qualifierResolver = qualifierResolver;
+        this.constructorResolver = constructorResolver;
+        this.injectionResolver = injectionResolver;
         this.linkers = linkers;
     }
     
     @Override public <T> StaticInjector<T> staticInjector(final Method method, final ComponentMetadata componentMetadata) {
-        ParameterizedFunction function = new MethodFunction(method);
-        final Dependency<?>[] dependencies = new Dependency[function.getParameterTypes().length];
-        for (int i = 0; i < dependencies.length; i++) {
-            dependencies[i] = new Parameter(function, i).asDependency();
-        }
+        final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
+                new MethodFunction(method),
+                componentMetadata);
         return new StaticInjector<T>() {
-
-            ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
-
-            {
-                method.setAccessible(true);
-                linkers.add(new Linker() {
-                    @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
-                        for (int i = 0; i < dependencies.length; i++) {
-                            provisionStrategies[i] = internalProvider.getProvisionStrategy(
-                                    DependencyRequest.Factory.create(componentMetadata, dependencies[i]));
-                        }
-                    }
-                }, LinkingPhase.POST_WIRING);
-            }
-
             @Override public T inject(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                Object[] parameters = new Object[provisionStrategies.length];
-                for (int i = 0; i < parameters.length; i++) {
-                    parameters[i] = provisionStrategies[i].get(internalProvider, resolutionContext);
-                }
-                try {
-                    return Smithy.cloak(method.invoke(null, parameters));
-                } catch (IllegalAccessException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
-                } catch (InvocationTargetException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
-                }
+                return invoker.invoke(null, internalProvider, resolutionContext);
             }
-
             @Override public Collection<Dependency<?>> dependencies() {
-                return Arrays.asList(dependencies);
+                return invoker.dependencies();
             }
         };
     }
 
-    @Override public <T> Injector<T> compositeInjector(ComponentMetadata<Class<?>> componentMetadata) {
-        return null;
+    @Override public <T> Injector<T> compositeInjector(final ComponentMetadata<Class<?>> componentMetadata) {
+        // TODO walk up the class hierarchy
+        final List<Injector<T>> injectors = new ArrayList<Injector<T>>();
+        for (final Field field : componentMetadata.provider().getDeclaredFields()) {
+            if (!injectionResolver.shouldInject(field)) {
+                continue;
+            }
+            final Dependency<?> dependency = new Dependency<Object>() {
+                Qualifier qualifier = qualifierResolver.resolve(field);
+                TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
+                @Override Qualifier qualifier() {
+                    return qualifier;
+                }
+                @Override TypeKey<Object> typeKey() {
+                    return typeKey;
+                }
+            };
+            injectors.add(new Injector<T>() {
+                ProvisionStrategy<?> provisionStrategy;
+                {
+                    field.setAccessible(true);
+                    linkers.add(new Linker() {
+                        @Override public void link(InternalProvider internalProvider,
+                                                   ResolutionContext linkingContext) {
+                            provisionStrategy = internalProvider.getProvisionStrategy(
+                                        DependencyRequest.Factory.create(componentMetadata, dependency));
+                        }
+                    }, LinkingPhase.POST_WIRING);
+                }
+                @Override public Object inject(T target, InternalProvider internalProvider,
+                                               ResolutionContext resolutionContext) {
+                    try {
+                        field.set(target, provisionStrategy.get(internalProvider, resolutionContext));
+                        return null;
+                    } catch (IllegalAccessException e) {
+                        throw Smithy.<RuntimeException>cloak(e);
+                    }
+                }
+                @Override public Collection<Dependency<?>> dependencies() {
+                    return Collections.<Dependency<?>>singleton(dependency);
+                }
+            });
+        }
+        for (final Method method : componentMetadata.provider().getDeclaredMethods()) {
+            if (!injectionResolver.shouldInject(method)) {
+                continue;
+            }
+            final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
+                    new MethodFunction(method),
+                    componentMetadata);
+            injectors.add(new Injector<T>() {
+                @Override public Object inject(T target, InternalProvider internalProvider,
+                                               ResolutionContext resolutionContext) {
+                    return invoker.invoke(target, internalProvider, resolutionContext);
+                }
+                @Override public Collection<Dependency<?>> dependencies() {
+                    return invoker.dependencies();
+                }
+            });
+        }
+        return new Injector<T>() {
+            @Override public Object inject(T target, InternalProvider internalProvider,
+                                           ResolutionContext resolutionContext) {
+                for (Injector<T> injector : injectors) {
+                    injector.inject(target, internalProvider, resolutionContext);
+                }
+                return null;
+            }
+            @Override public Collection<Dependency<?>> dependencies() {
+                List<Dependency<?>> dependencies = new LinkedList<Dependency<?>>();
+                for (Injector<T> injector : injectors) {
+                    dependencies.addAll(injector.dependencies());
+                }
+                return dependencies;
+            }
+        };
     }
 
     @Override public <T> Injector<T> lazyCompositeInjector(ComponentMetadata<?> componentMetadata) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override public <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata) {
-        return null;
+        final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
+                new ConstructorFunction(constructorResolver.resolve(componentMetadata.provider())),
+                componentMetadata);
+        return new Instantiator<T>() {
+            @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
+                return invoker.invoke(null, provider, resolutionContext);
+            }
+            @Override public Collection<Dependency<?>> dependencies() {
+                return invoker.dependencies();
+            }
+        };
     }
 
     @Override public <T> Instantiator<T> methodInstantiator(final ComponentMetadata<Method> componentMetadata) {
@@ -103,24 +172,86 @@ class InjectorFactoryImpl implements InjectorFactory {
         };
     }
 
-    private interface ParameterizedFunction {
+    private <T> ParameterizedFunctionInvoker<T> eagerInvoker(final ParameterizedFunction function,
+                                                        final ComponentMetadata<?> metadata) {
+        final Dependency<?>[] dependencies = new Dependency[function.getParameterTypes().length];
+        for (int i = 0; i < dependencies.length; i++) {
+            dependencies[i] = new Parameter(function, i).asDependency();
+        }
+        return new ParameterizedFunctionInvoker<T>() {
+            ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
+            {
+                linkers.add(new Linker() {
+                    @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
+                        for (int i = 0; i < dependencies.length; i++) {
+                            provisionStrategies[i] = internalProvider.getProvisionStrategy(
+                                    DependencyRequest.Factory.create(metadata, dependencies[i]));
+                        }
+                    }
+                }, LinkingPhase.POST_WIRING);
+            }
+            @Override public T invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext) {
+                Object[] parameters = new Object[provisionStrategies.length];
+                for (int i = 0; i < parameters.length; i++) {
+                    parameters[i] = provisionStrategies[i].get(internalProvider, resolutionContext);
+                }
+                try {
+                    return Smithy.cloak(function.invoke(onInstance, parameters));
+                } catch (IllegalAccessException e) {
+                    throw Smithy.<RuntimeException>cloak(e);
+                } catch (InvocationTargetException e) {
+                    throw Smithy.<RuntimeException>cloak(e);
+                } catch (InstantiationException e) {
+                    throw Smithy.<RuntimeException>cloak(e);
+                }
+            }
+            @Override public Collection<Dependency<?>> dependencies() {
+                return Arrays.asList(dependencies);
+            }
+        };
+    }
+
+    private static interface ParameterizedFunctionInvoker<T> extends Dependent {
+        T invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext);
+    }
+
+    private interface ParameterizedFunction<T> {
+        T invoke(Object onInstance, Object[] params) throws InvocationTargetException, IllegalAccessException, InstantiationException;
         Type[] getParameterTypes();
         Annotation[][] getParameterAnnotations();
     }
 
     private static class MethodFunction implements ParameterizedFunction {
-
         final Method method;
-
         MethodFunction(Method method) {
+            method.setAccessible(true);
             this.method = method;
         }
-
+        @Override public Object invoke(Object onInstance, Object[] params) throws InvocationTargetException, IllegalAccessException {
+            return method.invoke(onInstance, params);
+        }
         @Override public Type[] getParameterTypes() {
             return method.getGenericParameterTypes();
         }
         @Override public Annotation[][] getParameterAnnotations() {
             return method.getParameterAnnotations();
+        }
+    }
+
+    private static class ConstructorFunction implements ParameterizedFunction {
+        final Constructor<?> constructor;
+        ConstructorFunction(Constructor<?> constructor) {
+            constructor.setAccessible(true);
+            this.constructor = constructor;
+        }
+        @Override public Object invoke(Object onInstance, Object[] params) throws InvocationTargetException, IllegalAccessException, InstantiationException {
+            return constructor.newInstance(params);
+        }
+        @Override public Type[] getParameterTypes() {
+            return constructor.getGenericParameterTypes();
+        }
+        @Override public Annotation[][] getParameterAnnotations() {
+            return constructor.getParameterAnnotations();
         }
     }
 
@@ -173,6 +304,8 @@ class InjectorFactoryImpl implements InjectorFactory {
         }
 
     }
+
+
 
 
 }
