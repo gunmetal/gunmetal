@@ -130,4 +130,9 @@ final class Smithy {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
+    static <T> T cloak(Object o) {
+        return (T) o;
+    }
+
 }

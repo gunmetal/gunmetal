@@ -40,10 +40,9 @@ final class Types {
         };
     }
 
-    @SuppressWarnings("unchecked")
     static <T> TypeKey<T> typeKey(final Type type) {
         if (type instanceof Class) {
-            return typeKey((Class) type);
+            return Smithy.cloak(typeKey((Class) type));
         } else if (type instanceof ParameterizedType) {
             return typeKey(((ParameterizedType) type));
         } else {
@@ -51,9 +50,8 @@ final class Types {
         }
     }
 
-    @SuppressWarnings("unchecked")
     static <T> TypeKey<T> typeKey(final ParameterizedType type) {
-        final Class<? super T> raw = (Class<? super T>) type.getRawType();
+        final Class<? super T> raw = Smithy.cloak(type.getRawType());
         return new TypeKey<T>() {
             @Override public Type type() {
                 return type;

@@ -23,8 +23,8 @@ import java.lang.reflect.Method;
  */
 interface InjectorFactory {
     StaticInjector staticInjector(Method method, ComponentMetadata componentMetadata);
-    <T> Injector<T> composite(ComponentMetadata componentMetadata);
-    <T> Injector<T> lazy(ComponentMetadata componentMetadata);
-    <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class> componentMetadata);
+    <T> Injector<T> compositeInjector(ComponentMetadata<Class<?>> componentMetadata);
+    <T> Injector<T> lazyCompositeInjector(ComponentMetadata<?> componentMetadata);
+    <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata);
     <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata);
 }

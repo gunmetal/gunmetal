@@ -35,10 +35,10 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
         this.strategyDecorator = strategyDecorator;
     }
 
-    @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class> componentMetadata) {
+    @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata) {
         Instantiator<T> instantiator =
                 injectorFactory.constructorInstantiator(componentMetadata);
-        Injector<T> postInjector = injectorFactory.composite(componentMetadata);
+        Injector<T> postInjector = injectorFactory.compositeInjector(componentMetadata);
         ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector));
@@ -52,7 +52,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     @Override public <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata) {
         Instantiator<T> instantiator =
                 injectorFactory.methodInstantiator(componentMetadata);
-        Injector<T> postInjector = injectorFactory.lazy(componentMetadata);
+        Injector<T> postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
         ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector));
@@ -77,7 +77,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 }
                 strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
                 try {
-                    strategyContext.component = instantiator.getInstance(internalProvider, resolutionContext);
+                    strategyContext.component = instantiator.newInstance(internalProvider, resolutionContext);
                     strategyContext.state = ResolutionContext.States.PRE_INJECTION;
                     injector.inject(strategyContext.component, internalProvider, resolutionContext);
                     strategyContext.state = ResolutionContext.States.NEW;

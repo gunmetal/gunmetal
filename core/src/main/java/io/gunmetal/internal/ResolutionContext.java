@@ -46,8 +46,7 @@ public interface ResolutionContext {
             @Override
             public <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy) {
 
-                @SuppressWarnings("unchecked")
-                ProvisionContext<T> strategyContext = (ProvisionContext<T>) contextMap.get(strategy);
+                ProvisionContext<T> strategyContext = Smithy.cloak(contextMap.get(strategy));
 
                 if (strategyContext == null) {
                     strategyContext = new ProvisionContext<T>();

@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
  */
 interface ComponentAdapterFactory {
 
-    <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class> componentMetadata);
+    <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata);
     <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata);
 
 }

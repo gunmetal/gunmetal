@@ -21,8 +21,8 @@ package io.gunmetal.internal;
 */
 public interface Instantiator<T> extends Dependent {
 
-    T getInstance(InternalProvider provider, ResolutionContext resolutionContext);
+    T newInstance(InternalProvider provider, ResolutionContext resolutionContext);
 
-    T getInstance(InternalProvider provider, ResolutionContext resolutionContext, Object... providedArgs);
+    T newInstance(InternalProvider provider, ResolutionContext resolutionContext, Object... providedArgs);
 
 }

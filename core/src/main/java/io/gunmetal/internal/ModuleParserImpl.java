@@ -273,7 +273,7 @@ class ModuleParserImpl implements ModuleParser {
                 typeKeys = Types.typeKeys(targets);
             }
 
-            final ComponentMetadata<Class> componentMetadata = new ComponentMetadata<Class>() {
+            final ComponentMetadata<Class<?>> componentMetadata = new ComponentMetadata<Class<?>>() {
                 @Override public Class<?> provider() {
                     return component.type();
                 }

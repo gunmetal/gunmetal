@@ -40,7 +40,7 @@ interface DependencyRequest {
 
         private Factory() { }
 
-        static DependencyRequest create(final ComponentMetadata requestingComponent, final Dependency<?> dependency) {
+        static DependencyRequest create(final ComponentMetadata<?> requestingComponent, final Dependency<?> dependency) {
 
             return new DependencyRequest() {
 
