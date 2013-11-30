@@ -23,6 +23,4 @@ public interface Instantiator<T> extends Dependent {
 
     T newInstance(InternalProvider provider, ResolutionContext resolutionContext);
 
-    T newInstance(InternalProvider provider, ResolutionContext resolutionContext, Object... providedArgs);
-
 }

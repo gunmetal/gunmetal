@@ -21,6 +21,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -36,8 +37,46 @@ class InjectorFactoryImpl implements InjectorFactory {
         this.linkers = linkers;
     }
     
-    @Override public StaticInjector staticInjector(Method method, ComponentMetadata componentMetadata) {
-        return null;
+    @Override public <T> StaticInjector<T> staticInjector(final Method method, final ComponentMetadata componentMetadata) {
+        ParameterizedFunction function = new MethodFunction(method);
+        final Dependency<?>[] dependencies = new Dependency[function.getParameterTypes().length];
+        for (int i = 0; i < dependencies.length; i++) {
+            dependencies[i] = new Parameter(function, i).asDependency();
+        }
+        return new StaticInjector<T>() {
+
+            ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
+
+            {
+                method.setAccessible(true);
+                linkers.add(new Linker() {
+                    @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
+                        for (int i = 0; i < dependencies.length; i++) {
+                            provisionStrategies[i] = internalProvider.getProvisionStrategy(
+                                    DependencyRequest.Factory.create(componentMetadata, dependencies[i]));
+                        }
+                    }
+                }, LinkingPhase.POST_WIRING);
+            }
+
+            @Override public T inject(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+                Object[] parameters = new Object[provisionStrategies.length];
+                for (int i = 0; i < parameters.length; i++) {
+                    parameters[i] = provisionStrategies[i].get(internalProvider, resolutionContext);
+                }
+                try {
+                    return Smithy.cloak(method.invoke(null, parameters));
+                } catch (IllegalAccessException e) {
+                    throw Smithy.<RuntimeException>cloak(e);
+                } catch (InvocationTargetException e) {
+                    throw Smithy.<RuntimeException>cloak(e);
+                }
+            }
+
+            @Override public Collection<Dependency<?>> dependencies() {
+                return Arrays.asList(dependencies);
+            }
+        };
     }
 
     @Override public <T> Injector<T> compositeInjector(ComponentMetadata<Class<?>> componentMetadata) {
@@ -53,48 +92,13 @@ class InjectorFactoryImpl implements InjectorFactory {
     }
 
     @Override public <T> Instantiator<T> methodInstantiator(final ComponentMetadata<Method> componentMetadata) {
-        ParameterizedFunction function = new MethodFunction(componentMetadata.provider());
-        final Dependency<?>[] dependencies = new Dependency[function.getParameterTypes().length];
-        for (int i = 0; i < dependencies.length; i++) {
-            dependencies[i] = new Parameter(function, i).asDependency();
-        }
         return new Instantiator<T>() {
-
-            ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
-            Method method = componentMetadata.provider();
-
-            {
-                method.setAccessible(true);
-                linkers.add(new Linker() {
-                    @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
-                        for (int i = 0; i < dependencies.length; i++) {
-                            provisionStrategies[i] = internalProvider.getProvisionStrategy(
-                                    DependencyRequest.Factory.create(componentMetadata, dependencies[i]));
-                        }
-                    }
-                }, LinkingPhase.POST_WIRING);
-            }
-
+            StaticInjector<T> staticInjector = staticInjector(componentMetadata.provider(), componentMetadata);
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-                Object[] parameters = new Object[provisionStrategies.length];
-                for (int i = 0; i < parameters.length; i++) {
-                    parameters[i] = provisionStrategies[i].get(provider, resolutionContext);
-                }
-                try {
-                    return Smithy.cloak(method.invoke(null, parameters));
-                } catch (IllegalAccessException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
-                } catch (InvocationTargetException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
-                }
+                return staticInjector.inject(provider, resolutionContext);
             }
-
-            @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext, Object... providedArgs) {
-                throw new UnsupportedOperationException();
-            }
-
             @Override public Collection<Dependency<?>> dependencies() {
-                return null;
+                return staticInjector.dependencies();
             }
         };
     }
