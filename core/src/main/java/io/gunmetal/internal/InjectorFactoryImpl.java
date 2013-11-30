@@ -66,65 +66,69 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     @Override public <T> Injector<T> compositeInjector(final ComponentMetadata<Class<?>> componentMetadata) {
         final List<Injector<T>> injectors = new ArrayList<Injector<T>>();
-        new Walker().walk(componentMetadata.provider(), new Walker.Callback() {
-            @Override public void visit(Class<?> cls) {
-                for (final Field field : cls.getDeclaredFields()) {
-                    if (!injectionResolver.shouldInject(field)) {
-                        continue;
+        new ClassWalker().walk(componentMetadata.provider(), new ClassWalker.MemberVisitor() {
+            @Override public void visit(final Field field) {
+                if (!injectionResolver.shouldInject(field)) {
+                    return;
+                }
+                final Dependency<?> dependency = new Dependency<Object>() {
+                    Qualifier qualifier = qualifierResolver.resolve(field);
+                    TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
+
+                    @Override Qualifier qualifier() {
+                        return qualifier;
                     }
-                    final Dependency<?> dependency = new Dependency<Object>() {
-                        Qualifier qualifier = qualifierResolver.resolve(field);
-                        TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
-                        @Override Qualifier qualifier() {
-                            return qualifier;
-                        }
-                        @Override TypeKey<Object> typeKey() {
-                            return typeKey;
-                        }
-                    };
-                    injectors.add(new Injector<T>() {
-                        ProvisionStrategy<?> provisionStrategy;
-                        {
-                            field.setAccessible(true);
-                            linkers.add(new Linker() {
-                                @Override public void link(InternalProvider internalProvider,
-                                                           ResolutionContext linkingContext) {
-                                    provisionStrategy = internalProvider.getProvisionStrategy(
-                                            DependencyRequest.Factory.create(componentMetadata, dependency));
-                                }
-                            }, LinkingPhase.POST_WIRING);
-                        }
-                        @Override public Object inject(T target, InternalProvider internalProvider,
-                                                       ResolutionContext resolutionContext) {
-                            try {
-                                field.set(target, provisionStrategy.get(internalProvider, resolutionContext));
-                                return null;
-                            } catch (IllegalAccessException e) {
-                                throw Smithy.<RuntimeException>cloak(e);
+
+                    @Override TypeKey<Object> typeKey() {
+                        return typeKey;
+                    }
+                };
+                injectors.add(new Injector<T>() {
+                    ProvisionStrategy<?> provisionStrategy;
+
+                    {
+                        field.setAccessible(true);
+                        linkers.add(new Linker() {
+                            @Override public void link(InternalProvider internalProvider,
+                                                       ResolutionContext linkingContext) {
+                                provisionStrategy = internalProvider.getProvisionStrategy(
+                                        DependencyRequest.Factory.create(componentMetadata, dependency));
                             }
-                        }
-                        @Override public Collection<Dependency<?>> dependencies() {
-                            return Collections.<Dependency<?>>singleton(dependency);
-                        }
-                    });
-                }
-                for (final Method method : cls.getDeclaredMethods()) {
-                    if (!injectionResolver.shouldInject(method)) {
-                        continue;
+                        }, LinkingPhase.POST_WIRING);
                     }
-                    final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
-                            new MethodFunction(method),
-                            componentMetadata);
-                    injectors.add(new Injector<T>() {
-                        @Override public Object inject(T target, InternalProvider internalProvider,
-                                                       ResolutionContext resolutionContext) {
-                            return invoker.invoke(target, internalProvider, resolutionContext);
+
+                    @Override public Object inject(T target, InternalProvider internalProvider,
+                                                   ResolutionContext resolutionContext) {
+                        try {
+                            field.set(target, provisionStrategy.get(internalProvider, resolutionContext));
+                            return null;
+                        } catch (IllegalAccessException e) {
+                            throw Smithy.<RuntimeException>cloak(e);
                         }
-                        @Override public Collection<Dependency<?>> dependencies() {
-                            return invoker.dependencies();
-                        }
-                    });
+                    }
+
+                    @Override public Collection<Dependency<?>> dependencies() {
+                        return Collections.<Dependency<?>>singleton(dependency);
+                    }
+                });
+            }
+            @Override public void visit(Method method) {
+                if (!injectionResolver.shouldInject(method)) {
+                    return;
                 }
+                final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
+                        new MethodFunction(method),
+                        componentMetadata);
+                injectors.add(new Injector<T>() {
+                    @Override public Object inject(T target, InternalProvider internalProvider,
+                                                   ResolutionContext resolutionContext) {
+                        return invoker.invoke(target, internalProvider, resolutionContext);
+                    }
+
+                    @Override public Collection<Dependency<?>> dependencies() {
+                        return invoker.dependencies();
+                    }
+                });
             }
         });
         return new Injector<T>() {
@@ -150,57 +154,55 @@ class InjectorFactoryImpl implements InjectorFactory {
             volatile List<Injector<T>> injectors;
             void init(Class<?> targetClass,
                       final InternalProvider internalProvider) {
-                new Walker().walk(targetClass, new Walker.Callback() {
-                    @Override public void visit(Class<?> cls) {
-                        for (final Field field : cls.getDeclaredFields()) {
-                            if (!injectionResolver.shouldInject(field)) {
-                                continue;
-                            }
-                            final Dependency<?> dependency = new Dependency<Object>() {
-                                Qualifier qualifier = qualifierResolver.resolve(field);
-                                TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
-                                @Override Qualifier qualifier() {
-                                    return qualifier;
-                                }
-                                @Override TypeKey<Object> typeKey() {
-                                    return typeKey;
-                                }
-                            };
-                            injectors.add(new Injector<T>() {
-                                ProvisionStrategy<?> provisionStrategy = internalProvider.getProvisionStrategy(
-                                                    DependencyRequest.Factory.create(componentMetadata, dependency));
-                                @Override public Object inject(T target, InternalProvider internalProvider,
-                                                               ResolutionContext resolutionContext) {
-                                    try {
-                                        field.set(target, provisionStrategy.get(internalProvider, resolutionContext));
-                                        return null;
-                                    } catch (IllegalAccessException e) {
-                                        throw Smithy.<RuntimeException>cloak(e);
-                                    }
-                                }
-                                @Override public Collection<Dependency<?>> dependencies() {
-                                    return Collections.<Dependency<?>>singleton(dependency);
-                                }
-                            });
+                new ClassWalker().walk(targetClass, new ClassWalker.MemberVisitor() {
+                    @Override public void visit(final Field field) {
+                        if (!injectionResolver.shouldInject(field)) {
+                            return;
                         }
-                        for (final Method method : cls.getDeclaredMethods()) {
-                            if (!injectionResolver.shouldInject(method)) {
-                                continue;
+                        final Dependency<?> dependency = new Dependency<Object>() {
+                            Qualifier qualifier = qualifierResolver.resolve(field);
+                            TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
+                            @Override Qualifier qualifier() {
+                                return qualifier;
                             }
-                            final ParameterizedFunctionInvoker<T> invoker = lazyInvoker(
-                                    new MethodFunction(method),
-                                    componentMetadata,
-                                    internalProvider);
-                            injectors.add(new Injector<T>() {
-                                @Override public Object inject(T target, InternalProvider internalProvider,
-                                                               ResolutionContext resolutionContext) {
-                                    return invoker.invoke(target, internalProvider, resolutionContext);
+                            @Override TypeKey<Object> typeKey() {
+                                return typeKey;
+                            }
+                        };
+                        injectors.add(new Injector<T>() {
+                            ProvisionStrategy<?> provisionStrategy = internalProvider.getProvisionStrategy(
+                                    DependencyRequest.Factory.create(componentMetadata, dependency));
+                            @Override public Object inject(T target, InternalProvider internalProvider,
+                                                           ResolutionContext resolutionContext) {
+                                try {
+                                    field.set(target, provisionStrategy.get(internalProvider, resolutionContext));
+                                    return null;
+                                } catch (IllegalAccessException e) {
+                                    throw Smithy.<RuntimeException>cloak(e);
                                 }
-                                @Override public Collection<Dependency<?>> dependencies() {
-                                    return invoker.dependencies();
-                                }
-                            });
+                            }
+                            @Override public Collection<Dependency<?>> dependencies() {
+                                return Collections.<Dependency<?>>singleton(dependency);
+                            }
+                        });
+                    }
+                    @Override public void visit(Method method) {
+                        if (!injectionResolver.shouldInject(method)) {
+                            return;
                         }
+                        final ParameterizedFunctionInvoker<T> invoker = lazyInvoker(
+                                new MethodFunction(method),
+                                componentMetadata,
+                                internalProvider);
+                        injectors.add(new Injector<T>() {
+                            @Override public Object inject(T target, InternalProvider internalProvider,
+                                                           ResolutionContext resolutionContext) {
+                                return invoker.invoke(target, internalProvider, resolutionContext);
+                            }
+                            @Override public Collection<Dependency<?>> dependencies() {
+                                return invoker.dependencies();
+                            }
+                        });
                     }
                 });
             }
@@ -427,14 +429,21 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     }
 
-    static class Walker {
-        interface Callback { void visit(Class<?> cls); }
-        void walk(Class<?> classToWalk, Callback callback) {
+    static class ClassWalker {
+        interface MemberVisitor {
+            void visit(Field field);
+            void visit(Method method);
+        }
+        void walk(Class<?> classToWalk, MemberVisitor memberVisitor) {
             for (Class<?> cls = classToWalk; cls != Object.class; cls = cls.getSuperclass()) {
-                callback.visit(cls);
+                for (final Field field : cls.getDeclaredFields()) {
+                    memberVisitor.visit(field);
+                }
+                for (final Method method : cls.getDeclaredMethods()) {
+                    memberVisitor.visit(method);
+                }
             }
         }
     }
-
 
 }
