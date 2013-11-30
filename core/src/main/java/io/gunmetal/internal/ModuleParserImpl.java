@@ -260,7 +260,7 @@ class ModuleParserImpl implements ModuleParser {
         for (final Component component : components) {
 
             final Qualifier qualifier = qualifierResolver.resolve(
-                    component.type(), moduleMetadata.qualifier());
+                    component.type()).merge(moduleMetadata.qualifier());
 
             final Scope scope = scopeResolver.resolve(component.type());
 
@@ -325,7 +325,7 @@ class ModuleParserImpl implements ModuleParser {
             }
 
             final Qualifier qualifier =
-                    qualifierResolver.resolve(method, moduleMetadata.qualifier());
+                    qualifierResolver.resolve(method).merge(moduleMetadata.qualifier());
 
             final Scope scope = scopeResolver.resolve(method);
 

@@ -67,6 +67,23 @@ final class Smithy {
                 return qualifiers;
             }
 
+            @Override public Qualifier merge(Qualifier other) {
+                if (qualifiers.length == 0) {
+                    return other;
+                }
+                if (other.qualifiers().length == 0) {
+                    return this;
+                }
+                List<Object> qualifierList = new LinkedList<Object>();
+                Collections.addAll(qualifierList, other.qualifiers());
+                for (Object qualifier : qualifiers) {
+                    if (!qualifierList.contains(qualifier)) {
+                        qualifierList.add(qualifier);
+                    }
+                }
+                return qualifier(qualifierList.toArray());
+            }
+
             @Override public boolean intersects(Object[] otherQualifiers) {
                 for (Object qualifier : qualifiers) {
                     for (Object otherQualifier : otherQualifiers) {

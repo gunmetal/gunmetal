@@ -19,14 +19,21 @@ package io.gunmetal.internal;
 /**
  * @author rees.byars
  */
-interface Qualifier {
+public class ProxyDecorator implements ProvisionStrategyDecorator {
 
-    Object[] qualifiers();
+    ProxyDecorator() {
 
-    Qualifier merge(Qualifier other);
+    }
 
-    boolean intersects(Object[] qualifiers);
+    @Override public <T> ProvisionStrategy<T> decorate(
+            ComponentMetadata<?> componentMetadata,
+            ProvisionStrategy<T> delegateStrategy) {
 
-    boolean intersects(Qualifier qualifier);
+        // if (componentMetadata.isProxy()) {
+        //      return
+        // }
+
+        return null;
+    }
 
 }

@@ -23,5 +23,4 @@ import java.lang.reflect.AnnotatedElement;
  */
 interface AnnotationResolver<T> {
     T resolve(AnnotatedElement annotatedElement);
-    T resolve(AnnotatedElement annotatedElement, T t);
 }
