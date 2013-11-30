@@ -66,11 +66,8 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     @Override public <T> Injector<T> compositeInjector(final ComponentMetadata<Class<?>> componentMetadata) {
         final List<Injector<T>> injectors = new ArrayList<Injector<T>>();
-        new ClassWalker().walk(componentMetadata.provider(), new ClassWalker.MemberVisitor() {
+        new ClassWalker().walk(componentMetadata.provider(), new InjectedMemberVisitor() {
             @Override public void visit(final Field field) {
-                if (!injectionResolver.shouldInject(field)) {
-                    return;
-                }
                 final Dependency<?> dependency = new Dependency<Object>() {
                     Qualifier qualifier = qualifierResolver.resolve(field);
                     TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
@@ -85,7 +82,6 @@ class InjectorFactoryImpl implements InjectorFactory {
                 };
                 injectors.add(new Injector<T>() {
                     ProvisionStrategy<?> provisionStrategy;
-
                     {
                         field.setAccessible(true);
                         linkers.add(new Linker() {
@@ -96,7 +92,6 @@ class InjectorFactoryImpl implements InjectorFactory {
                             }
                         }, LinkingPhase.POST_WIRING);
                     }
-
                     @Override public Object inject(T target, InternalProvider internalProvider,
                                                    ResolutionContext resolutionContext) {
                         try {
@@ -106,16 +101,12 @@ class InjectorFactoryImpl implements InjectorFactory {
                             throw Smithy.<RuntimeException>cloak(e);
                         }
                     }
-
                     @Override public Collection<Dependency<?>> dependencies() {
                         return Collections.<Dependency<?>>singleton(dependency);
                     }
                 });
             }
             @Override public void visit(Method method) {
-                if (!injectionResolver.shouldInject(method)) {
-                    return;
-                }
                 final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
                         new MethodFunction(method),
                         componentMetadata);
@@ -154,11 +145,9 @@ class InjectorFactoryImpl implements InjectorFactory {
             volatile List<Injector<T>> injectors;
             void init(Class<?> targetClass,
                       final InternalProvider internalProvider) {
-                new ClassWalker().walk(targetClass, new ClassWalker.MemberVisitor() {
+                injectors = new ArrayList<Injector<T>>();
+                new ClassWalker().walk(targetClass, new InjectedMemberVisitor() {
                     @Override public void visit(final Field field) {
-                        if (!injectionResolver.shouldInject(field)) {
-                            return;
-                        }
                         final Dependency<?> dependency = new Dependency<Object>() {
                             Qualifier qualifier = qualifierResolver.resolve(field);
                             TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
@@ -187,9 +176,6 @@ class InjectorFactoryImpl implements InjectorFactory {
                         });
                     }
                     @Override public void visit(Method method) {
-                        if (!injectionResolver.shouldInject(method)) {
-                            return;
-                        }
                         final ParameterizedFunctionInvoker<T> invoker = lazyInvoker(
                                 new MethodFunction(method),
                                 componentMetadata,
@@ -429,18 +415,23 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     }
 
-    static class ClassWalker {
-        interface MemberVisitor {
-            void visit(Field field);
-            void visit(Method method);
-        }
-        void walk(Class<?> classToWalk, MemberVisitor memberVisitor) {
+    private interface InjectedMemberVisitor {
+        void visit(Field injectedField);
+        void visit(Method injectedMethod);
+    }
+
+    private class ClassWalker {
+        void walk(Class<?> classToWalk, InjectedMemberVisitor memberVisitor) {
             for (Class<?> cls = classToWalk; cls != Object.class; cls = cls.getSuperclass()) {
                 for (final Field field : cls.getDeclaredFields()) {
-                    memberVisitor.visit(field);
+                    if (injectionResolver.shouldInject(field)) {
+                        memberVisitor.visit(field);
+                    }
                 }
                 for (final Method method : cls.getDeclaredMethods()) {
-                    memberVisitor.visit(method);
+                    if (injectionResolver.shouldInject(method)) {
+                        memberVisitor.visit(method);
+                    }
                 }
             }
         }
