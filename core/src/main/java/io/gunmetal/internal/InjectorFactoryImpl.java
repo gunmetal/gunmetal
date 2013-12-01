@@ -37,16 +37,16 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     private final AnnotationResolver<Qualifier> qualifierResolver;
     private final ConstructorResolver constructorResolver;
-    private final InjectionResolver injectionResolver;
+    private final ClassWalker classWalker;
     private final Linkers linkers;
 
     InjectorFactoryImpl(AnnotationResolver<Qualifier> qualifierResolver,
                         ConstructorResolver constructorResolver,
-                        InjectionResolver injectionResolver,
+                        ClassWalker classWalker,
                         Linkers linkers) {
         this.qualifierResolver = qualifierResolver;
         this.constructorResolver = constructorResolver;
-        this.injectionResolver = injectionResolver;
+        this.classWalker = classWalker;
         this.linkers = linkers;
     }
     
@@ -66,12 +66,11 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     @Override public <T> Injector<T> compositeInjector(final ComponentMetadata<Class<?>> componentMetadata) {
         final List<Injector<T>> injectors = new ArrayList<Injector<T>>();
-        new ClassWalker().walk(componentMetadata.provider(), new InjectedMemberVisitor() {
+        classWalker.walk(componentMetadata.provider(), new ClassWalker.InjectedMemberVisitor() {
             @Override public void visit(final Field field) {
                 final Dependency<?> dependency = new Dependency<Object>() {
                     Qualifier qualifier = qualifierResolver.resolve(field);
                     TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
-
                     @Override Qualifier qualifier() {
                         return qualifier;
                     }
@@ -146,7 +145,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             void init(Class<?> targetClass,
                       final InternalProvider internalProvider) {
                 injectors = new ArrayList<Injector<T>>();
-                new ClassWalker().walk(targetClass, new InjectedMemberVisitor() {
+                classWalker.walk(targetClass, new ClassWalker.InjectedMemberVisitor() {
                     @Override public void visit(final Field field) {
                         final Dependency<?> dependency = new Dependency<Object>() {
                             Qualifier qualifier = qualifierResolver.resolve(field);
@@ -413,28 +412,6 @@ class InjectorFactoryImpl implements InjectorFactory {
             };
         }
 
-    }
-
-    private interface InjectedMemberVisitor {
-        void visit(Field injectedField);
-        void visit(Method injectedMethod);
-    }
-
-    private class ClassWalker {
-        void walk(Class<?> classToWalk, InjectedMemberVisitor memberVisitor) {
-            for (Class<?> cls = classToWalk; cls != Object.class; cls = cls.getSuperclass()) {
-                for (final Field field : cls.getDeclaredFields()) {
-                    if (injectionResolver.shouldInject(field)) {
-                        memberVisitor.visit(field);
-                    }
-                }
-                for (final Method method : cls.getDeclaredMethods()) {
-                    if (injectionResolver.shouldInject(method)) {
-                        memberVisitor.visit(method);
-                    }
-                }
-            }
-        }
     }
 
 }

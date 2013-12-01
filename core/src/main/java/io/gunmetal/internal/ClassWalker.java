@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package io.gunmetal;
+package io.gunmetal.internal;
 
-import io.gunmetal.internal.ApplicationBuilderImpl;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
  */
-public final class Gunmetal {
+interface ClassWalker {
 
-    private Gunmetal() { }
+    void walk(Class<?> classToWalk, InjectedMemberVisitor memberVisitor);
 
-    public static ApplicationContainer create(Class<?> applicationModule) {
-        return new ApplicationBuilderImpl().build(applicationModule);
-    }
-
-    public static ApplicationContainer create(Class<?> applicationModule, ApplicationContainer ... referencedContainers) {
-        throw new UnsupportedOperationException();
+    interface InjectedMemberVisitor {
+        void visit(Field injectedField);
+        void visit(Method injectedMethod);
     }
 
 }

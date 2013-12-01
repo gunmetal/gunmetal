@@ -16,21 +16,16 @@
 
 package io.gunmetal;
 
-import io.gunmetal.internal.ApplicationBuilderImpl;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author rees.byars
  */
-public final class Gunmetal {
-
-    private Gunmetal() { }
-
-    public static ApplicationContainer create(Class<?> applicationModule) {
-        return new ApplicationBuilderImpl().build(applicationModule);
-    }
-
-    public static ApplicationContainer create(Class<?> applicationModule, ApplicationContainer ... referencedContainers) {
-        throw new UnsupportedOperationException();
-    }
-
-}
+@Target({ ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface Inject { }
