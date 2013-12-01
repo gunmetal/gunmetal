@@ -234,6 +234,10 @@ class ModuleParserImpl implements ModuleParser {
 
                 ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
 
+                if (module == requestSourceModule.moduleClass()) {
+                    return true;
+                }
+
                 for (Class<?> dependency : requestSourceModule.referencedModules()) {
                     if (module == dependency) {
                         return true;

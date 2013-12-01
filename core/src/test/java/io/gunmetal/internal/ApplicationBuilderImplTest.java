@@ -16,10 +16,11 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.ApplicationContainer;
-import io.gunmetal.ApplicationModule;
-import io.gunmetal.Module;
+import io.gunmetal.*;
 import org.junit.Test;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * @author rees.byars
@@ -29,10 +30,20 @@ public class ApplicationBuilderImplTest {
     @ApplicationModule(modules = TestModule.class)
     static class Application { }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    @io.gunmetal.Qualifier
+    public @interface Main {}
+
+
     @Module
     static class TestModule {
 
-        static ApplicationBuilderImplTest test() {
+        @Main
+        static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
+            return new ApplicationBuilderImplTest();
+        }
+
+        static ApplicationBuilderImplTest testy() {
             return new ApplicationBuilderImplTest();
         }
 
@@ -43,6 +54,7 @@ public class ApplicationBuilderImplTest {
 
         ApplicationContainer app = new ApplicationBuilderImpl().build(Application.class);
 
+        @Main
         class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
 
         ApplicationBuilderImplTest test = app.get(Dep.class);

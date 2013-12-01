@@ -85,6 +85,11 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 } catch (CircularReferenceException e) {
                     strategyContext.state = ResolutionContext.States.NEW;
                     if (e.metadata().equals(componentMetadata)) {
+                        ProvisionStrategy<?> reverseStrategy = e.getReverseStrategy();
+                        if (reverseStrategy == null) {
+                            throw new IllegalArgumentException("The component [" + componentMetadata.toString()
+                                + "] depends on itself");
+                        }
                         e.getReverseStrategy().get(internalProvider, resolutionContext);
                         return strategyContext.component;
                     } else if (e.getReverseStrategy() == null) {
