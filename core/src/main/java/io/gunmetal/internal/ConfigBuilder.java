@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package io.gunmetal;
+package io.gunmetal.internal;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import io.gunmetal.Option;
 
 /**
  * @author rees.byars
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Scope
-public @interface Prototype {
+interface ConfigBuilder {
+
+    Config build(Option[] options);
+
 }

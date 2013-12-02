@@ -268,13 +268,13 @@ class ModuleParserImpl implements ModuleParser {
 
             final Scope scope = scopeResolver.resolve(component.type());
 
-            final Collection<TypeKey<?>> typeKeys;
+            final Collection<Dependency<?>> dependencies;
             Class<?>[] targets = component.targets();
-
             if (targets.length == 0) {
-                typeKeys = Collections.<TypeKey<?>>singletonList(Types.typeKey(component.type()));
+                dependencies = Collections.<Dependency<?>>singletonList(
+                        Dependency.from(qualifier, component.type()));
             } else {
-                typeKeys = Types.typeKeys(targets);
+                dependencies = Dependency.from(qualifier, targets);
             }
 
             final ComponentMetadata<Class<?>> componentMetadata = new ComponentMetadata<Class<?>>() {
@@ -290,8 +290,8 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Qualifier qualifier() {
                     return qualifier;
                 }
-                @Override public Collection<TypeKey<?>> targets() {
-                    return typeKeys;
+                @Override public Collection<Dependency<?>> targets() {
+                    return dependencies;
                 }
                 @Override Scope scope() {
                     return scope;
@@ -334,9 +334,8 @@ class ModuleParserImpl implements ModuleParser {
             final Scope scope = scopeResolver.resolve(method);
 
             // TODO targeted return type check, better type ref impl
-            final Collection<TypeKey<?>> typeKeys =
-                    Collections.<TypeKey<?>>singletonList(Types.typeKey(method.getGenericReturnType()));
-
+            final Collection<Dependency<?>> dependencies = Collections.<Dependency<?>>singletonList(
+                    Dependency.from(qualifier, method.getGenericReturnType()));
             ComponentMetadata<Method> componentMetadata = new ComponentMetadata<Method>() {
                 @Override public Method provider() {
                     return method;
@@ -350,8 +349,8 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Qualifier qualifier() {
                     return qualifier;
                 }
-                @Override public Collection<TypeKey<?>> targets() {
-                    return typeKeys;
+                @Override public Collection<Dependency<?>> targets() {
+                    return dependencies;
                 }
                 @Override Scope scope() {
                     return scope;

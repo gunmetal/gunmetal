@@ -16,18 +16,17 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import dagger.ObjectGraph;
+import io.gunmetal.ApplicationContainer;
+import io.gunmetal.ApplicationModule;
 import se.jbee.inject.bootstrap.Bootstrap;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
-import java.lang.Object;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
+ *
+ * mvn clean install -Pbenchmarks -DskipTests -Dbenchmark.instruments=runtime -Dbenchmark.args="--benchmark newGunmetalStandup,gunmetalStandup"
+ *
  * @author rees.byars
  */
 public class CaliperBenchmarks {
@@ -35,7 +34,9 @@ public class CaliperBenchmarks {
     static final Dependency<N> PROTOTYPE_DEPENDENCY = Smithy.forge(N.class, Qualifier.NONE);
     static final Dependency<E> SINGLETON_DEPENDENCY  = Smithy.forge(E.class, Qualifier.NONE);
     Provider<N> gunmetalProvider;
+    io.gunmetal.Provider<N> newGunmetalProvider;
     static final Container CONTAINER = Gunmetal.jsr330().load(new GunmetalBenchMarkModule());
+    static final ApplicationContainer APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
     @Inject public Provider<N> daggerProvider;
     static final ObjectGraph OBJECT_GRAPH = ObjectGraph.create(new DaggerBenchMarkModule());
     static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
@@ -43,16 +44,31 @@ public class CaliperBenchmarks {
     Provider<N> guiceProvider;
     static final Injector INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
 
+    @ApplicationModule(modules = NewGunmetalBenchMarkModule.class)
+    static class App { }
+
+    static class Dep implements io.gunmetal.Dependency<AA> { }
+
     @BeforeExperiment() void setUp() {
         gunmetalProvider = CONTAINER.get(new Generic<Provider<N>>() { });
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
+        //class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
+        //newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
     }
 
     @Benchmark long gunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= Gunmetal.jsr330().load(new GunmetalBenchMarkModule()).get(AA.class, SelectionAdvisor.NONE).hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long newGunmetalStandup(int reps) {
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= io.gunmetal.Gunmetal.create(App.class).get(Dep.class).hashCode();
         }
         return dummy;
     }
@@ -156,6 +172,15 @@ public class CaliperBenchmarks {
         return dummy;
     }
 
+    @Benchmark long newGunmetalProvider(int reps) {
+        io.gunmetal.Provider<N> provider = newGunmetalProvider;
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= provider.get().hashCode();
+        }
+        return dummy;
+    }
+
     @Benchmark long daggerProvider(int reps) {
         Provider<N> provider = daggerProvider;
         int dummy = 0;
@@ -172,67 +197,6 @@ public class CaliperBenchmarks {
             dummy |= provider.get().hashCode();
         }
         return dummy;
-    }
-
-    @Benchmark long testPure(int reps) {
-        Instance instance = new Instance();
-        HashMap map = new HashMap();
-        map.put("key", instance);
-        int dummy = 0;
-        for (long i = 0; i < reps; i++) {
-            dummy |= ((Instance) map.get("key")).getComponent().execute();
-        }
-        return dummy;
-    }
-
-    @Benchmark long testInstanceProvider(int reps) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method m = Instance.class.getDeclaredMethod("getComponent");
-        m.setAccessible(true);
-        Instance instance = new Instance();
-        int dummy = 0;
-        for (long i = 0; i < reps; i++) {
-            dummy |= ((Component) m.invoke(instance)).execute();
-        }
-        return dummy;
-    }
-
-    @Benchmark long testConstructorProvider(int reps) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
-        Constructor c = Component.class.getDeclaredConstructor();
-        c.setAccessible(true);
-        int dummy = 0;
-        for (long i = 0; i < reps; i++) {
-            dummy |= ((Component) c.newInstance()).execute();
-        }
-        return dummy;
-    }
-
-    @Benchmark long testStaticProvider(int reps) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method m = Static.class.getDeclaredMethod("getComponent");
-        m.setAccessible(true);
-        int dummy = 0;
-        for (long i = 0; i < reps; i++) {
-            dummy |= ((Component) m.invoke(null)).execute();
-        }
-        return dummy;
-    }
-
-    static class Instance {
-        Component getComponent() {
-            return new Component();
-        }
-    }
-
-    static class Static {
-        static Component getComponent() {
-            return new Component();
-        }
-    }
-
-    static class Component {
-        static int i = 0;
-        int execute() {
-            return i++;
-        }
     }
 
 }

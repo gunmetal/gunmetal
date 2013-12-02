@@ -16,7 +16,12 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.*;
+import com.github.overengineer.gunmetal.testmocks.A;
+import io.gunmetal.ApplicationContainer;
+import io.gunmetal.ApplicationModule;
+import io.gunmetal.Component;
+import io.gunmetal.Gunmetal;
+import io.gunmetal.Module;
 import org.junit.Test;
 
 import java.lang.annotation.Retention;
@@ -35,7 +40,11 @@ public class ApplicationBuilderImplTest {
     public @interface Main {}
 
 
-    @Module
+    @Module(
+            components = {
+                    @Component(type = ApplicationBuilderImplTest.class)
+            }
+    )
     static class TestModule {
 
         @Main
@@ -60,6 +69,14 @@ public class ApplicationBuilderImplTest {
         ApplicationBuilderImplTest test = app.get(Dep.class);
 
         assert test != this;
+
+        class Dep2 implements io.gunmetal.Dependency<A> { }
+
+        app = Gunmetal.create(NewGunmetalBenchMarkModule.class);
+
+        A a = app.get(Dep2.class);
+
+        assert a != app.get(Dep2.class);
     }
 
 }

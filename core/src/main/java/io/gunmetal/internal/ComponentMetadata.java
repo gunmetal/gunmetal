@@ -32,7 +32,7 @@ abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     abstract Qualifier qualifier();
 
-    abstract Collection<TypeKey<?>> targets();
+    abstract Collection<Dependency<?>> targets();
 
     abstract Scope scope();
 

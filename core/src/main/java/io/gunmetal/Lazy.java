@@ -16,8 +16,6 @@
 
 package io.gunmetal;
 
-import com.github.overengineer.gunmetal.metadata.Scope;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,9 +25,8 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Scope
 public @interface Lazy {
 }

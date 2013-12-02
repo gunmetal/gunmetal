@@ -1,0 +1,201 @@
+/*
+ * Copyright (c) 2013.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.gunmetal.internal;
+
+import io.gunmetal.Inject;
+import io.gunmetal.Lazy;
+import io.gunmetal.Option;
+import io.gunmetal.Prototype;
+import io.gunmetal.ProviderDecorator;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
+/**
+ * @author rees.byars
+ */
+public class ConfigBuildImpl implements ConfigBuilder {
+    @Override public Config build(Option[] options) {
+        return new Config() {
+
+            @Override public ClassWalker classWalker() {
+                return new ClassWalkerImpl(new InjectionResolver() {
+                    @Override public boolean shouldInject(Field field) {
+                        return field.isAnnotationPresent(Inject.class);
+                    }
+                    @Override public boolean shouldInject(Method method) {
+                        return method.isAnnotationPresent(Inject.class);
+                    }
+                });
+            }
+
+            @Override public AnnotationResolver<Qualifier> qualifierResolver() {
+                return new AnnotationResolver<Qualifier>() {
+                    @Override public Qualifier resolve(AnnotatedElement annotatedElement) {
+                        return QualifierBuilder.qualifier(annotatedElement, io.gunmetal.Qualifier.class);
+                    }
+                };
+            }
+
+            @Override public AnnotationResolver<Scope> scopeResolver() {
+                return new AnnotationResolver<Scope>() {
+                    @Override public Scope resolve(AnnotatedElement annotatedElement) {
+                        Annotation scope = null;
+                        for (Annotation annotation : annotatedElement.getAnnotations()) {
+                            Class<? extends Annotation> annotationType = annotation.annotationType();
+                            if (annotationType.isAnnotationPresent(io.gunmetal.Scope.class)) {
+                                scope = annotation;
+                            }
+                        }
+                        if (scope == null) {
+                            if (annotatedElement.isAnnotationPresent(Lazy.class)) {
+                                return Scopes.LAZY_SINGLETON;
+                            }
+                            return Scopes.EAGER_SINGLETON;
+                        }
+                        if (scope instanceof Prototype) {
+                            return Scopes.PROTOTYPE;
+                        }
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+
+            @Override public ConstructorResolver constructorResolver() {
+                return new ConstructorResolver() {
+                    @Override public <T> Constructor<T> resolve(Class<T> cls) {
+                        return Smithy.cloak(cls.getDeclaredConstructors()[0]);
+                    }
+                };
+            }
+
+            @Override public ScopeBindings scopeBindings() {
+                return new ScopeBindings() {
+                    @Override public ProviderDecorator decoratorFor(Scope scope) {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+
+        };
+    }
+
+    private static class QualifierBuilder {
+
+        // TODO revisit the intersects impl here
+        private static final Qualifier NO_QUALIFIER = new Qualifier() {
+
+            Object[] qualifiers = {};
+
+            @Override public Object[] qualifiers() {
+                return qualifiers;
+            }
+
+            @Override public Qualifier merge(Qualifier other) {
+                return other;
+            }
+
+            @Override public boolean intersects(Object[] qualifiers) {
+                return true;
+            }
+
+            @Override public boolean intersects(Qualifier qualifier) {
+                return true;
+            }
+
+        };
+
+        static Qualifier qualifier(AnnotatedElement annotatedElement,
+                                   Class<? extends Annotation> qualifierAnnotation) {
+            List<Object> qualifiers = new LinkedList<Object>();
+            for (Annotation annotation : annotatedElement.getAnnotations()) {
+                Class<? extends Annotation> annotationType = annotation.annotationType();
+                if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
+                    qualifiers.add(annotation);
+                }
+            }
+            if (qualifiers.isEmpty()) {
+                return NO_QUALIFIER;
+            }
+            return qualifier(qualifiers.toArray());
+        }
+
+        private static Qualifier qualifier(final Object[] q) {
+            Arrays.sort(q);
+            return new Qualifier() {
+
+                Object[] qualifiers = q;
+                int hashCode = Arrays.hashCode(qualifiers);
+
+                @Override public Object[] qualifiers() {
+                    return qualifiers;
+                }
+
+                @Override public Qualifier merge(Qualifier other) {
+                    if (qualifiers.length == 0) {
+                        return other;
+                    }
+                    if (other.qualifiers().length == 0) {
+                        return this;
+                    }
+                    List<Object> qualifierList = new LinkedList<Object>();
+                    Collections.addAll(qualifierList, other.qualifiers());
+                    for (Object qualifier : qualifiers) {
+                        if (!qualifierList.contains(qualifier)) {
+                            qualifierList.add(qualifier);
+                        }
+                    }
+                    return qualifier(qualifierList.toArray());
+                }
+
+                @Override public boolean intersects(Object[] otherQualifiers) {
+                    for (Object qualifier : qualifiers) {
+                        for (Object otherQualifier : otherQualifiers) {
+                            if (qualifier.equals(otherQualifier)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+
+                @Override public boolean intersects(Qualifier qualifier) {
+                    return intersects(qualifier.qualifiers());
+                }
+
+                @Override public boolean equals(Object o) {
+                    return o instanceof Qualifier
+                            && (this == o || Arrays.equals(((Qualifier) o).qualifiers(), qualifiers));
+                }
+
+                @Override public int hashCode() {
+                    return hashCode;
+                }
+
+            };
+
+        }
+
+    }
+}

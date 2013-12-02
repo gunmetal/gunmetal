@@ -68,17 +68,8 @@ class InjectorFactoryImpl implements InjectorFactory {
         final List<Injector<T>> injectors = new ArrayList<Injector<T>>();
         classWalker.walk(componentMetadata.provider(), new ClassWalker.InjectedMemberVisitor() {
             @Override public void visit(final Field field) {
-                final Dependency<?> dependency = new Dependency<Object>() {
-                    Qualifier qualifier = qualifierResolver.resolve(field);
-                    TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
-                    @Override Qualifier qualifier() {
-                        return qualifier;
-                    }
-
-                    @Override TypeKey<Object> typeKey() {
-                        return typeKey;
-                    }
-                };
+                final Dependency<?> dependency = Dependency.from(
+                        qualifierResolver.resolve(field), field.getGenericType());
                 injectors.add(new Injector<T>() {
                     ProvisionStrategy<?> provisionStrategy;
                     {
@@ -147,16 +138,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                 injectors = new ArrayList<Injector<T>>();
                 classWalker.walk(targetClass, new ClassWalker.InjectedMemberVisitor() {
                     @Override public void visit(final Field field) {
-                        final Dependency<?> dependency = new Dependency<Object>() {
-                            Qualifier qualifier = qualifierResolver.resolve(field);
-                            TypeKey<Object> typeKey = Types.typeKey(field.getGenericType());
-                            @Override Qualifier qualifier() {
-                                return qualifier;
-                            }
-                            @Override TypeKey<Object> typeKey() {
-                                return typeKey;
-                            }
-                        };
+                        final Dependency<?> dependency = Dependency.from(
+                                qualifierResolver.resolve(field), field.getGenericType());
                         injectors.add(new Injector<T>() {
                             ProvisionStrategy<?> provisionStrategy = internalProvider.getProvisionStrategy(
                                     DependencyRequest.Factory.create(componentMetadata, dependency));
@@ -401,15 +384,7 @@ class InjectorFactoryImpl implements InjectorFactory {
         }
 
         Dependency<T> asDependency() {
-            return new Dependency<T>() {
-                Qualifier qualifier = qualifierResolver.resolve(Parameter.this);
-                @Override Qualifier qualifier() {
-                    return qualifier;
-                }
-                @Override TypeKey<T> typeKey() {
-                    return Types.typeKey(type);
-                }
-            };
+            return Dependency.from(qualifierResolver.resolve(Parameter.this), type);
         }
 
     }

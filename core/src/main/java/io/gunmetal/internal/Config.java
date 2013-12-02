@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package io.gunmetal;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package io.gunmetal.internal;
 
 /**
  * @author rees.byars
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Scope
-public @interface Prototype {
+interface Config {
+    ClassWalker classWalker();
+    AnnotationResolver<Qualifier> qualifierResolver();
+    AnnotationResolver<Scope> scopeResolver();
+    ConstructorResolver constructorResolver();
+    ScopeBindings scopeBindings();
 }
