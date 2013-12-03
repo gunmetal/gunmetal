@@ -19,7 +19,6 @@ package io.gunmetal.internal;
 import com.github.overengineer.gunmetal.testmocks.A;
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
-import io.gunmetal.Component;
 import io.gunmetal.Gunmetal;
 import io.gunmetal.Module;
 import io.gunmetal.Prototype;
@@ -42,11 +41,7 @@ public class ApplicationBuilderImplTest {
     public @interface Main {}
 
 
-    @Module(
-            components = {
-                    @Component(type = ApplicationBuilderImplTest.class)
-            }
-    )
+    @Module
     static class TestModule {
 
         @Main static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {

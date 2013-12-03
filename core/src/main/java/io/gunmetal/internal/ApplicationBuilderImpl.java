@@ -88,7 +88,11 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 ComponentAdapter<?> adapter = adapterProvider.get();
                 final ComponentMetadata<?> metadata = adapter.metadata();
                 for (final Dependency<?> dependency : metadata.targets()) {
-                    componentAdapterProviders.put(dependency, adapterProvider);
+                    ComponentAdapterProvider<?> previous = componentAdapterProviders.put(dependency, adapterProvider);
+                    if (previous != null) {
+                        throw new RuntimeException("more than one of type"); // TODO
+                    }
+
                 }
             }
         }
