@@ -22,6 +22,8 @@ import io.gunmetal.ApplicationModule;
 import io.gunmetal.Component;
 import io.gunmetal.Gunmetal;
 import io.gunmetal.Module;
+import io.gunmetal.Prototype;
+import io.gunmetal.Provider;
 import org.junit.Test;
 
 import java.lang.annotation.Retention;
@@ -47,12 +49,19 @@ public class ApplicationBuilderImplTest {
     )
     static class TestModule {
 
-        @Main
-        static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
+        @Main static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
             return new ApplicationBuilderImplTest();
         }
 
-        static ApplicationBuilderImplTest testy() {
+        static Object test2(Provider<ApplicationBuilderImplTest> test) {
+            System.out.println(test.get());
+            System.out.println(test.get());
+            System.out.println(test.get());
+            System.out.println(test.get());
+            return test.get();
+        }
+
+        @Prototype static ApplicationBuilderImplTest testy() {
             return new ApplicationBuilderImplTest();
         }
 

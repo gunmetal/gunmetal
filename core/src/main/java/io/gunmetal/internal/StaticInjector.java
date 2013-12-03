@@ -19,6 +19,6 @@ package io.gunmetal.internal;
 /**
 * @author rees.byars
 */
-public interface StaticInjector<T> extends Dependent {
-    T inject(InternalProvider internalProvider, ResolutionContext resolutionContext);
+public interface StaticInjector extends Dependent {
+    Object inject(InternalProvider internalProvider, ResolutionContext resolutionContext);
 }

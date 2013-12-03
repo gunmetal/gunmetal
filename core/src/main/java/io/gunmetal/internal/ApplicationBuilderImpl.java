@@ -18,6 +18,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
+import io.gunmetal.Provider;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -94,13 +95,44 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         final InternalProvider internalProvider = new InternalProvider() {
             @Override public <T> ProvisionStrategy<T> getProvisionStrategy(DependencyRequest dependencyRequest) {
+                Dependency<?> dependency = dependencyRequest.dependency();
                 ComponentAdapterProvider<T> adapterProvider =
-                        Smithy.cloak(componentAdapterProviders.get(dependencyRequest.dependency()));
-
-                if (!adapterProvider.isAccessibleTo(dependencyRequest)) {
-                    throw new IllegalAccessError(); // TODO
+                        Smithy.cloak(componentAdapterProviders.get(dependency));
+                if (adapterProvider != null) {
+                    if (!adapterProvider.isAccessibleTo(dependencyRequest)) {
+                        throw new IllegalAccessError(); // TODO
+                    }
+                    return adapterProvider.get().provisionStrategy();
                 }
-                return adapterProvider.get().provisionStrategy();
+                if (config.isProvider(dependency)) {
+                    // TODO add check before casting
+                    ParameterizedType parameterizedType = (ParameterizedType) dependency.typeKey().type();
+                    Type type = parameterizedType.getActualTypeArguments()[0];
+                    // TODO store
+                    Dependency<?> providedTypeDependency = Dependency.from(dependency.qualifier(), type);
+                    ComponentAdapterProvider<?> providedTypeAdapterProvider =
+                            Smithy.cloak(componentAdapterProviders.get(providedTypeDependency));
+                    if (providedTypeAdapterProvider != null) {
+                        if (!providedTypeAdapterProvider.isAccessibleTo(dependencyRequest)) {
+                            throw new IllegalAccessError(); // TODO
+                        }
+                        final ProvisionStrategy<?> providedTypeProvisionStrategy =
+                                providedTypeAdapterProvider.get().provisionStrategy();
+                        final InternalProvider internalProvider = this;
+                        final Object provider = config.provider(new Provider() {
+                            @Override public Object get() {
+                                return providedTypeProvisionStrategy.get(internalProvider, ResolutionContext.Factory.create());
+                            }
+                        });
+                        return new ProvisionStrategy<T>() {
+                            @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+                                return Smithy.cloak(provider);
+                            }
+                        };
+                    }
+
+                }
+                throw new RuntimeException("missing dependency " + dependency.toString()); // TODO
             }
         };
 
@@ -123,12 +155,16 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 final Qualifier qualifier = config.qualifierResolver().resolve(dependency);
                 ParameterizedType parameterizedType = (ParameterizedType) dependency.getGenericInterfaces()[0];
                 Type type = parameterizedType.getActualTypeArguments()[0];
-                ComponentAdapterProvider<T> adapterProvider = Smithy.cloak(
+                ComponentAdapterProvider<? extends T> adapterProvider = Smithy.cloak(
                         componentAdapterProviders.get(Dependency.from(qualifier, type)));
                 return adapterProvider.get()
                         .provisionStrategy().get(internalProvider, ResolutionContext.Factory.create());
             }
         };
     }
+
+    //collections - explicit
+    //factories - explicit, anonymous + providers
+    //deconstructed apis - explicit, anonymous + providers
 
 }

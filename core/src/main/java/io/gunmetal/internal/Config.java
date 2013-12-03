@@ -16,6 +16,8 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.Provider;
+
 /**
  * @author rees.byars
  */
@@ -25,4 +27,6 @@ interface Config {
     AnnotationResolver<Scope> scopeResolver();
     ConstructorResolver constructorResolver();
     ScopeBindings scopeBindings();
+    boolean isProvider(Dependency<?> dependency);
+    Object provider(Provider provider);
 }

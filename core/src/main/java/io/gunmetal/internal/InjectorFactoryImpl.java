@@ -50,12 +50,12 @@ class InjectorFactoryImpl implements InjectorFactory {
         this.linkers = linkers;
     }
     
-    @Override public <T> StaticInjector<T> staticInjector(final Method method, final ComponentMetadata componentMetadata) {
-        final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
+    @Override public StaticInjector staticInjector(final Method method, final ComponentMetadata componentMetadata) {
+        final ParameterizedFunctionInvoker invoker = eagerInvoker(
                 new MethodFunction(method),
                 componentMetadata);
-        return new StaticInjector<T>() {
-            @Override public T inject(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+        return new StaticInjector() {
+            @Override public Object inject(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 return invoker.invoke(null, internalProvider, resolutionContext);
             }
             @Override public Collection<Dependency<?>> dependencies() {
@@ -97,7 +97,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 });
             }
             @Override public void visit(Method method) {
-                final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
+                final ParameterizedFunctionInvoker invoker = eagerInvoker(
                         new MethodFunction(method),
                         componentMetadata);
                 injectors.add(new Injector<T>() {
@@ -158,7 +158,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                         });
                     }
                     @Override public void visit(Method method) {
-                        final ParameterizedFunctionInvoker<T> invoker = lazyInvoker(
+                        final ParameterizedFunctionInvoker invoker = lazyInvoker(
                                 new MethodFunction(method),
                                 componentMetadata,
                                 internalProvider);
@@ -203,12 +203,13 @@ class InjectorFactoryImpl implements InjectorFactory {
     }
 
     @Override public <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata) {
-        final ParameterizedFunctionInvoker<T> invoker = eagerInvoker(
-                new ConstructorFunction(constructorResolver.resolve(componentMetadata.provider())),
+        Constructor<?> constructor = constructorResolver.resolve(componentMetadata.provider());
+        final ParameterizedFunctionInvoker invoker = eagerInvoker(
+                new ConstructorFunction(constructor),
                 componentMetadata);
         return new Instantiator<T>() {
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-                return invoker.invoke(null, provider, resolutionContext);
+                return Smithy.cloak(invoker.invoke(null, provider, resolutionContext));
             }
             @Override public Collection<Dependency<?>> dependencies() {
                 return invoker.dependencies();
@@ -218,9 +219,9 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     @Override public <T> Instantiator<T> methodInstantiator(final ComponentMetadata<Method> componentMetadata) {
         return new Instantiator<T>() {
-            StaticInjector<T> staticInjector = staticInjector(componentMetadata.provider(), componentMetadata);
+            StaticInjector staticInjector = staticInjector(componentMetadata.provider(), componentMetadata);
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-                return staticInjector.inject(provider, resolutionContext);
+                return Smithy.cloak(staticInjector.inject(provider, resolutionContext));
             }
             @Override public Collection<Dependency<?>> dependencies() {
                 return staticInjector.dependencies();
@@ -228,13 +229,13 @@ class InjectorFactoryImpl implements InjectorFactory {
         };
     }
 
-    private <T> ParameterizedFunctionInvoker<T> eagerInvoker(final ParameterizedFunction function,
+    private ParameterizedFunctionInvoker eagerInvoker(final ParameterizedFunction function,
                                                         final ComponentMetadata<?> metadata) {
         final Dependency<?>[] dependencies = new Dependency[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
             dependencies[i] = new Parameter(function, i).asDependency();
         }
-        return new ParameterizedFunctionInvoker<T>() {
+        return new ParameterizedFunctionInvoker() {
             ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
             {
                 linkers.add(new Linker() {
@@ -246,13 +247,13 @@ class InjectorFactoryImpl implements InjectorFactory {
                     }
                 }, LinkingPhase.POST_WIRING);
             }
-            @Override public T invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext) {
+            @Override public Object invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 Object[] parameters = new Object[provisionStrategies.length];
                 for (int i = 0; i < parameters.length; i++) {
                     parameters[i] = provisionStrategies[i].get(internalProvider, resolutionContext);
                 }
                 try {
-                    return Smithy.cloak(function.invoke(onInstance, parameters));
+                    return function.invoke(onInstance, parameters);
                 } catch (IllegalAccessException e) {
                     throw Smithy.<RuntimeException>cloak(e);
                 } catch (InvocationTargetException e) {
@@ -267,14 +268,14 @@ class InjectorFactoryImpl implements InjectorFactory {
         };
     }
 
-    private <T> ParameterizedFunctionInvoker<T> lazyInvoker(final ParameterizedFunction function,
+    private ParameterizedFunctionInvoker lazyInvoker(final ParameterizedFunction function,
                                                              final ComponentMetadata<?> metadata,
                                                              final InternalProvider internalProvider) {
         final Dependency<?>[] dependencies = new Dependency[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
             dependencies[i] = new Parameter(function, i).asDependency();
         }
-        return new ParameterizedFunctionInvoker<T>() {
+        return new ParameterizedFunctionInvoker() {
             ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
             {
                 for (int i = 0; i < dependencies.length; i++) {
@@ -282,13 +283,13 @@ class InjectorFactoryImpl implements InjectorFactory {
                             DependencyRequest.Factory.create(metadata, dependencies[i]));
                 }
             }
-            @Override public T invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext) {
+            @Override public Object invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 Object[] parameters = new Object[provisionStrategies.length];
                 for (int i = 0; i < parameters.length; i++) {
                     parameters[i] = provisionStrategies[i].get(internalProvider, resolutionContext);
                 }
                 try {
-                    return Smithy.cloak(function.invoke(onInstance, parameters));
+                    return function.invoke(onInstance, parameters);
                 } catch (IllegalAccessException e) {
                     throw Smithy.<RuntimeException>cloak(e);
                 } catch (InvocationTargetException e) {
@@ -303,12 +304,12 @@ class InjectorFactoryImpl implements InjectorFactory {
         };
     }
 
-    private static interface ParameterizedFunctionInvoker<T> extends Dependent {
-        T invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext);
+    private static interface ParameterizedFunctionInvoker extends Dependent {
+        Object invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext);
     }
 
-    private interface ParameterizedFunction<T> {
-        T invoke(Object onInstance, Object[] params) throws InvocationTargetException, IllegalAccessException, InstantiationException;
+    private interface ParameterizedFunction {
+        Object invoke(Object onInstance, Object[] params) throws InvocationTargetException, IllegalAccessException, InstantiationException;
         Type[] getParameterTypes();
         Annotation[][] getParameterAnnotations();
     }

@@ -20,6 +20,7 @@ import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Option;
 import io.gunmetal.Prototype;
+import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
 
 import java.lang.annotation.Annotation;
@@ -96,6 +97,14 @@ public class ConfigBuildImpl implements ConfigBuilder {
                         throw new UnsupportedOperationException();
                     }
                 };
+            }
+
+            @Override public boolean isProvider(Dependency<?> dependency) {
+                return Provider.class.isAssignableFrom(dependency.typeKey().raw());
+            }
+
+            @Override public Object provider(Provider provider) {
+                return provider;
             }
 
         };
