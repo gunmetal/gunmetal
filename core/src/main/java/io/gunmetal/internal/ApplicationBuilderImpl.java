@@ -179,5 +179,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
     //collections - explicit
     //factories - explicit, anonymous + providers
     //deconstructed apis - explicit, anonymous + providers
+    //Visitor - Selector  - applicationWalker.walk(new CompositeThingBuilderVisitor());  -  injectable
+    //auto add for concrete dependencies
+
 
 }

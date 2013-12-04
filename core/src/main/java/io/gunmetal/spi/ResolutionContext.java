@@ -34,12 +34,12 @@ public interface ResolutionContext {
         byte PRE_INJECTION = 2;
     }
 
-    class ProvisionContext<T> {
-        byte state = States.NEW;
-        T component;
+    final class ProvisionContext<T> {
+        public byte state = States.NEW;
+        public T component;
     }
 
-    class Factory {
+    final class Factory {
 
         private static class ResolutionContextImpl implements ResolutionContext {
 

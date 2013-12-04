@@ -300,7 +300,7 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Collection<Dependency<?>> targets() {
                     return dependencies;
                 }
-                @Override Scope scope() {
+                @Override public Scope scope() {
                     return scope;
                 }
             };
@@ -359,7 +359,7 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Collection<Dependency<?>> targets() {
                     return dependencies;
                 }
-                @Override Scope scope() {
+                @Override public Scope scope() {
                     return scope;
                 }
             };
