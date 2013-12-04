@@ -22,6 +22,7 @@ import io.gunmetal.Option;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
+import io.gunmetal.spi.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;

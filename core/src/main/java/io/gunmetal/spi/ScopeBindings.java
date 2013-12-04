@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import io.gunmetal.ProviderDecorator;
 
 /**
  * @author rees.byars
  */
-interface ClassWalker {
-
-    void walk(Class<?> classToWalk, InjectedMemberVisitor memberVisitor);
-
-    interface InjectedMemberVisitor {
-        void visit(Field injectedField);
-        void visit(Method injectedMethod);
-    }
-
+public interface ScopeBindings {
+    ProviderDecorator decoratorFor(Scope scope);
 }

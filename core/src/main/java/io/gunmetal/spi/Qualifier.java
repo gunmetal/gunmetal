@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars
  */
-interface InternalProvider {
+public interface Qualifier {
 
-    <T> ProvisionStrategy<T> getProvisionStrategy(DependencyRequest dependencyRequest);
+    Object[] qualifiers();
+
+    Qualifier merge(Qualifier other);
+
+    boolean intersects(Object[] qualifiers);
+
+    boolean intersects(Qualifier qualifier);
 
 }

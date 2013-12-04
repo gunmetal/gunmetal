@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
+
+import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ResolutionContext;
 
 /**
  * @author rees.byars
  */
-interface ProvisionStrategy<T> {
+public interface ProvisionStrategy<T> {
     T get(InternalProvider internalProvider, ResolutionContext resolutionContext);
 }

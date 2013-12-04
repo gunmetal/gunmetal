@@ -14,25 +14,13 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
+
+import java.lang.reflect.AnnotatedElement;
 
 /**
  * @author rees.byars
  */
-abstract class ModuleMetadata {
-
-    abstract Class<?> moduleClass();
-
-    abstract Qualifier qualifier();
-
-    abstract Class<?>[] referencedModules();
-
-    @Override public int hashCode() {
-        return moduleClass().hashCode();
-    }
-
-    @Override public boolean equals(Object target) {
-        return target instanceof ModuleMetadata && target == moduleClass();
-    }
-
+public interface AnnotationResolver<T> {
+    T resolve(AnnotatedElement annotatedElement);
 }

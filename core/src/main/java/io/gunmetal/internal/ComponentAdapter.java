@@ -16,6 +16,9 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionStrategy;
+
 /**
  * @author rees.byars
  */

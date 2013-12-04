@@ -20,6 +20,13 @@ import io.gunmetal.BlackList;
 import io.gunmetal.Component;
 import io.gunmetal.Module;
 import io.gunmetal.WhiteList;
+import io.gunmetal.spi.AnnotationResolver;
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.Scope;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

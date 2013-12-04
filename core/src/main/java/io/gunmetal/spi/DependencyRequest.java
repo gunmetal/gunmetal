@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-interface DependencyRequest {
+public interface DependencyRequest {
 
     Class<?> sourceOrigin();
 

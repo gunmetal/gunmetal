@@ -2,6 +2,9 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Module;
 import io.gunmetal.Qualifier;
+import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ProvisionStrategy;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;

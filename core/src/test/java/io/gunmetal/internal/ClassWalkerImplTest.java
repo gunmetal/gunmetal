@@ -16,6 +16,8 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.ClassWalker;
+import io.gunmetal.spi.InjectionResolver;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.junit.Test;

@@ -16,6 +16,13 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
+import io.gunmetal.spi.ResolutionContext;
+
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.LinkedList;

@@ -16,6 +16,8 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.Dependency;
+
 import java.util.Collection;
 
 /**

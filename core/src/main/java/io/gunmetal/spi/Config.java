@@ -14,32 +14,19 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
-import java.lang.reflect.Type;
+import io.gunmetal.Provider;
 
 /**
  * @author rees.byars
  */
-abstract class TypeKey<T> {
-
-    abstract Type type();
-
-    abstract Class<? super T> raw();
-
-    @Override public int hashCode() {
-        return type().hashCode();
-    }
-
-    @Override public boolean equals(Object target) {
-        if (target == this) {
-            return true;
-        }
-        if (!(target instanceof TypeKey<?>)) {
-            return false;
-        }
-        TypeKey<?> typeKeyTarget = (TypeKey<?>) target;
-        return type().equals(typeKeyTarget.type());
-    }
-
+public interface Config {
+    ClassWalker classWalker();
+    AnnotationResolver<Qualifier> qualifierResolver();
+    AnnotationResolver<Scope> scopeResolver();
+    ConstructorResolver constructorResolver();
+    ScopeBindings scopeBindings();
+    boolean isProvider(Dependency<?> dependency);
+    Object provider(Provider provider);
 }

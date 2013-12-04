@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
-
-import io.gunmetal.Option;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars
  */
-interface ConfigBuilder {
-
-    Config build(Option[] options);
-
+public interface Scope {
 }

@@ -19,12 +19,12 @@ package io.gunmetal.internal;
 /**
  * @author rees.byars
  */
-final class Smithy {
+public final class Smithy {
 
     private Smithy() { }
 
     @SuppressWarnings("unchecked")
-    static <T> T cloak(Object o) {
+    public static <T> T cloak(Object o) {
         return (T) o;
     }
 

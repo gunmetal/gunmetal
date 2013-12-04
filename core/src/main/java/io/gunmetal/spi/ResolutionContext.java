@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
+
+import io.gunmetal.internal.Smithy;
 
 import java.util.HashMap;
 import java.util.Map;

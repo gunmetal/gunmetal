@@ -16,6 +16,8 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.*;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;

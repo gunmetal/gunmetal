@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
  */
-interface Qualifier {
+public interface ClassWalker {
 
-    Object[] qualifiers();
+    void walk(Class<?> classToWalk, InjectedMemberVisitor memberVisitor);
 
-    Qualifier merge(Qualifier other);
-
-    boolean intersects(Object[] qualifiers);
-
-    boolean intersects(Qualifier qualifier);
+    interface InjectedMemberVisitor {
+        void visit(Field injectedField);
+        void visit(Method injectedMethod);
+    }
 
 }

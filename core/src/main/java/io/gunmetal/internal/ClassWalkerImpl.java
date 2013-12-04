@@ -16,6 +16,9 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.ClassWalker;
+import io.gunmetal.spi.InjectionResolver;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 

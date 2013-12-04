@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
 import java.lang.reflect.AnnotatedElement;
 import java.util.Collection;
@@ -22,19 +22,19 @@ import java.util.Collection;
 /**
  * @author rees.byars
  */
-abstract class ComponentMetadata<P extends AnnotatedElement> {
+public abstract class ComponentMetadata<P extends AnnotatedElement> {
 
-    abstract P provider();
+    public abstract P provider();
 
-    abstract Class<?> providerClass();
+    public abstract Class<?> providerClass();
 
-    abstract ModuleMetadata moduleMetadata();
+    public abstract ModuleMetadata moduleMetadata();
 
-    abstract Qualifier qualifier();
+    public abstract Qualifier qualifier();
 
-    abstract Collection<Dependency<?>> targets();
+    public abstract Collection<Dependency<?>> targets();
 
-    abstract Scope scope();
+    public abstract Scope scope();
 
     // abstract boolean isProxy();  TODO scoped proxy invoke(..) { method.invoke(provider.get(), ...); ... }
 

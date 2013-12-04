@@ -14,15 +14,25 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars
  */
-interface InjectionResolver {
-    boolean shouldInject(Field field);
-    boolean shouldInject(Method method);
+public abstract class ModuleMetadata {
+
+    public abstract Class<?> moduleClass();
+
+    public abstract Qualifier qualifier();
+
+    public abstract Class<?>[] referencedModules();
+
+    @Override public int hashCode() {
+        return moduleClass().hashCode();
+    }
+
+    @Override public boolean equals(Object target) {
+        return target instanceof ModuleMetadata && target == moduleClass();
+    }
+
 }

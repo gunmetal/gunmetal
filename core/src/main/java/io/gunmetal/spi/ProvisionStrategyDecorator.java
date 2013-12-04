@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
-
-import io.gunmetal.Provider;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars
  */
-interface Config {
-    ClassWalker classWalker();
-    AnnotationResolver<Qualifier> qualifierResolver();
-    AnnotationResolver<Scope> scopeResolver();
-    ConstructorResolver constructorResolver();
-    ScopeBindings scopeBindings();
-    boolean isProvider(Dependency<?> dependency);
-    Object provider(Provider provider);
+public interface ProvisionStrategyDecorator {
+
+    <T> ProvisionStrategy<T> decorate(
+            ComponentMetadata<?> componentMetadata,
+            ProvisionStrategy<T> delegateStrategy);
+
 }

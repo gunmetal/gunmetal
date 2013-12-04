@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
+
+import io.gunmetal.Option;
+import io.gunmetal.spi.Config;
 
 /**
  * @author rees.byars
  */
-interface ProvisionStrategyDecorator {
+public interface ConfigBuilder {
 
-    <T> ProvisionStrategy<T> decorate(
-            ComponentMetadata<?> componentMetadata,
-            ProvisionStrategy<T> delegateStrategy);
+    Config build(Option[] options);
 
 }

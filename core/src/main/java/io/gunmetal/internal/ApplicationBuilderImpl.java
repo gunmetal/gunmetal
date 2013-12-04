@@ -19,6 +19,15 @@ package io.gunmetal.internal;
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
 import io.gunmetal.Provider;
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Config;
+import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
+import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.ResolutionContext;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

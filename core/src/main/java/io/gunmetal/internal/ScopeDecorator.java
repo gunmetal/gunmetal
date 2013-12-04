@@ -18,6 +18,13 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
+import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.spi.Scope;
+import io.gunmetal.spi.ScopeBindings;
 
 /**
  * @author rees.byars

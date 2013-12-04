@@ -14,13 +14,32 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
-import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Type;
 
 /**
  * @author rees.byars
  */
-interface AnnotationResolver<T> {
-    T resolve(AnnotatedElement annotatedElement);
+public abstract class TypeKey<T> {
+
+    public abstract Type type();
+
+    public abstract Class<? super T> raw();
+
+    @Override public int hashCode() {
+        return type().hashCode();
+    }
+
+    @Override public boolean equals(Object target) {
+        if (target == this) {
+            return true;
+        }
+        if (!(target instanceof TypeKey<?>)) {
+            return false;
+        }
+        TypeKey<?> typeKeyTarget = (TypeKey<?>) target;
+        return type().equals(typeKeyTarget.type());
+    }
+
 }

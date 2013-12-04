@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
-
-import java.lang.reflect.Constructor;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars
  */
-interface ConstructorResolver {
-    <T> Constructor<T> resolve(Class<T> cls);
+public interface InternalProvider {
+
+    <T> ProvisionStrategy<T> getProvisionStrategy(DependencyRequest dependencyRequest);
+
 }

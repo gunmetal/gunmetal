@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
  */
-public interface Scope {
+public interface InjectionResolver {
+    boolean shouldInject(Field field);
+    boolean shouldInject(Method method);
 }

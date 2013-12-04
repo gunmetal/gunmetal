@@ -16,6 +16,8 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.ComponentMetadata;
+
 import java.lang.reflect.Method;
 
 /**

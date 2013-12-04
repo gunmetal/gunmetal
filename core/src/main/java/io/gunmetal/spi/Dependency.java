@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
+
+import io.gunmetal.internal.Smithy;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -25,11 +27,11 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-abstract class Dependency<T> {
+public abstract class Dependency<T> {
 
-    abstract Qualifier qualifier();
+    public abstract Qualifier qualifier();
 
-    abstract TypeKey<T> typeKey();
+    public abstract TypeKey<T> typeKey();
 
     public int hashCode() {
         return typeKey().hashCode() * 67 + qualifier().hashCode();
@@ -47,43 +49,43 @@ abstract class Dependency<T> {
                 && dependencyTarget.typeKey().equals(typeKey());
     }
 
-    static <T> Dependency<T> from(final Qualifier qualifier, Class<T> cls) {
+    public static <T> Dependency<T> from(final Qualifier qualifier, Class<T> cls) {
         final TypeKey<T> typeKey = Types.typeKey(cls);
         return new Dependency<T>() {
-            @Override Qualifier qualifier() {
+            @Override public Qualifier qualifier() {
                 return qualifier;
             }
-            @Override TypeKey<T> typeKey() {
+            @Override public TypeKey<T> typeKey() {
                 return typeKey;
             }
         };
     }
 
-    static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
+    public static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
         return new Dependency<T>() {
-            @Override Qualifier qualifier() {
+            @Override public Qualifier qualifier() {
                 return qualifier;
             }
-            @Override TypeKey<T> typeKey() {
+            @Override public TypeKey<T> typeKey() {
                 return typeKey;
             }
         };
     }
 
-    static <T> Dependency<T> from(final Qualifier qualifier, ParameterizedType type) {
+    public static <T> Dependency<T> from(final Qualifier qualifier, ParameterizedType type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
         return new Dependency<T>() {
-            @Override Qualifier qualifier() {
+            @Override public Qualifier qualifier() {
                 return qualifier;
             }
-            @Override TypeKey<T> typeKey() {
+            @Override public TypeKey<T> typeKey() {
                 return typeKey;
             }
         };
     }
 
-    static <T> Collection<Dependency<?>> from(final Qualifier qualifier, Class<?>[] classes) {
+    public static <T> Collection<Dependency<?>> from(final Qualifier qualifier, Class<?>[] classes) {
         List<Dependency<?>> dependencies = new LinkedList<Dependency<?>>();
         for (Class<?> cls : classes) {
             dependencies.add(from(qualifier, cls));

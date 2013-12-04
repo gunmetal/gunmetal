@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
-import io.gunmetal.ProviderDecorator;
+import java.lang.reflect.Constructor;
 
 /**
  * @author rees.byars
  */
-interface ScopeBindings {
-    ProviderDecorator decoratorFor(Scope scope);
+public interface ConstructorResolver {
+    <T> Constructor<T> resolve(Class<T> cls);
 }
