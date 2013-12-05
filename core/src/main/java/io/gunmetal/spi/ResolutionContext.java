@@ -16,8 +16,6 @@
 
 package io.gunmetal.spi;
 
-import io.gunmetal.internal.Smithy;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +46,8 @@ public interface ResolutionContext {
             @Override
             public <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy) {
 
-                ProvisionContext<T> strategyContext = Smithy.cloak(contextMap.get(strategy));
+                @SuppressWarnings("unchecked")
+                ProvisionContext<T> strategyContext = contextMap.get(strategy);
 
                 if (strategyContext == null) {
                     strategyContext = new ProvisionContext<T>();

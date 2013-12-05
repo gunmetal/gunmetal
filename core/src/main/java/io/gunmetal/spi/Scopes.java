@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
-
-import io.gunmetal.spi.Scope;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars

@@ -113,29 +113,6 @@ public class ConfigBuildImpl implements ConfigBuilder {
 
     private static class QualifierBuilder {
 
-        // TODO revisit the intersects impl here
-        private static final Qualifier NO_QUALIFIER = new Qualifier() {
-
-            Object[] qualifiers = {};
-
-            @Override public Object[] qualifiers() {
-                return qualifiers;
-            }
-
-            @Override public Qualifier merge(Qualifier other) {
-                return other;
-            }
-
-            @Override public boolean intersects(Object[] qualifiers) {
-                return true;
-            }
-
-            @Override public boolean intersects(Qualifier qualifier) {
-                return true;
-            }
-
-        };
-
         static Qualifier qualifier(AnnotatedElement annotatedElement,
                                    Class<? extends Annotation> qualifierAnnotation) {
             List<Object> qualifiers = new LinkedList<Object>();
@@ -146,7 +123,7 @@ public class ConfigBuildImpl implements ConfigBuilder {
                 }
             }
             if (qualifiers.isEmpty()) {
-                return NO_QUALIFIER;
+                return Qualifier.NONE;
             }
             return qualifier(qualifiers.toArray());
         }

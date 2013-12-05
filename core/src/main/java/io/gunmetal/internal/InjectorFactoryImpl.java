@@ -117,8 +117,10 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new Injector<T>() {
             @Override public Object inject(T target, InternalProvider internalProvider,
                                            ResolutionContext resolutionContext) {
-                for (Injector<T> injector : injectors) {
-                    injector.inject(target, internalProvider, resolutionContext);
+                if (!injectors.isEmpty()) {
+                    for (Injector<T> injector : injectors) {
+                        injector.inject(target, internalProvider, resolutionContext);
+                    }
                 }
                 return null;
             }
@@ -185,8 +187,10 @@ class InjectorFactoryImpl implements InjectorFactory {
                         }
                     }
                 }
-                for (Injector<T> injector : injectors) {
-                    injector.inject(target, internalProvider, resolutionContext);
+                if (!injectors.isEmpty()) {
+                    for (Injector<T> injector : injectors) {
+                        injector.inject(target, internalProvider, resolutionContext);
+                    }
                 }
                 return null;
             }
@@ -220,13 +224,16 @@ class InjectorFactoryImpl implements InjectorFactory {
     }
 
     @Override public <T> Instantiator<T> methodInstantiator(final ComponentMetadata<Method> componentMetadata) {
+        final ParameterizedFunctionInvoker invoker = eagerInvoker(
+                new MethodFunction(componentMetadata.provider()),
+                componentMetadata);
         return new Instantiator<T>() {
-            StaticInjector staticInjector = staticInjector(componentMetadata.provider(), componentMetadata);
+            @SuppressWarnings("unchecked")
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-                return Smithy.cloak(staticInjector.inject(provider, resolutionContext));
+                return (T) invoker.invoke(null, provider, resolutionContext);
             }
             @Override public Collection<Dependency<?>> dependencies() {
-                return staticInjector.dependencies();
+                return invoker.dependencies();
             }
         };
     }

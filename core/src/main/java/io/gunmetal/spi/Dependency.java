@@ -33,11 +33,11 @@ public abstract class Dependency<T> {
 
     public abstract TypeKey<T> typeKey();
 
-    public int hashCode() {
+    @Override public int hashCode() {
         return typeKey().hashCode() * 67 + qualifier().hashCode();
     }
 
-    public boolean equals(Object target) {
+    @Override public boolean equals(Object target) {
         if (target == this) {
             return true;
         }
@@ -47,6 +47,10 @@ public abstract class Dependency<T> {
         Dependency<?> dependencyTarget = (Dependency<?>) target;
         return dependencyTarget.qualifier().equals(qualifier())
                 && dependencyTarget.typeKey().equals(typeKey());
+    }
+
+    @Override public String toString() {
+        return "dependency[" + qualifier().toString() + typeKey().toString() + "]";
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, Class<T> cls) {

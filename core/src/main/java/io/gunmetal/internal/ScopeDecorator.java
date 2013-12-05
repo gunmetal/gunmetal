@@ -25,6 +25,7 @@ import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.ScopeBindings;
+import io.gunmetal.spi.Scopes;
 
 /**
  * @author rees.byars

@@ -22,6 +22,12 @@ import se.jbee.inject.bootstrap.Bootstrap;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.lang.Object;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  *
@@ -53,8 +59,8 @@ public class CaliperBenchmarks {
         gunmetalProvider = CONTAINER.get(new Generic<Provider<N>>() { });
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
-        //class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
-        //newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
+        class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
+        newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
     }
 
     @Benchmark long gunmetalStandup(int reps) {
@@ -198,5 +204,68 @@ public class CaliperBenchmarks {
         }
         return dummy;
     }
+
+
+    @Benchmark long testPure(int reps) {
+        Instance instance = new Instance();
+        HashMap map = new HashMap();
+        map.put("key", instance);
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= ((Instance) map.get("key")).getComponent().hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long testInstanceProvider(int reps) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method m = Instance.class.getDeclaredMethod("getComponent");
+        m.setAccessible(true);
+        Instance instance = new Instance();
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= ((Component) m.invoke(instance)).hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long testConstructorProvider(int reps) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        Constructor c = Component.class.getDeclaredConstructor();
+        c.setAccessible(true);
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= ((Component) c.newInstance()).hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long testStaticProvider(int reps) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method m = Static.class.getDeclaredMethod("getComponent");
+        m.setAccessible(true);
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= ((Component) m.invoke(null)).hashCode();
+        }
+        return dummy;
+    }
+
+    static class Instance {
+        Component getComponent() {
+            return new Component();
+        }
+    }
+
+    static class Static {
+        static Component getComponent() {
+            return new Component();
+        }
+    }
+
+    static class Component {
+        static int i = 0;
+        int execute() {
+            return i++;
+        }
+    }
+
 
 }

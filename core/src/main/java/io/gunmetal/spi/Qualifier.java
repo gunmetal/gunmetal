@@ -21,6 +21,29 @@ package io.gunmetal.spi;
  */
 public interface Qualifier {
 
+    // TODO revisit the intersects impl here
+    Qualifier NONE = new Qualifier() {
+
+        Object[] qualifiers = {};
+
+        @Override public Object[] qualifiers() {
+            return qualifiers;
+        }
+
+        @Override public Qualifier merge(Qualifier other) {
+            return other;
+        }
+
+        @Override public boolean intersects(Object[] qualifiers) {
+            return true;
+        }
+
+        @Override public boolean intersects(Qualifier qualifier) {
+            return true;
+        }
+
+    };
+
     Object[] qualifiers();
 
     Qualifier merge(Qualifier other);

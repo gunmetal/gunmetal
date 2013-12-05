@@ -74,13 +74,23 @@ class ModuleParserImpl implements ModuleParser {
         final AccessFilter<DependencyRequest> blackListFilter = blackListFilter(module, moduleAnnotation);
         final AccessFilter<DependencyRequest> whiteListFilter = whiteListFilter(module, moduleAnnotation);
         final AccessFilter<DependencyRequest> dependsOnFilter = dependsOnFilter(module);
-        final AccessFilter<Class<?>> moduleClassFilter =
-                AccessFilter.Factory.getAccessFilter(moduleAnnotation.access(), module);
+        final AccessFilter<DependencyRequest> moduleClassFilter = new AccessFilter<DependencyRequest>() {
+            AccessFilter<Class<?>> classAccessFilter =
+                    AccessFilter.Factory.getAccessFilter(moduleAnnotation.access(), module);
+            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+                if (classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
+                    return true;
+                }
+                dependencyRequest.addError("This module aint accessible from here bo"); // TODO
+                return false;
+            }
+        };
+
         return new AccessFilter<DependencyRequest>() {
             @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
                 // we use the single '&' because we want to process them all regardless if one fails
                 // in order to collect all errors and report them back
-                return moduleClassFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())
+                return moduleClassFilter.isAccessibleTo(dependencyRequest)
                         & dependsOnFilter.isAccessibleTo(dependencyRequest)
                         & blackListFilter.isAccessibleTo(dependencyRequest)
                         & whiteListFilter.isAccessibleTo(dependencyRequest);
@@ -243,6 +253,10 @@ class ModuleParserImpl implements ModuleParser {
 
                 if (module == requestSourceModule.moduleClass()) {
                     return true;
+                }
+
+                if (requestSourceModule.referencedModules().length == 0) {
+                    return true; //TODO
                 }
 
                 for (Class<?> dependency : requestSourceModule.referencedModules()) {
