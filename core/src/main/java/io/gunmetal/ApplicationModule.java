@@ -38,4 +38,5 @@ public @interface ApplicationModule {
     ScopeHandler[] scopes() default { };
     Class<?>[] modules() default { };
     Class<?>[] configurationModules() default { };
+    Class<? extends Layer>[] layers() default { };
 }

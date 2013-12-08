@@ -34,4 +34,5 @@ public @interface Module {
     Class<? extends BlackList> notAccessibleFrom() default BlackList.class;
     Class<? extends WhiteList> onlyAccessibleFrom() default WhiteList.class;
     AccessLevel access() default AccessLevel.UNDEFINED;
+    Class<? extends Layer> layer() default Layer.class;
 }
