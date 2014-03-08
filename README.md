@@ -13,6 +13,7 @@ Nice things about Gunmetal:
     - unmatched wiring. if you can wire it by hand, gunmetal can wire it
     - extensibility through component post-processors, aspects, and custom component scopes
     - configurable enforcement and override options for programming to interfaces, disallowing circular graphs, etc
+    - small, intuitive API for small learning curve and quickly ramping up teams for rapid development
 
 The initial release of Gunmetal to the Maven Central Repo is slated for some time in 2014. 
 
