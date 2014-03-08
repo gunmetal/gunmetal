@@ -90,7 +90,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                             field.set(target, provisionStrategy.get(internalProvider, resolutionContext));
                             return null;
                         } catch (IllegalAccessException e) {
-                            throw Smithy.<RuntimeException>cloak(e);
+                            throw new RuntimeException("TODO injection exception", e);
                         }
                     }
                     @Override public Collection<Dependency<?>> dependencies() {
@@ -153,7 +153,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                     field.set(target, provisionStrategy.get(internalProvider, resolutionContext));
                                     return null;
                                 } catch (IllegalAccessException e) {
-                                    throw Smithy.<RuntimeException>cloak(e);
+                                    throw new RuntimeException("TODO injection exception", e);
                                 }
                             }
                             @Override public Collection<Dependency<?>> dependencies() {
@@ -263,12 +263,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                 }
                 try {
                     return function.invoke(onInstance, parameters);
-                } catch (IllegalAccessException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
-                } catch (InvocationTargetException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
-                } catch (InstantiationException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
+                } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                    throw new RuntimeException("TODO injection exception", e);
                 }
             }
             @Override public Collection<Dependency<?>> dependencies() {
@@ -299,12 +295,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                 }
                 try {
                     return function.invoke(onInstance, parameters);
-                } catch (IllegalAccessException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
-                } catch (InvocationTargetException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
-                } catch (InstantiationException e) {
-                    throw Smithy.<RuntimeException>cloak(e);
+                } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                    throw new RuntimeException("TODO injection exception", e);
                 }
             }
             @Override public Collection<Dependency<?>> dependencies() {

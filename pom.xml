@@ -54,7 +54,7 @@
     </modules>
 
     <properties>
-        <java.version>1.6</java.version>
+        <java.version>1.7</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.0</slf4j.version>
     </properties>
