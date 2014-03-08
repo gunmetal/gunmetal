@@ -76,7 +76,7 @@ public class ApplicationBuilderImplTest {
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
 
-        app = Gunmetal.create(NewGunmetalBenchMarkModule.class);
+        app = Gunmetal.create(NewGunmetalBenchMarkModule2.class);
 
         A a = app.get(Dep2.class);
 

@@ -10,6 +10,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.type.UnionType;
 import javax.lang.model.type.WildcardType;
 
 /**
@@ -75,6 +76,11 @@ public abstract class AbstractTypeVisitor<R, P> implements TypeVisitor<R, P> {
     @Override
     public R visitUnknown(TypeMirror typeMirror, P p) {
         throw new UnsupportedOperationException("The visitor type [" + this + "] does not support visiting unknown TypeMirror [" + typeMirror + "]");
+    }
+
+    @Override
+    public R visitUnion(UnionType t, P p) {
+        throw new UnsupportedOperationException("The visitor type [" + this + "] does not support visiting union of type [" + t + "]");
     }
 
 }

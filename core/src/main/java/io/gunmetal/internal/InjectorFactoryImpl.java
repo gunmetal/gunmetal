@@ -16,7 +16,16 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.*;
+import io.gunmetal.spi.AnnotationResolver;
+import io.gunmetal.spi.ClassWalker;
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ConstructorResolver;
+import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.ResolutionContext;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -51,7 +60,7 @@ class InjectorFactoryImpl implements InjectorFactory {
         this.classWalker = classWalker;
         this.linkers = linkers;
     }
-    
+
     @Override public StaticInjector staticInjector(final Method method, final ComponentMetadata componentMetadata) {
         final ParameterizedFunctionInvoker invoker = eagerInvoker(
                 new MethodFunction(method),
@@ -305,7 +314,7 @@ class InjectorFactoryImpl implements InjectorFactory {
         };
     }
 
-    private static interface ParameterizedFunctionInvoker extends Dependent {
+    private interface ParameterizedFunctionInvoker extends Dependent {
         Object invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext);
     }
 

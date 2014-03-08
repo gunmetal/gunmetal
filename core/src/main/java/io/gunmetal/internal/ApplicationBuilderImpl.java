@@ -20,7 +20,18 @@ import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
 import io.gunmetal.Gunmetal;
 import io.gunmetal.Provider;
-import io.gunmetal.spi.*;
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Config;
+import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
+import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.spi.Scope;
+import io.gunmetal.spi.Scopes;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -41,15 +52,16 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         ApplicationModule applicationModule = application.getAnnotation(ApplicationModule.class);
 
-        final Config config = new ConfigBuildImpl().build(applicationModule.options());
+        final Config config = new ConfigBuilderImpl().build(applicationModule.options());
 
         final List<Linker> postWiringLinkers = new LinkedList<Linker>();
         final List<Linker> eagerLinkers = new LinkedList<Linker>();
         Linkers linkers = new Linkers() {
             @Override public void add(Linker linker, LinkingPhase phase) {
                 switch (phase) {
-                    case POST_WIRING: postWiringLinkers.add(linker);
-                    case EAGER_INSTANTIATION: eagerLinkers.add(linker);
+                    case POST_WIRING: postWiringLinkers.add(linker); break;
+                    case EAGER_INSTANTIATION: eagerLinkers.add(linker); break;
+                    default: throw new UnsupportedOperationException("Phase unsupported:  " + phase);
                 }
 
             }

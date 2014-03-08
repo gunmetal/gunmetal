@@ -51,7 +51,7 @@ public class ImplementationVisitor extends AbstractTypeVisitor<ImplementationVis
 
         boolean declaredType;
         boolean finalImplementation;
-        Set<Element> matchingMethods = new HashSet<Element>();
+        Set<Element> matchingMethods = new HashSet<>();
 
     }
 

@@ -22,7 +22,17 @@ import io.gunmetal.Option;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
-import io.gunmetal.spi.*;
+import io.gunmetal.spi.AnnotationResolver;
+import io.gunmetal.spi.ClassWalker;
+import io.gunmetal.spi.Config;
+import io.gunmetal.spi.ConfigBuilder;
+import io.gunmetal.spi.ConstructorResolver;
+import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.InjectionResolver;
+import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.Scope;
+import io.gunmetal.spi.ScopeBindings;
+import io.gunmetal.spi.Scopes;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -37,7 +47,7 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-public class ConfigBuildImpl implements ConfigBuilder {
+public class ConfigBuilderImpl implements ConfigBuilder {
     @Override public Config build(Option[] options) {
         return new Config() {
 
