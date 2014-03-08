@@ -16,9 +16,6 @@
 
 package io.gunmetal.spi;
 
-import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.ResolutionContext;
-
 /**
  * @author rees.byars
  */

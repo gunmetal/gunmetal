@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Component {
     Class<?> type();
-    Class<? extends Annotation> scope() default Scope.class; //undefined scope
+    Class<? extends Annotation> scope() default Component.class; //undefined scope
     AccessLevel access() default AccessLevel.UNDEFINED;
     Class<?>[] targets() default { };
 }

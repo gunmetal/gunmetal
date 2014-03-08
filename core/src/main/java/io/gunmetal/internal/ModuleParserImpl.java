@@ -287,7 +287,11 @@ class ModuleParserImpl implements ModuleParser {
             final Qualifier qualifier = qualifierResolver.resolve(
                     component.type()).merge(moduleMetadata.qualifier());
 
-            final Scope scope = scopeResolver.resolve(component.type());
+            Class<?> scopeElement = component.scope();
+            if (scopeElement == Component.class) {
+                scopeElement = component.type();
+            }
+            final Scope scope = scopeResolver.resolve(scopeElement);
 
             final Collection<Dependency<?>> dependencies;
             Class<?>[] targets = component.targets();
