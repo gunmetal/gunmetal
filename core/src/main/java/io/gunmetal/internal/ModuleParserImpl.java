@@ -166,7 +166,9 @@ class ModuleParserImpl implements ModuleParser {
 
                 }
 
-                boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(blackListQualifier);
+                boolean qualifierMatch =
+                        blackListQualifier.qualifiers().length > 0
+                        && dependencyRequest.sourceQualifier().intersects(blackListQualifier);
 
                 if (qualifierMatch) {
                     dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()

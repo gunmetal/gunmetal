@@ -20,6 +20,7 @@ import com.github.overengineer.gunmetal.testmocks.A;
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
 import io.gunmetal.Gunmetal;
+import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
@@ -33,16 +34,16 @@ import java.lang.annotation.RetentionPolicy;
  */
 public class ApplicationBuilderImplTest {
 
-    @ApplicationModule(modules = TestModule.class)
-    static class Application { }
-
     @Retention(RetentionPolicy.RUNTIME)
     @io.gunmetal.Qualifier
     public @interface Main {}
 
 
-    @Module
+    @Module(notAccessibleFrom = TestModule.BlackList.class)
     static class TestModule {
+
+        @io.gunmetal.BlackList.Modules(M.class)
+        class BlackList implements io.gunmetal.BlackList { }
 
         @Main static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
             return new ApplicationBuilderImplTest();
@@ -62,8 +63,18 @@ public class ApplicationBuilderImplTest {
 
     }
 
+    @Module
+    static class M {
+        @Lazy static M m(ApplicationBuilderImplTest test) {
+            return new M();
+        }
+    }
+
     @Test
     public void testBuild() {
+
+        @ApplicationModule(modules = { TestModule.class })
+        class Application { }
 
         ApplicationContainer app = new ApplicationBuilderImpl().build(Application.class);
 
@@ -81,6 +92,15 @@ public class ApplicationBuilderImplTest {
         A a = app.get(Dep2.class);
 
         assert a != app.get(Dep2.class);
+    }
+
+    @Test(expected = IllegalAccessError.class)
+    public void testBlackList() {
+
+        @ApplicationModule(modules = { TestModule.class, M.class })
+        class Application { }
+
+        new ApplicationBuilderImpl().build(Application.class);
     }
 
 }

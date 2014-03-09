@@ -94,7 +94,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 config.scopeResolver());
 
         final Map<Dependency<?>, ComponentAdapterProvider<?>> componentAdapterProviders
-                = new HashMap<Dependency<?>, ComponentAdapterProvider<?>>();
+                = new HashMap<>();
 
         for (Class<?> module : applicationModule.modules()) {
 
