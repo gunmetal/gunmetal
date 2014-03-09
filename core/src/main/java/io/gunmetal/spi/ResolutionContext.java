@@ -41,7 +41,7 @@ public interface ResolutionContext {
 
         private static class ResolutionContextImpl implements ResolutionContext {
 
-            private final Map<ProvisionStrategy, ProvisionContext> contextMap = new HashMap<ProvisionStrategy, ProvisionContext>();
+            private final Map<ProvisionStrategy, ProvisionContext> contextMap = new HashMap<>();
 
             @Override
             public <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy) {
@@ -50,7 +50,7 @@ public interface ResolutionContext {
                 ProvisionContext<T> strategyContext = contextMap.get(strategy);
 
                 if (strategyContext == null) {
-                    strategyContext = new ProvisionContext<T>();
+                    strategyContext = new ProvisionContext<>();
                     contextMap.put(strategy, strategyContext);
                 }
 

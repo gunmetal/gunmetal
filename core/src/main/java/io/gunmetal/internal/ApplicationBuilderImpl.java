@@ -54,8 +54,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         final Config config = new ConfigBuilderImpl().build(applicationModule.options());
 
-        final List<Linker> postWiringLinkers = new LinkedList<Linker>();
-        final List<Linker> eagerLinkers = new LinkedList<Linker>();
+        final List<Linker> postWiringLinkers = new LinkedList<>();
+        final List<Linker> eagerLinkers = new LinkedList<>();
         Linkers linkers = new Linkers() {
             @Override public void add(Linker linker, LinkingPhase phase) {
                 switch (phase) {
@@ -73,7 +73,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 config.classWalker(),
                 linkers);
 
-        final List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<ProvisionStrategyDecorator>();
+        final List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
         strategyDecorators.add(new ScopeDecorator(config.scopeBindings(), linkers));
         ProvisionStrategyDecorator compositeStrategyDecorator = new ProvisionStrategyDecorator() {
             @Override public <T> ProvisionStrategy<T> decorate(

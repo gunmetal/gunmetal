@@ -52,8 +52,6 @@ public class ApplicationBuilderImplTest {
         static Object test2(Provider<ApplicationBuilderImplTest> test) {
             System.out.println(test.get());
             System.out.println(test.get());
-            System.out.println(test.get());
-            System.out.println(test.get());
             return test.get();
         }
 

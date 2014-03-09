@@ -89,8 +89,8 @@ public abstract class Dependency<T> {
         };
     }
 
-    public static <T> Collection<Dependency<?>> from(final Qualifier qualifier, Class<?>[] classes) {
-        List<Dependency<?>> dependencies = new LinkedList<Dependency<?>>();
+    public static Collection<Dependency<?>> from(final Qualifier qualifier, Class<?>[] classes) {
+        List<Dependency<?>> dependencies = new LinkedList<>();
         for (Class<?> cls : classes) {
             dependencies.add(from(qualifier, cls));
         }

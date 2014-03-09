@@ -76,7 +76,7 @@ class InjectorFactoryImpl implements InjectorFactory {
     }
 
     @Override public <T> Injector<T> compositeInjector(final ComponentMetadata<Class<?>> componentMetadata) {
-        final List<Injector<T>> injectors = new ArrayList<Injector<T>>();
+        final List<Injector<T>> injectors = new ArrayList<>();
         classWalker.walk(componentMetadata.provider(), new ClassWalker.InjectedMemberVisitor() {
             @Override public void visit(final Field field) {
                 final Dependency<?> dependency = Dependency.from(
@@ -134,7 +134,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 return null;
             }
             @Override public Collection<Dependency<?>> dependencies() {
-                List<Dependency<?>> dependencies = new LinkedList<Dependency<?>>();
+                List<Dependency<?>> dependencies = new LinkedList<>();
                 for (Injector<T> injector : injectors) {
                     dependencies.addAll(injector.dependencies());
                 }
@@ -148,7 +148,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             volatile List<Injector<T>> injectors;
             void init(Class<?> targetClass,
                       final InternalProvider internalProvider) {
-                injectors = new ArrayList<Injector<T>>();
+                injectors = new ArrayList<>();
                 classWalker.walk(targetClass, new ClassWalker.InjectedMemberVisitor() {
                     @Override public void visit(final Field field) {
                         final Dependency<?> dependency = Dependency.from(
@@ -208,7 +208,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                     throw new IllegalStateException("The component [" + componentMetadata.toString()
                         + "] cannot have it's dependencies queried before it has been initialized.");
                 }
-                List<Dependency<?>> dependencies = new LinkedList<Dependency<?>>();
+                List<Dependency<?>> dependencies = new LinkedList<>();
                 for (Injector<T> injector : injectors) {
                     dependencies.addAll(injector.dependencies());
                 }

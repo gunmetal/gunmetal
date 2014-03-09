@@ -61,7 +61,7 @@ class ModuleParserImpl implements ModuleParser {
         }
         AccessFilter<DependencyRequest> moduleFilter = moduleFilter(module, moduleAnnotation);
         ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
-        List<ComponentAdapterProvider<?>> componentAdapterProviders = new LinkedList<ComponentAdapterProvider<?>>();
+        List<ComponentAdapterProvider<?>> componentAdapterProviders = new LinkedList<>();
         addForComponentAnnotations(
                 moduleAnnotation.components(), componentAdapterProviders, moduleFilter, moduleMetadata);
         addForProviderMethods(

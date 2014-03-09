@@ -74,7 +74,7 @@ public interface DependencyRequest {
                 @Override
                 public DependencyRequest addError(String errorMessage) {
                     if (errors == null) {
-                        errors = new LinkedList<String>();
+                        errors = new LinkedList<>();
                     }
                     errors.add(errorMessage);
                     return this;

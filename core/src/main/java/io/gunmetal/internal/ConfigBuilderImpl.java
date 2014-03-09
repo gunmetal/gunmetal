@@ -125,7 +125,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
 
         static Qualifier qualifier(AnnotatedElement annotatedElement,
                                    Class<? extends Annotation> qualifierAnnotation) {
-            List<Object> qualifiers = new LinkedList<Object>();
+            List<Object> qualifiers = new LinkedList<>();
             for (Annotation annotation : annotatedElement.getAnnotations()) {
                 Class<? extends Annotation> annotationType = annotation.annotationType();
                 if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
@@ -156,7 +156,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     if (other.qualifiers().length == 0) {
                         return this;
                     }
-                    List<Object> qualifierList = new LinkedList<Object>();
+                    List<Object> qualifierList = new LinkedList<>();
                     Collections.addAll(qualifierList, other.qualifiers());
                     for (Object qualifier : qualifiers) {
                         if (!qualifierList.contains(qualifier)) {

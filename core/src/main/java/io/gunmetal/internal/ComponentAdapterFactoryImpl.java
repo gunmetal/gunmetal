@@ -122,7 +122,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 return provisionStrategy;
             }
             @Override public Collection<Dependency<?>> dependencies() {
-                List<Dependency<?>> dependencies = new LinkedList<Dependency<?>>();
+                List<Dependency<?>> dependencies = new LinkedList<>();
                 dependencies.addAll(instantiator.dependencies());
                 dependencies.addAll(injector.dependencies());
                 return dependencies;
