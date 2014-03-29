@@ -18,12 +18,15 @@ package io.gunmetal.internal;
 
 import io.gunmetal.AccessLevel;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
  */
 interface AccessFilter<T> {
+
+    AnnotatedElement filteredElement();
 
     boolean isAccessibleTo(T target);
 
@@ -35,7 +38,7 @@ interface AccessFilter<T> {
             boolean isPublic();
         }
 
-        static AccessFilter<Class<?>> getAccessFilter(Method method) {
+        static AccessFilter<Class<?>> getAccessFilter(final Method method) {
 
             Class<?> declaringClass = method.getDeclaringClass();
 
@@ -51,6 +54,10 @@ interface AccessFilter<T> {
             }
 
             return new AccessFilter<Class<?>>() {
+
+                @Override public AnnotatedElement filteredElement() {
+                    return method;
+                }
 
                 @Override
                 public boolean isAccessibleTo(Class<?> cls) {
@@ -72,7 +79,7 @@ interface AccessFilter<T> {
             return getFilter(accessLevel, cls);
         }
 
-        private static ClassAccessFilter getFilter(AccessLevel clsAccessLevel, Class<?> cls) {
+        private static ClassAccessFilter getFilter(AccessLevel clsAccessLevel, final Class<?> cls) {
 
             if (cls.isLocalClass()) {
                 return new ClassAccessFilter() {
@@ -80,6 +87,10 @@ interface AccessFilter<T> {
                     @Override
                     public boolean isPublic() {
                         return false;
+                    }
+
+                    @Override public AnnotatedElement filteredElement() {
+                        return cls;
                     }
 
                     @Override
@@ -109,6 +120,10 @@ interface AccessFilter<T> {
                 @Override
                 public boolean isPublic() {
                     return false;
+                }
+
+                @Override public AnnotatedElement filteredElement() {
+                    return cls;
                 }
 
                 @Override
@@ -145,13 +160,15 @@ interface AccessFilter<T> {
 
                     return new ClassAccessFilter() {
 
-                        @Override
-                        public boolean isPublic() {
+                        @Override public boolean isPublic() {
                             return false;
                         }
 
-                        @Override
-                        public boolean isAccessibleTo(final Class<?> classOfResourceRequestingAccess) {
+                        @Override public AnnotatedElement filteredElement() {
+                            return classOfResourceBeingRequested;
+                        }
+
+                        @Override public boolean isAccessibleTo(final Class<?> classOfResourceRequestingAccess) {
                             return classOfResourceBeingRequested == classOfResourceRequestingAccess
                                     || resourceEnclosingClass == new EnclosingUtil().getHighestEnclosingClass(classOfResourceRequestingAccess);
                         }
@@ -165,13 +182,15 @@ interface AccessFilter<T> {
 
                     return new ClassAccessFilter() {
 
-                        @Override
-                        public boolean isPublic() {
+                        @Override public boolean isPublic() {
                             return false;
                         }
 
-                        @Override
-                        public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
+                        @Override public AnnotatedElement filteredElement() {
+                            return classOfResourceBeingRequested;
+                        }
+
+                        @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return (packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage())
                                     || classOfResourceBeingRequested.isAssignableFrom(classOfResourceRequestingAccess);
                         }
@@ -186,13 +205,15 @@ interface AccessFilter<T> {
 
                     return new ClassAccessFilter() {
 
-                        @Override
-                        public boolean isPublic() {
+                        @Override public boolean isPublic() {
                             return false;
                         }
 
-                        @Override
-                        public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
+                        @Override public AnnotatedElement filteredElement() {
+                            return classOfResourceBeingRequested;
+                        }
+
+                        @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage();
                         }
 
@@ -204,13 +225,15 @@ interface AccessFilter<T> {
 
                     return new ClassAccessFilter() {
 
-                        @Override
-                        public boolean isPublic() {
+                        @Override public boolean isPublic() {
                             return true;
                         }
 
-                        @Override
-                        public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
+                        @Override public AnnotatedElement filteredElement() {
+                            return classOfResourceBeingRequested;
+                        }
+
+                        @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return true;
                         }
 

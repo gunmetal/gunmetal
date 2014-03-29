@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013.
+ * Copyright (c) 2014.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,21 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.ProvisionStrategy;
+
+import java.util.List;
 
 /**
  * @author rees.byars
  */
-interface ComponentAdapterProvider<T> extends AccessFilter<DependencyRequest> {
-    ComponentAdapter<T> get();
+interface DependencyRequestHandler<T> {
+
+    List<Dependency<?>> targets(); // TODO ? super T
+
+    DependencyResponse<T> handle(DependencyRequest dependencyRequest);
+
+    ProvisionStrategy<T> force();
+
 }

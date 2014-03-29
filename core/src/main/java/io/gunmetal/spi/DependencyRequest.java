@@ -16,9 +16,6 @@
 
 package io.gunmetal.spi;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * @author rees.byars
  */
@@ -32,10 +29,6 @@ public interface DependencyRequest {
 
     Dependency<?> dependency();
 
-    List<String> errors();
-
-    DependencyRequest addError(String errorMessage);
-
     final class Factory {
 
         private Factory() { }
@@ -43,8 +36,6 @@ public interface DependencyRequest {
         public static DependencyRequest create(final ComponentMetadata<?> requestingComponent, final Dependency<?> dependency) {
 
             return new DependencyRequest() {
-
-                List<String> errors;
 
                 @Override
                 public Class<?> sourceOrigin() {
@@ -64,20 +55,6 @@ public interface DependencyRequest {
                 @Override
                 public Dependency<?> dependency() {
                     return dependency;
-                }
-
-                @Override
-                public List<String> errors() {
-                    return errors;
-                }
-
-                @Override
-                public DependencyRequest addError(String errorMessage) {
-                    if (errors == null) {
-                        errors = new LinkedList<>();
-                    }
-                    errors.add(errorMessage);
-                    return this;
                 }
 
             };

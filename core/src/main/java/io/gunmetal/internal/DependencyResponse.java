@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013.
+ * Copyright (c) 2014.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,19 @@
 
 package io.gunmetal.internal;
 
-import java.util.List;
+import io.gunmetal.spi.ProvisionStrategy;
 
 /**
  * @author rees.byars
  */
-interface ModuleParser {
-    List<DependencyRequestHandler<?>> parse(Class<?> module);
+interface DependencyResponse<T> {
+
+    ValidatedDependencyResponse<T> validateResponse();
+
+    interface ValidatedDependencyResponse<T> extends DependencyResponse<T> {
+
+        ProvisionStrategy<T> getProvisionStrategy();
+
+    }
+
 }

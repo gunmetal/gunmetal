@@ -17,7 +17,7 @@
 package io.gunmetal.spi;
 
 import java.lang.reflect.AnnotatedElement;
-import java.util.Collection;
+import java.util.List;
 
 /**
  * @author rees.byars
@@ -32,7 +32,7 @@ public abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     public abstract Qualifier qualifier();
 
-    public abstract Collection<Dependency<?>> targets();
+    public abstract List<Dependency<?>> targets();
 
     public abstract Scope scope();
 

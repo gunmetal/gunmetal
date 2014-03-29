@@ -18,26 +18,20 @@ package io.gunmetal.internal;
 
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
-import io.gunmetal.Gunmetal;
 import io.gunmetal.Provider;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
-import io.gunmetal.spi.Scope;
-import io.gunmetal.spi.Scopes;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -93,22 +87,17 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 config.qualifierResolver(),
                 config.scopeResolver());
 
-        final Map<Dependency<?>, ComponentAdapterProvider<?>> componentAdapterProviders
+        final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers
                 = new HashMap<>();
 
         for (Class<?> module : applicationModule.modules()) {
-
-            List<ComponentAdapterProvider<?>> moduleAdapterProviders = moduleParser.parse(module);
-
-            for (ComponentAdapterProvider<?> adapterProvider : moduleAdapterProviders) {
-                ComponentAdapter<?> adapter = adapterProvider.get();
-                final ComponentMetadata<?> metadata = adapter.metadata();
-                for (final Dependency<?> dependency : metadata.targets()) {
-                    ComponentAdapterProvider<?> previous = componentAdapterProviders.put(dependency, adapterProvider);
+            List<DependencyRequestHandler<?>> moduleRequestHandlers = moduleParser.parse(module);
+            for (DependencyRequestHandler<?> requestHandler : moduleRequestHandlers) {
+                for (Dependency<?> dependency : requestHandler.targets()) {
+                    DependencyRequestHandler<?> previous = requestHandlers.put(dependency, requestHandler);
                     if (previous != null) {
                         throw new RuntimeException("more than one of type"); // TODO
                     }
-
                 }
             }
         }
@@ -116,18 +105,13 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         final InternalProvider internalProvider = new InternalProvider() {
             @Override public <T> ProvisionStrategy<T> getProvisionStrategy(final DependencyRequest dependencyRequest) {
                 final Dependency<?> dependency = dependencyRequest.dependency();
-                ComponentAdapterProvider<T> adapterProvider =
-                        Smithy.cloak(componentAdapterProviders.get(dependency));
-                if (adapterProvider != null) {
-                    if (!adapterProvider.isAccessibleTo(dependencyRequest)
-                            && dependencyRequest.sourceOrigin() != Gunmetal.class) {
-                        StringBuilder message = new StringBuilder();
-                        for (String error : dependencyRequest.errors()) {
-                            message.append(error).append("\n");
-                        }
-                        throw new IllegalAccessError(message.toString());
-                    }
-                    return adapterProvider.get().provisionStrategy();
+                DependencyRequestHandler<T> requestHandler =
+                        Smithy.cloak(requestHandlers.get(dependency));
+                if (requestHandler != null) {
+                    return requestHandler
+                            .handle(dependencyRequest)
+                            .validateResponse()
+                            .getProvisionStrategy();
                 }
                 if (config.isProvider(dependency)) {
                     // TODO add check before casting
@@ -135,23 +119,19 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                     Type type = parameterizedType.getActualTypeArguments()[0];
                     // TODO store
                     Dependency<?> providedTypeDependency = Dependency.from(dependency.qualifier(), type);
-                    ComponentAdapterProvider<?> providedTypeAdapterProvider =
-                            Smithy.cloak(componentAdapterProviders.get(providedTypeDependency));
-                    if (providedTypeAdapterProvider != null) {
-                        if (!providedTypeAdapterProvider.isAccessibleTo(dependencyRequest)
-                                && dependencyRequest.sourceOrigin() != Gunmetal.class) {
-                            StringBuilder message = new StringBuilder();
-                            for (String error : dependencyRequest.errors()) { //TODO this sucks
-                                message.append(error).append("\n");
-                            }
-                            throw new IllegalAccessError(message.toString());
-                        }
+                    DependencyRequestHandler<?> providedTypeRequestHandler =
+                            Smithy.cloak(requestHandlers.get(providedTypeDependency));
+                    if (providedTypeRequestHandler != null) {
                         final ProvisionStrategy<?> providedTypeProvisionStrategy =
-                                providedTypeAdapterProvider.get().provisionStrategy();
+                                providedTypeRequestHandler
+                                        .handle(dependencyRequest)
+                                        .validateResponse()
+                                        .getProvisionStrategy();
                         final InternalProvider internalProvider = this;
                         final Object provider = config.provider(new Provider() {
                             @Override public Object get() {
-                                return providedTypeProvisionStrategy.get(internalProvider, ResolutionContext.Factory.create());
+                                return providedTypeProvisionStrategy.get(
+                                        internalProvider, ResolutionContext.Factory.create());
                             }
                         });
                         return new ProvisionStrategy<T>() {
@@ -184,39 +164,13 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 final Qualifier qualifier = config.qualifierResolver().resolve(dependency);
                 ParameterizedType parameterizedType = (ParameterizedType) dependency.getGenericInterfaces()[0];
                 Type type = parameterizedType.getActualTypeArguments()[0];
-                final Dependency<?> d = Dependency.from(qualifier, type);
-                return Smithy.cloak(internalProvider.getProvisionStrategy(DependencyRequest.Factory.create(
-                        new ComponentMetadata<Class>() {
-                            @Override public Class provider() {
-                                return Gunmetal.class;
-                            }
-                            @Override public Class<?> providerClass() {
-                                return Gunmetal.class;
-                            }
-                            @Override public ModuleMetadata moduleMetadata() {
-                                return new ModuleMetadata() {
-                                    @Override public Class<?> moduleClass() {
-                                        return Gunmetal.class;
-                                    }
-                                    @Override public Qualifier qualifier() {
-                                        return Qualifier.NONE;
-                                    }
-
-                                    @Override public Class<?>[] referencedModules() {
-                                        return new Class<?>[0];
-                                    }
-                                };
-                            }
-                            @Override public Qualifier qualifier() {
-                                return Qualifier.NONE;
-                            }
-                            @Override public Collection<Dependency<?>> targets() {
-                                return Collections.emptySet();
-                            }
-                            @Override public Scope scope() {
-                                return Scopes.EAGER_SINGLETON;
-                            }
-                        }, d)).get(internalProvider, ResolutionContext.Factory.create()));
+                final Dependency<T> d = Dependency.from(qualifier, type);
+                DependencyRequestHandler<T> requestHandler = Smithy.cloak(requestHandlers.get(d));
+                if (requestHandler != null) {
+                    return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
+                } else {
+                    return null;
+                }
             }
         };
     }

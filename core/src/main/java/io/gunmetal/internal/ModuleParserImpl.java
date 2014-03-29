@@ -25,12 +25,12 @@ import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.Scope;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,47 +53,48 @@ class ModuleParserImpl implements ModuleParser {
     }
 
     @Override
-    public List<ComponentAdapterProvider<?>> parse(final Class<?> module) {
+    public List<DependencyRequestHandler<?>> parse(final Class<?> module) {
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {
             throw new IllegalArgumentException("The module class [" + module.getName()
                     + "] must be annotated with @Module()");
         }
-        AccessFilter<DependencyRequest> moduleFilter = moduleFilter(module, moduleAnnotation);
+        RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation);
         ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
-        List<ComponentAdapterProvider<?>> componentAdapterProviders = new LinkedList<>();
+        List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
         addForComponentAnnotations(
-                moduleAnnotation.components(), componentAdapterProviders, moduleFilter, moduleMetadata);
+                moduleAnnotation.components(), requestHandlers, moduleRequestVisitor, moduleMetadata);
         addForProviderMethods(
-                module, componentAdapterProviders, moduleFilter, moduleMetadata);
-        return componentAdapterProviders;
+                module, requestHandlers, moduleRequestVisitor, moduleMetadata);
+        return requestHandlers;
 
     }
 
-    private AccessFilter<DependencyRequest> moduleFilter(final Class<?> module, final Module moduleAnnotation) {
-        final AccessFilter<DependencyRequest> blackListFilter = blackListFilter(module, moduleAnnotation);
-        final AccessFilter<DependencyRequest> whiteListFilter = whiteListFilter(module, moduleAnnotation);
-        final AccessFilter<DependencyRequest> dependsOnFilter = dependsOnFilter(module);
-        final AccessFilter<DependencyRequest> moduleClassFilter = new AccessFilter<DependencyRequest>() {
+    private RequestVisitor moduleRequestVisitor(final Class<?> module, final Module moduleAnnotation) {
+        final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation);
+        final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation);
+        final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
+        final RequestVisitor moduleClassVisitor = new RequestVisitor() {
             AccessFilter<Class<?>> classAccessFilter =
                     AccessFilter.Factory.getAccessFilter(moduleAnnotation.access(), module);
-            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                if (classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
-                    return true;
+            @Override public void visit(
+                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
+                if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
+                    response.addError(
+                            "The module [" + dependencyRequest.sourceModule().moduleClass().getName()
+                                    + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
+                    );
                 }
-                dependencyRequest.addError("This module aint accessible from here bo"); // TODO
-                return false;
             }
         };
 
-        return new AccessFilter<DependencyRequest>() {
-            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                // we use the single '&' because we want to process them all regardless if one fails
-                // in order to collect all errors and report them back
-                return moduleClassFilter.isAccessibleTo(dependencyRequest)
-                        & dependsOnFilter.isAccessibleTo(dependencyRequest)
-                        & blackListFilter.isAccessibleTo(dependencyRequest)
-                        & whiteListFilter.isAccessibleTo(dependencyRequest);
+        return new RequestVisitor() {
+            @Override public void visit(
+                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
+                moduleClassVisitor.visit(dependencyRequest, response);
+                dependsOnVisitor.visit(dependencyRequest, response);
+                blackListVisitor.visit(dependencyRequest, response);
+                whiteListVisitor.visit(dependencyRequest, response);
             }
         };
     }
@@ -115,18 +116,13 @@ class ModuleParserImpl implements ModuleParser {
         };
     }
 
-    private AccessFilter<DependencyRequest> blackListFilter(final Class<?> module, Module moduleAnnotation) {
+    private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation) {
 
         Class<? extends BlackList> blackListConfigClass =
                 moduleAnnotation.notAccessibleFrom();
 
         if (blackListConfigClass == BlackList.class) {
-            return new AccessFilter<DependencyRequest>() {
-                @Override
-                public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                    return true;
-                }
-            };
+            return RequestVisitor.NONE;
         }
 
         final Class[] blackListClasses;
@@ -146,10 +142,10 @@ class ModuleParserImpl implements ModuleParser {
 
         final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
 
-        return  new AccessFilter<DependencyRequest>() {
+        return new RequestVisitor() {
 
-            @Override
-            public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+            @Override public void visit(
+                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
 
                 Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
 
@@ -157,10 +153,8 @@ class ModuleParserImpl implements ModuleParser {
 
                     if (blackListClass == requestingSourceModuleClass) {
 
-                        dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
+                        response.addError("The module [" + requestingSourceModuleClass.getName()
                                 + "] does not have access to the module [" + module.getName() + "].");
-
-                        return false;
 
                     }
 
@@ -171,11 +165,9 @@ class ModuleParserImpl implements ModuleParser {
                         && dependencyRequest.sourceQualifier().intersects(blackListQualifier);
 
                 if (qualifierMatch) {
-                    dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
+                    response.addError("The module [" + requestingSourceModuleClass.getName()
                             + "] does not have access to the module [" + module.getName() + "].");
                 }
-
-                return !qualifierMatch;
 
             }
 
@@ -183,18 +175,13 @@ class ModuleParserImpl implements ModuleParser {
 
     }
 
-    private AccessFilter<DependencyRequest> whiteListFilter(final Class<?> module, Module moduleAnnotation) {
+    private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation) {
 
         Class<? extends WhiteList> whiteListConfigClass =
                 moduleAnnotation.onlyAccessibleFrom();
 
         if (whiteListConfigClass == WhiteList.class) {
-            return new AccessFilter<DependencyRequest>() {
-                @Override
-                public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                    return true;
-                }
-            };
+            return RequestVisitor.NONE;
         }
 
         final Class[] whiteListClasses;
@@ -214,16 +201,16 @@ class ModuleParserImpl implements ModuleParser {
 
         final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
 
-        return  new AccessFilter<DependencyRequest>() {
+        return new RequestVisitor() {
 
-            @Override
-            public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+            @Override public void visit(
+                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
 
                 Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
 
                 for (Class<?> whiteListClass : whiteListClasses) {
                     if (whiteListClass == requestingSourceModuleClass) {
-                        return true;
+                        return;
                     }
                 }
 
@@ -231,12 +218,10 @@ class ModuleParserImpl implements ModuleParser {
 
                 if (!qualifierMatch) {
 
-                    dependencyRequest.addError("The module [" + requestingSourceModuleClass.getName()
+                    response.addError("The module [" + requestingSourceModuleClass.getName()
                             + "] does not have access to the module [" + module.getName() + "].");
 
                 }
-
-                return qualifierMatch;
 
             }
 
@@ -244,33 +229,31 @@ class ModuleParserImpl implements ModuleParser {
 
     }
 
-    private AccessFilter<DependencyRequest> dependsOnFilter(final Class<?> module) {
+    private RequestVisitor dependsOnVisitor(final Class<?> module) {
 
-        return new AccessFilter<DependencyRequest>() {
+        return new RequestVisitor() {
 
-            @Override
-            public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
+            @Override public void visit(
+                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
 
                 ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
 
                 if (module == requestSourceModule.moduleClass()) {
-                    return true;
+                    return;
                 }
 
                 if (requestSourceModule.referencedModules().length == 0) {
-                    return true; //TODO
+                    return; //TODO
                 }
 
                 for (Class<?> dependency : requestSourceModule.referencedModules()) {
                     if (module == dependency) {
-                        return true;
+                        return;
                     }
                 }
 
-                dependencyRequest.addError("The module [" + requestSourceModule.moduleClass().getName()
+                response.addError("The module [" + requestSourceModule.moduleClass().getName()
                         + "] does not have access to the module [" + module.getName() + "].");
-
-                return false;
 
             }
 
@@ -280,8 +263,8 @@ class ModuleParserImpl implements ModuleParser {
 
     private void addForComponentAnnotations(
             Component[] components,
-            List<ComponentAdapterProvider<?>> componentAdapterProviders,
-            final AccessFilter<DependencyRequest> moduleFilter,
+            List<DependencyRequestHandler<?>> requestHandlers,
+            final RequestVisitor moduleRequestVisitor,
             final ModuleMetadata moduleMetadata) {
 
         for (final Component component : components) {
@@ -295,7 +278,7 @@ class ModuleParserImpl implements ModuleParser {
             }
             final Scope scope = scopeResolver.resolve(scopeElement);
 
-            final Collection<Dependency<?>> dependencies;
+            final List<Dependency<?>> dependencies;
             Class<?>[] targets = component.targets();
             if (targets.length == 0) {
                 dependencies = Collections.<Dependency<?>>singletonList(
@@ -317,7 +300,7 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Qualifier qualifier() {
                     return qualifier;
                 }
-                @Override public Collection<Dependency<?>> targets() {
+                @Override public List<Dependency<?>> targets() {
                     return dependencies;
                 }
                 @Override public Scope scope() {
@@ -327,9 +310,9 @@ class ModuleParserImpl implements ModuleParser {
 
             AccessFilter<Class<?>> classAccessFilter = AccessFilter.Factory.getAccessFilter(component.type());
 
-            componentAdapterProviders.add(componentAdapterProvider(
+            requestHandlers.add(requestHandler(
                     componentAdapterFactory.withClassProvider(componentMetadata),
-                    moduleFilter,
+                    moduleRequestVisitor,
                     classAccessFilter));
 
         }
@@ -337,8 +320,8 @@ class ModuleParserImpl implements ModuleParser {
 
     private void addForProviderMethods(
             Class<?> module,
-            List<ComponentAdapterProvider<?>> componentAdapterProviders,
-            final AccessFilter<DependencyRequest> moduleFilter,
+            List<DependencyRequestHandler<?>> requestHandlers,
+            final RequestVisitor moduleRequestVisitor,
             final ModuleMetadata moduleMetadata) {
 
         for (final Method method : module.getDeclaredMethods()) {
@@ -361,7 +344,7 @@ class ModuleParserImpl implements ModuleParser {
             final Scope scope = scopeResolver.resolve(method);
 
             // TODO targeted return type check, better type ref impl
-            final Collection<Dependency<?>> dependencies = Collections.<Dependency<?>>singletonList(
+            final List<Dependency<?>> dependencies = Collections.<Dependency<?>>singletonList(
                     Dependency.from(qualifier, method.getGenericReturnType()));
             ComponentMetadata<Method> componentMetadata = new ComponentMetadata<Method>() {
                 @Override public Method provider() {
@@ -376,7 +359,7 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Qualifier qualifier() {
                     return qualifier;
                 }
-                @Override public Collection<Dependency<?>> targets() {
+                @Override public List<Dependency<?>> targets() {
                     return dependencies;
                 }
                 @Override public Scope scope() {
@@ -385,32 +368,90 @@ class ModuleParserImpl implements ModuleParser {
             };
 
             final AccessFilter<Class<?>> classAccessFilter = AccessFilter.Factory.getAccessFilter(method);
-            componentAdapterProviders.add(componentAdapterProvider(
+            requestHandlers.add(requestHandler(
                     componentAdapterFactory.withMethodProvider(componentMetadata),
-                    moduleFilter,
+                    moduleRequestVisitor,
                     classAccessFilter));
         }
 
     }
 
-    private <T> ComponentAdapterProvider<T> componentAdapterProvider(
+    private <T> DependencyRequestHandler<T> requestHandler(
                                                      final ComponentAdapter<T> componentAdapter,
-                                                     final AccessFilter<DependencyRequest> moduleFilter,
+                                                     final RequestVisitor moduleRequestVisitor,
                                                      final AccessFilter<Class<?>> classAccessFilter) {
-        final AccessFilter<DependencyRequest> componentFilter = new AccessFilter<DependencyRequest>() {
-            @Override public boolean isAccessibleTo(DependencyRequest dependencyRequest) {
-                return moduleFilter.isAccessibleTo(dependencyRequest)
-                        && classAccessFilter.isAccessibleTo(dependencyRequest.sourceOrigin());
+        return new DependencyRequestHandler<T>() {
+            @Override public List<Dependency<?>> targets() {
+                ComponentMetadata<?> metadata = componentAdapter.metadata();
+                return metadata.targets();
+            }
+
+            @Override public DependencyResponse<T> handle(DependencyRequest dependencyRequest) {
+                MutableDependencyResponse<T> response =
+                        new DependencyResponseImpl<>(componentAdapter.provisionStrategy());
+                moduleRequestVisitor.visit(dependencyRequest, response);
+                if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceOrigin())) {
+                    response.addError(
+                            "The class [" + dependencyRequest.sourceOrigin().getName()
+                            + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
+                    );
+                }
+                return response;
+            }
+
+            @Override public ProvisionStrategy<T> force() {
+                return componentAdapter.provisionStrategy();
             }
         };
-        return new ComponentAdapterProvider<T>() {
-            @Override public ComponentAdapter<T> get() {
-                return componentAdapter;
-            }
-            @Override public boolean isAccessibleTo(DependencyRequest request) {
-                return componentFilter.isAccessibleTo(request);
-            }
+    }
+
+    private interface MutableDependencyResponse<T> extends DependencyResponse<T> {
+        void addError(String errorMessage);
+    }
+
+    private interface RequestVisitor {
+
+        RequestVisitor NONE = new RequestVisitor() {
+            @Override public void visit(
+                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> dependencyResponse) { }
         };
+
+        void visit(DependencyRequest dependencyRequest, MutableDependencyResponse<?> dependencyResponse);
+    }
+
+    private static class DependencyResponseImpl<T> implements MutableDependencyResponse<T> {
+
+        List<String> errors;
+        final ProvisionStrategy<T> provisionStrategy;
+
+        DependencyResponseImpl(ProvisionStrategy<T> provisionStrategy) {
+            this.provisionStrategy = provisionStrategy;
+        }
+
+        @Override public void addError(String errorMessage) {
+            if (errors == null) {
+                errors = new LinkedList<>();
+            }
+            errors.add(errorMessage);
+        }
+
+        @Override public ValidatedDependencyResponse<T> validateResponse() {
+            if (errors != null) {
+                StringBuilder stringBuilder = new StringBuilder("There were errors processing a dependency \n");
+                for (String error : errors) {
+                    stringBuilder.append("    ").append(error).append("\n");
+                }
+                throw new IllegalAccessError(stringBuilder.toString());
+            }
+            return new ValidatedDependencyResponse<T>() {
+                @Override public ProvisionStrategy<T> getProvisionStrategy() {
+                    return provisionStrategy;
+                }
+                @Override public ValidatedDependencyResponse<T> validateResponse() {
+                    return this;
+                }
+            };
+        }
     }
 
 }
