@@ -36,7 +36,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,7 +68,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             @Override public Object inject(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 return invoker.invoke(null, internalProvider, resolutionContext);
             }
-            @Override public Collection<Dependency<?>> dependencies() {
+            @Override public List<Dependency<?>> dependencies() {
                 return invoker.dependencies();
             }
         };
@@ -102,8 +101,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                             throw new RuntimeException("TODO injection exception", e);
                         }
                     }
-                    @Override public Collection<Dependency<?>> dependencies() {
-                        return Collections.<Dependency<?>>singleton(dependency);
+                    @Override public List<Dependency<?>> dependencies() {
+                        return Collections.<Dependency<?>>singletonList(dependency);
                     }
                 });
             }
@@ -117,7 +116,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                         return invoker.invoke(target, internalProvider, resolutionContext);
                     }
 
-                    @Override public Collection<Dependency<?>> dependencies() {
+                    @Override public List<Dependency<?>> dependencies() {
                         return invoker.dependencies();
                     }
                 });
@@ -133,7 +132,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 }
                 return null;
             }
-            @Override public Collection<Dependency<?>> dependencies() {
+            @Override public List<Dependency<?>> dependencies() {
                 List<Dependency<?>> dependencies = new LinkedList<>();
                 for (Injector<T> injector : injectors) {
                     dependencies.addAll(injector.dependencies());
@@ -165,8 +164,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                                     throw new RuntimeException("TODO injection exception", e);
                                 }
                             }
-                            @Override public Collection<Dependency<?>> dependencies() {
-                                return Collections.<Dependency<?>>singleton(dependency);
+                            @Override public List<Dependency<?>> dependencies() {
+                                return Collections.<Dependency<?>>singletonList(dependency);
                             }
                         });
                     }
@@ -180,7 +179,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                                            ResolutionContext resolutionContext) {
                                 return invoker.invoke(target, internalProvider, resolutionContext);
                             }
-                            @Override public Collection<Dependency<?>> dependencies() {
+                            @Override public List<Dependency<?>> dependencies() {
                                 return invoker.dependencies();
                             }
                         });
@@ -203,7 +202,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 }
                 return null;
             }
-            @Override public Collection<Dependency<?>> dependencies() {
+            @Override public List<Dependency<?>> dependencies() {
                 if (injectors == null) {
                     throw new IllegalStateException("The component [" + componentMetadata.toString()
                         + "] cannot have it's dependencies queried before it has been initialized.");
@@ -226,7 +225,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
                 return Smithy.cloak(invoker.invoke(null, provider, resolutionContext));
             }
-            @Override public Collection<Dependency<?>> dependencies() {
+            @Override public List<Dependency<?>> dependencies() {
                 return invoker.dependencies();
             }
         };
@@ -241,7 +240,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
                 return (T) invoker.invoke(null, provider, resolutionContext);
             }
-            @Override public Collection<Dependency<?>> dependencies() {
+            @Override public List<Dependency<?>> dependencies() {
                 return invoker.dependencies();
             }
         };
@@ -254,7 +253,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             dependencies[i] = new Parameter(function, i).asDependency();
         }
         return new ParameterizedFunctionInvoker() {
-            ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
+            final ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
             {
                 linkers.add(new Linker() {
                     @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
@@ -276,7 +275,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                     throw new RuntimeException("TODO injection exception", e);
                 }
             }
-            @Override public Collection<Dependency<?>> dependencies() {
+            @Override public List<Dependency<?>> dependencies() {
                 return Arrays.asList(dependencies);
             }
         };
@@ -290,7 +289,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             dependencies[i] = new Parameter(function, i).asDependency();
         }
         return new ParameterizedFunctionInvoker() {
-            ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
+            final ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
             {
                 for (int i = 0; i < dependencies.length; i++) {
                     provisionStrategies[i] = internalProvider.getProvisionStrategy(
@@ -308,7 +307,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                     throw new RuntimeException("TODO injection exception", e);
                 }
             }
-            @Override public Collection<Dependency<?>> dependencies() {
+            @Override public List<Dependency<?>> dependencies() {
                 return Arrays.asList(dependencies);
             }
         };
@@ -380,7 +379,7 @@ class InjectorFactoryImpl implements InjectorFactory {
         @Override public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
             for (Annotation annotation : annotations) {
                 if (annotationClass.isInstance(annotation)) {
-                    return Smithy.cloak(annotation);
+                    return annotationClass.cast(annotation);
                 }
             }
             return null;

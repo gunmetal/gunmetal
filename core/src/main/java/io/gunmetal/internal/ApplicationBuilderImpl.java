@@ -32,6 +32,7 @@ import io.gunmetal.spi.ResolutionContext;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -114,31 +115,19 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                             .getProvisionStrategy();
                 }
                 if (config.isProvider(dependency)) {
-                    // TODO add check before casting
-                    ParameterizedType parameterizedType = (ParameterizedType) dependency.typeKey().type();
-                    Type type = parameterizedType.getActualTypeArguments()[0];
-                    // TODO store
+                    Type type = unsafeFirstTypeParam(dependency.typeKey().type());
                     Dependency<?> providedTypeDependency = Dependency.from(dependency.qualifier(), type);
-                    DependencyRequestHandler<?> providedTypeRequestHandler =
-                            Smithy.cloak(requestHandlers.get(providedTypeDependency));
-                    if (providedTypeRequestHandler != null) {
-                        final ProvisionStrategy<?> providedTypeProvisionStrategy =
-                                providedTypeRequestHandler
-                                        .handle(dependencyRequest)
-                                        .validateResponse()
-                                        .getProvisionStrategy();
-                        final InternalProvider internalProvider = this;
-                        final Object provider = config.provider(new Provider() {
-                            @Override public Object get() {
-                                return providedTypeProvisionStrategy.get(
-                                        internalProvider, ResolutionContext.Factory.create());
-                            }
-                        });
-                        return new ProvisionStrategy<T>() {
-                            @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                                return Smithy.cloak(provider);
-                            }
-                        };
+                    DependencyRequestHandler<?> componentHandler = requestHandlers.get(providedTypeDependency);
+                    if (componentHandler != null) {
+                        ProvisionStrategy<?> componentStrategy = componentHandler.force();
+                        ProvisionStrategy<T> providerStrategy =
+                                createProviderStrategy(config, componentStrategy, this);
+                        requestHandler = createProviderHandler(providerStrategy, componentHandler, dependency);
+                        requestHandlers.put(dependency, requestHandler);
+                        return requestHandler
+                                .handle(dependencyRequest)
+                                .validateResponse()
+                                .getProvisionStrategy();
                     }
                 }
                 throw new RuntimeException("missing dependency " + dependency.toString()); // TODO
@@ -161,16 +150,83 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             }
 
             @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependency) {
-                final Qualifier qualifier = config.qualifierResolver().resolve(dependency);
-                ParameterizedType parameterizedType = (ParameterizedType) dependency.getGenericInterfaces()[0];
-                Type type = parameterizedType.getActualTypeArguments()[0];
-                final Dependency<T> d = Dependency.from(qualifier, type);
+                Qualifier qualifier = config.qualifierResolver().resolve(dependency);
+                Dependency<T> d = Dependency.from(qualifier, unsafeFirstTypeParam(dependency.getGenericInterfaces()[0]));
                 DependencyRequestHandler<T> requestHandler = Smithy.cloak(requestHandlers.get(d));
                 if (requestHandler != null) {
                     return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
-                } else {
-                    return null;
+                } else if (config.isProvider(d)) {
+                    Type type = unsafeFirstTypeParam(d.typeKey().type());
+                    Dependency<?> providedTypeDependency = Dependency.from(d.qualifier(), type);
+                    DependencyRequestHandler<?> componentHandler = requestHandlers.get(providedTypeDependency);
+                    if (componentHandler != null) {
+                        ProvisionStrategy<?> componentStrategy = componentHandler.force();
+                        ProvisionStrategy<T> providerStrategy =
+                                createProviderStrategy(config, componentStrategy, internalProvider);
+                        requestHandler = createProviderHandler(providerStrategy, componentHandler, d);
+                        requestHandlers.put(d, requestHandler);
+                        return providerStrategy.get(internalProvider, ResolutionContext.Factory.create());
+                    }
                 }
+                return null;
+            }
+        };
+    }
+
+    private Type unsafeFirstTypeParam(Type type) {
+        return ((ParameterizedType) type).getActualTypeArguments()[0];
+    }
+
+    private <T> ProvisionStrategy<T> createProviderStrategy(
+            Config config,
+            final ProvisionStrategy<?> componentStrategy,
+            final InternalProvider internalProvider) {
+        final Object provider = config.provider(new Provider() {
+            @Override public Object get() {
+                return componentStrategy.get(
+                        internalProvider, ResolutionContext.Factory.create());
+            }
+        });
+        return new ProvisionStrategy<T>() {
+            @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+                return Smithy.cloak(provider);
+            }
+        };
+    }
+
+    private <T> DependencyRequestHandler<T> createProviderHandler(
+            final ProvisionStrategy<T> providerStrategy,
+            final DependencyRequestHandler<?> componentHandler,
+            final Dependency<?> providerDependency) {
+        return new DependencyRequestHandler<T>() {
+            @Override public List<Dependency<?>> targets() {
+                return Collections.<Dependency<?>>singletonList(providerDependency);
+            }
+
+            @Override public List<Dependency<?>> dependencies() {
+                return componentHandler.dependencies();
+            }
+
+            @Override public DependencyResponse<T> handle(DependencyRequest dependencyRequest) {
+                final DependencyResponse<?> componentResponse = componentHandler.handle(dependencyRequest);
+                return new DependencyResponse<T>() {
+                    @Override public ValidatedDependencyResponse<T> validateResponse() {
+                        componentResponse.validateResponse();
+                        return new ValidatedDependencyResponse<T>() {
+                            @Override public ProvisionStrategy<T> getProvisionStrategy() {
+                                return providerStrategy;
+                            }
+
+                            @Override public ValidatedDependencyResponse<T> validateResponse() {
+                                return this;
+                            }
+                        };
+                    }
+                };
+            }
+
+            @Override public ProvisionStrategy<T> force() {
+                return providerStrategy;
             }
         };
     }

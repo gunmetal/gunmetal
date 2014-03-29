@@ -18,13 +18,13 @@ package io.gunmetal.internal;
 
 import io.gunmetal.spi.Dependency;
 
-import java.util.Collection;
+import java.util.List;
 
 /**
  * @author rees.byars
  */
 interface Dependent {
 
-    Collection<Dependency<?>> dependencies();
+    List<Dependency<?>> dependencies();
 
 }

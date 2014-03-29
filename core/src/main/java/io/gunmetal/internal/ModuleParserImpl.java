@@ -386,6 +386,10 @@ class ModuleParserImpl implements ModuleParser {
                 return metadata.targets();
             }
 
+            @Override public List<Dependency<?>> dependencies() {
+                return componentAdapter.dependencies();
+            }
+
             @Override public DependencyResponse<T> handle(DependencyRequest dependencyRequest) {
                 MutableDependencyResponse<T> response =
                         new DependencyResponseImpl<>(componentAdapter.provisionStrategy());

@@ -24,7 +24,6 @@ import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -121,7 +120,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             @Override public ProvisionStrategy<T> provisionStrategy() {
                 return provisionStrategy;
             }
-            @Override public Collection<Dependency<?>> dependencies() {
+            @Override public List<Dependency<?>> dependencies() {
                 List<Dependency<?>> dependencies = new LinkedList<>();
                 dependencies.addAll(instantiator.dependencies());
                 dependencies.addAll(injector.dependencies());
