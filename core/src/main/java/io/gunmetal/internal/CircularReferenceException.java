@@ -32,7 +32,7 @@ class CircularReferenceException extends RuntimeException {
         this.metadata = metadata;
     }
 
-    public ComponentMetadata metadata() {
+    public ComponentMetadata<?> metadata() {
         return metadata;
     }
 

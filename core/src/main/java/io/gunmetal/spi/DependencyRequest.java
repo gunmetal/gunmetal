@@ -19,7 +19,7 @@ package io.gunmetal.spi;
 /**
  * @author rees.byars
  */
-public interface DependencyRequest {
+public interface DependencyRequest<T> {
 
     Class<?> sourceOrigin();
 
@@ -27,15 +27,15 @@ public interface DependencyRequest {
 
     ModuleMetadata sourceModule();
 
-    Dependency<?> dependency();
+    Dependency<T> dependency();
 
     final class Factory {
 
         private Factory() { }
 
-        public static DependencyRequest create(final ComponentMetadata<?> requestingComponent, final Dependency<?> dependency) {
+        public static <T> DependencyRequest<T> create(final ComponentMetadata<?> requestingComponent, final Dependency<T> dependency) {
 
-            return new DependencyRequest() {
+            return new DependencyRequest<T>() {
 
                 @Override
                 public Class<?> sourceOrigin() {
@@ -53,7 +53,36 @@ public interface DependencyRequest {
                 }
 
                 @Override
-                public Dependency<?> dependency() {
+                public Dependency<T> dependency() {
+                    return dependency;
+                }
+
+            };
+
+        }
+
+        public static <T> DependencyRequest<T> create(final DependencyRequest<?> dependencyRequest,
+                                                      final Dependency<T> dependency) {
+
+            return new DependencyRequest<T>() {
+
+                @Override
+                public Class<?> sourceOrigin() {
+                    return dependencyRequest.sourceOrigin();
+                }
+
+                @Override
+                public Qualifier sourceQualifier() {
+                    return dependencyRequest.sourceQualifier();
+                }
+
+                @Override
+                public ModuleMetadata sourceModule() {
+                    return dependencyRequest.sourceModule();
+                }
+
+                @Override
+                public Dependency<T> dependency() {
                     return dependency;
                 }
 

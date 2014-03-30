@@ -69,7 +69,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 postInjector);
     }
 
-    private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata componentMetadata,
+    private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata<?> componentMetadata,
                                                      final Instantiator<T> instantiator,
                                                      final Injector<T> injector) {
         return new ProvisionStrategy<T>() {
@@ -111,7 +111,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     private <T> ComponentAdapter<T> componentAdapter(
             final ComponentMetadata<?> metadata,
             final ProvisionStrategy<T> provisionStrategy,
-            final Instantiator instantiator,
+            final Instantiator<T> instantiator,
             final Injector<T> injector) {
         return new ComponentAdapter<T>() {
             @Override public ComponentMetadata metadata() {

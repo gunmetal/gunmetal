@@ -78,7 +78,7 @@ class ModuleParserImpl implements ModuleParser {
             AccessFilter<Class<?>> classAccessFilter =
                     AccessFilter.Factory.getAccessFilter(moduleAnnotation.access(), module);
             @Override public void visit(
-                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
+                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
                 if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
                     response.addError(
                             "The module [" + dependencyRequest.sourceModule().moduleClass().getName()
@@ -90,7 +90,7 @@ class ModuleParserImpl implements ModuleParser {
 
         return new RequestVisitor() {
             @Override public void visit(
-                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
+                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
                 moduleClassVisitor.visit(dependencyRequest, response);
                 dependsOnVisitor.visit(dependencyRequest, response);
                 blackListVisitor.visit(dependencyRequest, response);
@@ -136,7 +136,7 @@ class ModuleParserImpl implements ModuleParser {
 
         } else {
 
-            blackListClasses = new Class[]{};
+            blackListClasses = new Class<?>[]{};
 
         }
 
@@ -145,7 +145,7 @@ class ModuleParserImpl implements ModuleParser {
         return new RequestVisitor() {
 
             @Override public void visit(
-                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
+                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
 
                 Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
 
@@ -195,7 +195,7 @@ class ModuleParserImpl implements ModuleParser {
 
         } else {
 
-            whiteListClasses = new Class[]{};
+            whiteListClasses = new Class<?>[]{};
 
         }
 
@@ -204,7 +204,7 @@ class ModuleParserImpl implements ModuleParser {
         return new RequestVisitor() {
 
             @Override public void visit(
-                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
+                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
 
                 Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
 
@@ -234,7 +234,7 @@ class ModuleParserImpl implements ModuleParser {
         return new RequestVisitor() {
 
             @Override public void visit(
-                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> response) {
+                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
 
                 ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
 
@@ -390,7 +390,7 @@ class ModuleParserImpl implements ModuleParser {
                 return componentAdapter.dependencies();
             }
 
-            @Override public DependencyResponse<T> handle(DependencyRequest dependencyRequest) {
+            @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
                 MutableDependencyResponse<T> response =
                         new DependencyResponseImpl<>(componentAdapter.provisionStrategy());
                 moduleRequestVisitor.visit(dependencyRequest, response);
@@ -417,16 +417,16 @@ class ModuleParserImpl implements ModuleParser {
 
         RequestVisitor NONE = new RequestVisitor() {
             @Override public void visit(
-                    DependencyRequest dependencyRequest, MutableDependencyResponse<?> dependencyResponse) { }
+                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> dependencyResponse) { }
         };
 
-        void visit(DependencyRequest dependencyRequest, MutableDependencyResponse<?> dependencyResponse);
+        void visit(DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> dependencyResponse);
     }
 
     private static class DependencyResponseImpl<T> implements MutableDependencyResponse<T> {
 
         List<String> errors;
-        final ProvisionStrategy<T> provisionStrategy;
+        final ProvisionStrategy<? extends T> provisionStrategy;
 
         DependencyResponseImpl(ProvisionStrategy<T> provisionStrategy) {
             this.provisionStrategy = provisionStrategy;
@@ -445,10 +445,10 @@ class ModuleParserImpl implements ModuleParser {
                 for (String error : errors) {
                     stringBuilder.append("    ").append(error).append("\n");
                 }
-                throw new IllegalAccessError(stringBuilder.toString());
+                throw new DependencyException(stringBuilder.toString());
             }
             return new ValidatedDependencyResponse<T>() {
-                @Override public ProvisionStrategy<T> getProvisionStrategy() {
+                @Override public ProvisionStrategy<? extends T> getProvisionStrategy() {
                     return provisionStrategy;
                 }
                 @Override public ValidatedDependencyResponse<T> validateResponse() {

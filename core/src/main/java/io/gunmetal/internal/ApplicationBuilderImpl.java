@@ -104,10 +104,9 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         }
 
         final InternalProvider internalProvider = new InternalProvider() {
-            @Override public <T> ProvisionStrategy<T> getProvisionStrategy(final DependencyRequest dependencyRequest) {
-                final Dependency<?> dependency = dependencyRequest.dependency();
-                DependencyRequestHandler<T> requestHandler =
-                        Smithy.cloak(requestHandlers.get(dependency));
+            @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
+                final Dependency<T> dependency = dependencyRequest.dependency();
+                DependencyRequestHandler<? extends T> requestHandler = Smithy.cloak(requestHandlers.get(dependency));
                 if (requestHandler != null) {
                     return requestHandler
                             .handle(dependencyRequest)
@@ -115,14 +114,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                             .getProvisionStrategy();
                 }
                 if (config.isProvider(dependency)) {
-                    Type type = unsafeFirstTypeParam(dependency.typeKey().type());
-                    Dependency<?> providedTypeDependency = Dependency.from(dependency.qualifier(), type);
-                    DependencyRequestHandler<?> componentHandler = requestHandlers.get(providedTypeDependency);
-                    if (componentHandler != null) {
-                        ProvisionStrategy<?> componentStrategy = componentHandler.force();
-                        ProvisionStrategy<T> providerStrategy =
-                                createProviderStrategy(config, componentStrategy, this);
-                        requestHandler = createProviderHandler(providerStrategy, componentHandler, dependency);
+                    requestHandler = createProviderHandler(dependencyRequest, config, this, requestHandlers);
+                    if (requestHandler != null) {
                         requestHandlers.put(dependency, requestHandler);
                         return requestHandler
                                 .handle(dependencyRequest)
@@ -130,7 +123,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                                 .getProvisionStrategy();
                     }
                 }
-                throw new RuntimeException("missing dependency " + dependency.toString()); // TODO
+                throw new DependencyException("missing dependency " + dependency.toString()); // TODO
             }
         };
 
@@ -152,19 +145,13 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependency) {
                 Qualifier qualifier = config.qualifierResolver().resolve(dependency);
                 Dependency<T> d = Dependency.from(qualifier, unsafeFirstTypeParam(dependency.getGenericInterfaces()[0]));
-                DependencyRequestHandler<T> requestHandler = Smithy.cloak(requestHandlers.get(d));
+                DependencyRequestHandler<? extends T> requestHandler = Smithy.cloak(requestHandlers.get(d));
                 if (requestHandler != null) {
                     return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
                 } else if (config.isProvider(d)) {
-                    Type type = unsafeFirstTypeParam(d.typeKey().type());
-                    Dependency<?> providedTypeDependency = Dependency.from(d.qualifier(), type);
-                    DependencyRequestHandler<?> componentHandler = requestHandlers.get(providedTypeDependency);
-                    if (componentHandler != null) {
-                        ProvisionStrategy<?> componentStrategy = componentHandler.force();
-                        ProvisionStrategy<T> providerStrategy =
-                                createProviderStrategy(config, componentStrategy, internalProvider);
-                        requestHandler = createProviderHandler(providerStrategy, componentHandler, d);
-                        requestHandlers.put(d, requestHandler);
+                    ProvisionStrategy<T> providerStrategy =
+                            createProviderStrategy(d, config, internalProvider, requestHandlers);
+                    if (providerStrategy != null) {
                         return providerStrategy.get(internalProvider, ResolutionContext.Factory.create());
                     }
                 }
@@ -177,11 +164,10 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         return ((ParameterizedType) type).getActualTypeArguments()[0];
     }
 
-    private <T> ProvisionStrategy<T> createProviderStrategy(
-            Config config,
-            final ProvisionStrategy<?> componentStrategy,
-            final InternalProvider internalProvider) {
-        final Object provider = config.provider(new Provider() {
+    private <T> ProvisionStrategy<T> createProviderStrategy(final ProvisionStrategy<?> componentStrategy,
+                                            final Config config,
+                                            final InternalProvider internalProvider) {
+        final Object provider = config.provider(new Provider<Object>() {
             @Override public Object get() {
                 return componentStrategy.get(
                         internalProvider, ResolutionContext.Factory.create());
@@ -194,21 +180,49 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         };
     }
 
-    private <T> DependencyRequestHandler<T> createProviderHandler(
-            final ProvisionStrategy<T> providerStrategy,
-            final DependencyRequestHandler<?> componentHandler,
-            final Dependency<?> providerDependency) {
+    private <T> ProvisionStrategy<T> createProviderStrategy(
+            final Dependency<T> providerDependency,
+            final Config config,
+            final InternalProvider internalProvider,
+            final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers) {
+        Type type = unsafeFirstTypeParam(providerDependency.typeKey().type());
+        final Dependency<?> componentDependency = Dependency.from(providerDependency.qualifier(), type);
+        final DependencyRequestHandler<?> componentHandler = Smithy.cloak(requestHandlers.get(componentDependency));
+        if (componentHandler == null) {
+            return null;
+        }
+        ProvisionStrategy<?> componentStrategy = componentHandler.force();
+        return createProviderStrategy(componentStrategy, config, internalProvider);
+    }
+
+    private <T, C> DependencyRequestHandler<T> createProviderHandler(
+            final DependencyRequest<T> providerRequest,
+            final Config config,
+            final InternalProvider internalProvider,
+            final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers) {
+        Dependency<T> providerDependency = providerRequest.dependency();
+        Type type = unsafeFirstTypeParam(providerDependency.typeKey().type());
+        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), type);
+        final DependencyRequestHandler<? extends C> componentHandler =
+                Smithy.cloak(requestHandlers.get(componentDependency));
+        if (componentHandler == null) {
+            return null;
+        }
+        ProvisionStrategy<? extends C> componentStrategy = componentHandler.force();
+        final ProvisionStrategy<T> providerStrategy =
+                createProviderStrategy(componentStrategy, config, internalProvider);
         return new DependencyRequestHandler<T>() {
             @Override public List<Dependency<?>> targets() {
-                return Collections.<Dependency<?>>singletonList(providerDependency);
+                return Collections.<Dependency<?>>singletonList(providerRequest.dependency());
             }
 
             @Override public List<Dependency<?>> dependencies() {
                 return componentHandler.dependencies();
             }
 
-            @Override public DependencyResponse<T> handle(DependencyRequest dependencyRequest) {
-                final DependencyResponse<?> componentResponse = componentHandler.handle(dependencyRequest);
+            @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
+                final DependencyResponse<?> componentResponse =
+                        componentHandler.handle(DependencyRequest.Factory.create(providerRequest, componentDependency));
                 return new DependencyResponse<T>() {
                     @Override public ValidatedDependencyResponse<T> validateResponse() {
                         componentResponse.validateResponse();
@@ -229,7 +243,10 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 return providerStrategy;
             }
         };
+
     }
+
+
 
     //collections - explicit
     //factories - explicit, anonymous + providers

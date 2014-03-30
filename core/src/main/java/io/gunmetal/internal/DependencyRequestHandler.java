@@ -27,11 +27,11 @@ import java.util.List;
  */
 interface DependencyRequestHandler<T> {
 
-    List<Dependency<?>> targets(); // TODO ? super T
+    List<Dependency<?>> targets();  // TODO ? super T
 
     List<Dependency<?>> dependencies();
 
-    DependencyResponse<T> handle(DependencyRequest dependencyRequest);
+    DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest);
 
     ProvisionStrategy<T> force();
 

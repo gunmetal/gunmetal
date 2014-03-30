@@ -93,7 +93,7 @@ public class ApplicationBuilderImplTest {
         assert a != app.get(Dep2.class);
     }
 
-    @Test(expected = IllegalAccessError.class)
+    @Test(expected = DependencyException.class)
     public void testBlackList() {
 
         @ApplicationModule(modules = { TestModule.class, M.class })

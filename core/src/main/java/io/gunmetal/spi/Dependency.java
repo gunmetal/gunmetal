@@ -114,7 +114,7 @@ public abstract class Dependency<T> {
 
         static <T> TypeKey<T> typeKey(final Type type) {
             if (type instanceof Class) {
-                return Smithy.cloak(typeKey((Class) type));
+                return Smithy.cloak(typeKey((Class<?>) type));
             } else if (type instanceof ParameterizedType) {
                 return typeKey(((ParameterizedType) type));
             } else {
