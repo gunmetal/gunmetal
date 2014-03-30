@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.overengineer.gunmetal</groupId>
+        <groupId>io.gunmetal</groupId>
         <artifactId>parent</artifactId>
         <version>0.0.1-BETA-SNAPSHOT</version>
     </parent>
@@ -123,7 +123,7 @@
                                 <configuration>
                                     <classpathScope>test</classpathScope>
                                     <mainClass>com.google.caliper.runner.CaliperMain</mainClass>
-                                    <commandlineArgs>com.github.overengineer.gunmetal.benchmark.CaliperBenchmarks --instrument ${benchmark.instruments} ${benchmark.args} -Cinstrument.allocation.options.trackAllocations=false</commandlineArgs>
+                                    <commandlineArgs>io.gunmetal.benchmarks.CaliperBenchmarks --instrument ${benchmark.instruments} ${benchmark.args} -Cinstrument.allocation.options.trackAllocations=false</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>

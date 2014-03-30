@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import com.github.overengineer.gunmetal.testmocks.A;
+import io.gunmetal.testmocks.A;
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
 import io.gunmetal.Gunmetal;
@@ -24,6 +24,7 @@ import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
+import io.gunmetal.testmocks.NewGunmetalBenchMarkModule2;
 import org.junit.Test;
 
 import java.lang.annotation.Retention;
