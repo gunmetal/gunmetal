@@ -88,10 +88,11 @@ public abstract class Dependency<T> {
         };
     }
 
-    public static List<Dependency<?>> from(final Qualifier qualifier, Class<?>[] classes) {
-        List<Dependency<?>> dependencies = new LinkedList<>();
-        for (Class<?> cls : classes) {
-            dependencies.add(from(qualifier, cls));
+    public static <T> List<Dependency<? super T>> from(final Qualifier qualifier, Class<? super T>[] classes) {
+        List<Dependency<? super T>> dependencies = new LinkedList<>();
+        for (Class<? super T> cls : classes) {
+            Dependency<? super T> dependency = Dependency.from(qualifier, cls);
+            dependencies.add(dependency);
         }
         return dependencies;
     }

@@ -269,49 +269,10 @@ class ModuleParserImpl implements ModuleParser {
 
         for (final Component component : components) {
 
-            final Qualifier qualifier = qualifierResolver.resolve(
-                    component.type()).merge(moduleMetadata.qualifier());
-
-            Class<?> scopeElement = component.scope();
-            if (scopeElement == Component.class) {
-                scopeElement = component.type();
-            }
-            final Scope scope = scopeResolver.resolve(scopeElement);
-
-            final List<Dependency<?>> dependencies;
-            Class<?>[] targets = component.targets();
-            if (targets.length == 0) {
-                dependencies = Collections.<Dependency<?>>singletonList(
-                        Dependency.from(qualifier, component.type()));
-            } else {
-                dependencies = Dependency.from(qualifier, targets);
-            }
-
-            final ComponentMetadata<Class<?>> componentMetadata = new ComponentMetadata<Class<?>>() {
-                @Override public Class<?> provider() {
-                    return component.type();
-                }
-                @Override public Class<?> providerClass() {
-                    return component.type();
-                }
-                @Override public ModuleMetadata moduleMetadata() {
-                    return moduleMetadata;
-                }
-                @Override public Qualifier qualifier() {
-                    return qualifier;
-                }
-                @Override public Scope scope() {
-                    return scope;
-                }
-            };
-
-            AccessFilter<Class<?>> classAccessFilter = AccessFilter.Factory.getAccessFilter(component.type());
-
             requestHandlers.add(requestHandler(
-                    componentAdapterFactory.withClassProvider(componentMetadata),
-                    dependencies,
+                    component,
                     moduleRequestVisitor,
-                    classAccessFilter));
+                    moduleMetadata));
 
         }
     }
@@ -324,63 +285,124 @@ class ModuleParserImpl implements ModuleParser {
 
         for (final Method method : module.getDeclaredMethods()) {
 
-            int modifiers = method.getModifiers();
-
-            if (!Modifier.isStatic(modifiers)) {
-                throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
-                        + method.getName() + "] in module [" + module.getName() + "] is not static.");
-            }
-
-            if (method.getReturnType().equals(Void.TYPE)) {
-                throw new IllegalArgumentException("A module's provider methods must have a return type.  The method ["
-                        + method.getName() + "] in module [" + module.getName() + "] has a void return type.");
-            }
-
-            final Qualifier qualifier =
-                    qualifierResolver.resolve(method).merge(moduleMetadata.qualifier());
-
-            final Scope scope = scopeResolver.resolve(method);
-
-            // TODO targeted return type check, better type ref impl
-            final List<Dependency<?>> dependencies = Collections.<Dependency<?>>singletonList(
-                    Dependency.from(qualifier, method.getGenericReturnType()));
-            ComponentMetadata<Method> componentMetadata = new ComponentMetadata<Method>() {
-                @Override public Method provider() {
-                    return method;
-                }
-                @Override public Class<?> providerClass() {
-                    return method.getDeclaringClass();
-                }
-                @Override public ModuleMetadata moduleMetadata() {
-                    return moduleMetadata;
-                }
-                @Override public Qualifier qualifier() {
-                    return qualifier;
-                }
-                @Override public Scope scope() {
-                    return scope;
-                }
-            };
-
-            final AccessFilter<Class<?>> classAccessFilter = AccessFilter.Factory.getAccessFilter(method);
             requestHandlers.add(requestHandler(
-                    componentAdapterFactory.withMethodProvider(componentMetadata),
-                    dependencies,
+                    method,
+                    module,
                     moduleRequestVisitor,
-                    classAccessFilter));
+                    moduleMetadata));
         }
 
     }
 
     private <T> DependencyRequestHandler<T> requestHandler(
+            final Component component,
+            final RequestVisitor moduleRequestVisitor,
+            final ModuleMetadata moduleMetadata) {
+
+        final Qualifier qualifier = qualifierResolver.resolve(
+                component.type()).merge(moduleMetadata.qualifier());
+
+        Class<?> scopeElement = component.scope();
+        if (scopeElement == Component.class) {
+            scopeElement = component.type();
+        }
+        final Scope scope = scopeResolver.resolve(scopeElement);
+
+        final ComponentMetadata<Class<?>> componentMetadata = new ComponentMetadata<Class<?>>() {
+            @Override public Class<?> provider() {
+                return component.type();
+            }
+            @Override public Class<?> providerClass() {
+                return component.type();
+            }
+            @Override public ModuleMetadata moduleMetadata() {
+                return moduleMetadata;
+            }
+            @Override public Qualifier qualifier() {
+                return qualifier;
+            }
+            @Override public Scope scope() {
+                return scope;
+            }
+        };
+
+        final List<Dependency<? super T>> dependencies;
+        Class<? super T>[] targets = Smithy.cloak(component.targets()); // TODO validation
+        if (targets.length == 0) {
+            Dependency<T> dependency = Dependency.from(qualifier, Smithy.<Class<T>>cloak(component.type()));
+            dependencies = Collections.<Dependency<? super T>>singletonList(dependency);
+        } else {
+            dependencies = Dependency.from(qualifier, targets);
+        }
+
+        return requestHandler(
+                componentAdapterFactory.<T>withClassProvider(componentMetadata),
+                dependencies,
+                moduleRequestVisitor,
+                AccessFilter.Factory.getAccessFilter(component.type()));
+    }
+
+    private <T> DependencyRequestHandler<T> requestHandler(
+            final Method method,
+            Class<?> module,
+            final RequestVisitor moduleRequestVisitor,
+            final ModuleMetadata moduleMetadata) {
+
+        int modifiers = method.getModifiers();
+
+        if (!Modifier.isStatic(modifiers)) {
+            throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
+                    + method.getName() + "] in module [" + module.getName() + "] is not static.");
+        }
+
+        if (method.getReturnType().equals(Void.TYPE)) {
+            throw new IllegalArgumentException("A module's provider methods must have a return type.  The method ["
+                    + method.getName() + "] in module [" + module.getName() + "] has a void return type.");
+        }
+
+        final Qualifier qualifier =
+                qualifierResolver.resolve(method).merge(moduleMetadata.qualifier());
+
+        final Scope scope = scopeResolver.resolve(method);
+
+        ComponentMetadata<Method> componentMetadata = new ComponentMetadata<Method>() {
+            @Override public Method provider() {
+                return method;
+            }
+            @Override public Class<?> providerClass() {
+                return method.getDeclaringClass();
+            }
+            @Override public ModuleMetadata moduleMetadata() {
+                return moduleMetadata;
+            }
+            @Override public Qualifier qualifier() {
+                return qualifier;
+            }
+            @Override public Scope scope() {
+                return scope;
+            }
+        };
+
+        // TODO targeted return type check
+        final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
+                Dependency.from(qualifier, method.getGenericReturnType()));
+
+        return requestHandler(
+                componentAdapterFactory.<T>withMethodProvider(componentMetadata),
+                dependencies,
+                moduleRequestVisitor,
+                AccessFilter.Factory.getAccessFilter(method));
+    }
+
+    private <T> DependencyRequestHandler<T> requestHandler(
                                                      final ComponentAdapter<T> componentAdapter,
-                                                     final List<Dependency<?>> targets,
+                                                     final List<Dependency<? super T>> targets,
                                                      final RequestVisitor moduleRequestVisitor,
                                                      final AccessFilter<Class<?>> classAccessFilter) {
 
         return new DependencyRequestHandler<T>() {
             @Override public List<Dependency<? super T>> targets() {
-                return Smithy.cloak(targets); // TODO
+                return targets;
             }
 
             @Override public List<Dependency<?>> dependencies() {
