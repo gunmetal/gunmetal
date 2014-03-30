@@ -24,10 +24,13 @@ import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.spi.Scope;
+import io.gunmetal.spi.Scopes;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -130,8 +133,65 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         }
 
         return new ApplicationContainer() {
-            @Override public ApplicationContainer inject(Object injectionTarget) {
-                throw new UnsupportedOperationException();
+
+            final Map<Class<?>, Injector<?>> injectors = new HashMap<>();
+            final InjectorFactory injectorFactory = new InjectorFactoryImpl(
+                    config.qualifierResolver(),
+                    config.constructorResolver(),
+                    config.classWalker(),
+                    new Linkers() {
+                        @Override public void add(Linker linker, LinkingPhase phase) {
+                            linker.link(internalProvider, ResolutionContext.Factory.create());
+                        }
+                    });
+
+            @Override public <T> ApplicationContainer inject(T injectionTarget) {
+
+                final Class<T> targetClass = Smithy.cloak(injectionTarget.getClass());
+
+                Injector<T> injector = Smithy.cloak(injectors.get(targetClass));
+
+                if (injector == null) {
+                    final Qualifier qualifier = config.qualifierResolver().resolve(targetClass);
+                    injector = injectorFactory.compositeInjector(new ComponentMetadata<Class<?>>() {
+                        @Override public Class<?> provider() {
+                            return targetClass;
+                        }
+
+                        @Override public Class<?> providerClass() {
+                            return targetClass;
+                        }
+
+                        @Override public ModuleMetadata moduleMetadata() {
+                            return new ModuleMetadata() {
+                                @Override public Class<?> moduleClass() {
+                                    return targetClass;
+                                }
+
+                                @Override public Qualifier qualifier() {
+                                    return qualifier;
+                                }
+
+                                @Override public Class<?>[] referencedModules() {
+                                    return new Class<?>[0];
+                                }
+                            };
+                        }
+
+                        @Override public Qualifier qualifier() {
+                            return qualifier;
+                        }
+
+                        @Override public Scope scope() {
+                            return Scopes.UNDEFINED;
+                        }
+                    });
+                    injectors.put(targetClass, injector);
+                }
+
+                injector.inject(injectionTarget, internalProvider, ResolutionContext.Factory.create());
+
+                return this;
             }
 
             @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependency) {

@@ -16,14 +16,16 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.testmocks.A;
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
 import io.gunmetal.Gunmetal;
+import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
+import io.gunmetal.testmocks.A;
+import io.gunmetal.testmocks.F;
 import io.gunmetal.testmocks.NewGunmetalBenchMarkModule2;
 import org.junit.Test;
 
@@ -91,6 +93,18 @@ public class ApplicationBuilderImplTest {
         A a = app.get(Dep2.class);
 
         assert a != app.get(Dep2.class);
+
+        class InjectTest {
+            @Inject
+            F f;
+        }
+
+        InjectTest injectTest = new InjectTest();
+
+        app.inject(injectTest);
+
+        assert injectTest.f != null;
+
     }
 
     @Test(expected = DependencyException.class)
