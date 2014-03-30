@@ -300,9 +300,6 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Qualifier qualifier() {
                     return qualifier;
                 }
-                @Override public List<Dependency<?>> targets() {
-                    return dependencies;
-                }
                 @Override public Scope scope() {
                     return scope;
                 }
@@ -312,6 +309,7 @@ class ModuleParserImpl implements ModuleParser {
 
             requestHandlers.add(requestHandler(
                     componentAdapterFactory.withClassProvider(componentMetadata),
+                    dependencies,
                     moduleRequestVisitor,
                     classAccessFilter));
 
@@ -359,9 +357,6 @@ class ModuleParserImpl implements ModuleParser {
                 @Override public Qualifier qualifier() {
                     return qualifier;
                 }
-                @Override public List<Dependency<?>> targets() {
-                    return dependencies;
-                }
                 @Override public Scope scope() {
                     return scope;
                 }
@@ -370,6 +365,7 @@ class ModuleParserImpl implements ModuleParser {
             final AccessFilter<Class<?>> classAccessFilter = AccessFilter.Factory.getAccessFilter(method);
             requestHandlers.add(requestHandler(
                     componentAdapterFactory.withMethodProvider(componentMetadata),
+                    dependencies,
                     moduleRequestVisitor,
                     classAccessFilter));
         }
@@ -378,12 +374,13 @@ class ModuleParserImpl implements ModuleParser {
 
     private <T> DependencyRequestHandler<T> requestHandler(
                                                      final ComponentAdapter<T> componentAdapter,
+                                                     final List<Dependency<?>> targets,
                                                      final RequestVisitor moduleRequestVisitor,
                                                      final AccessFilter<Class<?>> classAccessFilter) {
+
         return new DependencyRequestHandler<T>() {
-            @Override public List<Dependency<?>> targets() {
-                ComponentMetadata<?> metadata = componentAdapter.metadata();
-                return metadata.targets();
+            @Override public List<Dependency<? super T>> targets() {
+                return Smithy.cloak(targets); // TODO
             }
 
             @Override public List<Dependency<?>> dependencies() {

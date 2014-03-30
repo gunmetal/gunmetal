@@ -88,25 +88,17 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 config.qualifierResolver(),
                 config.scopeResolver());
 
-        final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers
-                = new HashMap<>();
+        final HandlerCache handlerCache = new HandlerCache();
 
         for (Class<?> module : applicationModule.modules()) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers = moduleParser.parse(module);
-            for (DependencyRequestHandler<?> requestHandler : moduleRequestHandlers) {
-                for (Dependency<?> dependency : requestHandler.targets()) {
-                    DependencyRequestHandler<?> previous = requestHandlers.put(dependency, requestHandler);
-                    if (previous != null) {
-                        throw new RuntimeException("more than one of type"); // TODO
-                    }
-                }
-            }
+            handlerCache.putAll(moduleRequestHandlers);
         }
 
         final InternalProvider internalProvider = new InternalProvider() {
             @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
                 final Dependency<T> dependency = dependencyRequest.dependency();
-                DependencyRequestHandler<? extends T> requestHandler = Smithy.cloak(requestHandlers.get(dependency));
+                DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
                 if (requestHandler != null) {
                     return requestHandler
                             .handle(dependencyRequest)
@@ -114,9 +106,9 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                             .getProvisionStrategy();
                 }
                 if (config.isProvider(dependency)) {
-                    requestHandler = createProviderHandler(dependencyRequest, config, this, requestHandlers);
+                    requestHandler = createProviderHandler(dependencyRequest, config, this, handlerCache);
                     if (requestHandler != null) {
-                        requestHandlers.put(dependency, requestHandler);
+                        handlerCache.put(dependency, requestHandler);
                         return requestHandler
                                 .handle(dependencyRequest)
                                 .validateResponse()
@@ -145,12 +137,12 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependency) {
                 Qualifier qualifier = config.qualifierResolver().resolve(dependency);
                 Dependency<T> d = Dependency.from(qualifier, unsafeFirstTypeParam(dependency.getGenericInterfaces()[0]));
-                DependencyRequestHandler<? extends T> requestHandler = Smithy.cloak(requestHandlers.get(d));
+                DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(d);
                 if (requestHandler != null) {
                     return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
                 } else if (config.isProvider(d)) {
                     ProvisionStrategy<T> providerStrategy =
-                            createProviderStrategy(d, config, internalProvider, requestHandlers);
+                            createProviderStrategy(d, config, internalProvider, handlerCache);
                     if (providerStrategy != null) {
                         return providerStrategy.get(internalProvider, ResolutionContext.Factory.create());
                     }
@@ -180,14 +172,14 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         };
     }
 
-    private <T> ProvisionStrategy<T> createProviderStrategy(
+    private <T, C> ProvisionStrategy<T> createProviderStrategy(
             final Dependency<T> providerDependency,
             final Config config,
             final InternalProvider internalProvider,
-            final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers) {
+            final HandlerCache handlerCache) {
         Type type = unsafeFirstTypeParam(providerDependency.typeKey().type());
-        final Dependency<?> componentDependency = Dependency.from(providerDependency.qualifier(), type);
-        final DependencyRequestHandler<?> componentHandler = Smithy.cloak(requestHandlers.get(componentDependency));
+        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), type);
+        final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
         if (componentHandler == null) {
             return null;
         }
@@ -199,12 +191,11 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             final DependencyRequest<T> providerRequest,
             final Config config,
             final InternalProvider internalProvider,
-            final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers) {
+            final HandlerCache handlerCache) {
         Dependency<T> providerDependency = providerRequest.dependency();
         Type type = unsafeFirstTypeParam(providerDependency.typeKey().type());
         final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), type);
-        final DependencyRequestHandler<? extends C> componentHandler =
-                Smithy.cloak(requestHandlers.get(componentDependency));
+        final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
         if (componentHandler == null) {
             return null;
         }
@@ -212,8 +203,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         final ProvisionStrategy<T> providerStrategy =
                 createProviderStrategy(componentStrategy, config, internalProvider);
         return new DependencyRequestHandler<T>() {
-            @Override public List<Dependency<?>> targets() {
-                return Collections.<Dependency<?>>singletonList(providerRequest.dependency());
+            @Override public List<Dependency<? super T>> targets() {
+                return Collections.<Dependency<? super T>>singletonList(providerRequest.dependency());
             }
 
             @Override public List<Dependency<?>> dependencies() {
@@ -243,6 +234,35 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 return providerStrategy;
             }
         };
+
+    }
+
+    private static class HandlerCache {
+
+        final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new HashMap<>();
+
+        void putAll(List<DependencyRequestHandler<?>> requestHandlers) {
+            for (DependencyRequestHandler<?> requestHandler : requestHandlers) {
+                putAll(requestHandler);
+            }
+        }
+
+        <T> void putAll(DependencyRequestHandler<T> requestHandler) {
+            for (Dependency<? super T> dependency : requestHandler.targets()) {
+                put(dependency, requestHandler);
+            }
+        }
+
+        <T> void put(Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler) {
+            DependencyRequestHandler<?> previous = requestHandlers.put(dependency, requestHandler);
+            if (previous != null) {
+                throw new RuntimeException("more than one of type"); // TODO
+            }
+        }
+
+        <T> DependencyRequestHandler<? extends T> get(Dependency<T> dependency) {
+            return Smithy.cloak(requestHandlers.get(dependency));
+        }
 
     }
 

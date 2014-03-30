@@ -27,7 +27,7 @@ import java.util.List;
  */
 interface DependencyRequestHandler<T> {
 
-    List<Dependency<?>> targets();  // TODO ? super T
+    List<Dependency<? super T>> targets();
 
     List<Dependency<?>> dependencies();
 
