@@ -52,27 +52,16 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         final Config config = new ConfigBuilderImpl().build(applicationModule.options());
 
-        final List<Linker> postWiringLinkers = new LinkedList<>();
-        final List<Linker> eagerLinkers = new LinkedList<>();
-        Linkers linkers = new Linkers() {
-            @Override public void add(Linker linker, LinkingPhase phase) {
-                switch (phase) {
-                    case POST_WIRING: postWiringLinkers.add(linker); break;
-                    case EAGER_INSTANTIATION: eagerLinkers.add(linker); break;
-                    default: throw new UnsupportedOperationException("Phase unsupported:  " + phase);
-                }
-
-            }
-        };
+        ApplicationLinker applicationLinker = new ApplicationLinker();
 
         InjectorFactory injectorFactory = new InjectorFactoryImpl(
                 config.qualifierResolver(),
                 config.constructorResolver(),
                 config.classWalker(),
-                linkers);
+                applicationLinker);
 
         final List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
-        strategyDecorators.add(new ScopeDecorator(config.scopeBindings(), linkers));
+        strategyDecorators.add(new ScopeDecorator(config.scopeBindings(), applicationLinker));
         ProvisionStrategyDecorator compositeStrategyDecorator = new ProvisionStrategyDecorator() {
             @Override public <T> ProvisionStrategy<T> decorate(
                     ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy) {
@@ -86,7 +75,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         final ComponentAdapterFactory componentAdapterFactory =
                 new ComponentAdapterFactoryImpl(injectorFactory, compositeStrategyDecorator);
 
-        ModuleParser moduleParser = new ModuleParserImpl(
+        final HandlerFactory handlerFactory = new HandlerFactoryImpl(
                 componentAdapterFactory,
                 config.qualifierResolver(),
                 config.scopeResolver());
@@ -94,7 +83,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         final HandlerCache handlerCache = new HandlerCache();
 
         for (Class<?> module : applicationModule.modules()) {
-            List<DependencyRequestHandler<?>> moduleRequestHandlers = moduleParser.parse(module);
+            List<DependencyRequestHandler<?>> moduleRequestHandlers =
+                    handlerFactory.createHandlersForModule(module);
             handlerCache.putAll(moduleRequestHandlers);
         }
 
@@ -118,19 +108,19 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                                 .getProvisionStrategy();
                     }
                 }
+                requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest);
+                if (requestHandler != null) {
+                    handlerCache.put(dependency, requestHandler);
+                    return requestHandler
+                            .handle(dependencyRequest)
+                            .validateResponse()
+                            .getProvisionStrategy();
+                }
                 throw new DependencyException("missing dependency " + dependency.toString()); // TODO
             }
         };
 
-        ResolutionContext linkingContext = ResolutionContext.Factory.create();
-        for (Linker linker : postWiringLinkers) {
-            linker.link(internalProvider, linkingContext);
-        }
-
-        ResolutionContext eagerContext = ResolutionContext.Factory.create();
-        for (Linker linker : eagerLinkers) {
-            linker.link(internalProvider, eagerContext);
-        }
+        applicationLinker.link(internalProvider, ResolutionContext.Factory.create());
 
         return new ApplicationContainer() {
 
@@ -196,7 +186,9 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
             @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependency) {
                 Qualifier qualifier = config.qualifierResolver().resolve(dependency);
-                Dependency<T> d = Dependency.from(qualifier, unsafeFirstTypeParam(dependency.getGenericInterfaces()[0]));
+                Dependency<T> d = Dependency.from(
+                        qualifier,
+                        unsafeFirstTypeParam(dependency.getGenericInterfaces()[0]));
                 DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(d);
                 if (requestHandler != null) {
                     return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
@@ -301,19 +293,19 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new HashMap<>();
 
-        void putAll(List<DependencyRequestHandler<?>> requestHandlers) {
+        synchronized void putAll(List<DependencyRequestHandler<?>> requestHandlers) {
             for (DependencyRequestHandler<?> requestHandler : requestHandlers) {
                 putAll(requestHandler);
             }
         }
 
-        <T> void putAll(DependencyRequestHandler<T> requestHandler) {
+        synchronized <T> void putAll(DependencyRequestHandler<T> requestHandler) {
             for (Dependency<? super T> dependency : requestHandler.targets()) {
                 put(dependency, requestHandler);
             }
         }
 
-        <T> void put(Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler) {
+        synchronized <T> void put(Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler) {
             DependencyRequestHandler<?> previous = requestHandlers.put(dependency, requestHandler);
             if (previous != null) {
                 throw new RuntimeException("more than one of type"); // TODO
@@ -326,13 +318,34 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
     }
 
+    private static class ApplicationLinker implements Linkers, Linker {
 
+        final List<Linker> postWiringLinkers = new LinkedList<>();
+        final List<Linker> concretePostWiringLinkers = new LinkedList<>();
+        final List<Linker> eagerLinkers = new LinkedList<>();
+        boolean linkingBegun = false;
 
-    //collections - explicit
-    //factories - explicit, anonymous + providers
-    //deconstructed apis - explicit, anonymous + providers
-    //Visitor - Selector  - applicationWalker.walk(new CompositeThingBuilderVisitor());  -  injectable
-    //auto add for concrete dependencies
+        @Override public void add(Linker linker, LinkingPhase phase) {
+            switch (phase) {
+                case POST_WIRING: (linkingBegun ? concretePostWiringLinkers : postWiringLinkers).add(linker); break;
+                case EAGER_INSTANTIATION: eagerLinkers.add(linker); break;
+                default: throw new UnsupportedOperationException("Phase unsupported:  " + phase);
+            }
+        }
 
+        @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
+            linkingBegun = true;
+            for (Linker linker : postWiringLinkers) {
+                linker.link(internalProvider, linkingContext);
+            }
+            for (Linker linker : concretePostWiringLinkers) {
+                linker.link(internalProvider, linkingContext);
+            }
+            for (Linker linker : eagerLinkers) {
+                linker.link(internalProvider, linkingContext);
+            }
+        }
+
+    }
 
 }

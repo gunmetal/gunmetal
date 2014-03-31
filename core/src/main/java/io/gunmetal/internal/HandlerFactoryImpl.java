@@ -28,9 +28,12 @@ import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.Scope;
+import io.gunmetal.spi.Scopes;
+import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,22 +41,21 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class ModuleParserImpl implements ModuleParser {
+class HandlerFactoryImpl implements HandlerFactory {
 
     private final ComponentAdapterFactory componentAdapterFactory;
     private final AnnotationResolver<Qualifier> qualifierResolver;
     private final AnnotationResolver<Scope> scopeResolver;
 
-    ModuleParserImpl(ComponentAdapterFactory componentAdapterFactory,
-                     AnnotationResolver<Qualifier> qualifierResolver,
-                     AnnotationResolver<Scope> scopeResolver) {
+    HandlerFactoryImpl(ComponentAdapterFactory componentAdapterFactory,
+                       AnnotationResolver<Qualifier> qualifierResolver,
+                       AnnotationResolver<Scope> scopeResolver) {
         this.componentAdapterFactory = componentAdapterFactory;
         this.qualifierResolver = qualifierResolver;
         this.scopeResolver = scopeResolver;
     }
 
-    @Override
-    public List<DependencyRequestHandler<?>> parse(final Class<?> module) {
+    @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module) {
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {
             throw new IllegalArgumentException("The module class [" + module.getName()
@@ -68,6 +70,50 @@ class ModuleParserImpl implements ModuleParser {
                 module, requestHandlers, moduleRequestVisitor, moduleMetadata);
         return requestHandlers;
 
+    }
+
+    @Override public <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(
+            final DependencyRequest<T> dependencyRequest) {
+        final Dependency<T> dependency = dependencyRequest.dependency();
+        final TypeKey<T> typeKey = dependency.typeKey();
+        if (!isInstantiable(typeKey.type())) {
+            return null;
+        }
+        final Class<? super T> cls = typeKey.raw();
+        final ModuleMetadata moduleMetadata = new ModuleMetadata() {
+            @Override public Class<?> moduleClass() {
+                return cls;
+            }
+            @Override public Qualifier qualifier() {
+                return dependency.qualifier();
+            }
+            @Override public Class<?>[] referencedModules() {
+                return new Class<?>[0];
+            }
+        };
+        ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
+                new ComponentMetadata<Class<?>>() {
+                    @Override public Class<?> provider() {
+                        return cls;
+                    }
+                    @Override public Class<?> providerClass() {
+                        return cls;
+                    }
+                    @Override public ModuleMetadata moduleMetadata() {
+                        return moduleMetadata;
+                    }
+                    @Override public Qualifier qualifier() {
+                        return dependency.qualifier();
+                    }
+                    @Override public Scope scope() {
+                        return Scopes.UNDEFINED;
+                    }
+                });
+        return requestHandler(
+                componentAdapter,
+                Collections.<Dependency<? super T>>singletonList(dependency),
+                RequestVisitor.NONE,
+                AccessFilter.Factory.getAccessFilter(typeKey.raw()));
     }
 
     private RequestVisitor moduleRequestVisitor(final Class<?> module, final Module moduleAnnotation) {
@@ -426,6 +472,24 @@ class ModuleParserImpl implements ModuleParser {
                 return componentAdapter.provisionStrategy();
             }
         };
+    }
+
+    private boolean isInstantiable(Type type) {
+        if (!(type instanceof Class)) {
+            return false;
+        }
+        Class<?> cls = (Class<?>) type;
+        if (cls.isInterface()
+                || cls.isArray()
+                || cls.isEnum()
+                || cls.isPrimitive()
+                || cls.isSynthetic()
+                //|| cls.isMemberClass()
+                || cls.isAnnotation()) {
+            return false;
+        }
+        int modifiers = cls.getModifiers();
+        return !Modifier.isAbstract(modifiers);
     }
 
     private interface MutableDependencyResponse<T> extends DependencyResponse<T> {

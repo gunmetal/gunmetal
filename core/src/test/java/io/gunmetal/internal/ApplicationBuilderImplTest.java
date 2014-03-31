@@ -46,15 +46,17 @@ public class ApplicationBuilderImplTest {
     static class TestModule {
 
         @io.gunmetal.BlackList.Modules(M.class)
-        class BlackList implements io.gunmetal.BlackList { }
+        static class BlackList implements io.gunmetal.BlackList { }
 
         @Main static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
             return new ApplicationBuilderImplTest();
         }
 
-        static Object test2(Provider<ApplicationBuilderImplTest> test) {
+        static Object test2(Provider<ApplicationBuilderImplTest> test, BlackList blackList) {
             System.out.println(test.get());
             System.out.println(test.get());
+
+            System.out.println(blackList);
             return test.get();
         }
 

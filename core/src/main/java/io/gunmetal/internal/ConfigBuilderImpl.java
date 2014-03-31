@@ -105,6 +105,13 @@ public class ConfigBuilderImpl implements ConfigBuilder {
             @Override public ScopeBindings scopeBindings() {
                 return new ScopeBindings() {
                     @Override public ProviderDecorator decoratorFor(Scope scope) {
+                        if (scope == Scopes.UNDEFINED) {
+                            return new ProviderDecorator() {
+                                @Override public <T> Provider<T> decorate(Object hashKey, Provider<T> provider) {
+                                    return provider;
+                                }
+                            };
+                        }
                         throw new UnsupportedOperationException();
                     }
                 };

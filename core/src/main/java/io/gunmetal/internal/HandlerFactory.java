@@ -16,11 +16,17 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.DependencyRequest;
+
 import java.util.List;
 
 /**
  * @author rees.byars
  */
-interface ModuleParser {
-    List<DependencyRequestHandler<?>> parse(Class<?> module);
+interface HandlerFactory {
+
+    List<DependencyRequestHandler<?>> createHandlersForModule(Class<?> module);
+
+    <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(DependencyRequest<T> dependencyRequest);
+
 }
