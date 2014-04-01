@@ -97,6 +97,11 @@ public class ConfigBuilderImpl implements ConfigBuilder {
             @Override public ConstructorResolver constructorResolver() {
                 return new ConstructorResolver() {
                     @Override public <T> Constructor<T> resolve(Class<T> cls) {
+                        for (Constructor<?> constructor : cls.getDeclaredConstructors()) {
+                            if (constructor.getParameterTypes().length == 0) {
+                                return Smithy.cloak(constructor);
+                            }
+                        }
                         return Smithy.cloak(cls.getDeclaredConstructors()[0]);
                     }
                 };

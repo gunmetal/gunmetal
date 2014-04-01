@@ -32,7 +32,6 @@ import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,7 +74,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             final DependencyRequest<T> dependencyRequest) {
         final Dependency<T> dependency = dependencyRequest.dependency();
         final TypeKey<T> typeKey = dependency.typeKey();
-        if (!isInstantiable(typeKey.type())) {
+        if (!isInstantiable(typeKey.raw())) {
             return null;
         }
         final Class<? super T> cls = typeKey.raw();
@@ -474,17 +473,12 @@ class HandlerFactoryImpl implements HandlerFactory {
         };
     }
 
-    private boolean isInstantiable(Type type) {
-        if (!(type instanceof Class)) {
-            return false;
-        }
-        Class<?> cls = (Class<?>) type;
+    private boolean isInstantiable(Class<?> cls) {
         if (cls.isInterface()
                 || cls.isArray()
                 || cls.isEnum()
                 || cls.isPrimitive()
                 || cls.isSynthetic()
-                //|| cls.isMemberClass()
                 || cls.isAnnotation()) {
             return false;
         }

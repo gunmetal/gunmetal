@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 /**
  * @author rees.byars
@@ -209,8 +210,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
     }
 
     private <T> ProvisionStrategy<T> createProviderStrategy(final ProvisionStrategy<?> componentStrategy,
-                                            final Config config,
-                                            final InternalProvider internalProvider) {
+                                                            final Config config,
+                                                            final InternalProvider internalProvider) {
         final Object provider = config.provider(new Provider<Object>() {
             @Override public Object get() {
                 return componentStrategy.get(
@@ -320,26 +321,20 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
     private static class ApplicationLinker implements Linkers, Linker {
 
-        final List<Linker> postWiringLinkers = new LinkedList<>();
-        final List<Linker> concretePostWiringLinkers = new LinkedList<>();
+        final Stack<Linker> postWiringLinkers = new Stack<>();
         final List<Linker> eagerLinkers = new LinkedList<>();
-        boolean linkingBegun = false;
 
         @Override public void add(Linker linker, LinkingPhase phase) {
             switch (phase) {
-                case POST_WIRING: (linkingBegun ? concretePostWiringLinkers : postWiringLinkers).add(linker); break;
+                case POST_WIRING: postWiringLinkers.push(linker); break;
                 case EAGER_INSTANTIATION: eagerLinkers.add(linker); break;
                 default: throw new UnsupportedOperationException("Phase unsupported:  " + phase);
             }
         }
 
         @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
-            linkingBegun = true;
-            for (Linker linker : postWiringLinkers) {
-                linker.link(internalProvider, linkingContext);
-            }
-            for (Linker linker : concretePostWiringLinkers) {
-                linker.link(internalProvider, linkingContext);
+            while (!postWiringLinkers.empty()) {
+                postWiringLinkers.pop().link(internalProvider, linkingContext);
             }
             for (Linker linker : eagerLinkers) {
                 linker.link(internalProvider, linkingContext);

@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 
 /**
  * @author rees.byars
@@ -41,12 +42,21 @@ public class ApplicationBuilderImplTest {
     @io.gunmetal.Qualifier
     public @interface Main {}
 
-
     @Module(notAccessibleFrom = TestModule.BlackList.class)
     static class TestModule {
 
         @io.gunmetal.BlackList.Modules(M.class)
-        static class BlackList implements io.gunmetal.BlackList { }
+        static class BlackList implements io.gunmetal.BlackList {
+
+            @Inject
+            TestModule testModule;
+
+
+        }
+
+        static TestModule tm(A a, ArrayList<Integer> integers) {
+            return new TestModule();
+        }
 
         @Main static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
             return new ApplicationBuilderImplTest();
