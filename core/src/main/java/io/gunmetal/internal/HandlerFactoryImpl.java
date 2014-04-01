@@ -28,7 +28,6 @@ import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.Scope;
-import io.gunmetal.spi.Scopes;
 import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.Method;
@@ -91,6 +90,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 return new Class<?>[0];
             }
         };
+        final Scope scope = scopeResolver.resolve(cls);
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
                 new ComponentMetadata<Class<?>>() {
                     @Override public Class<?> provider() {
@@ -106,7 +106,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                         return dependency.qualifier();
                     }
                     @Override public Scope scope() {
-                        return Scopes.UNDEFINED;
+                        return scope;
                     }
                 });
         return requestHandler(

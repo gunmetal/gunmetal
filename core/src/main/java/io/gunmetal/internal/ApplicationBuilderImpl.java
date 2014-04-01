@@ -110,7 +110,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 }
                 requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest);
                 if (requestHandler != null) {
-                    handlerCache.put(dependency, requestHandler);
+                    // we do not cache handlers for specific requests - each request gets its own
                     return requestHandler
                             .handle(dependencyRequest)
                             .validateResponse()
