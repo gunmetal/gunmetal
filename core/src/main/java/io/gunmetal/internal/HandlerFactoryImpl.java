@@ -44,13 +44,19 @@ class HandlerFactoryImpl implements HandlerFactory {
     private final ComponentAdapterFactory componentAdapterFactory;
     private final AnnotationResolver<Qualifier> qualifierResolver;
     private final AnnotationResolver<Scope> scopeResolver;
+    private final AnnotationResolver<Boolean> overrideResolver;
+    private final AnnotationResolver<Dependency.Kind> kindResolver;
 
     HandlerFactoryImpl(ComponentAdapterFactory componentAdapterFactory,
                        AnnotationResolver<Qualifier> qualifierResolver,
-                       AnnotationResolver<Scope> scopeResolver) {
+                       AnnotationResolver<Scope> scopeResolver,
+                       AnnotationResolver<Boolean> overrideResolver,
+                       AnnotationResolver<Dependency.Kind> kindResolver) {
         this.componentAdapterFactory = componentAdapterFactory;
         this.qualifierResolver = qualifierResolver;
         this.scopeResolver = scopeResolver;
+        this.overrideResolver = overrideResolver;
+        this.kindResolver = kindResolver;
     }
 
     @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module) {
@@ -400,11 +406,6 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is not static.");
         }
 
-        if (method.getReturnType().equals(Void.TYPE)) {
-            throw new IllegalArgumentException("A module's provider methods must have a return type.  The method ["
-                    + method.getName() + "] in module [" + module.getName() + "] has a void return type.");
-        }
-
         final Qualifier qualifier =
                 qualifierResolver.resolve(method).merge(moduleMetadata.qualifier());
 
@@ -445,7 +446,10 @@ class HandlerFactoryImpl implements HandlerFactory {
                                                      final RequestVisitor moduleRequestVisitor,
                                                      final AccessFilter<Class<?>> classAccessFilter) {
 
+        final boolean overrideEnabled = overrideResolver.resolve(componentAdapter.metadata().provider());
+
         return new DependencyRequestHandler<T>() {
+
             @Override public List<Dependency<? super T>> targets() {
                 return targets;
             }
@@ -469,6 +473,10 @@ class HandlerFactoryImpl implements HandlerFactory {
 
             @Override public ProvisionStrategy<T> force() {
                 return componentAdapter.provisionStrategy();
+            }
+
+            @Override public boolean isOverrideEnabled() {
+                return overrideEnabled;
             }
         };
     }

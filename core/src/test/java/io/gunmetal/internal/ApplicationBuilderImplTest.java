@@ -22,6 +22,7 @@ import io.gunmetal.Gunmetal;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
+import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.testmocks.A;
@@ -42,8 +43,23 @@ public class ApplicationBuilderImplTest {
     @io.gunmetal.Qualifier
     public @interface Main {}
 
+    interface Bad { }
+
+    static class Circ implements Bad {
+        @Inject Bad providedCirc;
+        @Inject ApplicationBuilderImplTest applicationBuilderImplTest;
+    }
+
     @Module(notAccessibleFrom = TestModule.BlackList.class)
     static class TestModule {
+
+        static Bad providedCirc(Provider<Circ> circProvider) {
+            return circProvider.get();
+        }
+
+        @Prototype static Circ circ() {
+            return new Circ();
+        }
 
         @io.gunmetal.BlackList.Modules(M.class)
         static class BlackList implements io.gunmetal.BlackList {
@@ -54,7 +70,17 @@ public class ApplicationBuilderImplTest {
 
         }
 
-        static TestModule tm(A a, ArrayList<Integer> integers) {
+
+        static void routine(BlackList blackList) {
+            System.out.println("routineeee" + blackList);
+        }
+
+
+        @OverrideEnabled static TestModule tm(ArrayList<Integer> integers) {
+            return new TestModule();
+        }
+
+        static TestModule tmO() {
             return new TestModule();
         }
 
@@ -95,6 +121,18 @@ public class ApplicationBuilderImplTest {
         class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
 
         ApplicationBuilderImplTest test = app.get(Dep.class);
+
+        class BadDep implements io.gunmetal.Dependency<Circ> { }
+
+        Bad b = app.get(BadDep.class);
+
+        Bad b2 = app.get(BadDep.class);
+
+        Bad b3 = app.get(BadDep.class);
+
+        assert b != app.get(BadDep.class);
+
+        assert ((Circ) b).providedCirc != app.get(BadDep.class);
 
         assert test != this;
 

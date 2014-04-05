@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014.
+ * Copyright (c) 2013.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,18 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal;
 
-import io.gunmetal.spi.Dependency;
-import io.gunmetal.spi.DependencyRequest;
-import io.gunmetal.spi.ProvisionStrategy;
-
-import java.util.List;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author rees.byars
  */
-interface DependencyRequestHandler<T> {
-
-    List<Dependency<? super T>> targets();
-
-    List<Dependency<?>> dependencies();
-
-    DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest);
-
-    ProvisionStrategy<T> force();
-
-    boolean isOverrideEnabled();
-
-}
+@Target({ ElementType.TYPE, ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface OverrideEnabled { }

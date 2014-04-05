@@ -26,11 +26,29 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-public abstract class Dependency<T> {
+public final class Dependency<T> {
 
-    public abstract Qualifier qualifier();
+    private final Qualifier qualifier;
+    private final TypeKey<T> typeKey;
+    private final Kind kind;
 
-    public abstract TypeKey<T> typeKey();
+    private Dependency(Qualifier qualifier, TypeKey<T> typeKey, Kind kind) {
+        this.qualifier = qualifier;
+        this.typeKey = typeKey;
+        this.kind = kind;
+    }
+
+    public Kind kind() {
+        return kind;
+    }
+
+    public Qualifier qualifier() {
+        return qualifier;
+    }
+
+    public TypeKey<T> typeKey() {
+        return typeKey;
+    }
 
     @Override public int hashCode() {
         return typeKey().hashCode() * 67 + qualifier().hashCode();
@@ -54,38 +72,22 @@ public abstract class Dependency<T> {
 
     public static <T> Dependency<T> from(final Qualifier qualifier, Class<T> cls) {
         final TypeKey<T> typeKey = Types.typeKey(cls);
-        return new Dependency<T>() {
-            @Override public Qualifier qualifier() {
-                return qualifier;
-            }
-            @Override public TypeKey<T> typeKey() {
-                return typeKey;
-            }
-        };
+        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<T>() {
-            @Override public Qualifier qualifier() {
-                return qualifier;
-            }
-            @Override public TypeKey<T> typeKey() {
-                return typeKey;
-            }
-        };
+        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
+    }
+
+    public static <T> Dependency<T> from(final Qualifier qualifier, Type type, Kind kind) {
+        final TypeKey<T> typeKey = Types.typeKey(type);
+        return new Dependency<>(qualifier, typeKey, kind);
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, ParameterizedType type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<T>() {
-            @Override public Qualifier qualifier() {
-                return qualifier;
-            }
-            @Override public TypeKey<T> typeKey() {
-                return typeKey;
-            }
-        };
+        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
     }
 
     public static <T> List<Dependency<? super T>> from(final Qualifier qualifier, Class<? super T>[] classes) {
@@ -97,6 +99,9 @@ public abstract class Dependency<T> {
         return dependencies;
     }
 
+    public enum Kind {
+        STANDARD, COLLECTION_ELEMENT, COLLECTION, STARTUP_ROUTINE, CALLABLE_ROUTINE
+    }
 
     private static final class Types {
 

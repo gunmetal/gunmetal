@@ -18,7 +18,9 @@ package io.gunmetal.internal;
 
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
+import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Provider;
+import io.gunmetal.spi.AnnotationResolver;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
@@ -32,12 +34,12 @@ import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.Scopes;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -79,7 +81,18 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         final HandlerFactory handlerFactory = new HandlerFactoryImpl(
                 componentAdapterFactory,
                 config.qualifierResolver(),
-                config.scopeResolver());
+                config.scopeResolver(),
+                // TODO move to config
+                new AnnotationResolver<Boolean>() {
+                    @Override public Boolean resolve(AnnotatedElement annotatedElement) {
+                        return annotatedElement.isAnnotationPresent(OverrideEnabled.class);
+                    }
+                },
+                new AnnotationResolver<Dependency.Kind>() {
+                    @Override public Dependency.Kind resolve(AnnotatedElement annotatedElement) {
+                        throw new UnsupportedOperationException();
+                    }
+                });
 
         final HandlerCache handlerCache = new HandlerCache();
 
@@ -185,17 +198,19 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 return this;
             }
 
-            @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependency) {
-                Qualifier qualifier = config.qualifierResolver().resolve(dependency);
-                Dependency<T> d = Dependency.from(
+            @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
+                Qualifier qualifier = config.qualifierResolver().resolve(dependencySpec);
+                Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
+                Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
+                Dependency<T> dependency = Dependency.from(
                         qualifier,
-                        unsafeFirstTypeParam(dependency.getGenericInterfaces()[0]));
-                DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(d);
+                        dependencyType);
+                DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
                 if (requestHandler != null) {
                     return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
-                } else if (config.isProvider(d)) {
+                } else if (config.isProvider(dependency)) {
                     ProvisionStrategy<T> providerStrategy =
-                            createProviderStrategy(d, config, internalProvider, handlerCache);
+                            createProviderStrategy(dependency, config, internalProvider, handlerCache);
                     if (providerStrategy != null) {
                         return providerStrategy.get(internalProvider, ResolutionContext.Factory.create());
                     }
@@ -205,18 +220,34 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         };
     }
 
-    private Type unsafeFirstTypeParam(Type type) {
-        return ((ParameterizedType) type).getActualTypeArguments()[0];
-    }
-
     private <T> ProvisionStrategy<T> createProviderStrategy(final ProvisionStrategy<?> componentStrategy,
                                                             final Config config,
                                                             final InternalProvider internalProvider) {
         final Object provider = config.provider(new Provider<Object>() {
+
+            // TODO this is a hack for issue #2 :/
+            final ThreadLocal<ResolutionContext> contextThreadLocal = new ThreadLocal<>();
+
             @Override public Object get() {
-                return componentStrategy.get(
-                        internalProvider, ResolutionContext.Factory.create());
+
+                ResolutionContext context = contextThreadLocal.get();
+
+                if (context != null) {
+                    return componentStrategy.get(
+                            internalProvider, context);
+                }
+
+                try {
+                    context = ResolutionContext.Factory.create();
+                    contextThreadLocal.set(context);
+                    return componentStrategy.get(
+                            internalProvider, context);
+                } finally {
+                    contextThreadLocal.remove();
+                }
+
             }
+
         });
         return new ProvisionStrategy<T>() {
             @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
@@ -230,8 +261,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             final Config config,
             final InternalProvider internalProvider,
             final HandlerCache handlerCache) {
-        Type type = unsafeFirstTypeParam(providerDependency.typeKey().type());
-        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), type);
+        Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
+        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
         final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
         if (componentHandler == null) {
             return null;
@@ -246,8 +277,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             final InternalProvider internalProvider,
             final HandlerCache handlerCache) {
         Dependency<T> providerDependency = providerRequest.dependency();
-        Type type = unsafeFirstTypeParam(providerDependency.typeKey().type());
-        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), type);
+        Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
+        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
         final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
         if (componentHandler == null) {
             return null;
@@ -286,6 +317,10 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             @Override public ProvisionStrategy<T> force() {
                 return providerStrategy;
             }
+
+            @Override public boolean isOverrideEnabled() {
+                return componentHandler.isOverrideEnabled();
+            }
         };
 
     }
@@ -307,9 +342,20 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         }
 
         synchronized <T> void put(Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler) {
-            DependencyRequestHandler<?> previous = requestHandlers.put(dependency, requestHandler);
+            DependencyRequestHandler<?> previous = requestHandlers.get(dependency);
             if (previous != null) {
-                throw new RuntimeException("more than one of type"); // TODO
+                // TODO better messages.
+                // TODO This could randomly pass/fail in case of multiple non-override enabled
+                // TODO handlers with a single enabled handler.  Low priority.
+                if (previous.isOverrideEnabled() && requestHandler.isOverrideEnabled()) {
+                    throw new RuntimeException("more than one of type with override enabled");
+                } else if (!previous.isOverrideEnabled() && !requestHandler.isOverrideEnabled()) {
+                    throw new RuntimeException("more than one of type without override enabled");
+                } else if (requestHandler.isOverrideEnabled()) {
+                    requestHandlers.put(dependency, requestHandler);
+                } // else keep previous
+            } else {
+                requestHandlers.put(dependency, requestHandler);
             }
         }
 
@@ -322,7 +368,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
     private static class ApplicationLinker implements Linkers, Linker {
 
         final Stack<Linker> postWiringLinkers = new Stack<>();
-        final List<Linker> eagerLinkers = new LinkedList<>();
+        final Stack<Linker> eagerLinkers = new Stack<>();
 
         @Override public void add(Linker linker, LinkingPhase phase) {
             switch (phase) {
@@ -336,8 +382,8 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             while (!postWiringLinkers.empty()) {
                 postWiringLinkers.pop().link(internalProvider, linkingContext);
             }
-            for (Linker linker : eagerLinkers) {
-                linker.link(internalProvider, linkingContext);
+            while (!eagerLinkers.empty()) {
+                eagerLinkers.pop().link(internalProvider, linkingContext);
             }
         }
 
