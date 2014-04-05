@@ -97,6 +97,11 @@ public class ConfigBuilderImpl implements ConfigBuilder {
             @Override public ConstructorResolver constructorResolver() {
                 return new ConstructorResolver() {
                     @Override public <T> Constructor<T> resolve(Class<T> cls) {
+                        for (Constructor<?> constructor : cls.getDeclaredConstructors()) {
+                            if (constructor.getParameterTypes().length == 0) {
+                                return Smithy.cloak(constructor);
+                            }
+                        }
                         return Smithy.cloak(cls.getDeclaredConstructors()[0]);
                     }
                 };
@@ -105,6 +110,13 @@ public class ConfigBuilderImpl implements ConfigBuilder {
             @Override public ScopeBindings scopeBindings() {
                 return new ScopeBindings() {
                     @Override public ProviderDecorator decoratorFor(Scope scope) {
+                        if (scope == Scopes.UNDEFINED) {
+                            return new ProviderDecorator() {
+                                @Override public <T> Provider<T> decorate(Object hashKey, Provider<T> provider) {
+                                    return provider;
+                                }
+                            };
+                        }
                         throw new UnsupportedOperationException();
                     }
                 };

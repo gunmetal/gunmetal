@@ -24,6 +24,7 @@ import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -58,7 +59,20 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     @Override public <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata) {
         Instantiator<T> instantiator =
                 injectorFactory.methodInstantiator(componentMetadata);
-        Injector<T> postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
+        Injector<T> postInjector;
+        // TODO probably the wrong approach here ;)
+        if (componentMetadata.provider().getReturnType() == void.class) {
+            postInjector = new Injector<T>() {
+                @Override public Object inject(T target, InternalProvider internalProvider, ResolutionContext resolutionContext) {
+                    return null;
+                }
+                @Override public List<Dependency<?>> dependencies() {
+                    return Collections.emptyList();
+                }
+            };
+        } else {
+            postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
+        }
         ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector));
@@ -69,7 +83,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 postInjector);
     }
 
-    private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata componentMetadata,
+    private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata<?> componentMetadata,
                                                      final Instantiator<T> instantiator,
                                                      final Injector<T> injector) {
         return new ProvisionStrategy<T>() {
@@ -111,7 +125,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     private <T> ComponentAdapter<T> componentAdapter(
             final ComponentMetadata<?> metadata,
             final ProvisionStrategy<T> provisionStrategy,
-            final Instantiator instantiator,
+            final Instantiator<T> instantiator,
             final Injector<T> injector) {
         return new ComponentAdapter<T>() {
             @Override public ComponentMetadata metadata() {

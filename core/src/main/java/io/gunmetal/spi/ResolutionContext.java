@@ -41,13 +41,13 @@ public interface ResolutionContext {
 
         private static class ResolutionContextImpl implements ResolutionContext {
 
-            private final Map<ProvisionStrategy, ProvisionContext> contextMap = new HashMap<>();
+            private final Map<ProvisionStrategy<?>, ProvisionContext<?>> contextMap = new HashMap<>();
 
             @Override
             public <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy) {
 
                 @SuppressWarnings("unchecked")
-                ProvisionContext<T> strategyContext = contextMap.get(strategy);
+                ProvisionContext<T> strategyContext = (ProvisionContext<T>) contextMap.get(strategy);
 
                 if (strategyContext == null) {
                     strategyContext = new ProvisionContext<>();

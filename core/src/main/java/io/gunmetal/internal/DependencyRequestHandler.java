@@ -27,12 +27,14 @@ import java.util.List;
  */
 interface DependencyRequestHandler<T> {
 
-    List<Dependency<?>> targets(); // TODO ? super T
+    List<Dependency<? super T>> targets();
 
     List<Dependency<?>> dependencies();
 
-    DependencyResponse<T> handle(DependencyRequest dependencyRequest);
+    DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest);
 
     ProvisionStrategy<T> force();
+
+    boolean isOverrideEnabled();
 
 }

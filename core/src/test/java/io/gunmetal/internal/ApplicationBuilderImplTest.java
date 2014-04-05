@@ -16,18 +16,23 @@
 
 package io.gunmetal.internal;
 
-import com.github.overengineer.gunmetal.testmocks.A;
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
 import io.gunmetal.Gunmetal;
+import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
+import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
+import io.gunmetal.testmocks.A;
+import io.gunmetal.testmocks.F;
+import io.gunmetal.testmocks.NewGunmetalBenchMarkModule2;
 import org.junit.Test;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 
 /**
  * @author rees.byars
@@ -38,20 +43,56 @@ public class ApplicationBuilderImplTest {
     @io.gunmetal.Qualifier
     public @interface Main {}
 
+    interface Bad { }
+
+    static class Circ implements Bad {
+        @Inject Bad providedCirc;
+        @Inject ApplicationBuilderImplTest applicationBuilderImplTest;
+    }
 
     @Module(notAccessibleFrom = TestModule.BlackList.class)
     static class TestModule {
 
+        static Bad providedCirc(Provider<Circ> circProvider) {
+            return circProvider.get();
+        }
+
+        @Prototype static Circ circ() {
+            return new Circ();
+        }
+
         @io.gunmetal.BlackList.Modules(M.class)
-        class BlackList implements io.gunmetal.BlackList { }
+        static class BlackList implements io.gunmetal.BlackList {
+
+            @Inject
+            TestModule testModule;
+
+
+        }
+
+
+        static void routine(BlackList blackList) {
+            System.out.println("routineeee" + blackList);
+        }
+
+
+        @OverrideEnabled static TestModule tm(ArrayList<Integer> integers) {
+            return new TestModule();
+        }
+
+        static TestModule tmO() {
+            return new TestModule();
+        }
 
         @Main static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
             return new ApplicationBuilderImplTest();
         }
 
-        static Object test2(Provider<ApplicationBuilderImplTest> test) {
+        static Object test2(Provider<ApplicationBuilderImplTest> test, BlackList blackList) {
             System.out.println(test.get());
             System.out.println(test.get());
+
+            System.out.println(blackList);
             return test.get();
         }
 
@@ -81,6 +122,18 @@ public class ApplicationBuilderImplTest {
 
         ApplicationBuilderImplTest test = app.get(Dep.class);
 
+        class BadDep implements io.gunmetal.Dependency<Circ> { }
+
+        Bad b = app.get(BadDep.class);
+
+        Bad b2 = app.get(BadDep.class);
+
+        Bad b3 = app.get(BadDep.class);
+
+        assert b != app.get(BadDep.class);
+
+        assert ((Circ) b).providedCirc != app.get(BadDep.class);
+
         assert test != this;
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
@@ -90,9 +143,21 @@ public class ApplicationBuilderImplTest {
         A a = app.get(Dep2.class);
 
         assert a != app.get(Dep2.class);
+
+        class InjectTest {
+            @Inject
+            F f;
+        }
+
+        InjectTest injectTest = new InjectTest();
+
+        app.inject(injectTest);
+
+        assert injectTest.f != null;
+
     }
 
-    @Test(expected = IllegalAccessError.class)
+    @Test(expected = DependencyException.class)
     public void testBlackList() {
 
         @ApplicationModule(modules = { TestModule.class, M.class })

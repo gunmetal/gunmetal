@@ -24,14 +24,15 @@ import io.gunmetal.spi.ProvisionStrategy;
  */
 class CircularReferenceException extends RuntimeException {
 
-    private final ComponentMetadata metadata;
+    private static final long serialVersionUID = -7837281223529967792L;
+    private final ComponentMetadata<?> metadata;
     private ProvisionStrategy<?> reverseStrategy;
 
-    CircularReferenceException(ComponentMetadata metadata) {
+    CircularReferenceException(ComponentMetadata<?> metadata) {
         this.metadata = metadata;
     }
 
-    public ComponentMetadata metadata() {
+    public ComponentMetadata<?> metadata() {
         return metadata;
     }
 

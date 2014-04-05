@@ -17,7 +17,6 @@
 package io.gunmetal.spi;
 
 import java.lang.reflect.AnnotatedElement;
-import java.util.List;
 
 /**
  * @author rees.byars
@@ -31,8 +30,6 @@ public abstract class ComponentMetadata<P extends AnnotatedElement> {
     public abstract ModuleMetadata moduleMetadata();
 
     public abstract Qualifier qualifier();
-
-    public abstract List<Dependency<?>> targets();
 
     public abstract Scope scope();
 

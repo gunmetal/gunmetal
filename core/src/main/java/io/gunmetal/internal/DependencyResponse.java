@@ -27,7 +27,7 @@ interface DependencyResponse<T> {
 
     interface ValidatedDependencyResponse<T> extends DependencyResponse<T> {
 
-        ProvisionStrategy<T> getProvisionStrategy();
+        ProvisionStrategy<? extends T> getProvisionStrategy();
 
     }
 

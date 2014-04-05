@@ -11,13 +11,13 @@
         <version>7</version>
     </parent>
 
-    <groupId>com.github.overengineer.gunmetal</groupId>
+    <groupId>io.gunmetal</groupId>
     <artifactId>parent</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1-BETA-SNAPSHOT</version>
 
     <name>gunmetal</name>
-    <description>A sleek JSR-330 dependency injection and application modularity library for Java.</description>
+    <description>A JSR-330 dependency injection and application modularity library for Java.</description>
     <url>https://github.com/overengineer/gunmetal</url>
     <inceptionYear>2013</inceptionYear>
 
@@ -64,13 +64,13 @@
         <dependencies>
 
             <dependency>
-                <groupId>com.github.overengineer.gunmetal</groupId>
+                <groupId>io.gunmetal</groupId>
                 <artifactId>compiler</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>com.github.overengineer.gunmetal</groupId>
+                <groupId>io.gunmetal</groupId>
                 <artifactId>core</artifactId>
                 <version>${project.version}</version>
             </dependency>

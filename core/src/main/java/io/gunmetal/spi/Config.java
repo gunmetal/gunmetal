@@ -28,5 +28,5 @@ public interface Config {
     ConstructorResolver constructorResolver();
     ScopeBindings scopeBindings();
     boolean isProvider(Dependency<?> dependency);
-    Object provider(Provider provider);
+    Object provider(Provider<?> provider);
 }

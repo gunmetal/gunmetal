@@ -60,7 +60,7 @@ class InjectorFactoryImpl implements InjectorFactory {
         this.linkers = linkers;
     }
 
-    @Override public StaticInjector staticInjector(final Method method, final ComponentMetadata componentMetadata) {
+    @Override public StaticInjector staticInjector(final Method method, final ComponentMetadata<?> componentMetadata) {
         final ParameterizedFunctionInvoker invoker = eagerInvoker(
                 new MethodFunction(method),
                 componentMetadata);
@@ -236,9 +236,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                 new MethodFunction(componentMetadata.provider()),
                 componentMetadata);
         return new Instantiator<T>() {
-            @SuppressWarnings("unchecked")
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-                return (T) invoker.invoke(null, provider, resolutionContext);
+                return Smithy.cloak(invoker.invoke(null, provider, resolutionContext));
             }
             @Override public List<Dependency<?>> dependencies() {
                 return invoker.dependencies();
@@ -248,9 +247,9 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     private ParameterizedFunctionInvoker eagerInvoker(final ParameterizedFunction function,
                                                         final ComponentMetadata<?> metadata) {
-        final Dependency<?>[] dependencies = new Dependency[function.getParameterTypes().length];
+        final Dependency<?>[] dependencies = new Dependency<?>[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
-            dependencies[i] = new Parameter(function, i).asDependency();
+            dependencies[i] = new Parameter<>(function, i).asDependency();
         }
         return new ParameterizedFunctionInvoker() {
             final ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
@@ -284,9 +283,9 @@ class InjectorFactoryImpl implements InjectorFactory {
     private ParameterizedFunctionInvoker lazyInvoker(final ParameterizedFunction function,
                                                              final ComponentMetadata<?> metadata,
                                                              final InternalProvider internalProvider) {
-        final Dependency<?>[] dependencies = new Dependency[function.getParameterTypes().length];
+        final Dependency<?>[] dependencies = new Dependency<?>[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
-            dependencies[i] = new Parameter(function, i).asDependency();
+            dependencies[i] = new Parameter<>(function, i).asDependency();
         }
         return new ParameterizedFunctionInvoker() {
             final ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];

@@ -24,7 +24,7 @@ import io.gunmetal.spi.ProvisionStrategy;
  */
 interface ComponentAdapter<T> extends Dependent {
 
-    ComponentMetadata metadata();
+    ComponentMetadata<?> metadata();
 
     ProvisionStrategy<T> provisionStrategy();
 
