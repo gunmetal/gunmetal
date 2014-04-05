@@ -65,7 +65,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             postInjector = new Injector<T>() {
                 @Override public Object inject(T target, InternalProvider internalProvider, ResolutionContext resolutionContext) {
                     return null;
-                }@Override public List<Dependency<?>> dependencies() {
+                }
+                @Override public List<Dependency<?>> dependencies() {
                     return Collections.emptyList();
                 }
             };
