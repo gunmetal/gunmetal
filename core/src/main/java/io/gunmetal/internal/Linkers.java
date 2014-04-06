@@ -20,5 +20,13 @@ package io.gunmetal.internal;
  * @author rees.byars
  */
 interface Linkers {
-    void add(Linker linker, LinkingPhase phase);
+
+    void add(WiringLinker linker);
+
+    void add(EagerLinker linker);
+
+    interface WiringLinker extends Linker { }
+
+    interface EagerLinker extends Linker { }
+
 }

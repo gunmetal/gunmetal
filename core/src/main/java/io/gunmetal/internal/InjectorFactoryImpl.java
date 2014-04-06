@@ -84,13 +84,13 @@ class InjectorFactoryImpl implements InjectorFactory {
                     ProvisionStrategy<?> provisionStrategy;
                     {
                         field.setAccessible(true);
-                        linkers.add(new Linker() {
+                        linkers.add(new Linkers.WiringLinker() {
                             @Override public void link(InternalProvider internalProvider,
                                                        ResolutionContext linkingContext) {
                                 provisionStrategy = internalProvider.getProvisionStrategy(
                                         DependencyRequest.Factory.create(componentMetadata, dependency));
                             }
-                        }, LinkingPhase.POST_WIRING);
+                        });
                     }
                     @Override public Object inject(T target, InternalProvider internalProvider,
                                                    ResolutionContext resolutionContext) {
@@ -254,14 +254,14 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new ParameterizedFunctionInvoker() {
             final ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
             {
-                linkers.add(new Linker() {
+                linkers.add(new Linkers.WiringLinker() {
                     @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
                         for (int i = 0; i < dependencies.length; i++) {
                             provisionStrategies[i] = internalProvider.getProvisionStrategy(
                                     DependencyRequest.Factory.create(metadata, dependencies[i]));
                         }
                     }
-                }, LinkingPhase.POST_WIRING);
+                });
             }
             @Override public Object invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 Object[] parameters = new Object[provisionStrategies.length];

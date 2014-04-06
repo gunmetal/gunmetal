@@ -55,11 +55,11 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
             return new ProvisionStrategy<T>() {
                 volatile T singleton;
                 {
-                    linkers.add(new Linker() {
+                    linkers.add(new Linkers.EagerLinker() {
                         @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
                             get(internalProvider, linkingContext);
                         }
-                    }, LinkingPhase.EAGER_INSTANTIATION);
+                    });
                 }
                 @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                     if (singleton == null) {

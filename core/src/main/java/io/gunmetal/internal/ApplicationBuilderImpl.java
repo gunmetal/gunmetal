@@ -144,7 +144,10 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                     config.constructorResolver(),
                     config.classWalker(),
                     new Linkers() {
-                        @Override public void add(Linker linker, LinkingPhase phase) {
+                        @Override public void add(WiringLinker linker) {
+                            linker.link(internalProvider, ResolutionContext.Factory.create());
+                        }
+                        @Override public void add(EagerLinker linker) {
                             linker.link(internalProvider, ResolutionContext.Factory.create());
                         }
                     });
@@ -367,15 +370,15 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
     private static class ApplicationLinker implements Linkers, Linker {
 
-        final Stack<Linker> postWiringLinkers = new Stack<>();
-        final Stack<Linker> eagerLinkers = new Stack<>();
+        final Stack<WiringLinker> postWiringLinkers = new Stack<>();
+        final Stack<EagerLinker> eagerLinkers = new Stack<>();
 
-        @Override public void add(Linker linker, LinkingPhase phase) {
-            switch (phase) {
-                case POST_WIRING: postWiringLinkers.push(linker); break;
-                case EAGER_INSTANTIATION: eagerLinkers.add(linker); break;
-                default: throw new UnsupportedOperationException("Phase unsupported:  " + phase);
-            }
+        @Override public void add(WiringLinker linker) {
+            postWiringLinkers.add(linker);
+        }
+
+        @Override public void add(EagerLinker linker) {
+            eagerLinkers.add(linker);
         }
 
         @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
