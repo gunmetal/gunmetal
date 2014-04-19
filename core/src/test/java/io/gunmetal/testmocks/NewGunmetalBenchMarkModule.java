@@ -60,7 +60,7 @@ public class NewGunmetalBenchMarkModule {
         return new E(f);
     }
 
-    @Prototype static F f(G g) {
+    @Prototype public static F f(G g) {
         return new F(g);
     }
 

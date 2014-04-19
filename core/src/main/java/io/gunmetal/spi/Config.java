@@ -24,7 +24,7 @@ import io.gunmetal.Provider;
 public interface Config {
     ClassWalker classWalker();
     AnnotationResolver<Qualifier> qualifierResolver();
-    AnnotationResolver<Scope> scopeResolver();
+    ComponentMetadataResolver componentMetadataResolver();
     ConstructorResolver constructorResolver();
     ScopeBindings scopeBindings();
     boolean isProvider(Dependency<?> dependency);

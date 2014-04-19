@@ -18,9 +18,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
-import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Provider;
-import io.gunmetal.spi.AnnotationResolver;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
@@ -31,10 +29,7 @@ import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
-import io.gunmetal.spi.Scope;
-import io.gunmetal.spi.Scopes;
 
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -81,18 +76,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         final HandlerFactory handlerFactory = new HandlerFactoryImpl(
                 componentAdapterFactory,
                 config.qualifierResolver(),
-                config.scopeResolver(),
-                // TODO move to config
-                new AnnotationResolver<Boolean>() {
-                    @Override public Boolean resolve(AnnotatedElement annotatedElement) {
-                        return annotatedElement.isAnnotationPresent(OverrideEnabled.class);
-                    }
-                },
-                new AnnotationResolver<Dependency.Kind>() {
-                    @Override public Dependency.Kind resolve(AnnotatedElement annotatedElement) {
-                        throw new UnsupportedOperationException();
-                    }
-                });
+                config.componentMetadataResolver());
 
         final HandlerCache handlerCache = new HandlerCache();
 
@@ -160,39 +144,22 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
                 if (injector == null) {
                     final Qualifier qualifier = config.qualifierResolver().resolve(targetClass);
-                    injector = injectorFactory.compositeInjector(new ComponentMetadata<Class<?>>() {
-                        @Override public Class<?> provider() {
-                            return targetClass;
-                        }
+                    injector = injectorFactory.compositeInjector(
+                            config.componentMetadataResolver().resolveMetadata(
+                                    targetClass,
+                                    new ModuleMetadata() {
+                                        @Override public Class<?> moduleClass() {
+                                            return targetClass;
+                                        }
 
-                        @Override public Class<?> providerClass() {
-                            return targetClass;
-                        }
+                                        @Override public Qualifier qualifier() {
+                                            return qualifier;
+                                        }
 
-                        @Override public ModuleMetadata moduleMetadata() {
-                            return new ModuleMetadata() {
-                                @Override public Class<?> moduleClass() {
-                                    return targetClass;
-                                }
-
-                                @Override public Qualifier qualifier() {
-                                    return qualifier;
-                                }
-
-                                @Override public Class<?>[] referencedModules() {
-                                    return new Class<?>[0];
-                                }
-                            };
-                        }
-
-                        @Override public Qualifier qualifier() {
-                            return qualifier;
-                        }
-
-                        @Override public Scope scope() {
-                            return Scopes.UNDEFINED;
-                        }
-                    });
+                                        @Override public Class<?>[] referencedModules() {
+                                            return new Class<?>[0];
+                                        }
+                                    }));
                     injectors.put(targetClass, injector);
                 }
 

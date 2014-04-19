@@ -17,17 +17,16 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.BlackList;
-import io.gunmetal.Component;
 import io.gunmetal.Module;
 import io.gunmetal.WhiteList;
 import io.gunmetal.spi.AnnotationResolver;
 import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ComponentMetadataResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
-import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.Method;
@@ -43,20 +42,14 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     private final ComponentAdapterFactory componentAdapterFactory;
     private final AnnotationResolver<Qualifier> qualifierResolver;
-    private final AnnotationResolver<Scope> scopeResolver;
-    private final AnnotationResolver<Boolean> overrideResolver;
-    private final AnnotationResolver<Dependency.Kind> kindResolver;
+    private final ComponentMetadataResolver componentMetadataResolver;
 
     HandlerFactoryImpl(ComponentAdapterFactory componentAdapterFactory,
                        AnnotationResolver<Qualifier> qualifierResolver,
-                       AnnotationResolver<Scope> scopeResolver,
-                       AnnotationResolver<Boolean> overrideResolver,
-                       AnnotationResolver<Dependency.Kind> kindResolver) {
+                       ComponentMetadataResolver componentMetadataResolver) {
         this.componentAdapterFactory = componentAdapterFactory;
         this.qualifierResolver = qualifierResolver;
-        this.scopeResolver = scopeResolver;
-        this.overrideResolver = overrideResolver;
-        this.kindResolver = kindResolver;
+        this.componentMetadataResolver = componentMetadataResolver;
     }
 
     @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module) {
@@ -68,8 +61,6 @@ class HandlerFactoryImpl implements HandlerFactory {
         RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation);
         ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
         List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
-        addForComponentAnnotations(
-                moduleAnnotation.components(), requestHandlers, moduleRequestVisitor, moduleMetadata);
         addForProviderMethods(
                 module, requestHandlers, moduleRequestVisitor, moduleMetadata);
         return requestHandlers;
@@ -95,25 +86,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                 return new Class<?>[0];
             }
         };
-        final Scope scope = scopeResolver.resolve(cls);
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
-                new ComponentMetadata<Class<?>>() {
-                    @Override public Class<?> provider() {
-                        return cls;
-                    }
-                    @Override public Class<?> providerClass() {
-                        return cls;
-                    }
-                    @Override public ModuleMetadata moduleMetadata() {
-                        return moduleMetadata;
-                    }
-                    @Override public Qualifier qualifier() {
-                        return dependency.qualifier();
-                    }
-                    @Override public Scope scope() {
-                        return scope;
-                    }
-                });
+                componentMetadataResolver.resolveMetadata(cls, moduleMetadata));
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
@@ -312,22 +286,6 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     }
 
-    private void addForComponentAnnotations(
-            Component[] components,
-            List<DependencyRequestHandler<?>> requestHandlers,
-            final RequestVisitor moduleRequestVisitor,
-            final ModuleMetadata moduleMetadata) {
-
-        for (final Component component : components) {
-
-            requestHandlers.add(requestHandler(
-                    component,
-                    moduleRequestVisitor,
-                    moduleMetadata));
-
-        }
-    }
-
     private void addForProviderMethods(
             Class<?> module,
             List<DependencyRequestHandler<?>> requestHandlers,
@@ -346,54 +304,6 @@ class HandlerFactoryImpl implements HandlerFactory {
     }
 
     private <T> DependencyRequestHandler<T> requestHandler(
-            final Component component,
-            final RequestVisitor moduleRequestVisitor,
-            final ModuleMetadata moduleMetadata) {
-
-        final Qualifier qualifier = qualifierResolver.resolve(
-                component.type()).merge(moduleMetadata.qualifier());
-
-        Class<?> scopeElement = component.scope();
-        if (scopeElement == Component.class) {
-            scopeElement = component.type();
-        }
-        final Scope scope = scopeResolver.resolve(scopeElement);
-
-        final ComponentMetadata<Class<?>> componentMetadata = new ComponentMetadata<Class<?>>() {
-            @Override public Class<?> provider() {
-                return component.type();
-            }
-            @Override public Class<?> providerClass() {
-                return component.type();
-            }
-            @Override public ModuleMetadata moduleMetadata() {
-                return moduleMetadata;
-            }
-            @Override public Qualifier qualifier() {
-                return qualifier;
-            }
-            @Override public Scope scope() {
-                return scope;
-            }
-        };
-
-        final List<Dependency<? super T>> dependencies;
-        Class<? super T>[] targets = Smithy.cloak(component.targets()); // TODO validation
-        if (targets.length == 0) {
-            Dependency<T> dependency = Dependency.from(qualifier, Smithy.<Class<T>>cloak(component.type()));
-            dependencies = Collections.<Dependency<? super T>>singletonList(dependency);
-        } else {
-            dependencies = Dependency.from(qualifier, targets);
-        }
-
-        return requestHandler(
-                componentAdapterFactory.<T>withClassProvider(componentMetadata),
-                dependencies,
-                moduleRequestVisitor,
-                AccessFilter.Factory.getAccessFilter(component.type()));
-    }
-
-    private <T> DependencyRequestHandler<T> requestHandler(
             final Method method,
             Class<?> module,
             final RequestVisitor moduleRequestVisitor,
@@ -406,32 +316,11 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is not static.");
         }
 
-        final Qualifier qualifier =
-                qualifierResolver.resolve(method).merge(moduleMetadata.qualifier());
-
-        final Scope scope = scopeResolver.resolve(method);
-
-        ComponentMetadata<Method> componentMetadata = new ComponentMetadata<Method>() {
-            @Override public Method provider() {
-                return method;
-            }
-            @Override public Class<?> providerClass() {
-                return method.getDeclaringClass();
-            }
-            @Override public ModuleMetadata moduleMetadata() {
-                return moduleMetadata;
-            }
-            @Override public Qualifier qualifier() {
-                return qualifier;
-            }
-            @Override public Scope scope() {
-                return scope;
-            }
-        };
+        ComponentMetadata<Method> componentMetadata = componentMetadataResolver.resolveMetadata(method, moduleMetadata);
 
         // TODO targeted return type check
         final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
-                Dependency.from(qualifier, method.getGenericReturnType()));
+                Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
 
         return requestHandler(
                 componentAdapterFactory.<T>withMethodProvider(componentMetadata),
@@ -446,7 +335,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                                                      final RequestVisitor moduleRequestVisitor,
                                                      final AccessFilter<Class<?>> classAccessFilter) {
 
-        final boolean overrideEnabled = overrideResolver.resolve(componentAdapter.metadata().provider());
+        final boolean overrideEnabled = componentAdapter.metadata().isOverrideEnabled();
 
         return new DependencyRequestHandler<T>() {
 

@@ -27,7 +27,7 @@ import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.testmocks.A;
 import io.gunmetal.testmocks.F;
-import io.gunmetal.testmocks.NewGunmetalBenchMarkModule2;
+import io.gunmetal.testmocks.NewGunmetalBenchMarkModule;
 import org.junit.Test;
 
 import java.lang.annotation.Retention;
@@ -138,7 +138,7 @@ public class ApplicationBuilderImplTest {
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
 
-        app = Gunmetal.create(NewGunmetalBenchMarkModule2.class);
+        app = Gunmetal.create(NewGunmetalBenchMarkModule.class);
 
         A a = app.get(Dep2.class);
 
