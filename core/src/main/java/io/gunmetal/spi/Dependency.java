@@ -30,16 +30,10 @@ public final class Dependency<T> {
 
     private final Qualifier qualifier;
     private final TypeKey<T> typeKey;
-    private final Kind kind;
 
-    private Dependency(Qualifier qualifier, TypeKey<T> typeKey, Kind kind) {
+    private Dependency(Qualifier qualifier, TypeKey<T> typeKey) {
         this.qualifier = qualifier;
         this.typeKey = typeKey;
-        this.kind = kind;
-    }
-
-    public Kind kind() {
-        return kind;
     }
 
     public Qualifier qualifier() {
@@ -72,22 +66,17 @@ public final class Dependency<T> {
 
     public static <T> Dependency<T> from(final Qualifier qualifier, Class<T> cls) {
         final TypeKey<T> typeKey = Types.typeKey(cls);
-        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
+        return new Dependency<>(qualifier, typeKey);
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
-    }
-
-    public static <T> Dependency<T> from(final Qualifier qualifier, Type type, Kind kind) {
-        final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<>(qualifier, typeKey, kind);
+        return new Dependency<>(qualifier, typeKey);
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, ParameterizedType type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
+        return new Dependency<>(qualifier, typeKey);
     }
 
     public static <T> List<Dependency<? super T>> from(final Qualifier qualifier, Class<? super T>[] classes) {
@@ -99,23 +88,12 @@ public final class Dependency<T> {
         return dependencies;
     }
 
-    public enum Kind {
-        STANDARD, COLLECTION_ELEMENT, COLLECTION, STARTUP_ROUTINE, CALLABLE_ROUTINE
-    }
-
     private static final class Types {
 
         private Types() { }
 
         static <T> TypeKey<T> typeKey(final Class<T> cls) {
-            return new TypeKey<T>() {
-                @Override public Type type() {
-                    return cls;
-                }
-                @Override public Class<? super T> raw() {
-                    return cls;
-                }
-            };
+            return new TypeKey<>(cls, cls);
         }
 
         static <T> TypeKey<T> typeKey(final Type type) {
@@ -130,14 +108,7 @@ public final class Dependency<T> {
 
         static <T> TypeKey<T> typeKey(final ParameterizedType type) {
             final Class<? super T> raw = Smithy.cloak(type.getRawType());
-            return new TypeKey<T>() {
-                @Override public Type type() {
-                    return type;
-                }
-                @Override public Class<? super T> raw() {
-                    return raw;
-                }
-            };
+            return new TypeKey<>(type, raw);
         }
 
     }

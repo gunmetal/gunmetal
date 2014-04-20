@@ -21,14 +21,26 @@ import java.lang.reflect.Type;
 /**
  * @author rees.byars
  */
-public abstract class TypeKey<T> {
+public final class TypeKey<T> {
 
-    public abstract Type type();
+    private final Type type;
+    private final Class<? super T> raw;
 
-    public abstract Class<? super T> raw();
+    TypeKey(Type type, Class<? super T> raw) {
+        this.type = type;
+        this.raw = raw;
+    }
+
+    public Type type() {
+        return type;
+    }
+
+    public Class<? super T> raw() {
+        return raw;
+    }
 
     @Override public int hashCode() {
-        return type().hashCode();
+        return raw().hashCode(); // TODO this will lead to hash collisions, temp hack for parameterized type hashes
     }
 
     @Override public boolean equals(Object target) {

@@ -75,17 +75,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             return null;
         }
         final Class<? super T> cls = typeKey.raw();
-        final ModuleMetadata moduleMetadata = new ModuleMetadata() {
-            @Override public Class<?> moduleClass() {
-                return cls;
-            }
-            @Override public Qualifier qualifier() {
-                return dependency.qualifier();
-            }
-            @Override public Class<?>[] referencedModules() {
-                return new Class<?>[0];
-            }
-        };
+        final ModuleMetadata moduleMetadata = new ModuleMetadata(cls, dependency.qualifier(), new Class<?>[0]);
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
                 componentMetadataResolver.resolveMetadata(cls, moduleMetadata));
         return requestHandler(
@@ -126,19 +116,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation) {
         final Qualifier qualifier = qualifierResolver.resolve(module);
-        return new ModuleMetadata() {
-            @Override public Class<?> moduleClass() {
-                return module;
-            }
-
-            @Override public Qualifier qualifier() {
-                return qualifier;
-            }
-
-            @Override public Class<?>[] referencedModules() {
-                return moduleAnnotation.dependsOn();
-            }
-        };
+        return new ModuleMetadata(module, qualifier, moduleAnnotation.dependsOn());
     }
 
     private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation) {
@@ -335,8 +313,6 @@ class HandlerFactoryImpl implements HandlerFactory {
                                                      final RequestVisitor moduleRequestVisitor,
                                                      final AccessFilter<Class<?>> classAccessFilter) {
 
-        final boolean overrideEnabled = componentAdapter.metadata().isOverrideEnabled();
-
         return new DependencyRequestHandler<T>() {
 
             @Override public List<Dependency<? super T>> targets() {
@@ -364,9 +340,10 @@ class HandlerFactoryImpl implements HandlerFactory {
                 return componentAdapter.provisionStrategy();
             }
 
-            @Override public boolean isOverrideEnabled() {
-                return overrideEnabled;
+            @Override public ComponentMetadata<?> componentMetadata() {
+                return componentAdapter.metadata();
             }
+
         };
     }
 

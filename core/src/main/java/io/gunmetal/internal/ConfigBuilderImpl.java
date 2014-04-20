@@ -16,6 +16,7 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.AutoCollection;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Option;
@@ -81,6 +82,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     Qualifier qualifier;
                     Scope scope;
                     boolean overrideEnabled = false;
+                    boolean collectionElement = false;
 
                     Resolver(AnnotatedElement annotatedElement) {
 
@@ -90,6 +92,9 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                             Class<? extends Annotation> annotationType = annotation.annotationType();
                             if (annotationType == OverrideEnabled.class) {
                                 overrideEnabled = true;
+                            } else if (annotationType == AutoCollection.class) {
+                                collectionElement = true;
+                                qualifiers.add(annotation);
                             }
                             if (annotationType.isAnnotationPresent(io.gunmetal.Scope.class)) {
                                 scopeAnnotation = annotation;
@@ -154,6 +159,10 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                             @Override public boolean isOverrideEnabled() {
                                 return resolver.overrideEnabled;
                             }
+
+                            @Override public boolean isCollectionElement() {
+                                return resolver.collectionElement;
+                            }
                         };
                     }
 
@@ -186,6 +195,10 @@ public class ConfigBuilderImpl implements ConfigBuilder {
 
                             @Override public boolean isOverrideEnabled() {
                                 return resolver.overrideEnabled;
+                            }
+
+                            @Override public boolean isCollectionElement() {
+                                return resolver.collectionElement;
                             }
                         };
                     }
@@ -239,6 +252,8 @@ public class ConfigBuilderImpl implements ConfigBuilder {
             for (Annotation annotation : annotatedElement.getAnnotations()) {
                 Class<? extends Annotation> annotationType = annotation.annotationType();
                 if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
+                    qualifiers.add(annotation);
+                } else if (annotationType == AutoCollection.class) {
                     qualifiers.add(annotation);
                 }
             }

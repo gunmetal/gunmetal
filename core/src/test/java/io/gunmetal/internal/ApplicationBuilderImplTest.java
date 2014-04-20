@@ -18,6 +18,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.ApplicationContainer;
 import io.gunmetal.ApplicationModule;
+import io.gunmetal.AutoCollection;
 import io.gunmetal.Gunmetal;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
@@ -33,6 +34,7 @@ import org.junit.Test;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author rees.byars
@@ -98,6 +100,24 @@ public class ApplicationBuilderImplTest {
 
         @Prototype static ApplicationBuilderImplTest testy() {
             return new ApplicationBuilderImplTest();
+        }
+
+        @AutoCollection static String s1() {
+            return "1";
+        }
+
+        @AutoCollection static String s2() {
+            return "2";
+        }
+
+        @AutoCollection static String s3() {
+            return "3";
+        }
+
+        @Main static void printStrings(@AutoCollection List<String> strings) {
+            for (String s : strings) {
+                System.out.println(s);
+            }
         }
 
     }
