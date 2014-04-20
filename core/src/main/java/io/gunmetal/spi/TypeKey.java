@@ -16,7 +16,10 @@
 
 package io.gunmetal.spi;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author rees.byars
@@ -25,10 +28,21 @@ public final class TypeKey<T> {
 
     private final Type type;
     private final Class<? super T> raw;
+    private final int hash;
 
     TypeKey(Type type, Class<? super T> raw) {
         this.type = type;
         this.raw = raw;
+        // TODO this could be better
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            hash = Objects.hash(
+                    Arrays.hashCode(parameterizedType.getActualTypeArguments()),
+                    parameterizedType.getRawType(),
+                    parameterizedType.getOwnerType());
+        } else {
+            hash = type.hashCode();
+        }
     }
 
     public Type type() {
@@ -40,7 +54,7 @@ public final class TypeKey<T> {
     }
 
     @Override public int hashCode() {
-        return raw().hashCode(); // TODO this will lead to hash collisions, temp hack for parameterized type hashes
+        return hash;
     }
 
     @Override public boolean equals(Object target) {
