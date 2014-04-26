@@ -186,4 +186,38 @@ public class ApplicationBuilderImplTest {
         new ApplicationBuilderImpl().build(Application.class);
     }
 
+    @Module
+    static class PlusModule {
+
+        @Inject ApplicationBuilderImplTest applicationBuilderImplTest;
+
+        static PlusModule plusModule() {
+            return new PlusModule();
+        }
+
+    }
+
+    @Test
+    public void testPlus() {
+
+        @ApplicationModule(modules = { TestModule.class })
+        class Parent { }
+
+        @ApplicationModule(modules = { PlusModule.class })
+        class Child { }
+
+        class Dep implements io.gunmetal.Dependency<PlusModule> { }
+
+        ApplicationContainer parent = new ApplicationBuilderImpl().build(Parent.class);
+
+        ApplicationContainer child = parent.plus(Child.class);
+
+        PlusModule p = child.get(Dep.class);
+
+        assert p.applicationBuilderImplTest != null;
+
+        assert parent.get(Dep.class) == null;
+
+    }
+
 }

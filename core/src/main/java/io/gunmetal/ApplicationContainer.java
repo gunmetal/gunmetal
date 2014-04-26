@@ -22,4 +22,5 @@ package io.gunmetal;
 public interface ApplicationContainer {
     <T> ApplicationContainer inject(T injectionTarget);
     <T, D extends Dependency<T>> T get(Class<D> dependency);
+    ApplicationContainer plus(Class<?> applicationModule);
 }

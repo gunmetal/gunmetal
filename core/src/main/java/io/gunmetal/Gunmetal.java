@@ -29,8 +29,4 @@ public final class Gunmetal {
         return new ApplicationBuilderImpl().build(applicationModule);
     }
 
-    public static ApplicationContainer create(Class<?> applicationModule, ApplicationContainer ... referencedContainers) {
-        throw new UnsupportedOperationException();
-    }
-
 }

@@ -47,6 +47,10 @@ import java.util.Stack;
 public class ApplicationBuilderImpl implements ApplicationBuilder {
 
     @Override public ApplicationContainer build(Class<?> application) {
+        return build(application, new HandlerCache());
+    }
+
+    private ApplicationContainer build(Class<?> application, final HandlerCache handlerCache) {
 
         ApplicationModule applicationModule = application.getAnnotation(ApplicationModule.class);
 
@@ -79,8 +83,6 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 componentAdapterFactory,
                 config.qualifierResolver(),
                 config.componentMetadataResolver());
-
-        final HandlerCache handlerCache = new HandlerCache();
 
         for (Class<?> module : applicationModule.modules()) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
@@ -177,6 +179,14 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 }
                 return null;
             }
+
+            @Override public ApplicationContainer plus(Class<?> applicationModule) {
+                // TODO review synchronization
+                HandlerCache childCache = new HandlerCache();
+                childCache.requestHandlers.putAll(handlerCache.requestHandlers);
+                return build(applicationModule, childCache);
+            }
+
         };
     }
 

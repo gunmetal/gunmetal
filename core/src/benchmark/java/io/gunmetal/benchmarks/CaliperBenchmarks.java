@@ -36,7 +36,7 @@ public class CaliperBenchmarks {
     static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
     static final Key<E> SINGLETON_KEY = Key.get(E.class);
     Provider<N> guiceProvider;
-    static final Injector INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
+    static final Injector INJECTOR = Guice.createInjector(new GuiceProvidesMethodBenchMarkModule());
 
     @ApplicationModule(modules = NewGunmetalBenchMarkModule.class)
     static class App { }

@@ -222,8 +222,9 @@ class InjectorFactoryImpl implements InjectorFactory {
                 new ConstructorFunction(constructor),
                 componentMetadata);
         return new Instantiator<T>() {
+            @SuppressWarnings("unchecked")
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-                return Smithy.cloak(invoker.invoke(null, provider, resolutionContext));
+                return (T) invoker.invoke(null, provider, resolutionContext);
             }
             @Override public List<Dependency<?>> dependencies() {
                 return invoker.dependencies();
@@ -231,25 +232,76 @@ class InjectorFactoryImpl implements InjectorFactory {
         };
     }
 
-    @Override public <T> Instantiator<T> methodInstantiator(final ComponentMetadata<Method> componentMetadata) {
-        final ParameterizedFunctionInvoker invoker = eagerInvoker(
+    @Override public <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata) {
+        final ParameterizedFunctionInvoker invoker = new EagerInvoker(
+                qualifierResolver,
+                linkers,
                 new MethodFunction(componentMetadata.provider()),
                 componentMetadata);
         return new Instantiator<T>() {
+            @SuppressWarnings("unchecked")
             @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-                return Smithy.cloak(invoker.invoke(null, provider, resolutionContext));
+                return (T) invoker.invoke(null, provider, resolutionContext);
             }
             @Override public List<Dependency<?>> dependencies() {
                 return invoker.dependencies();
             }
         };
+    }
+
+    private static class EagerInvoker implements ParameterizedFunctionInvoker {
+
+        final Dependency<?>[] dependencies;
+        final ProvisionStrategy<?>[] provisionStrategies;
+        final ParameterizedFunction function;
+
+        EagerInvoker(AnnotationResolver<Qualifier> qualifierResolver,
+                     Linkers linkers,
+                     ParameterizedFunction function,
+                     final ComponentMetadata<?> metadata) {
+            this.function = function;
+            dependencies = new Dependency<?>[function.getParameterTypes().length];
+            for (int i = 0; i < dependencies.length; i++) {
+                Parameter p = new Parameter(function, i);
+                dependencies[i] = Dependency.from(qualifierResolver.resolve(p), p.type);
+            }
+            provisionStrategies = new ProvisionStrategy<?>[dependencies.length];
+            {
+                linkers.add(new Linkers.WiringLinker() {
+                    @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
+                        for (int i = 0; i < dependencies.length; i++) {
+                            provisionStrategies[i] = internalProvider.getProvisionStrategy(
+                                    DependencyRequest.Factory.create(metadata, dependencies[i]));
+                        }
+                    }
+                });
+            }
+        }
+
+        @Override public Object invoke(Object onInstance, InternalProvider internalProvider, ResolutionContext resolutionContext) {
+            Object[] parameters = new Object[provisionStrategies.length];
+            for (int i = 0; i < parameters.length; i++) {
+                parameters[i] = provisionStrategies[i].get(internalProvider, resolutionContext);
+            }
+            try {
+                return function.invoke(onInstance, parameters);
+            } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                throw new RuntimeException("TODO injection exception", e);
+            }
+        }
+
+        @Override public List<Dependency<?>> dependencies() {
+            return Arrays.asList(dependencies);
+        }
+
     }
 
     private ParameterizedFunctionInvoker eagerInvoker(final ParameterizedFunction function,
                                                         final ComponentMetadata<?> metadata) {
         final Dependency<?>[] dependencies = new Dependency<?>[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
-            dependencies[i] = new Parameter<>(function, i).asDependency();
+            Parameter p = new Parameter(function, i);
+            dependencies[i] = Dependency.from(qualifierResolver.resolve(p), p.type);
         }
         return new ParameterizedFunctionInvoker() {
             final ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
@@ -285,7 +337,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                                                              final InternalProvider internalProvider) {
         final Dependency<?>[] dependencies = new Dependency<?>[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
-            dependencies[i] = new Parameter<>(function, i).asDependency();
+            Parameter p = new Parameter(function, i);
+            dependencies[i] = Dependency.from(qualifierResolver.resolve(p), p.type);
         }
         return new ParameterizedFunctionInvoker() {
             final ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
@@ -356,7 +409,7 @@ class InjectorFactoryImpl implements InjectorFactory {
         }
     }
 
-    private class Parameter<T> implements AnnotatedElement {
+    private static class Parameter implements AnnotatedElement {
 
         final Annotation[] annotations;
         final Type type;
@@ -390,10 +443,6 @@ class InjectorFactoryImpl implements InjectorFactory {
 
         @Override public Annotation[] getDeclaredAnnotations() {
             return annotations;
-        }
-
-        Dependency<T> asDependency() {
-            return Dependency.from(qualifierResolver.resolve(Parameter.this), type);
         }
 
     }
