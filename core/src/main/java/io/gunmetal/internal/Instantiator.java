@@ -26,4 +26,6 @@ public interface Instantiator<T> extends Dependent {
 
     T newInstance(InternalProvider provider, ResolutionContext resolutionContext);
 
+    Instantiator<T> newInstantiatorInstance(Linkers linkers);
+
 }

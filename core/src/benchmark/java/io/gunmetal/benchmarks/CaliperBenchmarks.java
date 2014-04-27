@@ -36,7 +36,7 @@ public class CaliperBenchmarks {
     static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
     static final Key<E> SINGLETON_KEY = Key.get(E.class);
     Provider<N> guiceProvider;
-    static final Injector INJECTOR = Guice.createInjector(new GuiceProvidesMethodBenchMarkModule());
+    static final Injector INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
 
     @ApplicationModule(modules = NewGunmetalBenchMarkModule.class)
     static class App { }
@@ -54,6 +54,16 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= io.gunmetal.Gunmetal.create(App.class).get(Dep.class).hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long template(int reps) {
+        int dummy = 0;
+        int counter = 0;
+        ApplicationContainer template = io.gunmetal.Gunmetal.create(App.class);
+        for (long i = 0; i < reps; i++) {
+            dummy |= template.newInstance().get(Dep.class).hashCode();
         }
         return dummy;
     }

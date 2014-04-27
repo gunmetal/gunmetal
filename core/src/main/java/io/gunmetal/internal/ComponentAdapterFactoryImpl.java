@@ -66,6 +66,11 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 @Override public Object inject(T target, InternalProvider internalProvider, ResolutionContext resolutionContext) {
                     return null;
                 }
+
+                @Override public Injector<T> newInjectorInstance(Linkers linkers) {
+                    return this;
+                }
+
                 @Override public List<Dependency<?>> dependencies() {
                     return Collections.emptyList();
                 }
@@ -134,6 +139,16 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             @Override public ProvisionStrategy<T> provisionStrategy() {
                 return provisionStrategy;
             }
+
+            @Override public ComponentAdapter<T> newAdapterInstance(Linkers linkers) {
+                Injector<T> newInjector = injector.newInjectorInstance(linkers);
+                Instantiator<T> newInstantiator = instantiator.newInstantiatorInstance(linkers);
+                ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
+                        metadata,
+                        baseProvisionStrategy(metadata, newInstantiator, newInjector));
+                return componentAdapter(metadata, provisionStrategy, newInstantiator, newInjector);
+            }
+
             @Override public List<Dependency<?>> dependencies() {
                 List<Dependency<?>> dependencies = new LinkedList<>();
                 dependencies.addAll(instantiator.dependencies());

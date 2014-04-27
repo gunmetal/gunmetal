@@ -47,10 +47,10 @@ import java.util.Stack;
 public class ApplicationBuilderImpl implements ApplicationBuilder {
 
     @Override public ApplicationContainer build(Class<?> application) {
-        return build(application, new HandlerCache());
+        return build(application, null);
     }
 
-    private ApplicationContainer build(Class<?> application, final HandlerCache handlerCache) {
+    private ApplicationContainer build(Class<?> application, final HandlerCache parentCache) {
 
         ApplicationModule applicationModule = application.getAnnotation(ApplicationModule.class);
 
@@ -84,113 +84,32 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 config.qualifierResolver(),
                 config.componentMetadataResolver());
 
+        final HandlerCache myCache = new HandlerCache();
+
         for (Class<?> module : applicationModule.modules()) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
                     handlerFactory.createHandlersForModule(module);
-            handlerCache.putAll(moduleRequestHandlers);
+            myCache.putAll(moduleRequestHandlers);
         }
 
-        final InternalProvider internalProvider = new InternalProvider() {
-            @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
-                final Dependency<T> dependency = dependencyRequest.dependency();
-                DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
-                if (requestHandler != null) {
-                    return requestHandler
-                            .handle(dependencyRequest)
-                            .validateResponse()
-                            .getProvisionStrategy();
-                }
-                if (config.isProvider(dependency)) {
-                    requestHandler = createProviderHandler(dependencyRequest, config, this, handlerCache);
-                    if (requestHandler != null) {
-                        handlerCache.put(dependency, requestHandler);
-                        return requestHandler
-                                .handle(dependencyRequest)
-                                .validateResponse()
-                                .getProvisionStrategy();
-                    }
-                }
-                requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest);
-                if (requestHandler != null) {
-                    // we do not cache handlers for specific requests - each request gets its own
-                    return requestHandler
-                            .handle(dependencyRequest)
-                            .validateResponse()
-                            .getProvisionStrategy();
-                }
-                throw new DependencyException("missing dependency " + dependency.toString()); // TODO
-            }
-        };
+        final HandlerCache compositeCache = new HandlerCache(parentCache, myCache);
+
+        final InternalProvider internalProvider =
+                new InternalProviderImpl(config, handlerFactory, compositeCache, myCache);
 
         applicationLinker.link(internalProvider, ResolutionContext.Factory.create());
 
-        return new ApplicationContainer() {
-
-            final Map<Class<?>, Injector<?>> injectors = new HashMap<>();
-            final InjectorFactory injectorFactory = new InjectorFactoryImpl(
-                    config.qualifierResolver(),
-                    config.constructorResolver(),
-                    config.classWalker(),
-                    new Linkers() {
-                        @Override public void add(WiringLinker linker) {
-                            linker.link(internalProvider, ResolutionContext.Factory.create());
-                        }
-                        @Override public void add(EagerLinker linker) {
-                            linker.link(internalProvider, ResolutionContext.Factory.create());
-                        }
-                    });
-
-            @Override public <T> ApplicationContainer inject(T injectionTarget) {
-
-                final Class<T> targetClass = Smithy.cloak(injectionTarget.getClass());
-
-                Injector<T> injector = Smithy.cloak(injectors.get(targetClass));
-
-                if (injector == null) {
-                    final Qualifier qualifier = config.qualifierResolver().resolve(targetClass);
-                    injector = injectorFactory.compositeInjector(
-                            config.componentMetadataResolver().resolveMetadata(
-                                    targetClass,
-                                    new ModuleMetadata(targetClass, qualifier, new Class<?>[0])));
-                    injectors.put(targetClass, injector);
-                }
-
-                injector.inject(injectionTarget, internalProvider, ResolutionContext.Factory.create());
-
-                return this;
-            }
-
-            @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
-                Qualifier qualifier = config.qualifierResolver().resolve(dependencySpec);
-                Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
-                Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
-                Dependency<T> dependency = Dependency.from(
-                        qualifier,
-                        dependencyType);
-                DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
-                if (requestHandler != null) {
-                    return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
-                } else if (config.isProvider(dependency)) {
-                    ProvisionStrategy<T> providerStrategy =
-                            createProviderStrategy(dependency, config, internalProvider, handlerCache);
-                    if (providerStrategy != null) {
-                        return providerStrategy.get(internalProvider, ResolutionContext.Factory.create());
-                    }
-                }
-                return null;
-            }
-
-            @Override public ApplicationContainer plus(Class<?> applicationModule) {
-                // TODO review synchronization
-                HandlerCache childCache = new HandlerCache();
-                childCache.requestHandlers.putAll(handlerCache.requestHandlers);
-                return build(applicationModule, childCache);
-            }
-
-        };
+        return new ContainerImpl(
+                config,
+                applicationLinker,
+                internalProvider,
+                injectorFactory,
+                compositeCache,
+                myCache,
+                parentCache);
     }
 
-    private <T> ProvisionStrategy<T> createProviderStrategy(final ProvisionStrategy<?> componentStrategy,
+    private static <T> ProvisionStrategy<T> createProviderStrategy(final ProvisionStrategy<?> componentStrategy,
                                                             final Config config,
                                                             final InternalProvider internalProvider) {
         final Object provider = config.provider(new Provider<Object>() {
@@ -241,63 +160,17 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         return createProviderStrategy(componentStrategy, config, internalProvider);
     }
 
-    private <T, C> DependencyRequestHandler<T> createProviderHandler(
-            final DependencyRequest<T> providerRequest,
-            final Config config,
-            final InternalProvider internalProvider,
-            final HandlerCache handlerCache) {
-        Dependency<T> providerDependency = providerRequest.dependency();
-        Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
-        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
-        if (componentHandler == null) {
-            return null;
-        }
-        ProvisionStrategy<? extends C> componentStrategy = componentHandler.force();
-        final ProvisionStrategy<T> providerStrategy =
-                createProviderStrategy(componentStrategy, config, internalProvider);
-        return new DependencyRequestHandler<T>() {
-            @Override public List<Dependency<? super T>> targets() {
-                return Collections.<Dependency<? super T>>singletonList(providerRequest.dependency());
-            }
-
-            @Override public List<Dependency<?>> dependencies() {
-                return componentHandler.dependencies();
-            }
-
-            @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
-                final DependencyResponse<?> componentResponse =
-                        componentHandler.handle(DependencyRequest.Factory.create(providerRequest, componentDependency));
-                return new DependencyResponse<T>() {
-                    @Override public ValidatedDependencyResponse<T> validateResponse() {
-                        componentResponse.validateResponse();
-                        return new ValidatedDependencyResponse<T>() {
-                            @Override public ProvisionStrategy<T> getProvisionStrategy() {
-                                return providerStrategy;
-                            }
-
-                            @Override public ValidatedDependencyResponse<T> validateResponse() {
-                                return this;
-                            }
-                        };
-                    }
-                };
-            }
-
-            @Override public ProvisionStrategy<T> force() {
-                return providerStrategy;
-            }
-
-            @Override public ComponentMetadata<?> componentMetadata() {
-                return componentHandler.componentMetadata();
-            }
-        };
-
-    }
-
     private static class HandlerCache {
 
         final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new HashMap<>();
+
+        HandlerCache(HandlerCache ... caches) {
+            for (HandlerCache cache : caches) {
+                if (cache != null) {
+                    requestHandlers.putAll(cache.requestHandlers);
+                }
+            }
+        }
 
         synchronized void putAll(List<DependencyRequestHandler<?>> requestHandlers) {
             for (DependencyRequestHandler<?> requestHandler : requestHandlers) {
@@ -443,6 +316,14 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                 throw new UnsupportedOperationException(); // TODO exception message
             }
 
+            @Override public DependencyRequestHandler<List<T>> newHandlerInstance(Linkers linkers) {
+                CollectionRequestHandler<T> newHandler = new CollectionRequestHandler<>(dependency, subDependency);
+                for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
+                    newHandler.requestHandlers.add(requestHandler.newHandlerInstance(linkers));
+                }
+                return newHandler;
+            }
+
         }
 
     }
@@ -467,6 +348,254 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             while (!eagerLinkers.empty()) {
                 eagerLinkers.pop().link(internalProvider, linkingContext);
             }
+        }
+
+    }
+
+    private static class InternalProviderImpl implements InternalProvider {
+
+        private final Config config;
+        private final HandlerFactory handlerFactory;
+        private final HandlerCache compositeCache;
+        private final HandlerCache myCache;
+
+        InternalProviderImpl(Config config,
+                             HandlerFactory handlerFactory,
+                             HandlerCache compositeCache,
+                             HandlerCache myCache) {
+            this.config = config;
+            this.handlerFactory = handlerFactory;
+            this.compositeCache = compositeCache;
+            this.myCache = myCache;
+        }
+
+        @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
+            final Dependency<T> dependency = dependencyRequest.dependency();
+            DependencyRequestHandler<? extends T> requestHandler = compositeCache.get(dependency);
+            if (requestHandler != null) {
+                return requestHandler
+                        .handle(dependencyRequest)
+                        .validateResponse()
+                        .getProvisionStrategy();
+            }
+            if (config.isProvider(dependency)) {
+                requestHandler = createProviderHandler(dependencyRequest, config, this, compositeCache);
+                if (requestHandler != null) {
+                    myCache.put(dependency, requestHandler);
+                    compositeCache.put(dependency, requestHandler);
+                    return requestHandler
+                            .handle(dependencyRequest)
+                            .validateResponse()
+                            .getProvisionStrategy();
+                }
+            }
+            requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest);
+            if (requestHandler != null) {
+                // we do not cache handlers for specific requests - each request gets its own
+                return requestHandler
+                        .handle(dependencyRequest)
+                        .validateResponse()
+                        .getProvisionStrategy();
+            }
+            throw new DependencyException("missing dependency " + dependency.toString()); // TODO
+        }
+
+        private <T, C> DependencyRequestHandler<T> createProviderHandler(
+                final DependencyRequest<T> providerRequest,
+                final Config config,
+                final InternalProvider internalProvider,
+                final HandlerCache handlerCache) {
+            Dependency<T> providerDependency = providerRequest.dependency();
+            Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
+            final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
+            final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
+            if (componentHandler == null) {
+                return null;
+            }
+            ProvisionStrategy<? extends C> componentStrategy = componentHandler.force();
+            final ProvisionStrategy<T> providerStrategy =
+                    createProviderStrategy(componentStrategy, config, internalProvider);
+            return new DependencyRequestHandler<T>() {
+                @Override public List<Dependency<? super T>> targets() {
+                    return Collections.<Dependency<? super T>>singletonList(providerRequest.dependency());
+                }
+
+                @Override public List<Dependency<?>> dependencies() {
+                    return componentHandler.dependencies();
+                }
+
+                @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
+                    final DependencyResponse<?> componentResponse =
+                            componentHandler.handle(DependencyRequest.Factory.create(providerRequest, componentDependency));
+                    return new DependencyResponse<T>() {
+                        @Override public ValidatedDependencyResponse<T> validateResponse() {
+                            componentResponse.validateResponse();
+                            return new ValidatedDependencyResponse<T>() {
+                                @Override public ProvisionStrategy<T> getProvisionStrategy() {
+                                    return providerStrategy;
+                                }
+
+                                @Override public ValidatedDependencyResponse<T> validateResponse() {
+                                    return this;
+                                }
+                            };
+                        }
+                    };
+                }
+
+                @Override public ProvisionStrategy<T> force() {
+                    return providerStrategy;
+                }
+
+                @Override public ComponentMetadata<?> componentMetadata() {
+                    return componentHandler.componentMetadata();
+                }
+
+                @Override public DependencyRequestHandler<T> newHandlerInstance(Linkers linkers) {
+                    // TODO important!!!!!!!!!!  implement ASAP
+                    //TODO move internal provider into static class, make this method a part of of it?
+                    throw new UnsupportedOperationException();
+                }
+
+            };
+
+        }
+
+    }
+
+    private class ContainerImpl implements ApplicationContainer {
+
+        private final Config config;
+        private final ApplicationLinker applicationLinker;
+        private final InternalProvider internalProvider;
+        private final InjectorFactory injectorFactory;
+        private final HandlerCache compositeCache;
+        private final HandlerCache myCache;
+        private final HandlerCache parentCache;
+        private final Map<Class<?>, Injector<?>> injectors = new HashMap<>();
+
+        ContainerImpl(Config config,
+                      ApplicationLinker applicationLinker,
+                      InternalProvider internalProvider,
+                      InjectorFactory injectorFactory,
+                      HandlerCache compositeCache,
+                      HandlerCache myCache,
+                      HandlerCache parentCache) {
+            this.config = config;
+            this.applicationLinker = applicationLinker;
+            this.internalProvider = internalProvider;
+            this.injectorFactory = injectorFactory;
+            this.compositeCache = compositeCache;
+            this.myCache = myCache;
+            this.parentCache = parentCache;
+        }
+
+        @Override public <T> ApplicationContainer inject(T injectionTarget) {
+
+            final Class<T> targetClass = Smithy.cloak(injectionTarget.getClass());
+
+            Injector<T> injector = Smithy.cloak(injectors.get(targetClass));
+
+            if (injector == null) {
+                final Qualifier qualifier = config.qualifierResolver().resolve(targetClass);
+
+                injector = injectorFactory.compositeInjector(
+                        config.componentMetadataResolver().resolveMetadata(
+                                targetClass,
+                                new ModuleMetadata(targetClass, qualifier, new Class<?>[0])));
+
+                applicationLinker.link(internalProvider, ResolutionContext.Factory.create());
+
+                injectors.put(targetClass, injector);
+            }
+
+            injector.inject(injectionTarget, internalProvider, ResolutionContext.Factory.create());
+
+            return this;
+        }
+
+        @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
+            Qualifier qualifier = config.qualifierResolver().resolve(dependencySpec);
+            Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
+            Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
+            Dependency<T> dependency = Dependency.from(
+                    qualifier,
+                    dependencyType);
+            DependencyRequestHandler<? extends T> requestHandler = compositeCache.get(dependency);
+            if (requestHandler != null) {
+                return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
+            } else if (config.isProvider(dependency)) {
+                ProvisionStrategy<T> providerStrategy =
+                        createProviderStrategy(dependency, config, internalProvider, compositeCache);
+                if (providerStrategy != null) {
+                    return providerStrategy.get(internalProvider, ResolutionContext.Factory.create());
+                }
+            }
+            return null;
+        }
+
+        @Override public ApplicationContainer plus(Class<?> applicationModule) {
+            return build(applicationModule, compositeCache);
+        }
+
+        @Override public ApplicationContainer newInstance() {
+
+            ApplicationLinker applicationLinker = new ApplicationLinker();
+            HandlerCache newMyCache = new HandlerCache();
+
+            for (Map.Entry<Dependency<?>, DependencyRequestHandler<?>> entry : myCache.requestHandlers.entrySet()) {
+                newMyCache.requestHandlers.put(
+                        entry.getKey(),
+                        entry.getValue().newHandlerInstance(applicationLinker));
+            }
+
+            HandlerCache newCompositeCache = new HandlerCache(parentCache, newMyCache);
+
+            InjectorFactory injectorFactory = new InjectorFactoryImpl(
+                    config.qualifierResolver(),
+                    config.constructorResolver(),
+                    config.classWalker(),
+                    applicationLinker);
+
+            final List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
+            strategyDecorators.add(new ScopeDecorator(config.scopeBindings(), applicationLinker));
+            ProvisionStrategyDecorator compositeStrategyDecorator = new ProvisionStrategyDecorator() {
+                @Override public <T> ProvisionStrategy<T> decorate(
+                        ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy) {
+                    for (ProvisionStrategyDecorator decorator : strategyDecorators) {
+                        delegateStrategy = decorator.decorate(componentMetadata, delegateStrategy);
+                    }
+                    return delegateStrategy;
+                }
+            };
+
+            final ComponentAdapterFactory componentAdapterFactory =
+                    new ComponentAdapterFactoryImpl(injectorFactory, compositeStrategyDecorator);
+
+            final HandlerFactory handlerFactory = new HandlerFactoryImpl(
+                    componentAdapterFactory,
+                    config.qualifierResolver(),
+                    config.componentMetadataResolver());
+
+            InternalProvider newInternalProvider =
+                    new InternalProviderImpl(config, handlerFactory, newCompositeCache, newMyCache);
+
+            ContainerImpl copy = new ContainerImpl(
+                    config,
+                    applicationLinker,
+                    newInternalProvider,
+                    injectorFactory,
+                    newCompositeCache,
+                    newMyCache,
+                    parentCache);
+
+            for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
+                copy.injectors.put(entry.getKey(), entry.getValue().newInjectorInstance(applicationLinker));
+            }
+
+            applicationLinker.link(newInternalProvider, ResolutionContext.Factory.create());
+
+            return copy;
         }
 
     }

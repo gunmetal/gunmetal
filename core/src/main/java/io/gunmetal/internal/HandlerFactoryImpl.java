@@ -344,6 +344,14 @@ class HandlerFactoryImpl implements HandlerFactory {
                 return componentAdapter.metadata();
             }
 
+            @Override public DependencyRequestHandler<T> newHandlerInstance(Linkers linkers) {
+                return requestHandler(
+                        componentAdapter.newAdapterInstance(linkers),
+                        targets,
+                        moduleRequestVisitor,
+                        classAccessFilter);
+            }
+
         };
     }
 

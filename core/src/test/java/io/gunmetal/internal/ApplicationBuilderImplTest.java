@@ -27,7 +27,9 @@ import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.testmocks.A;
+import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.F;
+import io.gunmetal.testmocks.N;
 import io.gunmetal.testmocks.NewGunmetalBenchMarkModule;
 import org.junit.Test;
 
@@ -218,6 +220,50 @@ public class ApplicationBuilderImplTest {
 
         assert parent.get(Dep.class) == null;
 
+        class InjectTest {
+            @Inject
+            F f;
+        }
+
+        InjectTest injectTest = new InjectTest();
+
+        child.inject(injectTest);
+
+        assert injectTest.f != null;
+
+        ApplicationContainer childCopy = child.newInstance();
+
+        assert child.get(Dep.class) != childCopy.get(Dep.class);
+
+        assert childCopy.get(Dep.class) == childCopy.get(Dep.class);
+
+        assert childCopy.get(Dep.class) != null;
+
+        childCopy.inject(injectTest);
+
+    }
+
+    @Test
+    public void testMore() {
+        class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
+        newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
+        newGunmetalStandup(10000);
+    }
+
+    io.gunmetal.Provider<N> newGunmetalProvider;
+    static final ApplicationContainer APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
+
+    @ApplicationModule(modules = NewGunmetalBenchMarkModule.class)
+    static class App { }
+
+    static class Dep implements io.gunmetal.Dependency<AA> { }
+
+    long newGunmetalStandup(int reps) {
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= APPLICATION_CONTAINER.newInstance().get(Dep.class).hashCode();
+        }
+        return dummy;
     }
 
 }

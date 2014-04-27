@@ -28,4 +28,6 @@ interface ComponentAdapter<T> extends Dependent {
 
     ProvisionStrategy<T> provisionStrategy();
 
+    ComponentAdapter<T> newAdapterInstance(Linkers linkers);
+
 }

@@ -38,4 +38,6 @@ interface DependencyRequestHandler<T> {
 
     ComponentMetadata<?> componentMetadata();
 
+    DependencyRequestHandler<T> newHandlerInstance(Linkers linkers);
+
 }
