@@ -24,39 +24,39 @@ import io.gunmetal.Prototype;
 @Module
 public class NewGunmetalBenchMarkModule {
 
-    @Prototype static AA aa(A a, BB bb, R r, E e, E ee, S s) {
+    @Prototype public static AA aa(A a, BB bb, R r, E e, E ee, S s) {
         return new AA(a, bb, r, e, ee, s);
     }
 
-    @Prototype static BB bb(B b, CC cc, R r, E e, E ee, S s) {
+    @Prototype public static BB bb(B b, CC cc, R r, E e, E ee, S s) {
         return new BB(b, cc, r, e, ee, s);
     }
 
-    @Prototype static CC cc(C c, DD dd, R r, E e, E ee, S s) {
+    @Prototype public static CC cc(C c, DD dd, R r, E e, E ee, S s) {
         return new CC(c, dd, r, e, ee, s);
     }
 
-    @Prototype static DD dd(D d, R r, E e, E ee, S s) {
+    @Prototype public static DD dd(D d, R r, E e, E ee, S s) {
         return new DD(d, r, e, ee, s);
     }
 
-    @Prototype static A a(B b) {
+    @Prototype public static A a(B b) {
         return new A(b);
     }
 
-    @Prototype static B b(C c) {
+    @Prototype public static B b(C c) {
         return new B(c);
     }
 
-    @Prototype static C c(D d) {
+    @Prototype public static C c(D d) {
         return new C(d);
     }
 
-    @Prototype static D d(E e) {
+    @Prototype public static D d(E e) {
         return new D(e);
     }
 
-    static E e(F f) {
+    public static E e(F f) {
         return new E(f);
     }
 
@@ -64,83 +64,83 @@ public class NewGunmetalBenchMarkModule {
         return new F(g);
     }
 
-    @Prototype static G g(H h) {
+    @Prototype public static G g(H h) {
         return new G(h);
     }
 
-    @Prototype static H h(I i) {
+    @Prototype public static H h(I i) {
         return new H(i);
     }
 
-    @Prototype static I i(J j) {
+    @Prototype public static I i(J j) {
         return new I(j);
     }
 
-    @Prototype static J j(K k) {
+    @Prototype public static J j(K k) {
         return new J(k);
     }
 
-    @Prototype static K k(L l) {
+    @Prototype public static K k(L l) {
         return new K(l);
     }
 
-    @Prototype static L l(M m) {
+    @Prototype public static L l(M m) {
         return new L(m);
     }
 
-    @Prototype static M m(N n) {
+    @Prototype public static M m(N n) {
         return new M(n);
     }
 
-    @Prototype static N n(O o) {
+    @Prototype public static N n(O o) {
         return new N(o);
     }
 
-    @Prototype static O o(P p) {
+    @Prototype public static O o(P p) {
         return new O(p);
     }
 
-    @Prototype static P p(Q q) {
+    @Prototype public static P p(Q q) {
         return new P(q);
     }
 
-    @Prototype static Q q(R r) {
+    @Prototype public static Q q(R r) {
         return new Q(r);
     }
 
-    @Prototype static R r(S s) {
+    @Prototype public static R r(S s) {
         return new R(s);
     }
 
-    @Prototype static S s(T t) {
+    @Prototype public static S s(T t) {
         return new S(t);
     }
 
-    @Prototype static T t(U u) {
+    @Prototype public static T t(U u) {
         return new T(u);
     }
 
-    @Prototype static U u(V v) {
+    @Prototype public static U u(V v) {
         return new U(v);
     }
 
-    @Prototype static V v(W w) {
+    @Prototype public static V v(W w) {
         return new V(w);
     }
 
-    @Prototype static W w(X x) {
+    @Prototype public static W w(X x) {
         return new W(x);
     }
 
-    @Prototype static X x(Y y) {
+    @Prototype public static X x(Y y) {
         return new X(y);
     }
 
-    @Prototype static Y y(Z z) {
+    @Prototype public static Y y(Z z) {
         return new Y(z);
     }
 
-    @Prototype static Z z() {
+    @Prototype public static Z z() {
         return new Z();
     }
 

@@ -273,17 +273,18 @@ class InjectorFactoryImpl implements InjectorFactory {
             });
         }
 
-        FunctionInjector(final ParameterizedFunction function,
-                         final ComponentMetadata<?> componentMetadata,
-                         final Dependency<?>[] dependencies,
-                         final ProvisionStrategy[] provisionStrategies) {
+        FunctionInjector(ParameterizedFunction function,
+                         ComponentMetadata<?> componentMetadata,
+                         Dependency<?>[] dependencies,
+                         ProvisionStrategy<?>[] provisionStrategies) {
             this.function = function;
             this.componentMetadata = componentMetadata;
             this.dependencies = dependencies;
             this.provisionStrategies = provisionStrategies;
         }
 
-        @Override public Object inject(T target, InternalProvider internalProvider,
+        @Override public Object inject(T target,
+                                       InternalProvider internalProvider,
                                        ResolutionContext resolutionContext) {
             Object[] parameters = new Object[provisionStrategies.length];
             for (int i = 0; i < parameters.length; i++) {
@@ -372,7 +373,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 @Override public void visit(Method method) {
                     ParameterizedFunction function = new MethodFunction(method);
                     Dependency<?>[] dependencies = dependenciesForFunction(function, qualifierResolver);
-                    ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy[dependencies.length];
+                    ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy<?>[dependencies.length];
                     for (int i = 0; i < dependencies.length; i++) {
                         provisionStrategies[i] = internalProvider.getProvisionStrategy(
                                 DependencyRequest.Factory.create(componentMetadata, dependencies[i]));

@@ -237,7 +237,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                 return Provider.class.isAssignableFrom(dependency.typeKey().raw());
             }
 
-            @Override public Object provider(Provider provider) {
+            @Override public Object provider(Provider<?> provider) {
                 return provider;
             }
 

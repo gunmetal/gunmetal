@@ -128,7 +128,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             return RequestVisitor.NONE;
         }
 
-        final Class[] blackListClasses;
+        final Class<?>[] blackListClasses;
 
         BlackList.Modules blackListModules =
                 blackListConfigClass.getAnnotation(BlackList.Modules.class);
@@ -187,7 +187,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             return RequestVisitor.NONE;
         }
 
-        final Class[] whiteListClasses;
+        final Class<?>[] whiteListClasses;
 
         WhiteList.Modules whiteListModules =
                 whiteListConfigClass.getAnnotation(WhiteList.Modules.class);

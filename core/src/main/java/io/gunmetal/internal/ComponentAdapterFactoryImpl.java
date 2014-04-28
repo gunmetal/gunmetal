@@ -133,7 +133,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             final Instantiator<T> instantiator,
             final Injector<T> injector) {
         return new ComponentAdapter<T>() {
-            @Override public ComponentMetadata metadata() {
+            @Override public ComponentMetadata<?> metadata() {
                 return metadata;
             }
             @Override public ProvisionStrategy<T> provisionStrategy() {
