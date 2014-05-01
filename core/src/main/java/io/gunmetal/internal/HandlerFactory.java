@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.Linkers;
 
 import java.util.List;
 
@@ -25,8 +26,8 @@ import java.util.List;
  */
 interface HandlerFactory {
 
-    List<DependencyRequestHandler<?>> createHandlersForModule(Class<?> module);
+    List<DependencyRequestHandler<?>> createHandlersForModule(Class<?> module, Linkers linkers);
 
-    <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(DependencyRequest<T> dependencyRequest);
+    <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(DependencyRequest<T> dependencyRequest, Linkers linkers);
 
 }

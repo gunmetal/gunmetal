@@ -20,6 +20,7 @@ import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
@@ -33,17 +34,16 @@ import io.gunmetal.spi.Scopes;
 class ScopeDecorator implements ProvisionStrategyDecorator {
 
     private final ScopeBindings scopeBindings;
-    private final Linkers linkers;
 
-    ScopeDecorator(ScopeBindings scopeBindings, Linkers linkers) {
+    ScopeDecorator(ScopeBindings scopeBindings) {
         this.scopeBindings = scopeBindings;
-        this.linkers = linkers;
     }
 
     @Override
     public <T> ProvisionStrategy<T> decorate(
             final ComponentMetadata<?> componentMetadata,
-            final ProvisionStrategy<T> delegateStrategy) {
+            final ProvisionStrategy<T> delegateStrategy,
+            final Linkers linkers) {
 
         final Scope scope = componentMetadata.scope();
 

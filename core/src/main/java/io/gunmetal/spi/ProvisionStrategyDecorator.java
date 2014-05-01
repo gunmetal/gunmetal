@@ -23,6 +23,7 @@ public interface ProvisionStrategyDecorator {
 
     <T> ProvisionStrategy<T> decorate(
             ComponentMetadata<?> componentMetadata,
-            ProvisionStrategy<T> delegateStrategy);
+            ProvisionStrategy<T> delegateStrategy,
+            Linkers linkers);
 
 }

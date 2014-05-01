@@ -19,6 +19,7 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
@@ -42,13 +43,15 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
         this.strategyDecorator = strategyDecorator;
     }
 
-    @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata) {
+    @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata,
+                                                               Linkers linkers) {
         Instantiator<T> instantiator =
-                injectorFactory.constructorInstantiator(componentMetadata);
-        Injector<T> postInjector = injectorFactory.compositeInjector(componentMetadata);
+                injectorFactory.constructorInstantiator(componentMetadata, linkers);
+        Injector<T> postInjector = injectorFactory.compositeInjector(componentMetadata, linkers);
         ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                 componentMetadata,
-                baseProvisionStrategy(componentMetadata, instantiator, postInjector));
+                baseProvisionStrategy(componentMetadata, instantiator, postInjector),
+                linkers);
         return componentAdapter(
                 componentMetadata,
                 provisionStrategy,
@@ -56,14 +59,17 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 postInjector);
     }
 
-    @Override public <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata) {
+    @Override public <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata,
+                                                                Linkers linkers) {
         Instantiator<T> instantiator =
-                injectorFactory.methodInstantiator(componentMetadata);
+                injectorFactory.methodInstantiator(componentMetadata, linkers);
         Injector<T> postInjector;
         // TODO probably the wrong approach here ;)
         if (componentMetadata.provider().getReturnType() == void.class) {
             postInjector = new Injector<T>() {
-                @Override public Object inject(T target, InternalProvider internalProvider, ResolutionContext resolutionContext) {
+                @Override public Object inject(T target,
+                                               InternalProvider internalProvider,
+                                               ResolutionContext resolutionContext) {
                     return null;
                 }
 
@@ -80,7 +86,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
         }
         ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                 componentMetadata,
-                baseProvisionStrategy(componentMetadata, instantiator, postInjector));
+                baseProvisionStrategy(componentMetadata, instantiator, postInjector),
+                linkers);
         return componentAdapter(
                 componentMetadata,
                 provisionStrategy,
@@ -145,7 +152,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 Instantiator<T> newInstantiator = instantiator.newInstantiatorInstance(linkers);
                 ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                         metadata,
-                        baseProvisionStrategy(metadata, newInstantiator, newInjector));
+                        baseProvisionStrategy(metadata, newInstantiator, newInjector),
+                        linkers);
                 return componentAdapter(metadata, provisionStrategy, newInstantiator, newInjector);
             }
 

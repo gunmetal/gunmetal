@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 
 /**

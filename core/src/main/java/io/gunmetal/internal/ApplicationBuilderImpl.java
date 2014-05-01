@@ -24,6 +24,8 @@ import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.Linker;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
@@ -56,21 +58,20 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         final Config config = new ConfigBuilderImpl().build(applicationModule.options());
 
-        ApplicationLinker applicationLinker = new ApplicationLinker();
-
         InjectorFactory injectorFactory = new InjectorFactoryImpl(
                 config.qualifierResolver(),
                 config.constructorResolver(),
-                config.classWalker(),
-                applicationLinker);
+                config.classWalker());
 
         final List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
-        strategyDecorators.add(new ScopeDecorator(config.scopeBindings(), applicationLinker));
+        strategyDecorators.add(new ScopeDecorator(config.scopeBindings()));
         ProvisionStrategyDecorator compositeStrategyDecorator = new ProvisionStrategyDecorator() {
             @Override public <T> ProvisionStrategy<T> decorate(
-                    ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy) {
+                    ComponentMetadata<?> componentMetadata,
+                    ProvisionStrategy<T> delegateStrategy,
+                    Linkers linkers) {
                 for (ProvisionStrategyDecorator decorator : strategyDecorators) {
-                    delegateStrategy = decorator.decorate(componentMetadata, delegateStrategy);
+                    delegateStrategy = decorator.decorate(componentMetadata, delegateStrategy, linkers);
                 }
                 return delegateStrategy;
             }
@@ -86,25 +87,19 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         final HandlerCache myCache = new HandlerCache();
 
+        final ApplicationLinker applicationLinker = new ApplicationLinker();
+
         for (Class<?> module : applicationModule.modules()) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
-                    handlerFactory.createHandlersForModule(module);
+                    handlerFactory.createHandlersForModule(module, applicationLinker);
             myCache.putAll(moduleRequestHandlers);
         }
-
-        final HandlerCache compositeCache = new HandlerCache(parentCache, myCache);
-
-        final InternalProvider internalProvider =
-                new InternalProviderImpl(config, handlerFactory, compositeCache, myCache);
-
-        applicationLinker.link(internalProvider, ResolutionContext.Factory.create());
 
         return new ContainerImpl(
                 config,
                 applicationLinker,
-                internalProvider,
                 injectorFactory,
-                compositeCache,
+                handlerFactory,
                 myCache,
                 parentCache);
     }
@@ -358,15 +353,18 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         private final HandlerFactory handlerFactory;
         private final HandlerCache compositeCache;
         private final HandlerCache myCache;
+        private final Linkers linkers;
 
         InternalProviderImpl(Config config,
                              HandlerFactory handlerFactory,
                              HandlerCache compositeCache,
-                             HandlerCache myCache) {
+                             HandlerCache myCache,
+                             Linkers linkers) {
             this.config = config;
             this.handlerFactory = handlerFactory;
             this.compositeCache = compositeCache;
             this.myCache = myCache;
+            this.linkers = linkers;
         }
 
         @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
@@ -389,7 +387,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                             .getProvisionStrategy();
                 }
             }
-            requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest);
+            requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, linkers);
             if (requestHandler != null) {
                 // we do not cache handlers for specific requests - each request gets its own
                 return requestHandler
@@ -469,6 +467,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         private final ApplicationLinker applicationLinker;
         private final InternalProvider internalProvider;
         private final InjectorFactory injectorFactory;
+        private final HandlerFactory handlerFactory;
         private final HandlerCache compositeCache;
         private final HandlerCache myCache;
         private final HandlerCache parentCache;
@@ -476,18 +475,24 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         ContainerImpl(Config config,
                       ApplicationLinker applicationLinker,
-                      InternalProvider internalProvider,
                       InjectorFactory injectorFactory,
-                      HandlerCache compositeCache,
+                      HandlerFactory handlerFactory,
                       HandlerCache myCache,
                       HandlerCache parentCache) {
             this.config = config;
             this.applicationLinker = applicationLinker;
-            this.internalProvider = internalProvider;
             this.injectorFactory = injectorFactory;
-            this.compositeCache = compositeCache;
+            this.handlerFactory = handlerFactory;
             this.myCache = myCache;
             this.parentCache = parentCache;
+
+            compositeCache = new HandlerCache(parentCache, myCache);
+
+            internalProvider =
+                    new InternalProviderImpl(config, handlerFactory, compositeCache, myCache, applicationLinker);
+
+            applicationLinker.link(internalProvider, ResolutionContext.Factory.create());
+
         }
 
         @Override public <T> ApplicationContainer inject(T injectionTarget) {
@@ -497,12 +502,14 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             Injector<T> injector = Smithy.cloak(injectors.get(targetClass));
 
             if (injector == null) {
+
                 final Qualifier qualifier = config.qualifierResolver().resolve(targetClass);
 
                 injector = injectorFactory.compositeInjector(
                         config.componentMetadataResolver().resolveMetadata(
                                 targetClass,
-                                new ModuleMetadata(targetClass, qualifier, new Class<?>[0])));
+                                new ModuleMetadata(targetClass, qualifier, new Class<?>[0])),
+                        applicationLinker);
 
                 applicationLinker.link(internalProvider, ResolutionContext.Factory.create());
 
@@ -541,6 +548,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         @Override public ApplicationContainer newInstance() {
 
             ApplicationLinker applicationLinker = new ApplicationLinker();
+
             HandlerCache newMyCache = new HandlerCache();
 
             for (Map.Entry<Dependency<?>, DependencyRequestHandler<?>> entry : myCache.requestHandlers.entrySet()) {
@@ -549,51 +557,21 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                         entry.getValue().newHandlerInstance(applicationLinker));
             }
 
-            HandlerCache newCompositeCache = new HandlerCache(parentCache, newMyCache);
+            Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
 
-            InjectorFactory injectorFactory = new InjectorFactoryImpl(
-                    config.qualifierResolver(),
-                    config.constructorResolver(),
-                    config.classWalker(),
-                    applicationLinker);
-
-            final List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
-            strategyDecorators.add(new ScopeDecorator(config.scopeBindings(), applicationLinker));
-            ProvisionStrategyDecorator compositeStrategyDecorator = new ProvisionStrategyDecorator() {
-                @Override public <T> ProvisionStrategy<T> decorate(
-                        ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy) {
-                    for (ProvisionStrategyDecorator decorator : strategyDecorators) {
-                        delegateStrategy = decorator.decorate(componentMetadata, delegateStrategy);
-                    }
-                    return delegateStrategy;
-                }
-            };
-
-            final ComponentAdapterFactory componentAdapterFactory =
-                    new ComponentAdapterFactoryImpl(injectorFactory, compositeStrategyDecorator);
-
-            final HandlerFactory handlerFactory = new HandlerFactoryImpl(
-                    componentAdapterFactory,
-                    config.qualifierResolver(),
-                    config.componentMetadataResolver());
-
-            InternalProvider newInternalProvider =
-                    new InternalProviderImpl(config, handlerFactory, newCompositeCache, newMyCache);
+            for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
+                injectorHashMap.put(entry.getKey(), entry.getValue().newInjectorInstance(applicationLinker));
+            }
 
             ContainerImpl copy = new ContainerImpl(
                     config,
                     applicationLinker,
-                    newInternalProvider,
                     injectorFactory,
-                    newCompositeCache,
+                    handlerFactory,
                     newMyCache,
                     parentCache);
 
-            for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
-                copy.injectors.put(entry.getKey(), entry.getValue().newInjectorInstance(applicationLinker));
-            }
-
-            applicationLinker.link(newInternalProvider, ResolutionContext.Factory.create());
+            copy.injectors.putAll(injectorHashMap);
 
             return copy;
         }

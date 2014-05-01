@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
-
-import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.ResolutionContext;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars
  */
-interface Linker {
-    void link(InternalProvider internalProvider, ResolutionContext linkingContext);
+public interface Linkers {
+
+    void add(WiringLinker linker);
+
+    void add(EagerLinker linker);
+
+    interface WiringLinker extends Linker { }
+
+    interface EagerLinker extends Linker { }
+
 }

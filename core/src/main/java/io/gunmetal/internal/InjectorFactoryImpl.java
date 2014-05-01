@@ -23,6 +23,7 @@ import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
@@ -48,19 +49,17 @@ class InjectorFactoryImpl implements InjectorFactory {
     private final AnnotationResolver<Qualifier> qualifierResolver;
     private final ConstructorResolver constructorResolver;
     private final ClassWalker classWalker;
-    private final Linkers linkers;
 
     InjectorFactoryImpl(AnnotationResolver<Qualifier> qualifierResolver,
                         ConstructorResolver constructorResolver,
-                        ClassWalker classWalker,
-                        Linkers linkers) {
+                        ClassWalker classWalker) {
         this.qualifierResolver = qualifierResolver;
         this.constructorResolver = constructorResolver;
         this.classWalker = classWalker;
-        this.linkers = linkers;
     }
 
-    @Override public <T> Injector<T> compositeInjector(final ComponentMetadata<Class<?>> componentMetadata) {
+    @Override public <T> Injector<T> compositeInjector(final ComponentMetadata<Class<?>> componentMetadata,
+                                                       final Linkers linkers) {
         final List<Injector<T>> injectors = new ArrayList<>();
         classWalker.walk(componentMetadata.provider(), new ClassWalker.InjectedMemberVisitor() {
             @Override public void visit(final Field field) {
@@ -84,7 +83,8 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new LazyCompositeInjector<>(classWalker, qualifierResolver, componentMetadata);
     }
 
-    @Override public <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata) {
+    @Override public <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata,
+                                                                 Linkers linkers) {
         Constructor<?> constructor = constructorResolver.resolve(componentMetadata.provider());
         final ParameterizedFunction function = new ConstructorFunction(constructor);
         Injector<T> injector = new FunctionInjector<>(
@@ -95,7 +95,8 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new InstantiatorImpl<>(injector);
     }
 
-    @Override public <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata) {
+    @Override public <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata,
+                                                            Linkers linkers) {
         final ParameterizedFunction function = new MethodFunction(componentMetadata.provider());
         Injector<T> injector = new FunctionInjector<>(
                 function,

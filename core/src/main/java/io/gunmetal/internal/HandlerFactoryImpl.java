@@ -24,6 +24,7 @@ import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ComponentMetadataResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
@@ -52,7 +53,8 @@ class HandlerFactoryImpl implements HandlerFactory {
         this.componentMetadataResolver = componentMetadataResolver;
     }
 
-    @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module) {
+    @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module,
+                                                                               Linkers linkers) {
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {
             throw new IllegalArgumentException("The module class [" + module.getName()
@@ -62,13 +64,13 @@ class HandlerFactoryImpl implements HandlerFactory {
         ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
         List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
         addForProviderMethods(
-                module, requestHandlers, moduleRequestVisitor, moduleMetadata);
+                module, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
         return requestHandlers;
 
     }
 
     @Override public <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(
-            final DependencyRequest<T> dependencyRequest) {
+            final DependencyRequest<T> dependencyRequest, Linkers linkers) {
         final Dependency<T> dependency = dependencyRequest.dependency();
         final TypeKey<T> typeKey = dependency.typeKey();
         if (!isInstantiable(typeKey.raw())) {
@@ -77,7 +79,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         final Class<? super T> cls = typeKey.raw();
         final ModuleMetadata moduleMetadata = new ModuleMetadata(cls, dependency.qualifier(), new Class<?>[0]);
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
-                componentMetadataResolver.resolveMetadata(cls, moduleMetadata));
+                componentMetadataResolver.resolveMetadata(cls, moduleMetadata), linkers);
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
@@ -267,8 +269,9 @@ class HandlerFactoryImpl implements HandlerFactory {
     private void addForProviderMethods(
             Class<?> module,
             List<DependencyRequestHandler<?>> requestHandlers,
-            final RequestVisitor moduleRequestVisitor,
-            final ModuleMetadata moduleMetadata) {
+            RequestVisitor moduleRequestVisitor,
+            ModuleMetadata moduleMetadata,
+            Linkers linkers) {
 
         for (final Method method : module.getDeclaredMethods()) {
 
@@ -276,7 +279,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                     method,
                     module,
                     moduleRequestVisitor,
-                    moduleMetadata));
+                    moduleMetadata,
+                    linkers));
         }
 
     }
@@ -285,7 +289,8 @@ class HandlerFactoryImpl implements HandlerFactory {
             final Method method,
             Class<?> module,
             final RequestVisitor moduleRequestVisitor,
-            final ModuleMetadata moduleMetadata) {
+            final ModuleMetadata moduleMetadata,
+            Linkers linkers) {
 
         int modifiers = method.getModifiers();
 
@@ -301,7 +306,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
 
         return requestHandler(
-                componentAdapterFactory.<T>withMethodProvider(componentMetadata),
+                componentAdapterFactory.<T>withMethodProvider(componentMetadata, linkers),
                 dependencies,
                 moduleRequestVisitor,
                 AccessFilter.Factory.getAccessFilter(method));
