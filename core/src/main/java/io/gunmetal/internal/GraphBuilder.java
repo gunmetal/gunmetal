@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package io.gunmetal;
+package io.gunmetal.internal;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import io.gunmetal.ObjectGraph;
 
 /**
  * @author rees.byars
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface ConfigurationModule {
-    Option[] requiresOptions() default { };
-    ScopeHandler[] scopes() default { };
-    Class<?>[] modules() default { };
+public interface GraphBuilder {
+
+    ObjectGraph build(Class<?> rootModule);
+
 }

@@ -29,9 +29,13 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Module {
+
     Class<?>[] dependsOn() default { };
+
     Class<? extends BlackList> notAccessibleFrom() default BlackList.class;
+
     Class<? extends WhiteList> onlyAccessibleFrom() default WhiteList.class;
+
     AccessLevel access() default AccessLevel.UNDEFINED;
-    Class<? extends Layer> layer() default Layer.class;
+
 }

@@ -87,7 +87,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                                                  Linkers linkers) {
         Constructor<?> constructor = constructorResolver.resolve(componentMetadata.provider());
         final ParameterizedFunction function = new ConstructorFunction(constructor);
-        Injector<T> injector = new FunctionInjector<>(
+        Injector<?> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
                 dependenciesForFunction(function, qualifierResolver),
@@ -98,7 +98,7 @@ class InjectorFactoryImpl implements InjectorFactory {
     @Override public <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata,
                                                             Linkers linkers) {
         final ParameterizedFunction function = new MethodFunction(componentMetadata.provider());
-        Injector<T> injector = new FunctionInjector<>(
+        Injector<?> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
                 dependenciesForFunction(function, qualifierResolver),
@@ -431,9 +431,9 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     private static class InstantiatorImpl<T> implements Instantiator<T> {
 
-        private final Injector<T> injector;
+        private final Injector<?> injector;
 
-        InstantiatorImpl(Injector<T> injector) {
+        InstantiatorImpl(Injector<?> injector) {
             this.injector = injector;
         }
 

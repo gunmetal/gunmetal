@@ -16,11 +16,11 @@
 
 package io.gunmetal.testmocks;
 
-import io.gunmetal.ApplicationModule;
+import io.gunmetal.RootModule;
 import io.gunmetal.Module;
 import io.gunmetal.Prototype;
 
-@ApplicationModule(modules = NewGunmetalBenchMarkModule.class)
+@RootModule(modules = NewGunmetalBenchMarkModule.class)
 @Module
 public class NewGunmetalBenchMarkModule {
 

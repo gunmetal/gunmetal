@@ -16,8 +16,8 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.ApplicationContainer;
-import io.gunmetal.ApplicationModule;
+import io.gunmetal.ObjectGraph;
+import io.gunmetal.RootModule;
 import io.gunmetal.AutoCollection;
 import io.gunmetal.Gunmetal;
 import io.gunmetal.Inject;
@@ -134,10 +134,10 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testBuild() {
 
-        @ApplicationModule(modules = { TestModule.class })
+        @RootModule(modules = { TestModule.class })
         class Application { }
 
-        ApplicationContainer app = new ApplicationBuilderImpl().build(Application.class);
+        ObjectGraph app = new GraphBuilderImpl().build(Application.class);
 
         @Main
         class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
@@ -182,10 +182,10 @@ public class ApplicationBuilderImplTest {
     @Test(expected = DependencyException.class)
     public void testBlackList() {
 
-        @ApplicationModule(modules = { TestModule.class, M.class })
+        @RootModule(modules = { TestModule.class, M.class })
         class Application { }
 
-        new ApplicationBuilderImpl().build(Application.class);
+        new GraphBuilderImpl().build(Application.class);
     }
 
     @Module
@@ -202,17 +202,17 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testPlus() {
 
-        @ApplicationModule(modules = { TestModule.class })
+        @RootModule(modules = { TestModule.class })
         class Parent { }
 
-        @ApplicationModule(modules = { PlusModule.class })
+        @RootModule(modules = { PlusModule.class })
         class Child { }
 
         class Dep implements io.gunmetal.Dependency<PlusModule> { }
 
-        ApplicationContainer parent = new ApplicationBuilderImpl().build(Parent.class);
+        ObjectGraph parent = new GraphBuilderImpl().build(Parent.class);
 
-        ApplicationContainer child = parent.plus(Child.class);
+        ObjectGraph child = parent.plus(Child.class);
 
         PlusModule p = child.get(Dep.class);
 
@@ -231,7 +231,7 @@ public class ApplicationBuilderImplTest {
 
         assert injectTest.f != null;
 
-        ApplicationContainer childCopy = child.newInstance();
+        ObjectGraph childCopy = child.newInstance();
 
         assert child.get(Dep.class) != childCopy.get(Dep.class);
 
@@ -251,9 +251,9 @@ public class ApplicationBuilderImplTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ApplicationContainer APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
+    static final ObjectGraph APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
 
-    @ApplicationModule(modules = NewGunmetalBenchMarkModule.class)
+    @RootModule(modules = NewGunmetalBenchMarkModule.class)
     static class App { }
 
     static class Dep implements io.gunmetal.Dependency<AA> { }

@@ -16,7 +16,7 @@
 
 package io.gunmetal;
 
-import io.gunmetal.internal.ApplicationBuilderImpl;
+import io.gunmetal.internal.GraphBuilderImpl;
 
 /**
  * @author rees.byars
@@ -25,8 +25,8 @@ public final class Gunmetal {
 
     private Gunmetal() { }
 
-    public static ApplicationContainer create(Class<?> applicationModule) {
-        return new ApplicationBuilderImpl().build(applicationModule);
+    public static ObjectGraph create(Class<?> rootModule) {
+        return new GraphBuilderImpl().build(rootModule);
     }
 
 }

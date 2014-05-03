@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
-
-import io.gunmetal.ApplicationContainer;
+package io.gunmetal;
 
 /**
  * @author rees.byars
  */
-public interface ApplicationBuilder {
+public interface ObjectGraph {
 
-    ApplicationContainer build(Class<?> application);
+    <T> ObjectGraph inject(T injectionTarget);
+
+    <T, D extends Dependency<T>> T get(Class<D> dependency);
+
+    ObjectGraph plus(Class<?> rootModule);
+
+    ObjectGraph newInstance();
 
 }

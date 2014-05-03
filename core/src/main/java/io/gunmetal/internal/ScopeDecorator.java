@@ -88,6 +88,8 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
                     return singleton;
                 }
             };
+
+
         }
 
         return new ProvisionStrategy<T>() {

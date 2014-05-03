@@ -28,10 +28,12 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface ApplicationModule {
+public @interface RootModule {
+
     Option[] options() default { };
+
     ScopeHandler[] scopes() default { };
+
     Class<?>[] modules() default { };
-    Class<?>[] configurationModules() default { };
-    Class<? extends Layer>[] layers() default { };
+
 }

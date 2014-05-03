@@ -16,8 +16,8 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.ApplicationContainer;
-import io.gunmetal.ApplicationModule;
+import io.gunmetal.ObjectGraph;
+import io.gunmetal.RootModule;
 import io.gunmetal.Provider;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Config;
@@ -46,17 +46,17 @@ import java.util.Stack;
 /**
  * @author rees.byars
  */
-public class ApplicationBuilderImpl implements ApplicationBuilder {
+public class GraphBuilderImpl implements GraphBuilder {
 
-    @Override public ApplicationContainer build(Class<?> application) {
-        return build(application, null);
+    @Override public ObjectGraph build(Class<?> root) {
+        return build(root, null);
     }
 
-    private ApplicationContainer build(Class<?> application, final HandlerCache parentCache) {
+    private ObjectGraph build(Class<?> root, final HandlerCache parentCache) {
 
-        ApplicationModule applicationModule = application.getAnnotation(ApplicationModule.class);
+        RootModule rootModule = root.getAnnotation(RootModule.class);
 
-        final Config config = new ConfigBuilderImpl().build(applicationModule.options());
+        final Config config = new ConfigBuilderImpl().build(rootModule.options());
 
         InjectorFactory injectorFactory = new InjectorFactoryImpl(
                 config.qualifierResolver(),
@@ -87,17 +87,17 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
         final HandlerCache myCache = new HandlerCache();
 
-        final ApplicationLinker applicationLinker = new ApplicationLinker();
+        final GraphLinker graphLinker = new GraphLinker();
 
-        for (Class<?> module : applicationModule.modules()) {
+        for (Class<?> module : rootModule.modules()) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
-                    handlerFactory.createHandlersForModule(module, applicationLinker);
+                    handlerFactory.createHandlersForModule(module, graphLinker);
             myCache.putAll(moduleRequestHandlers);
         }
 
-        return new ContainerImpl(
+        return new GraphImpl(
                 config,
-                applicationLinker,
+                graphLinker,
                 injectorFactory,
                 handlerFactory,
                 myCache,
@@ -140,7 +140,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         };
     }
 
-    private <T, C> ProvisionStrategy<T> createProviderStrategy(
+    private static <T, C> ProvisionStrategy<T> createProviderStrategy(
             final Dependency<T> providerDependency,
             final Config config,
             final InternalProvider internalProvider,
@@ -323,7 +323,7 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
     }
 
-    private static class ApplicationLinker implements Linkers, Linker {
+    private static class GraphLinker implements Linkers, Linker {
 
         final Stack<WiringLinker> postWiringLinkers = new Stack<>();
         final Stack<EagerLinker> eagerLinkers = new Stack<>();
@@ -461,10 +461,10 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
 
     }
 
-    private class ContainerImpl implements ApplicationContainer {
+    private static class GraphImpl implements ObjectGraph {
 
         private final Config config;
-        private final ApplicationLinker applicationLinker;
+        private final GraphLinker graphLinker;
         private final InternalProvider internalProvider;
         private final InjectorFactory injectorFactory;
         private final HandlerFactory handlerFactory;
@@ -473,14 +473,14 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
         private final HandlerCache parentCache;
         private final Map<Class<?>, Injector<?>> injectors = new HashMap<>();
 
-        ContainerImpl(Config config,
-                      ApplicationLinker applicationLinker,
-                      InjectorFactory injectorFactory,
-                      HandlerFactory handlerFactory,
-                      HandlerCache myCache,
-                      HandlerCache parentCache) {
+        GraphImpl(Config config,
+                  GraphLinker graphLinker,
+                  InjectorFactory injectorFactory,
+                  HandlerFactory handlerFactory,
+                  HandlerCache myCache,
+                  HandlerCache parentCache) {
             this.config = config;
-            this.applicationLinker = applicationLinker;
+            this.graphLinker = graphLinker;
             this.injectorFactory = injectorFactory;
             this.handlerFactory = handlerFactory;
             this.myCache = myCache;
@@ -489,13 +489,13 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             compositeCache = new HandlerCache(parentCache, myCache);
 
             internalProvider =
-                    new InternalProviderImpl(config, handlerFactory, compositeCache, myCache, applicationLinker);
+                    new InternalProviderImpl(config, handlerFactory, compositeCache, myCache, graphLinker);
 
-            applicationLinker.link(internalProvider, ResolutionContext.Factory.create());
+            graphLinker.link(internalProvider, ResolutionContext.Factory.create());
 
         }
 
-        @Override public <T> ApplicationContainer inject(T injectionTarget) {
+        @Override public <T> ObjectGraph inject(T injectionTarget) {
 
             final Class<T> targetClass = Smithy.cloak(injectionTarget.getClass());
 
@@ -509,9 +509,9 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
                         config.componentMetadataResolver().resolveMetadata(
                                 targetClass,
                                 new ModuleMetadata(targetClass, qualifier, new Class<?>[0])),
-                        applicationLinker);
+                        graphLinker);
 
-                applicationLinker.link(internalProvider, ResolutionContext.Factory.create());
+                graphLinker.link(internalProvider, ResolutionContext.Factory.create());
 
                 injectors.put(targetClass, injector);
             }
@@ -541,31 +541,31 @@ public class ApplicationBuilderImpl implements ApplicationBuilder {
             return null;
         }
 
-        @Override public ApplicationContainer plus(Class<?> applicationModule) {
-            return build(applicationModule, compositeCache);
+        @Override public ObjectGraph plus(Class<?> root) {
+            return new GraphBuilderImpl().build(root, compositeCache);
         }
 
-        @Override public ApplicationContainer newInstance() {
+        @Override public ObjectGraph newInstance() {
 
-            ApplicationLinker applicationLinker = new ApplicationLinker();
+            GraphLinker graphLinker = new GraphLinker();
 
             HandlerCache newMyCache = new HandlerCache();
 
             for (Map.Entry<Dependency<?>, DependencyRequestHandler<?>> entry : myCache.requestHandlers.entrySet()) {
                 newMyCache.requestHandlers.put(
                         entry.getKey(),
-                        entry.getValue().newHandlerInstance(applicationLinker));
+                        entry.getValue().newHandlerInstance(graphLinker));
             }
 
             Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
 
             for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
-                injectorHashMap.put(entry.getKey(), entry.getValue().newInjectorInstance(applicationLinker));
+                injectorHashMap.put(entry.getKey(), entry.getValue().newInjectorInstance(graphLinker));
             }
 
-            ContainerImpl copy = new ContainerImpl(
+            GraphImpl copy = new GraphImpl(
                     config,
-                    applicationLinker,
+                    graphLinker,
                     injectorFactory,
                     handlerFactory,
                     newMyCache,

@@ -6,8 +6,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import dagger.ObjectGraph;
-import io.gunmetal.ApplicationContainer;
-import io.gunmetal.ApplicationModule;
+import io.gunmetal.ObjectGraph;
+import io.gunmetal.RootModule;
 import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.E;
 import io.gunmetal.testmocks.N;
@@ -30,7 +30,7 @@ import java.util.HashMap;
 public class CaliperBenchmarks {
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ApplicationContainer APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
+    static final ObjectGraph APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
     @Inject public Provider<N> daggerProvider;
     static final ObjectGraph OBJECT_GRAPH = ObjectGraph.create(new DaggerBenchMarkModule());
     static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
@@ -38,7 +38,7 @@ public class CaliperBenchmarks {
     Provider<N> guiceProvider;
     static final Injector INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
 
-    @ApplicationModule(modules = NewGunmetalBenchMarkModule.class)
+    @RootModule(modules = NewGunmetalBenchMarkModule.class)
     static class App { }
 
     static class Dep implements io.gunmetal.Dependency<AA> { }
@@ -61,7 +61,7 @@ public class CaliperBenchmarks {
     @Benchmark long template(int reps) {
         int dummy = 0;
         int counter = 0;
-        ApplicationContainer template = io.gunmetal.Gunmetal.create(App.class);
+        ObjectGraph template = io.gunmetal.Gunmetal.create(App.class);
         for (long i = 0; i < reps; i++) {
             dummy |= template.newInstance().get(Dep.class).hashCode();
         }
