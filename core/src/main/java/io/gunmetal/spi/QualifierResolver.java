@@ -21,6 +21,10 @@ import java.lang.reflect.AnnotatedElement;
 /**
  * @author rees.byars
  */
-public interface AnnotationResolver<T> {
-    T resolve(AnnotatedElement annotatedElement);
+public interface QualifierResolver {
+
+    Qualifier resolve(AnnotatedElement annotatedElement);
+
+    Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier);
+
 }

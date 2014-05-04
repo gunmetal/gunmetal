@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
+import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Option;
@@ -24,7 +25,7 @@ import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
-import io.gunmetal.spi.AnnotationResolver;
+import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ComponentMetadataResolver;
@@ -67,10 +68,18 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                 });
             }
 
-            @Override public AnnotationResolver<Qualifier> qualifierResolver() {
-                return new AnnotationResolver<Qualifier>() {
+            @Override public QualifierResolver qualifierResolver() {
+                return new QualifierResolver() {
                     @Override public Qualifier resolve(AnnotatedElement annotatedElement) {
                         return QualifierBuilder.qualifier(annotatedElement, io.gunmetal.Qualifier.class);
+                    }
+
+                    @Override public Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier) {
+                        // TODO somewhat inefficient
+                        if (parameter.isAnnotationPresent(FromModule.class)) {
+                            return parentQualifier;
+                        }
+                        return QualifierBuilder.qualifier(parameter, io.gunmetal.Qualifier.class);
                     }
                 };
             }
@@ -84,9 +93,11 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     boolean overrideEnabled = false;
                     boolean collectionElement = false;
 
-                    Resolver(AnnotatedElement annotatedElement) {
+                    Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
 
                         List<Object> qualifiers = new LinkedList<>();
+                        // TODO addAll(asList not great
+                        qualifiers.addAll(Arrays.asList(moduleMetadata.qualifier().qualifiers()));
                         Annotation scopeAnnotation = null;
                         for (Annotation annotation : annotatedElement.getAnnotations()) {
                             Class<? extends Annotation> annotationType = annotation.annotationType();
@@ -132,7 +143,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     @Override public ComponentMetadata<Method> resolveMetadata(final Method method,
                                                                                final ModuleMetadata moduleMetadata) {
 
-                        final Resolver resolver = new Resolver(method);
+                        final Resolver resolver = new Resolver(method, moduleMetadata);
 
                         return new ComponentMetadata<Method>() {
 
@@ -169,7 +180,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     @Override public ComponentMetadata<Class<?>> resolveMetadata(final Class<?> cls,
                                                                                  final ModuleMetadata moduleMetadata) {
 
-                        final Resolver resolver = new Resolver(cls);
+                        final Resolver resolver = new Resolver(cls, moduleMetadata);
 
                         return new ComponentMetadata<Class<?>>() {
 

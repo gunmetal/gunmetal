@@ -16,6 +16,7 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.FromModule;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.RootModule;
 import io.gunmetal.AutoCollection;
@@ -189,7 +190,8 @@ public class ApplicationBuilderImplTest {
     }
 
     @Module
-    static class PlusModule {
+    @Main
+    static class PlusModule implements Cheese {
 
         @Inject ApplicationBuilderImplTest applicationBuilderImplTest;
 
@@ -197,7 +199,17 @@ public class ApplicationBuilderImplTest {
             return new PlusModule();
         }
 
+        static Cheese cheese() {
+            return new PlusModule();
+        }
+
+        static void r(@FromModule Cheese cheese) {
+            System.out.println("sup");
+        }
+
     }
+
+    interface Cheese { }
 
     @Test
     public void testPlus() {
@@ -208,6 +220,7 @@ public class ApplicationBuilderImplTest {
         @RootModule(modules = { PlusModule.class })
         class Child { }
 
+        @Main
         class Dep implements io.gunmetal.Dependency<PlusModule> { }
 
         ObjectGraph parent = new GraphBuilderImpl().build(Parent.class);

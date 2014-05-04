@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package io.gunmetal.spi;
+package io.gunmetal;
 
-import io.gunmetal.Provider;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author rees.byars
  */
-public interface Config {
+@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface FromModule { }
 
-    ClassWalker classWalker();
+// private handlerFactory.createHandlersForModule(Class<?> subsumedModule, Class<?> parentModule, Linkers linkers);
 
-    QualifierResolver qualifierResolver();
-
-    ComponentMetadataResolver componentMetadataResolver();
-
-    ConstructorResolver constructorResolver();
-
-    ScopeBindings scopeBindings();
-
-    boolean isProvider(Dependency<?> dependency);
-
-    Object provider(Provider<?> provider);
-
-}
+// subsumes = { @PartialModule(value = AuthenticationModule.class, alias = MyModule.class) }

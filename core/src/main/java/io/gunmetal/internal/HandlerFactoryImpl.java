@@ -19,7 +19,7 @@ package io.gunmetal.internal;
 import io.gunmetal.BlackList;
 import io.gunmetal.Module;
 import io.gunmetal.WhiteList;
-import io.gunmetal.spi.AnnotationResolver;
+import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ComponentMetadataResolver;
 import io.gunmetal.spi.Dependency;
@@ -42,11 +42,11 @@ import java.util.List;
 class HandlerFactoryImpl implements HandlerFactory {
 
     private final ComponentAdapterFactory componentAdapterFactory;
-    private final AnnotationResolver<Qualifier> qualifierResolver;
+    private final QualifierResolver qualifierResolver;
     private final ComponentMetadataResolver componentMetadataResolver;
 
     HandlerFactoryImpl(ComponentAdapterFactory componentAdapterFactory,
-                       AnnotationResolver<Qualifier> qualifierResolver,
+                       QualifierResolver qualifierResolver,
                        ComponentMetadataResolver componentMetadataResolver) {
         this.componentAdapterFactory = componentAdapterFactory;
         this.qualifierResolver = qualifierResolver;

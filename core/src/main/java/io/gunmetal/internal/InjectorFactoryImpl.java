@@ -16,7 +16,6 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.AnnotationResolver;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ConstructorResolver;
@@ -26,6 +25,7 @@ import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ResolutionContext;
 
 import java.lang.annotation.Annotation;
@@ -46,11 +46,11 @@ import java.util.List;
  */
 class InjectorFactoryImpl implements InjectorFactory {
 
-    private final AnnotationResolver<Qualifier> qualifierResolver;
+    private final QualifierResolver qualifierResolver;
     private final ConstructorResolver constructorResolver;
     private final ClassWalker classWalker;
 
-    InjectorFactoryImpl(AnnotationResolver<Qualifier> qualifierResolver,
+    InjectorFactoryImpl(QualifierResolver qualifierResolver,
                         ConstructorResolver constructorResolver,
                         ClassWalker classWalker) {
         this.qualifierResolver = qualifierResolver;
@@ -64,7 +64,10 @@ class InjectorFactoryImpl implements InjectorFactory {
         classWalker.walk(componentMetadata.provider(), new ClassWalker.InjectedMemberVisitor() {
             @Override public void visit(final Field field) {
                 final Dependency<?> dependency = Dependency.from(
-                        qualifierResolver.resolve(field), field.getGenericType());
+                        qualifierResolver.resolveDependencyQualifier(
+                                field,
+                                componentMetadata.moduleMetadata().qualifier()),
+                        field.getGenericType());
                 injectors.add(new FieldInjector<T>(field, componentMetadata, dependency, linkers));
             }
             @Override public void visit(Method method) {
@@ -72,7 +75,10 @@ class InjectorFactoryImpl implements InjectorFactory {
                 injectors.add(new FunctionInjector<T>(
                         function,
                         componentMetadata,
-                        dependenciesForFunction(function, qualifierResolver),
+                        dependenciesForFunction(
+                                function,
+                                qualifierResolver,
+                                componentMetadata.moduleMetadata().qualifier()),
                         linkers));
             }
         });
@@ -90,7 +96,7 @@ class InjectorFactoryImpl implements InjectorFactory {
         Injector<?> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
-                dependenciesForFunction(function, qualifierResolver),
+                dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
                 linkers);
         return new InstantiatorImpl<>(injector);
     }
@@ -101,17 +107,20 @@ class InjectorFactoryImpl implements InjectorFactory {
         Injector<?> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
-                dependenciesForFunction(function, qualifierResolver),
+                dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
                 linkers);
         return new InstantiatorImpl<>(injector);
     }
 
     private static Dependency<?>[] dependenciesForFunction(ParameterizedFunction function,
-                                                           AnnotationResolver<Qualifier> qualifierResolver) {
+                                                           QualifierResolver qualifierResolver,
+                                                           Qualifier parentQualifier) {
         final Dependency<?>[] dependencies = new Dependency<?>[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
-            Parameter p = new Parameter(function, i);
-            dependencies[i] = Dependency.from(qualifierResolver.resolve(p), p.type);
+            Parameter parameter = new Parameter(function, i);
+            dependencies[i] = Dependency.from(
+                    qualifierResolver.resolveDependencyQualifier(parameter, parentQualifier),
+                    parameter.type);
         }
         return dependencies;
     }
@@ -348,12 +357,12 @@ class InjectorFactoryImpl implements InjectorFactory {
     private static class LazyCompositeInjector<T> implements Injector<T> {
 
         private final ClassWalker classWalker;
-        private final AnnotationResolver<Qualifier> qualifierResolver;
+        private final QualifierResolver qualifierResolver;
         private final ComponentMetadata<?> componentMetadata;
         private volatile List<Injector<T>> injectors;
 
         LazyCompositeInjector(ClassWalker classWalker,
-                              AnnotationResolver<Qualifier> qualifierResolver,
+                              QualifierResolver qualifierResolver,
                               ComponentMetadata<?> componentMetadata) {
             this.classWalker = classWalker;
             this.qualifierResolver = qualifierResolver;
@@ -366,14 +375,21 @@ class InjectorFactoryImpl implements InjectorFactory {
             classWalker.walk(targetClass, new ClassWalker.InjectedMemberVisitor() {
                 @Override public void visit(final Field field) {
                     final Dependency<?> dependency = Dependency.from(
-                            qualifierResolver.resolve(field), field.getGenericType());
+                            qualifierResolver.resolveDependencyQualifier(
+                                    field,
+                                    componentMetadata.moduleMetadata().qualifier()),
+                            field.getGenericType());
                     ProvisionStrategy<?> provisionStrategy = internalProvider.getProvisionStrategy(
                             DependencyRequest.Factory.create(componentMetadata, dependency));
                     injectors.add(new FieldInjector<T>(field, componentMetadata, dependency, provisionStrategy));
                 }
                 @Override public void visit(Method method) {
                     ParameterizedFunction function = new MethodFunction(method);
-                    Dependency<?>[] dependencies = dependenciesForFunction(function, qualifierResolver);
+                    Dependency<?>[] dependencies =
+                            dependenciesForFunction(
+                                    function,
+                                    qualifierResolver,
+                                    componentMetadata.moduleMetadata().qualifier());
                     ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy<?>[dependencies.length];
                     for (int i = 0; i < dependencies.length; i++) {
                         provisionStrategies[i] = internalProvider.getProvisionStrategy(

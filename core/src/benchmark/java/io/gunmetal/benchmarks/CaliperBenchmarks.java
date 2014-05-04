@@ -5,7 +5,6 @@ import com.google.caliper.Benchmark;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import dagger.ObjectGraph;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.RootModule;
 import io.gunmetal.testmocks.AA;
@@ -32,7 +31,7 @@ public class CaliperBenchmarks {
     io.gunmetal.Provider<N> newGunmetalProvider;
     static final ObjectGraph APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
     @Inject public Provider<N> daggerProvider;
-    static final ObjectGraph OBJECT_GRAPH = ObjectGraph.create(new DaggerBenchMarkModule());
+    static final dagger.ObjectGraph OBJECT_GRAPH = dagger.ObjectGraph.create(new DaggerBenchMarkModule());
     static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
     static final Key<E> SINGLETON_KEY = Key.get(E.class);
     Provider<N> guiceProvider;
@@ -53,7 +52,9 @@ public class CaliperBenchmarks {
     @Benchmark long newGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= io.gunmetal.Gunmetal.create(App.class).get(Dep.class).hashCode();
+            InjectionTarget injectionTarget = new InjectionTarget();
+            io.gunmetal.Gunmetal.create(App.class).inject(injectionTarget);
+            dummy |= injectionTarget.hashCode();
         }
         return dummy;
     }
@@ -71,7 +72,9 @@ public class CaliperBenchmarks {
     @Benchmark long daggerStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= ObjectGraph.create(new DaggerBenchMarkModule()).get(AA.class).hashCode();
+            InjectionTarget injectionTarget = new InjectionTarget();
+            dagger.ObjectGraph.create(new DaggerBenchMarkModule()).inject(injectionTarget);
+            dummy |= injectionTarget.hashCode();
         }
         return dummy;
     }
@@ -101,7 +104,7 @@ public class CaliperBenchmarks {
     }
 
     @Benchmark long daggerPrototype(int reps) {
-        ObjectGraph objectGraph = OBJECT_GRAPH;
+        dagger.ObjectGraph objectGraph = OBJECT_GRAPH;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= objectGraph.get(N.class).hashCode();
@@ -120,7 +123,7 @@ public class CaliperBenchmarks {
     }
 
     @Benchmark long daggerSingleton(int reps) {
-        ObjectGraph objectGraph = OBJECT_GRAPH;
+        dagger.ObjectGraph objectGraph = OBJECT_GRAPH;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= objectGraph.get(E.class).hashCode();
@@ -225,6 +228,16 @@ public class CaliperBenchmarks {
         int execute() {
             return i++;
         }
+    }
+
+    static class InjectionTarget {
+
+        @Inject
+        AA aa;
+
+        @io.gunmetal.Inject
+        AA aaa;
+
     }
 
 
