@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.BlackList;
+import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.WhiteList;
 import io.gunmetal.spi.QualifierResolver;
@@ -65,6 +66,18 @@ class HandlerFactoryImpl implements HandlerFactory {
         List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
         addForProviderMethods(
                 module, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
+        for (Class<?> library : moduleAnnotation.subsumes()) {
+            if (library.isAnnotationPresent(Module.class)) {
+                // TODO better message
+                throw new IllegalArgumentException("A class with @Module cannot be subsumed");
+            }
+            if (!library.isAnnotationPresent(Library.class)) {
+                // TODO better message
+                throw new IllegalArgumentException("A class without @Library cannot be subsumed");
+            }
+            addForProviderMethods(
+                    library, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
+        }
         return requestHandlers;
 
     }

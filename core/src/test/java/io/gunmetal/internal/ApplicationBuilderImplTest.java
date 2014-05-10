@@ -16,17 +16,18 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.FromModule;
-import io.gunmetal.ObjectGraph;
-import io.gunmetal.RootModule;
 import io.gunmetal.AutoCollection;
+import io.gunmetal.FromModule;
 import io.gunmetal.Gunmetal;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
+import io.gunmetal.Library;
 import io.gunmetal.Module;
+import io.gunmetal.ObjectGraph;
 import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
+import io.gunmetal.RootModule;
 import io.gunmetal.testmocks.A;
 import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.F;
@@ -189,7 +190,7 @@ public class ApplicationBuilderImplTest {
         new GraphBuilderImpl().build(Application.class);
     }
 
-    @Module
+    @Module(subsumes = MyLibrary.class)
     @Main
     static class PlusModule implements Cheese {
 
@@ -203,8 +204,20 @@ public class ApplicationBuilderImplTest {
             return new PlusModule();
         }
 
-        static void r(@FromModule Cheese cheese) {
+        static void r(@FromModule Cheese cheese, @Main Lib myLibrary) {
             System.out.println("sup");
+        }
+
+    }
+
+    interface Lib { }
+
+    @Library
+    static class MyLibrary implements Lib {
+
+        static Lib huh(@FromModule Cheese cheese) {
+            System.out.println("sup library");
+            return new MyLibrary();
         }
 
     }

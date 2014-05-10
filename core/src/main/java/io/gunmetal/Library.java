@@ -28,16 +28,4 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Module {
-
-    Class<?>[] dependsOn() default { };
-
-    Class<?>[] subsumes() default { };
-
-    Class<? extends BlackList> notAccessibleFrom() default BlackList.class;
-
-    Class<? extends WhiteList> onlyAccessibleFrom() default WhiteList.class;
-
-    AccessLevel access() default AccessLevel.UNDEFINED;
-
-}
+public @interface Library { }
