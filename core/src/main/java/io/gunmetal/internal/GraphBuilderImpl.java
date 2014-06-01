@@ -17,8 +17,8 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.ObjectGraph;
-import io.gunmetal.RootModule;
 import io.gunmetal.Provider;
+import io.gunmetal.RootModule;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
@@ -41,7 +41,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author rees.byars
@@ -157,7 +158,7 @@ public class GraphBuilderImpl implements GraphBuilder {
 
     private static class HandlerCache {
 
-        final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new HashMap<>();
+        final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new ConcurrentHashMap<>(64, .75f, 2);
 
         HandlerCache(HandlerCache ... caches) {
             for (HandlerCache cache : caches) {
@@ -167,19 +168,19 @@ public class GraphBuilderImpl implements GraphBuilder {
             }
         }
 
-        synchronized void putAll(List<DependencyRequestHandler<?>> requestHandlers) {
+        void putAll(List<DependencyRequestHandler<?>> requestHandlers) {
             for (DependencyRequestHandler<?> requestHandler : requestHandlers) {
                 putAll(requestHandler);
             }
         }
 
-        synchronized <T> void putAll(DependencyRequestHandler<T> requestHandler) {
+        <T> void putAll(DependencyRequestHandler<T> requestHandler) {
             for (Dependency<? super T> dependency : requestHandler.targets()) {
                 put(dependency, requestHandler);
             }
         }
 
-        synchronized <T> void put(final Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler) {
+        <T> void put(final Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler) {
             ComponentMetadata<?> currentComponent = requestHandler.componentMetadata();
             if (currentComponent.isCollectionElement()) {
                 putCollectionElement(dependency, requestHandler);
@@ -325,8 +326,8 @@ public class GraphBuilderImpl implements GraphBuilder {
 
     private static class GraphLinker implements Linkers, Linker {
 
-        final Stack<WiringLinker> postWiringLinkers = new Stack<>();
-        final Stack<EagerLinker> eagerLinkers = new Stack<>();
+        final Queue<WiringLinker> postWiringLinkers = new LinkedList<>();
+        final Queue<EagerLinker> eagerLinkers = new LinkedList<>();
 
         @Override public void add(WiringLinker linker) {
             postWiringLinkers.add(linker);
@@ -337,11 +338,11 @@ public class GraphBuilderImpl implements GraphBuilder {
         }
 
         @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
-            while (!postWiringLinkers.empty()) {
-                postWiringLinkers.pop().link(internalProvider, linkingContext);
+            while (!postWiringLinkers.isEmpty()) {
+                postWiringLinkers.remove().link(internalProvider, linkingContext);
             }
-            while (!eagerLinkers.empty()) {
-                eagerLinkers.pop().link(internalProvider, linkingContext);
+            while (!eagerLinkers.isEmpty()) {
+                eagerLinkers.remove().link(internalProvider, linkingContext);
             }
         }
 
@@ -471,7 +472,7 @@ public class GraphBuilderImpl implements GraphBuilder {
         private final HandlerCache compositeCache;
         private final HandlerCache myCache;
         private final HandlerCache parentCache;
-        private final Map<Class<?>, Injector<?>> injectors = new HashMap<>();
+        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
 
         GraphImpl(Config config,
                   GraphLinker graphLinker,
@@ -574,6 +575,7 @@ public class GraphBuilderImpl implements GraphBuilder {
             copy.injectors.putAll(injectorHashMap);
 
             return copy;
+
         }
 
     }
