@@ -1,13 +1,15 @@
 package io.gunmetal.benchmarks;
 
 import io.gunmetal.testmocks.*;
-import dagger.Module;
-import dagger.Provides;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
 import javax.inject.Singleton;
 
-@Module(library = true, injects = { AA.class, E.class, F.class, N.class, R.class, CaliperBenchmarks.class, CaliperBenchmarks.InjectionTarget.class } )
-public class DaggerBenchMarkModule {
+public class GuiceProvidesMethodBenchMarkModule extends AbstractModule {
+
+
+    protected void configure() { }
 
     @Provides AA aa(A a, BB bb, R r, E e, E ee, S s) {
         return new AA(a, bb, r, e, ee, s);

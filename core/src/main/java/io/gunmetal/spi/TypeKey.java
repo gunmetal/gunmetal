@@ -16,19 +16,45 @@
 
 package io.gunmetal.spi;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author rees.byars
  */
-public abstract class TypeKey<T> {
+public final class TypeKey<T> {
 
-    public abstract Type type();
+    private final Type type;
+    private final Class<? super T> raw;
+    private final int hash;
 
-    public abstract Class<? super T> raw();
+    TypeKey(Type type, Class<? super T> raw) {
+        this.type = type;
+        this.raw = raw;
+        // TODO this could be better
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            hash = Objects.hash(
+                    Arrays.hashCode(parameterizedType.getActualTypeArguments()),
+                    parameterizedType.getRawType(),
+                    parameterizedType.getOwnerType());
+        } else {
+            hash = type.hashCode();
+        }
+    }
+
+    public Type type() {
+        return type;
+    }
+
+    public Class<? super T> raw() {
+        return raw;
+    }
 
     @Override public int hashCode() {
-        return type().hashCode();
+        return hash;
     }
 
     @Override public boolean equals(Object target) {

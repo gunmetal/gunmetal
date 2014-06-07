@@ -17,11 +17,16 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ResolutionContext;
 
 /**
 * @author rees.byars
 */
 public interface Injector<T> extends Dependent {
+
     Object inject(T target, InternalProvider internalProvider, ResolutionContext resolutionContext);
+
+    Injector<T> newInjectorInstance(Linkers linkers);
+
 }

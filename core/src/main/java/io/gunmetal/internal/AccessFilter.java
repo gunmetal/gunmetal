@@ -59,8 +59,7 @@ interface AccessFilter<T> {
                     return method;
                 }
 
-                @Override
-                public boolean isAccessibleTo(Class<?> cls) {
+                @Override public boolean isAccessibleTo(Class<?> cls) {
                     return classLevelFilter.isAccessibleTo(cls) && methodLevelFilter.isAccessibleTo(cls);
                 }
 
@@ -84,8 +83,7 @@ interface AccessFilter<T> {
             if (cls.isLocalClass()) {
                 return new ClassAccessFilter() {
 
-                    @Override
-                    public boolean isPublic() {
+                    @Override public boolean isPublic() {
                         return false;
                     }
 
@@ -93,8 +91,7 @@ interface AccessFilter<T> {
                         return cls;
                     }
 
-                    @Override
-                    public boolean isAccessibleTo(Class<?> cls) {
+                    @Override public boolean isAccessibleTo(Class<?> cls) {
                         return false;
                     }
                 };
@@ -117,8 +114,7 @@ interface AccessFilter<T> {
 
             return new ClassAccessFilter() {
 
-                @Override
-                public boolean isPublic() {
+                @Override public boolean isPublic() {
                     return false;
                 }
 
@@ -126,8 +122,7 @@ interface AccessFilter<T> {
                     return cls;
                 }
 
-                @Override
-                public boolean isAccessibleTo(Class<?> cls) {
+                @Override public boolean isAccessibleTo(Class<?> cls) {
                     return outerFilter.isAccessibleTo(cls) && innerFilter.isAccessibleTo(cls);
                 }
             };

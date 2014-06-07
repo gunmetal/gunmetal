@@ -20,5 +20,11 @@ package io.gunmetal;
  * @author rees.byars
  */
 public interface ProviderDecorator {
+
     <T> Provider<T> decorate(Object hashKey, Provider<T> provider);
+
+    static <T> Provider<T> none(Object hashKey, Provider<T> provider) {
+        return provider;
+    }
+
 }

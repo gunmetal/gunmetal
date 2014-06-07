@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package io.gunmetal;
-
-import java.lang.annotation.Annotation;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface Component {
-    Class<?> type();
-    Class<? extends Annotation> scope() default Component.class; //undefined scope
-    AccessLevel access() default AccessLevel.UNDEFINED;
-    Class<?>[] targets() default { };
+public interface Linkers {
+
+    void addWiringLinker(WiringLinker linker);
+
+    void addEagerLinker(EagerLinker linker);
+
+    interface WiringLinker extends Linker { }
+
+    interface EagerLinker extends Linker { }
+
 }

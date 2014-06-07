@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
-import io.gunmetal.ApplicationContainer;
+import java.lang.reflect.AnnotatedElement;
 
 /**
  * @author rees.byars
  */
-public interface ApplicationBuilder {
+public interface QualifierResolver {
 
-    ApplicationContainer build(Class<?> application);
+    Qualifier resolve(AnnotatedElement annotatedElement);
+
+    Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier);
 
 }

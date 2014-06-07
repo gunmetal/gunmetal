@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ResolutionContext;
 
 /**
@@ -25,5 +26,7 @@ import io.gunmetal.spi.ResolutionContext;
 public interface Instantiator<T> extends Dependent {
 
     T newInstance(InternalProvider provider, ResolutionContext resolutionContext);
+
+    Instantiator<T> newInstantiatorInstance(Linkers linkers);
 
 }

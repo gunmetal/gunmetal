@@ -16,20 +16,23 @@
 
 package io.gunmetal;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import io.gunmetal.internal.GraphBuilderImpl;
 
 /**
  * @author rees.byars
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface ConfigurationModule {
-    Option[] requiresOptions() default { };
-    ScopeHandler[] scopes() default { };
-    Class<?>[] modules() default { };
+public interface ObjectGraph {
+
+    <T> ObjectGraph inject(T injectionTarget);
+
+    <T, D extends Dependency<T>> T get(Class<D> dependency);
+
+    ObjectGraph plus(Class<?> rootModule);
+
+    ObjectGraph newInstance();
+
+    static ObjectGraph create(Class<?> rootModule) {
+        return new GraphBuilderImpl().build(rootModule);
+    }
+
 }

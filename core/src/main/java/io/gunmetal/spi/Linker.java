@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal.spi;
 
 /**
  * @author rees.byars
  */
-interface Linkers {
-    void add(Linker linker, LinkingPhase phase);
+public interface Linker {
+    void link(InternalProvider internalProvider, ResolutionContext linkingContext);
 }

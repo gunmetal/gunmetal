@@ -29,66 +29,60 @@ public interface DependencyRequest<T> {
 
     Dependency<T> dependency();
 
-    final class Factory {
+    static <T> DependencyRequest<T> create(final ComponentMetadata<?> requestingComponent, final Dependency<T> dependency) {
 
-        private Factory() { }
+        return new DependencyRequest<T>() {
 
-        public static <T> DependencyRequest<T> create(final ComponentMetadata<?> requestingComponent, final Dependency<T> dependency) {
+            @Override
+            public Class<?> sourceOrigin() {
+                return requestingComponent.providerClass();
+            }
 
-            return new DependencyRequest<T>() {
+            @Override
+            public Qualifier sourceQualifier() {
+                return requestingComponent.qualifier();
+            }
 
-                @Override
-                public Class<?> sourceOrigin() {
-                    return requestingComponent.providerClass();
-                }
+            @Override
+            public ModuleMetadata sourceModule() {
+                return requestingComponent.moduleMetadata();
+            }
 
-                @Override
-                public Qualifier sourceQualifier() {
-                    return requestingComponent.qualifier();
-                }
+            @Override
+            public Dependency<T> dependency() {
+                return dependency;
+            }
 
-                @Override
-                public ModuleMetadata sourceModule() {
-                    return requestingComponent.moduleMetadata();
-                }
+        };
 
-                @Override
-                public Dependency<T> dependency() {
-                    return dependency;
-                }
+    }
 
-            };
+    static <T> DependencyRequest<T> create(final DependencyRequest<?> dependencyRequest,
+                                                  final Dependency<T> dependency) {
 
-        }
+        return new DependencyRequest<T>() {
 
-        public static <T> DependencyRequest<T> create(final DependencyRequest<?> dependencyRequest,
-                                                      final Dependency<T> dependency) {
+            @Override
+            public Class<?> sourceOrigin() {
+                return dependencyRequest.sourceOrigin();
+            }
 
-            return new DependencyRequest<T>() {
+            @Override
+            public Qualifier sourceQualifier() {
+                return dependencyRequest.sourceQualifier();
+            }
 
-                @Override
-                public Class<?> sourceOrigin() {
-                    return dependencyRequest.sourceOrigin();
-                }
+            @Override
+            public ModuleMetadata sourceModule() {
+                return dependencyRequest.sourceModule();
+            }
 
-                @Override
-                public Qualifier sourceQualifier() {
-                    return dependencyRequest.sourceQualifier();
-                }
+            @Override
+            public Dependency<T> dependency() {
+                return dependency;
+            }
 
-                @Override
-                public ModuleMetadata sourceModule() {
-                    return dependencyRequest.sourceModule();
-                }
-
-                @Override
-                public Dependency<T> dependency() {
-                    return dependency;
-                }
-
-            };
-
-        }
+        };
 
     }
 

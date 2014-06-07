@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author rees.byars
  */
-public final class Smithy {
-
-    private Smithy() { }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T cloak(Object o) {
-        return (T) o;
-    }
-
-}
+@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface AutoCollection { }

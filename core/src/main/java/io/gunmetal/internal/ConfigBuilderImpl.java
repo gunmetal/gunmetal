@@ -16,23 +16,30 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.AutoCollection;
+import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Option;
+import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
-import io.gunmetal.spi.AnnotationResolver;
+import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ClassWalker;
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ComponentMetadataResolver;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.ConfigBuilder;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InjectionResolver;
+import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.ScopeBindings;
 import io.gunmetal.spi.Scopes;
+import io.gunmetal.util.Generics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -62,34 +69,150 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                 });
             }
 
-            @Override public AnnotationResolver<Qualifier> qualifierResolver() {
-                return new AnnotationResolver<Qualifier>() {
+            @Override public QualifierResolver qualifierResolver() {
+                return new QualifierResolver() {
                     @Override public Qualifier resolve(AnnotatedElement annotatedElement) {
                         return QualifierBuilder.qualifier(annotatedElement, io.gunmetal.Qualifier.class);
+                    }
+
+                    @Override public Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier) {
+                        // TODO somewhat inefficient
+                        if (parameter.isAnnotationPresent(FromModule.class)) {
+                            return parentQualifier;
+                        }
+                        return QualifierBuilder.qualifier(parameter, io.gunmetal.Qualifier.class);
                     }
                 };
             }
 
-            @Override public AnnotationResolver<Scope> scopeResolver() {
-                return new AnnotationResolver<Scope>() {
-                    @Override public Scope resolve(AnnotatedElement annotatedElement) {
-                        Annotation scope = null;
+            @Override public ComponentMetadataResolver componentMetadataResolver() {
+
+                class Resolver {
+
+                    Qualifier qualifier;
+                    Scope scope;
+                    boolean overrideEnabled = false;
+                    boolean collectionElement = false;
+
+                    Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
+
+                        List<Object> qualifiers = new LinkedList<>();
+                        // TODO addAll(asList not great
+                        qualifiers.addAll(Arrays.asList(moduleMetadata.qualifier().qualifiers()));
+                        Annotation scopeAnnotation = null;
                         for (Annotation annotation : annotatedElement.getAnnotations()) {
                             Class<? extends Annotation> annotationType = annotation.annotationType();
+                            if (annotationType == OverrideEnabled.class) {
+                                overrideEnabled = true;
+                            } else if (annotationType == AutoCollection.class) {
+                                collectionElement = true;
+                                qualifiers.add(annotation);
+                            }
                             if (annotationType.isAnnotationPresent(io.gunmetal.Scope.class)) {
-                                scope = annotation;
+                                scopeAnnotation = annotation;
+                            }
+                            if (annotationType.isAnnotationPresent(io.gunmetal.Qualifier.class)
+                                    && !qualifiers.contains(annotation)) {
+                                qualifiers.add(annotation);
                             }
                         }
-                        if (scope == null) {
+
+                        if (qualifiers.isEmpty()) {
+                            qualifier = Qualifier.NONE;
+                        } else {
+                            qualifier = QualifierBuilder.qualifier(qualifiers.toArray());
+                        }
+                        if (scopeAnnotation == null) {
                             if (annotatedElement.isAnnotationPresent(Lazy.class)) {
-                                return Scopes.LAZY_SINGLETON;
+                                scope = Scopes.LAZY_SINGLETON;
                             }
-                            return Scopes.EAGER_SINGLETON;
+                            scope = Scopes.EAGER_SINGLETON;
+                        } else {
+                            if (scopeAnnotation instanceof Prototype) {
+                                scope = Scopes.PROTOTYPE;
+                            } else {
+                                throw new UnsupportedOperationException(); // TODO unsupported scope
+                            }
                         }
-                        if (scope instanceof Prototype) {
-                            return Scopes.PROTOTYPE;
-                        }
-                        throw new UnsupportedOperationException();
+
+                    }
+
+                }
+
+                return new ComponentMetadataResolver() {
+
+                    @Override public ComponentMetadata<Method> resolveMetadata(final Method method,
+                                                                               final ModuleMetadata moduleMetadata) {
+
+                        final Resolver resolver = new Resolver(method, moduleMetadata);
+
+                        return new ComponentMetadata<Method>() {
+
+                            @Override public Method provider() {
+                                return method;
+                            }
+
+                            @Override public Class<?> providerClass() {
+                                return method.getDeclaringClass();
+                            }
+
+                            @Override public ModuleMetadata moduleMetadata() {
+                                return moduleMetadata;
+                            }
+
+                            @Override public Qualifier qualifier() {
+                                return resolver.qualifier;
+                            }
+
+                            @Override public Scope scope() {
+                                return resolver.scope;
+                            }
+
+                            @Override public boolean isOverrideEnabled() {
+                                return resolver.overrideEnabled;
+                            }
+
+                            @Override public boolean isCollectionElement() {
+                                return resolver.collectionElement;
+                            }
+                        };
+                    }
+
+                    @Override public ComponentMetadata<Class<?>> resolveMetadata(final Class<?> cls,
+                                                                                 final ModuleMetadata moduleMetadata) {
+
+                        final Resolver resolver = new Resolver(cls, moduleMetadata);
+
+                        return new ComponentMetadata<Class<?>>() {
+
+                            @Override public Class<?> provider() {
+                                return cls;
+                            }
+
+                            @Override public Class<?> providerClass() {
+                                return cls;
+                            }
+
+                            @Override public ModuleMetadata moduleMetadata() {
+                                return moduleMetadata;
+                            }
+
+                            @Override public Qualifier qualifier() {
+                                return resolver.qualifier;
+                            }
+
+                            @Override public Scope scope() {
+                                return resolver.scope;
+                            }
+
+                            @Override public boolean isOverrideEnabled() {
+                                return resolver.overrideEnabled;
+                            }
+
+                            @Override public boolean isCollectionElement() {
+                                return resolver.collectionElement;
+                            }
+                        };
                     }
                 };
             }
@@ -99,26 +222,20 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     @Override public <T> Constructor<T> resolve(Class<T> cls) {
                         for (Constructor<?> constructor : cls.getDeclaredConstructors()) {
                             if (constructor.getParameterTypes().length == 0) {
-                                return Smithy.cloak(constructor);
+                                return Generics.as(constructor);
                             }
                         }
-                        return Smithy.cloak(cls.getDeclaredConstructors()[0]);
+                        return Generics.as(cls.getDeclaredConstructors()[0]);
                     }
                 };
             }
 
             @Override public ScopeBindings scopeBindings() {
-                return new ScopeBindings() {
-                    @Override public ProviderDecorator decoratorFor(Scope scope) {
-                        if (scope == Scopes.UNDEFINED) {
-                            return new ProviderDecorator() {
-                                @Override public <T> Provider<T> decorate(Object hashKey, Provider<T> provider) {
-                                    return provider;
-                                }
-                            };
-                        }
-                        throw new UnsupportedOperationException();
+                return scope -> {
+                    if (scope == Scopes.UNDEFINED) {
+                        return ProviderDecorator::none;
                     }
+                    throw new UnsupportedOperationException();
                 };
             }
 
@@ -126,7 +243,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                 return Provider.class.isAssignableFrom(dependency.typeKey().raw());
             }
 
-            @Override public Object provider(Provider provider) {
+            @Override public Object provider(Provider<?> provider) {
                 return provider;
             }
 
@@ -142,6 +259,8 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                 Class<? extends Annotation> annotationType = annotation.annotationType();
                 if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
                     qualifiers.add(annotation);
+                } else if (annotationType == AutoCollection.class) {
+                    qualifiers.add(annotation);
                 }
             }
             if (qualifiers.isEmpty()) {
@@ -150,7 +269,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
             return qualifier(qualifiers.toArray());
         }
 
-        private static Qualifier qualifier(final Object[] q) {
+        static Qualifier qualifier(final Object[] q) {
             Arrays.sort(q);
             return new Qualifier() {
 

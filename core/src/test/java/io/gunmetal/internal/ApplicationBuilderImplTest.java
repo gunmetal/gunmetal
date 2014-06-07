@@ -16,23 +16,28 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.ApplicationContainer;
-import io.gunmetal.ApplicationModule;
-import io.gunmetal.Gunmetal;
+import io.gunmetal.AutoCollection;
+import io.gunmetal.FromModule;
+import io.gunmetal.ObjectGraph;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
+import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
+import io.gunmetal.RootModule;
 import io.gunmetal.testmocks.A;
+import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.F;
-import io.gunmetal.testmocks.NewGunmetalBenchMarkModule2;
+import io.gunmetal.testmocks.N;
+import io.gunmetal.testmocks.NewGunmetalBenchMarkModule;
 import org.junit.Test;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author rees.byars
@@ -100,6 +105,24 @@ public class ApplicationBuilderImplTest {
             return new ApplicationBuilderImplTest();
         }
 
+        @AutoCollection static String s1() {
+            return "1";
+        }
+
+        @AutoCollection static String s2() {
+            return "2";
+        }
+
+        @AutoCollection static String s3() {
+            return "3";
+        }
+
+        @Main static void printStrings(@AutoCollection List<String> strings) {
+            for (String s : strings) {
+                System.out.println(s);
+            }
+        }
+
     }
 
     @Module
@@ -112,10 +135,10 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testBuild() {
 
-        @ApplicationModule(modules = { TestModule.class })
+        @RootModule(modules = { TestModule.class })
         class Application { }
 
-        ApplicationContainer app = new ApplicationBuilderImpl().build(Application.class);
+        ObjectGraph app = new GraphBuilderImpl().build(Application.class);
 
         @Main
         class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
@@ -138,7 +161,7 @@ public class ApplicationBuilderImplTest {
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
 
-        app = Gunmetal.create(NewGunmetalBenchMarkModule2.class);
+        app = ObjectGraph.create(NewGunmetalBenchMarkModule.class);
 
         A a = app.get(Dep2.class);
 
@@ -160,10 +183,112 @@ public class ApplicationBuilderImplTest {
     @Test(expected = DependencyException.class)
     public void testBlackList() {
 
-        @ApplicationModule(modules = { TestModule.class, M.class })
+        @RootModule(modules = { TestModule.class, M.class })
         class Application { }
 
-        new ApplicationBuilderImpl().build(Application.class);
+        new GraphBuilderImpl().build(Application.class);
+    }
+
+    @Module(subsumes = MyLibrary.class)
+    @Main
+    static class PlusModule implements Cheese {
+
+        @Inject ApplicationBuilderImplTest applicationBuilderImplTest;
+
+        static PlusModule plusModule() {
+            return new PlusModule();
+        }
+
+        static Cheese cheese() {
+            return new PlusModule();
+        }
+
+        static void r(@FromModule Cheese cheese, @Main Lib myLibrary) {
+            System.out.println("sup");
+        }
+
+    }
+
+    interface Lib { }
+
+    @Library
+    static class MyLibrary implements Lib {
+
+        static Lib huh(@FromModule Cheese cheese) {
+            System.out.println("sup library");
+            return new MyLibrary();
+        }
+
+    }
+
+    interface Cheese { }
+
+    @Test
+    public void testPlus() {
+
+        @RootModule(modules = { TestModule.class })
+        class Parent { }
+
+        @RootModule(modules = { PlusModule.class })
+        class Child { }
+
+        @Main
+        class Dep implements io.gunmetal.Dependency<PlusModule> { }
+
+        ObjectGraph parent = new GraphBuilderImpl().build(Parent.class);
+
+        ObjectGraph child = parent.plus(Child.class);
+
+        PlusModule p = child.get(Dep.class);
+
+        assert p.applicationBuilderImplTest != null;
+
+        assert parent.get(Dep.class) == null;
+
+        class InjectTest {
+            @Inject
+            F f;
+        }
+
+        InjectTest injectTest = new InjectTest();
+
+        child.inject(injectTest);
+
+        assert injectTest.f != null;
+
+        ObjectGraph childCopy = child.newInstance();
+
+        assert child.get(Dep.class) != childCopy.get(Dep.class);
+
+        assert childCopy.get(Dep.class) == childCopy.get(Dep.class);
+
+        assert childCopy.get(Dep.class) != null;
+
+        childCopy.inject(injectTest);
+
+    }
+
+    @Test
+    public void testMore() {
+        class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
+        newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
+        newGunmetalStandup(10000);
+    }
+
+    io.gunmetal.Provider<N> newGunmetalProvider;
+    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.create(App.class);
+
+    @RootModule(modules = NewGunmetalBenchMarkModule.class)
+    static class App { }
+
+    static class Dep implements io.gunmetal.Dependency<AA> { }
+
+    long newGunmetalStandup(int reps) {
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= APPLICATION_CONTAINER.newInstance().get(Dep.class).hashCode();
+        }
+        return dummy;
     }
 
 }

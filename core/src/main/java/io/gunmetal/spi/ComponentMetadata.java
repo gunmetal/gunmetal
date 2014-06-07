@@ -33,6 +33,10 @@ public abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     public abstract Scope scope();
 
+    public abstract boolean isOverrideEnabled();
+
+    public abstract boolean isCollectionElement();
+
     // abstract boolean isProxy();  TODO scoped proxy invoke(..) { method.invoke(provider.get(), ...); ... }
 
     @Override public int hashCode() {

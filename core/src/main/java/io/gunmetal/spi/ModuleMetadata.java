@@ -19,20 +19,36 @@ package io.gunmetal.spi;
 /**
  * @author rees.byars
  */
-public abstract class ModuleMetadata {
+public final class ModuleMetadata {
 
-    public abstract Class<?> moduleClass();
+    private final Class<?> moduleClass;
+    private final Qualifier qualifier;
+    private final Class<?>[] referencedModules;
 
-    public abstract Qualifier qualifier();
+    public ModuleMetadata(Class<?> moduleClass, Qualifier qualifier, Class<?>[] referencedModules) {
+        this.moduleClass = moduleClass;
+        this.qualifier = qualifier;
+        this.referencedModules = referencedModules;
+    }
 
-    public abstract Class<?>[] referencedModules();
+    public Class<?> moduleClass() {
+        return moduleClass;
+    }
+
+    public Qualifier qualifier() {
+        return qualifier;
+    }
+
+    public Class<?>[] referencedModules() {
+        return referencedModules;
+    }
 
     @Override public int hashCode() {
         return moduleClass().hashCode();
     }
 
     @Override public boolean equals(Object target) {
-        return target instanceof ModuleMetadata && target == moduleClass();
+        return target instanceof ModuleMetadata && ((ModuleMetadata) target).moduleClass() == moduleClass();
     }
 
 }

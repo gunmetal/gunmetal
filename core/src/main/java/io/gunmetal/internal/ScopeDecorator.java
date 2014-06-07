@@ -16,10 +16,10 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.Provider;
 import io.gunmetal.ProviderDecorator;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
@@ -33,17 +33,16 @@ import io.gunmetal.spi.Scopes;
 class ScopeDecorator implements ProvisionStrategyDecorator {
 
     private final ScopeBindings scopeBindings;
-    private final Linkers linkers;
 
-    ScopeDecorator(ScopeBindings scopeBindings, Linkers linkers) {
+    ScopeDecorator(ScopeBindings scopeBindings) {
         this.scopeBindings = scopeBindings;
-        this.linkers = linkers;
     }
 
     @Override
     public <T> ProvisionStrategy<T> decorate(
             final ComponentMetadata<?> componentMetadata,
-            final ProvisionStrategy<T> delegateStrategy) {
+            final ProvisionStrategy<T> delegateStrategy,
+            final Linkers linkers) {
 
         final Scope scope = componentMetadata.scope();
 
@@ -55,11 +54,7 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
             return new ProvisionStrategy<T>() {
                 volatile T singleton;
                 {
-                    linkers.add(new Linker() {
-                        @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
-                            get(internalProvider, linkingContext);
-                        }
-                    }, LinkingPhase.EAGER_INSTANTIATION);
+                    linkers.addEagerLinker(this::get);
                 }
                 @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                     if (singleton == null) {
@@ -88,18 +83,16 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
                     return singleton;
                 }
             };
+
+
         }
 
         return new ProvisionStrategy<T>() {
             ProviderDecorator providerDecorator = scopeBindings.decoratorFor(scope);
             @Override
             public T get(final InternalProvider internalProvider, final ResolutionContext resolutionContext) {
-                return providerDecorator.decorate(componentMetadata, new Provider<T>() {
-                            @Override
-                            public T get() {
-                                return delegateStrategy.get(internalProvider, resolutionContext);
-                            }
-                        }).get();
+                return providerDecorator.decorate(componentMetadata, () ->
+                        delegateStrategy.get(internalProvider, resolutionContext)).get();
             }
         };
     }

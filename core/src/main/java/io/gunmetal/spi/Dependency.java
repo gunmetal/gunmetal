@@ -16,12 +16,10 @@
 
 package io.gunmetal.spi;
 
-import io.gunmetal.internal.Smithy;
+import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author rees.byars
@@ -30,16 +28,10 @@ public final class Dependency<T> {
 
     private final Qualifier qualifier;
     private final TypeKey<T> typeKey;
-    private final Kind kind;
 
-    private Dependency(Qualifier qualifier, TypeKey<T> typeKey, Kind kind) {
+    private Dependency(Qualifier qualifier, TypeKey<T> typeKey) {
         this.qualifier = qualifier;
         this.typeKey = typeKey;
-        this.kind = kind;
-    }
-
-    public Kind kind() {
-        return kind;
     }
 
     public Qualifier qualifier() {
@@ -70,37 +62,14 @@ public final class Dependency<T> {
         return "dependency[" + qualifier().toString() + typeKey().toString() + "]";
     }
 
-    public static <T> Dependency<T> from(final Qualifier qualifier, Class<T> cls) {
-        final TypeKey<T> typeKey = Types.typeKey(cls);
-        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
-    }
-
     public static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
-    }
-
-    public static <T> Dependency<T> from(final Qualifier qualifier, Type type, Kind kind) {
-        final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<>(qualifier, typeKey, kind);
+        return new Dependency<>(qualifier, typeKey);
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, ParameterizedType type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<>(qualifier, typeKey, Kind.STANDARD);
-    }
-
-    public static <T> List<Dependency<? super T>> from(final Qualifier qualifier, Class<? super T>[] classes) {
-        List<Dependency<? super T>> dependencies = new LinkedList<>();
-        for (Class<? super T> cls : classes) {
-            Dependency<? super T> dependency = Dependency.from(qualifier, cls);
-            dependencies.add(dependency);
-        }
-        return dependencies;
-    }
-
-    public enum Kind {
-        STANDARD, COLLECTION_ELEMENT, COLLECTION, STARTUP_ROUTINE, CALLABLE_ROUTINE
+        return new Dependency<>(qualifier, typeKey);
     }
 
     private static final class Types {
@@ -108,19 +77,12 @@ public final class Dependency<T> {
         private Types() { }
 
         static <T> TypeKey<T> typeKey(final Class<T> cls) {
-            return new TypeKey<T>() {
-                @Override public Type type() {
-                    return cls;
-                }
-                @Override public Class<? super T> raw() {
-                    return cls;
-                }
-            };
+            return new TypeKey<>(cls, cls);
         }
 
         static <T> TypeKey<T> typeKey(final Type type) {
             if (type instanceof Class) {
-                return Smithy.cloak(typeKey((Class<?>) type));
+                return Generics.as(typeKey((Class<?>) type));
             } else if (type instanceof ParameterizedType) {
                 return typeKey(((ParameterizedType) type));
             } else {
@@ -129,15 +91,8 @@ public final class Dependency<T> {
         }
 
         static <T> TypeKey<T> typeKey(final ParameterizedType type) {
-            final Class<? super T> raw = Smithy.cloak(type.getRawType());
-            return new TypeKey<T>() {
-                @Override public Type type() {
-                    return type;
-                }
-                @Override public Class<? super T> raw() {
-                    return raw;
-                }
-            };
+            final Class<? super T> raw = Generics.as(type.getRawType());
+            return new TypeKey<>(type, raw);
         }
 
     }

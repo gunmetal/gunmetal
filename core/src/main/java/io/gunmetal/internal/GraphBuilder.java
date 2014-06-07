@@ -16,28 +16,13 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ComponentMetadata;
-import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.spi.ProvisionStrategyDecorator;
+import io.gunmetal.ObjectGraph;
 
 /**
  * @author rees.byars
  */
-public class ProxyDecorator implements ProvisionStrategyDecorator {
+public interface GraphBuilder {
 
-    ProxyDecorator() {
-
-    }
-
-    @Override public <T> ProvisionStrategy<T> decorate(
-            ComponentMetadata<?> componentMetadata,
-            ProvisionStrategy<T> delegateStrategy) {
-
-        // if (componentMetadata.isProxy()) {
-        //      return
-        // }
-
-        return null;
-    }
+    ObjectGraph build(Class<?> rootModule);
 
 }

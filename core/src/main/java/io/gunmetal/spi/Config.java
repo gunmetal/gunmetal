@@ -22,11 +22,19 @@ import io.gunmetal.Provider;
  * @author rees.byars
  */
 public interface Config {
+
     ClassWalker classWalker();
-    AnnotationResolver<Qualifier> qualifierResolver();
-    AnnotationResolver<Scope> scopeResolver();
+
+    QualifierResolver qualifierResolver();
+
+    ComponentMetadataResolver componentMetadataResolver();
+
     ConstructorResolver constructorResolver();
+
     ScopeBindings scopeBindings();
+
     boolean isProvider(Dependency<?> dependency);
+
     Object provider(Provider<?> provider);
+
 }

@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package io.gunmetal;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package io.gunmetal.util;
 
 /**
  * @author rees.byars
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface ApplicationModule {
-    Option[] options() default { };
-    ScopeHandler[] scopes() default { };
-    Class<?>[] modules() default { };
-    Class<?>[] configurationModules() default { };
-    Class<? extends Layer>[] layers() default { };
+public interface Generics {
+
+    @SuppressWarnings("unchecked")
+    static <T> T as(Object o) {
+        return (T) o;
+    }
+
 }
