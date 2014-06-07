@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.overengineer.gunmetal</groupId>
+        <groupId>io.gunmetal</groupId>
         <artifactId>parent</artifactId>
         <version>0.0.1-BETA-SNAPSHOT</version>
     </parent>
@@ -22,6 +22,12 @@
         </dependency>
 
         <!-- =========  TEST  ========= -->
+
+        <dependency>
+            <groupId>com.googlecode.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
+            <version>1.5</version>
+        </dependency>
 
         <dependency>
             <groupId>log4j</groupId>
@@ -87,7 +93,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>build-helper-maven-plugin</artifactId>
-                        <version>1.5</version>
+                        <version>1.8</version>
                         <executions>
                             <execution>
                                 <id>add-test-source</id>
@@ -117,7 +123,7 @@
                                 <configuration>
                                     <classpathScope>test</classpathScope>
                                     <mainClass>com.google.caliper.runner.CaliperMain</mainClass>
-                                    <commandlineArgs>com.github.overengineer.gunmetal.benchmark.CaliperBenchmarks --instrument ${benchmark.instruments} ${benchmark.args} -Cinstrument.allocation.options.trackAllocations=false</commandlineArgs>
+                                    <commandlineArgs>io.gunmetal.benchmarks.CaliperBenchmarks --instrument ${benchmark.instruments} ${benchmark.args} -Cinstrument.allocation.options.trackAllocations=false</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>

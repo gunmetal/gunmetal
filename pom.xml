@@ -11,26 +11,26 @@
         <version>7</version>
     </parent>
 
-    <groupId>com.github.overengineer.gunmetal</groupId>
+    <groupId>io.gunmetal</groupId>
     <artifactId>parent</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1-BETA-SNAPSHOT</version>
 
     <name>gunmetal</name>
-    <description>A sleek JSR-330 dependency injection and application modularity library for Java.</description>
-    <url>https://github.com/overengineer/clarence</url>
+    <description>A JSR-330 dependency injection and application modularity library for Java.</description>
+    <url>https://github.com/overengineer/gunmetal</url>
     <inceptionYear>2013</inceptionYear>
 
     <scm>
-        <url>http://github.com/overengineer/clarence/</url>
-        <connection>scm:git:git://github.com/overengineer/clarence.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/overengineer/clarence.git</developerConnection>
+        <url>http://github.com/overengineer/gunmetal/</url>
+        <connection>scm:git:git://github.com/overengineer/gunmetal.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/overengineer/gunmetal.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>http://github.com/overengineer/clarence/issues</url>
+        <url>http://github.com/overengineer/gunmetal/issues</url>
     </issueManagement>
 
     <licenses>
@@ -43,7 +43,6 @@
     <developers>
         <developer>
             <name>Rees Byars</name>
-            <email>reesDOTbyarsATG00GLEMAIL</email>
         </developer>
     </developers>
 
@@ -54,7 +53,7 @@
     </modules>
 
     <properties>
-        <java.version>1.6</java.version>
+        <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.0</slf4j.version>
     </properties>
@@ -64,13 +63,13 @@
         <dependencies>
 
             <dependency>
-                <groupId>com.github.overengineer.gunmetal</groupId>
+                <groupId>io.gunmetal</groupId>
                 <artifactId>compiler</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>com.github.overengineer.gunmetal</groupId>
+                <groupId>io.gunmetal</groupId>
                 <artifactId>core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -173,9 +172,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.10</version>
+                <version>2.12.1</version>
                 <configuration>
-                    <failsOnError>true</failsOnError>
+                    <failsOnError>false</failsOnError>
                     <consoleOutput>true</consoleOutput>
                     <configLocation>checkstyle.xml</configLocation>
                 </configuration>

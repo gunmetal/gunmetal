@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2014.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.gunmetal.internal;
+
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.Linkers;
+import io.gunmetal.spi.ProvisionStrategy;
+
+import java.util.List;
+
+/**
+ * @author rees.byars
+ */
+interface DependencyRequestHandler<T> {
+
+    List<Dependency<? super T>> targets();
+
+    List<Dependency<?>> dependencies();
+
+    DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest);
+
+    ProvisionStrategy<T> force();
+
+    ComponentMetadata<?> componentMetadata();
+
+    DependencyRequestHandler<T> newHandlerInstance(Linkers linkers);
+
+}
