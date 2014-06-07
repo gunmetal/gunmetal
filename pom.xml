@@ -43,7 +43,6 @@
     <developers>
         <developer>
             <name>Rees Byars</name>
-            <email>reesDOTbyarsATG00GLEMAIL</email>
         </developer>
     </developers>
 
@@ -54,7 +53,7 @@
     </modules>
 
     <properties>
-        <java.version>1.7</java.version>
+        <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.0</slf4j.version>
     </properties>
@@ -173,9 +172,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.10</version>
+                <version>2.12.1</version>
                 <configuration>
-                    <failsOnError>true</failsOnError>
+                    <failsOnError>false</failsOnError>
                     <consoleOutput>true</consoleOutput>
                     <configLocation>checkstyle.xml</configLocation>
                 </configuration>

@@ -29,7 +29,7 @@ import java.util.HashMap;
 public class CaliperBenchmarks {
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
+    static final ObjectGraph APPLICATION_CONTAINER = io.gunmetal.ObjectGraph.create(App.class);
     @Inject public Provider<N> daggerProvider;
     static final dagger.ObjectGraph OBJECT_GRAPH = dagger.ObjectGraph.create(new DaggerBenchMarkModule());
     static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
@@ -53,7 +53,7 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            io.gunmetal.Gunmetal.create(App.class).inject(injectionTarget);
+            io.gunmetal.ObjectGraph.create(App.class).inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
         return dummy;
@@ -62,7 +62,7 @@ public class CaliperBenchmarks {
     @Benchmark long template(int reps) {
         int dummy = 0;
         int counter = 0;
-        ObjectGraph template = io.gunmetal.Gunmetal.create(App.class);
+        ObjectGraph template = io.gunmetal.ObjectGraph.create(App.class);
         for (long i = 0; i < reps; i++) {
             dummy |= template.newInstance().get(Dep.class).hashCode();
         }

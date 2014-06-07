@@ -18,12 +18,11 @@ package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
-import io.gunmetal.Gunmetal;
+import io.gunmetal.ObjectGraph;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Library;
 import io.gunmetal.Module;
-import io.gunmetal.ObjectGraph;
 import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
@@ -162,7 +161,7 @@ public class ApplicationBuilderImplTest {
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
 
-        app = Gunmetal.create(NewGunmetalBenchMarkModule.class);
+        app = ObjectGraph.create(NewGunmetalBenchMarkModule.class);
 
         A a = app.get(Dep2.class);
 
@@ -277,7 +276,7 @@ public class ApplicationBuilderImplTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = io.gunmetal.Gunmetal.create(App.class);
+    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.create(App.class);
 
     @RootModule(modules = NewGunmetalBenchMarkModule.class)
     static class App { }

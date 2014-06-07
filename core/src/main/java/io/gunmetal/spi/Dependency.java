@@ -16,12 +16,10 @@
 
 package io.gunmetal.spi;
 
-import io.gunmetal.internal.Smithy;
+import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author rees.byars
@@ -64,11 +62,6 @@ public final class Dependency<T> {
         return "dependency[" + qualifier().toString() + typeKey().toString() + "]";
     }
 
-    public static <T> Dependency<T> from(final Qualifier qualifier, Class<T> cls) {
-        final TypeKey<T> typeKey = Types.typeKey(cls);
-        return new Dependency<>(qualifier, typeKey);
-    }
-
     public static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
         return new Dependency<>(qualifier, typeKey);
@@ -77,15 +70,6 @@ public final class Dependency<T> {
     public static <T> Dependency<T> from(final Qualifier qualifier, ParameterizedType type) {
         final TypeKey<T> typeKey = Types.typeKey(type);
         return new Dependency<>(qualifier, typeKey);
-    }
-
-    public static <T> List<Dependency<? super T>> from(final Qualifier qualifier, Class<? super T>[] classes) {
-        List<Dependency<? super T>> dependencies = new LinkedList<>();
-        for (Class<? super T> cls : classes) {
-            Dependency<? super T> dependency = Dependency.from(qualifier, cls);
-            dependencies.add(dependency);
-        }
-        return dependencies;
     }
 
     private static final class Types {
@@ -98,7 +82,7 @@ public final class Dependency<T> {
 
         static <T> TypeKey<T> typeKey(final Type type) {
             if (type instanceof Class) {
-                return Smithy.cloak(typeKey((Class<?>) type));
+                return Generics.as(typeKey((Class<?>) type));
             } else if (type instanceof ParameterizedType) {
                 return typeKey(((ParameterizedType) type));
             } else {
@@ -107,7 +91,7 @@ public final class Dependency<T> {
         }
 
         static <T> TypeKey<T> typeKey(final ParameterizedType type) {
-            final Class<? super T> raw = Smithy.cloak(type.getRawType());
+            final Class<? super T> raw = Generics.as(type.getRawType());
             return new TypeKey<>(type, raw);
         }
 

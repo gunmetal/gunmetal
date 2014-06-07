@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package io.gunmetal;
-
-import io.gunmetal.internal.GraphBuilderImpl;
+package io.gunmetal.util;
 
 /**
  * @author rees.byars
  */
-public final class Gunmetal {
+public interface Generics {
 
-    private Gunmetal() { }
-
-    public static ObjectGraph create(Class<?> rootModule) {
-        return new GraphBuilderImpl().build(rootModule);
+    @SuppressWarnings("unchecked")
+    static <T> T as(Object o) {
+        return (T) o;
     }
 
 }

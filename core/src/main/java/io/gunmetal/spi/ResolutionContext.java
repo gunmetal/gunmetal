@@ -26,6 +26,10 @@ public interface ResolutionContext {
 
     <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy);
 
+    static ResolutionContext create() {
+        return Factory.create();
+    }
+
     interface States  {
         byte NEW = 0;
         byte PRE_INSTANTIATION = 1;
@@ -58,7 +62,7 @@ public interface ResolutionContext {
             }
         }
 
-        public static ResolutionContext create() {
+        private static ResolutionContext create() {
             return new ResolutionContextImpl();
         }
 

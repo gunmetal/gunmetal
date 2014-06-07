@@ -39,6 +39,7 @@ import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.ScopeBindings;
 import io.gunmetal.spi.Scopes;
+import io.gunmetal.util.Generics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -221,26 +222,20 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     @Override public <T> Constructor<T> resolve(Class<T> cls) {
                         for (Constructor<?> constructor : cls.getDeclaredConstructors()) {
                             if (constructor.getParameterTypes().length == 0) {
-                                return Smithy.cloak(constructor);
+                                return Generics.as(constructor);
                             }
                         }
-                        return Smithy.cloak(cls.getDeclaredConstructors()[0]);
+                        return Generics.as(cls.getDeclaredConstructors()[0]);
                     }
                 };
             }
 
             @Override public ScopeBindings scopeBindings() {
-                return new ScopeBindings() {
-                    @Override public ProviderDecorator decoratorFor(Scope scope) {
-                        if (scope == Scopes.UNDEFINED) {
-                            return new ProviderDecorator() {
-                                @Override public <T> Provider<T> decorate(Object hashKey, Provider<T> provider) {
-                                    return provider;
-                                }
-                            };
-                        }
-                        throw new UnsupportedOperationException();
+                return scope -> {
+                    if (scope == Scopes.UNDEFINED) {
+                        return ProviderDecorator::none;
                     }
+                    throw new UnsupportedOperationException();
                 };
             }
 

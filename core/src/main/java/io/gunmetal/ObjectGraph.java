@@ -16,6 +16,8 @@
 
 package io.gunmetal;
 
+import io.gunmetal.internal.GraphBuilderImpl;
+
 /**
  * @author rees.byars
  */
@@ -28,5 +30,9 @@ public interface ObjectGraph {
     ObjectGraph plus(Class<?> rootModule);
 
     ObjectGraph newInstance();
+
+    static ObjectGraph create(Class<?> rootModule) {
+        return new GraphBuilderImpl().build(rootModule);
+    }
 
 }

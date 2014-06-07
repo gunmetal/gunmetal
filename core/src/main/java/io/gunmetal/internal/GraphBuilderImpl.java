@@ -31,6 +31,7 @@ import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -110,7 +111,6 @@ public class GraphBuilderImpl implements GraphBuilder {
                                                             final InternalProvider internalProvider) {
         final Object provider = config.provider(new Provider<Object>() {
 
-            // TODO this is a hack for issue #2 :/
             final ThreadLocal<ResolutionContext> contextThreadLocal = new ThreadLocal<>();
 
             @Override public Object get() {
@@ -123,7 +123,7 @@ public class GraphBuilderImpl implements GraphBuilder {
                 }
 
                 try {
-                    context = ResolutionContext.Factory.create();
+                    context = ResolutionContext.create();
                     contextThreadLocal.set(context);
                     return componentStrategy.get(
                             internalProvider, context);
@@ -134,11 +134,8 @@ public class GraphBuilderImpl implements GraphBuilder {
             }
 
         });
-        return new ProvisionStrategy<T>() {
-            @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                return Smithy.cloak(provider);
-            }
-        };
+
+        return (p, c) -> Generics.as(provider);
     }
 
     private static <T, C> ProvisionStrategy<T> createProviderStrategy(
@@ -238,7 +235,7 @@ public class GraphBuilderImpl implements GraphBuilder {
 
                     });
             CollectionRequestHandler<T> collectionRequestHandler
-                    = Smithy.cloak(requestHandlers.get(collectionDependency));
+                    = Generics.as(requestHandlers.get(collectionDependency));
             if (collectionRequestHandler == null) {
                 collectionRequestHandler = new CollectionRequestHandler<>(collectionDependency, dependency);
                 requestHandlers.put(collectionDependency, collectionRequestHandler);
@@ -247,7 +244,7 @@ public class GraphBuilderImpl implements GraphBuilder {
         }
 
         <T> DependencyRequestHandler<? extends T> get(Dependency<T> dependency) {
-            return Smithy.cloak(requestHandlers.get(dependency));
+            return Generics.as(requestHandlers.get(dependency));
         }
 
         static class CollectionRequestHandler<T> implements DependencyRequestHandler<List<T>> {
@@ -277,7 +274,7 @@ public class GraphBuilderImpl implements GraphBuilder {
                 return new DependencyResponse<List<T>>() {
                     @Override public ValidatedDependencyResponse<List<T>> validateResponse() {
                         DependencyRequest<T> subRequest =
-                                DependencyRequest.Factory.create(dependencyRequest, subDependency);
+                                DependencyRequest.create(dependencyRequest, subDependency);
                         for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
                             requestHandler.handle(subRequest).validateResponse();
                         }
@@ -295,16 +292,13 @@ public class GraphBuilderImpl implements GraphBuilder {
             }
 
             @Override public ProvisionStrategy<List<T>> force() {
-                return new ProvisionStrategy<List<T>>() {
-                    @Override public List<T> get(
-                            InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                        List<T> list = new LinkedList<>();
-                        for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                            ProvisionStrategy<? extends T> provisionStrategy = requestHandler.force();
-                            list.add(provisionStrategy.get(internalProvider, resolutionContext));
-                        }
-                        return list;
+                return (internalProvider, resolutionContext) -> {
+                    List<T> list = new LinkedList<>();
+                    for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
+                        ProvisionStrategy<? extends T> provisionStrategy = requestHandler.force();
+                        list.add(provisionStrategy.get(internalProvider, resolutionContext));
                     }
+                    return list;
                 };
             }
 
@@ -329,11 +323,11 @@ public class GraphBuilderImpl implements GraphBuilder {
         final Queue<WiringLinker> postWiringLinkers = new LinkedList<>();
         final Queue<EagerLinker> eagerLinkers = new LinkedList<>();
 
-        @Override public void add(WiringLinker linker) {
+        @Override public void addWiringLinker(WiringLinker linker) {
             postWiringLinkers.add(linker);
         }
 
-        @Override public void add(EagerLinker linker) {
+        @Override public void addEagerLinker(EagerLinker linker) {
             eagerLinkers.add(linker);
         }
 
@@ -425,7 +419,7 @@ public class GraphBuilderImpl implements GraphBuilder {
 
                 @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
                     final DependencyResponse<?> componentResponse =
-                            componentHandler.handle(DependencyRequest.Factory.create(providerRequest, componentDependency));
+                            componentHandler.handle(DependencyRequest.create(providerRequest, componentDependency));
                     return new DependencyResponse<T>() {
                         @Override public ValidatedDependencyResponse<T> validateResponse() {
                             componentResponse.validateResponse();
@@ -492,15 +486,15 @@ public class GraphBuilderImpl implements GraphBuilder {
             internalProvider =
                     new InternalProviderImpl(config, handlerFactory, compositeCache, myCache, graphLinker);
 
-            graphLinker.link(internalProvider, ResolutionContext.Factory.create());
+            graphLinker.link(internalProvider, ResolutionContext.create());
 
         }
 
         @Override public <T> ObjectGraph inject(T injectionTarget) {
 
-            final Class<T> targetClass = Smithy.cloak(injectionTarget.getClass());
+            final Class<T> targetClass = Generics.as(injectionTarget.getClass());
 
-            Injector<T> injector = Smithy.cloak(injectors.get(targetClass));
+            Injector<T> injector = Generics.as(injectors.get(targetClass));
 
             if (injector == null) {
 
@@ -512,12 +506,12 @@ public class GraphBuilderImpl implements GraphBuilder {
                                 new ModuleMetadata(targetClass, qualifier, new Class<?>[0])),
                         graphLinker);
 
-                graphLinker.link(internalProvider, ResolutionContext.Factory.create());
+                graphLinker.link(internalProvider, ResolutionContext.create());
 
                 injectors.put(targetClass, injector);
             }
 
-            injector.inject(injectionTarget, internalProvider, ResolutionContext.Factory.create());
+            injector.inject(injectionTarget, internalProvider, ResolutionContext.create());
 
             return this;
         }
@@ -531,12 +525,12 @@ public class GraphBuilderImpl implements GraphBuilder {
                     dependencyType);
             DependencyRequestHandler<? extends T> requestHandler = compositeCache.get(dependency);
             if (requestHandler != null) {
-                return requestHandler.force().get(internalProvider, ResolutionContext.Factory.create());
+                return requestHandler.force().get(internalProvider, ResolutionContext.create());
             } else if (config.isProvider(dependency)) {
                 ProvisionStrategy<T> providerStrategy =
                         createProviderStrategy(dependency, config, internalProvider, compositeCache);
                 if (providerStrategy != null) {
-                    return providerStrategy.get(internalProvider, ResolutionContext.Factory.create());
+                    return providerStrategy.get(internalProvider, ResolutionContext.create());
                 }
             }
             return null;

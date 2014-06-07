@@ -118,14 +118,11 @@ class HandlerFactoryImpl implements HandlerFactory {
             }
         };
 
-        return new RequestVisitor() {
-            @Override public void visit(
-                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
-                moduleClassVisitor.visit(dependencyRequest, response);
-                dependsOnVisitor.visit(dependencyRequest, response);
-                blackListVisitor.visit(dependencyRequest, response);
-                whiteListVisitor.visit(dependencyRequest, response);
-            }
+        return (dependencyRequest, response) -> {
+            moduleClassVisitor.visit(dependencyRequest, response);
+            dependsOnVisitor.visit(dependencyRequest, response);
+            blackListVisitor.visit(dependencyRequest, response);
+            whiteListVisitor.visit(dependencyRequest, response);
         };
     }
 
@@ -160,33 +157,28 @@ class HandlerFactoryImpl implements HandlerFactory {
 
         final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
 
-        return new RequestVisitor() {
+        return (dependencyRequest, response) -> {
 
-            @Override public void visit(
-                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
+            Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
 
-                Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
+            for (Class<?> blackListClass : blackListClasses) {
 
-                for (Class<?> blackListClass : blackListClasses) {
+                if (blackListClass == requestingSourceModuleClass) {
 
-                    if (blackListClass == requestingSourceModuleClass) {
-
-                        response.addError("The module [" + requestingSourceModuleClass.getName()
-                                + "] does not have access to the module [" + module.getName() + "].");
-
-                    }
-
-                }
-
-                boolean qualifierMatch =
-                        blackListQualifier.qualifiers().length > 0
-                        && dependencyRequest.sourceQualifier().intersects(blackListQualifier);
-
-                if (qualifierMatch) {
                     response.addError("The module [" + requestingSourceModuleClass.getName()
                             + "] does not have access to the module [" + module.getName() + "].");
+
                 }
 
+            }
+
+            boolean qualifierMatch =
+                    blackListQualifier.qualifiers().length > 0
+                    && dependencyRequest.sourceQualifier().intersects(blackListQualifier);
+
+            if (qualifierMatch) {
+                response.addError("The module [" + requestingSourceModuleClass.getName()
+                        + "] does not have access to the module [" + module.getName() + "].");
             }
 
         };
@@ -219,27 +211,22 @@ class HandlerFactoryImpl implements HandlerFactory {
 
         final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
 
-        return new RequestVisitor() {
+        return (dependencyRequest, response) -> {
 
-            @Override public void visit(
-                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
+            Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
 
-                Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-
-                for (Class<?> whiteListClass : whiteListClasses) {
-                    if (whiteListClass == requestingSourceModuleClass) {
-                        return;
-                    }
+            for (Class<?> whiteListClass : whiteListClasses) {
+                if (whiteListClass == requestingSourceModuleClass) {
+                    return;
                 }
+            }
 
-                boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(whiteListQualifier);
+            boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(whiteListQualifier);
 
-                if (!qualifierMatch) {
+            if (!qualifierMatch) {
 
-                    response.addError("The module [" + requestingSourceModuleClass.getName()
-                            + "] does not have access to the module [" + module.getName() + "].");
-
-                }
+                response.addError("The module [" + requestingSourceModuleClass.getName()
+                        + "] does not have access to the module [" + module.getName() + "].");
 
             }
 
@@ -249,31 +236,26 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     private RequestVisitor dependsOnVisitor(final Class<?> module) {
 
-        return new RequestVisitor() {
+        return (dependencyRequest, response) -> {
 
-            @Override public void visit(
-                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
+            ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
 
-                ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
+            if (module == requestSourceModule.moduleClass()) {
+                return;
+            }
 
-                if (module == requestSourceModule.moduleClass()) {
+            if (requestSourceModule.referencedModules().length == 0) {
+                return; //TODO
+            }
+
+            for (Class<?> dependency : requestSourceModule.referencedModules()) {
+                if (module == dependency) {
                     return;
                 }
-
-                if (requestSourceModule.referencedModules().length == 0) {
-                    return; //TODO
-                }
-
-                for (Class<?> dependency : requestSourceModule.referencedModules()) {
-                    if (module == dependency) {
-                        return;
-                    }
-                }
-
-                response.addError("The module [" + requestSourceModule.moduleClass().getName()
-                        + "] does not have access to the module [" + module.getName() + "].");
-
             }
+
+            response.addError("The module [" + requestSourceModule.moduleClass().getName()
+                    + "] does not have access to the module [" + module.getName() + "].");
 
         };
 
@@ -392,10 +374,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     private interface RequestVisitor {
 
-        RequestVisitor NONE = new RequestVisitor() {
-            @Override public void visit(
-                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> dependencyResponse) { }
-        };
+        RequestVisitor NONE = (dependencyRequest, dependencyResponse) -> { };
 
         void visit(DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> dependencyResponse);
     }

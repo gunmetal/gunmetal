@@ -68,11 +68,11 @@ class InjectorFactoryImpl implements InjectorFactory {
                                 field,
                                 componentMetadata.moduleMetadata().qualifier()),
                         field.getGenericType());
-                injectors.add(new FieldInjector<T>(field, componentMetadata, dependency, linkers));
+                injectors.add(new FieldInjector<>(field, componentMetadata, dependency, linkers));
             }
             @Override public void visit(Method method) {
                 final ParameterizedFunction function = new MethodFunction(method);
-                injectors.add(new FunctionInjector<T>(
+                injectors.add(new FunctionInjector<>(
                         function,
                         componentMetadata,
                         dependenciesForFunction(
@@ -215,12 +215,9 @@ class InjectorFactoryImpl implements InjectorFactory {
                       final Dependency<?> dependency,
                       Linkers linkers) {
             field.setAccessible(true);
-            linkers.add(new Linkers.WiringLinker() {
-                @Override public void link(InternalProvider internalProvider,
-                                           ResolutionContext linkingContext) {
-                    provisionStrategy = internalProvider.getProvisionStrategy(
-                            DependencyRequest.Factory.create(componentMetadata, dependency));
-                }
+            linkers.addWiringLinker((internalProvider, linkingContext) -> {
+                provisionStrategy = internalProvider.getProvisionStrategy(
+                        DependencyRequest.create(componentMetadata, dependency));
             });
             this.field = field;
             this.componentMetadata = componentMetadata;
@@ -273,12 +270,10 @@ class InjectorFactoryImpl implements InjectorFactory {
             this.componentMetadata = componentMetadata;
             this.dependencies = dependencies;
             provisionStrategies = new ProvisionStrategy<?>[dependencies.length];
-            linkers.add(new Linkers.WiringLinker() {
-                @Override public void link(InternalProvider internalProvider, ResolutionContext linkingContext) {
-                    for (int i = 0; i < dependencies.length; i++) {
-                        provisionStrategies[i] = internalProvider.getProvisionStrategy(
-                                DependencyRequest.Factory.create(componentMetadata, dependencies[i]));
-                    }
+            linkers.addWiringLinker((internalProvider, linkingContext) -> {
+                for (int i = 0; i < dependencies.length; i++) {
+                    provisionStrategies[i] = internalProvider.getProvisionStrategy(
+                            DependencyRequest.create(componentMetadata, dependencies[i]));
                 }
             });
         }
@@ -380,8 +375,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                                     componentMetadata.moduleMetadata().qualifier()),
                             field.getGenericType());
                     ProvisionStrategy<?> provisionStrategy = internalProvider.getProvisionStrategy(
-                            DependencyRequest.Factory.create(componentMetadata, dependency));
-                    injectors.add(new FieldInjector<T>(field, componentMetadata, dependency, provisionStrategy));
+                            DependencyRequest.create(componentMetadata, dependency));
+                    injectors.add(new FieldInjector<>(field, componentMetadata, dependency, provisionStrategy));
                 }
                 @Override public void visit(Method method) {
                     ParameterizedFunction function = new MethodFunction(method);
@@ -393,9 +388,9 @@ class InjectorFactoryImpl implements InjectorFactory {
                     ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy<?>[dependencies.length];
                     for (int i = 0; i < dependencies.length; i++) {
                         provisionStrategies[i] = internalProvider.getProvisionStrategy(
-                                DependencyRequest.Factory.create(componentMetadata, dependencies[i]));
+                                DependencyRequest.create(componentMetadata, dependencies[i]));
                     }
-                    injectors.add(new FunctionInjector<T>(
+                    injectors.add(new FunctionInjector<>(
                             function,
                             componentMetadata,
                             dependencies,

@@ -29,7 +29,3 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface FromModule { }
-
-// private handlerFactory.createHandlersForModule(Class<?> subsumedModule, Class<?> parentModule, Linkers linkers);
-
-// subsumes = { @PartialModule(value = AuthenticationModule.class, alias = MyModule.class) }

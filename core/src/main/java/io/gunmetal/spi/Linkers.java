@@ -21,9 +21,9 @@ package io.gunmetal.spi;
  */
 public interface Linkers {
 
-    void add(WiringLinker linker);
+    void addWiringLinker(WiringLinker linker);
 
-    void add(EagerLinker linker);
+    void addEagerLinker(EagerLinker linker);
 
     interface WiringLinker extends Linker { }
 
