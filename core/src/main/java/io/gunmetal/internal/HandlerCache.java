@@ -4,7 +4,11 @@ import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Linkers;
+import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.Scope;
+import io.gunmetal.spi.Scopes;
 import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
@@ -15,6 +19,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -22,11 +27,12 @@ import java.util.concurrent.ConcurrentHashMap;
 */
 class HandlerCache implements LinkableComponentFactory<HandlerCache> {
 
+    private final HandlerCache parentCache;
     private final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new ConcurrentHashMap<>(64, .75f, 2);
-
-    HandlerCache() { }
+    private final Queue<DependencyRequestHandler<?>> myHandlers = new LinkedList<>();
 
     HandlerCache(HandlerCache parentCache) {
+        this.parentCache = parentCache;
         if (parentCache != null) {
             requestHandlers.putAll(parentCache.requestHandlers);
         }
@@ -61,9 +67,11 @@ class HandlerCache implements LinkableComponentFactory<HandlerCache> {
                     throw new RuntimeException("more than one of type without override enabled");
                 } else if (currentComponent.isOverrideEnabled()) {
                     requestHandlers.put(dependency, requestHandler);
+                    myHandlers.add(requestHandler);
                 } // else keep previous
             } else {
                 requestHandlers.put(dependency, requestHandler);
+                myHandlers.add(requestHandler);
             }
         }
     }
@@ -110,20 +118,19 @@ class HandlerCache implements LinkableComponentFactory<HandlerCache> {
         if (collectionRequestHandler == null) {
             collectionRequestHandler = new CollectionRequestHandler<>(collectionDependency, dependency);
             requestHandlers.put(collectionDependency, collectionRequestHandler);
+            myHandlers.add(collectionRequestHandler);
         }
         collectionRequestHandler.requestHandlers.add(requestHandler);
     }
 
     @Override public HandlerCache newInstance(Linkers linkers) {
-        HandlerCache newCache = new HandlerCache();
 
-        for (Map.Entry<Dependency<?>, DependencyRequestHandler<?>> entry : requestHandlers.entrySet()) {
-            newCache.requestHandlers.put(
-                    entry.getKey(),
-                    entry.getValue().newHandlerInstance(linkers));
-        }
+        HandlerCache newCache = new HandlerCache(parentCache);
+
+        myHandlers.forEach(handler -> newCache.putAll(handler.newHandlerInstance(linkers)));
 
         return newCache;
+
     }
 
     private static class CollectionRequestHandler<T> implements DependencyRequestHandler<List<T>> {
@@ -182,7 +189,35 @@ class HandlerCache implements LinkableComponentFactory<HandlerCache> {
         }
 
         @Override public ComponentMetadata<?> componentMetadata() {
-            throw new UnsupportedOperationException(); // TODO exception message
+            return new ComponentMetadata<Class<?>>() {
+                @Override public Class<?> provider() {
+                    throw new UnsupportedOperationException(); // TODO
+                }
+
+                @Override public Class<?> providerClass() {
+                    throw new UnsupportedOperationException(); // TODO
+                }
+
+                @Override public ModuleMetadata moduleMetadata() {
+                    throw new UnsupportedOperationException(); // TODO
+                }
+
+                @Override public Qualifier qualifier() {
+                    return dependency.qualifier();
+                }
+
+                @Override public Scope scope() {
+                    return Scopes.PROTOTYPE;
+                }
+
+                @Override public boolean isOverrideEnabled() {
+                    return false;
+                }
+
+                @Override public boolean isCollectionElement() {
+                    return false;
+                }
+            };
         }
 
         @Override public DependencyRequestHandler<List<T>> newHandlerInstance(Linkers linkers) {

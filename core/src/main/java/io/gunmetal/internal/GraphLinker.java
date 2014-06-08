@@ -13,14 +13,14 @@ import java.util.Queue;
 */
 class GraphLinker implements Linkers, Linker {
 
-    final Queue<WiringLinker> postWiringLinkers = new LinkedList<>();
-    final Queue<EagerLinker> eagerLinkers = new LinkedList<>();
+    final Queue<Linker> postWiringLinkers = new LinkedList<>();
+    final Queue<Linker> eagerLinkers = new LinkedList<>();
 
-    @Override public void addWiringLinker(WiringLinker linker) {
+    @Override public void addWiringLinker(Linker linker) {
         postWiringLinkers.add(linker);
     }
 
-    @Override public void addEagerLinker(EagerLinker linker) {
+    @Override public void addEagerLinker(Linker linker) {
         eagerLinkers.add(linker);
     }
 

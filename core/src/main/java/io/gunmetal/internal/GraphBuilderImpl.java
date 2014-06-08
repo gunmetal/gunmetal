@@ -153,16 +153,22 @@ public class GraphBuilderImpl implements GraphBuilder {
         }
 
         @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
+
             Qualifier qualifier = config.qualifierResolver().resolve(dependencySpec);
             Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
             Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
             Dependency<T> dependency = Dependency.from(
                     qualifier,
                     dependencyType);
+
             DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
+
             if (requestHandler != null) {
+
                 return requestHandler.force().get(internalProvider, ResolutionContext.create());
+
             } else if (config.isProvider(dependency)) {
+
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
                 final Dependency<?> componentDependency = Dependency.from(dependency.qualifier(), providedType);
                 final DependencyRequestHandler<?> componentHandler = handlerCache.get(componentDependency);
@@ -173,7 +179,9 @@ public class GraphBuilderImpl implements GraphBuilder {
                 return new ProviderStrategyFactory(config)
                         .<T>create(componentStrategy, internalProvider)
                         .get(internalProvider, ResolutionContext.create());
+
             }
+
             return null;
         }
 
