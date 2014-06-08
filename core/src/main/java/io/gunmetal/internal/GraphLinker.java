@@ -29,13 +29,13 @@ class GraphLinker implements Linkers {
         eagerLinkers.add(linker);
     }
 
-    void linkGraph(InternalProvider internalProvider, ResolutionContext linkingContext) {
+    void linkGraph(InternalProvider internalProvider, ResolutionContext.LinkingContext linkingContext) {
         while (!postWiringLinkers.isEmpty()) {
             postWiringLinkers.remove().link(internalProvider, linkingContext);
         }
     }
 
-    void linkAll(InternalProvider internalProvider, ResolutionContext linkingContext) {
+    void linkAll(InternalProvider internalProvider, ResolutionContext.LinkingContext linkingContext) {
         while (!postWiringLinkers.isEmpty()) {
             postWiringLinkers.remove().link(internalProvider, linkingContext);
         }

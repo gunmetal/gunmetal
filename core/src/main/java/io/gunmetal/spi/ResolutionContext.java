@@ -27,16 +27,18 @@ import java.util.Map;
  */
 public interface ResolutionContext {
 
-    <T> T getStatefulSource(Class<T> sourceClass);
-
     <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy);
 
     static ResolutionContext create() {
         return Factory.create();
     }
 
-    static ResolutionContext create(Map<Class<?>, Object> statefulSources) {
+    static LinkingContext create(Map<Class<?>, Object> statefulSources) {
         return Factory.create(statefulSources);
+    }
+
+    interface LinkingContext extends ResolutionContext {
+        <T> T getStatefulSource(Class<T> sourceClass);
     }
 
     interface States  {
@@ -52,7 +54,7 @@ public interface ResolutionContext {
 
     final class Factory {
 
-        private static class ResolutionContextImpl implements ResolutionContext {
+        private static class ResolutionContextImpl implements LinkingContext {
 
             private final Map<ProvisionStrategy<?>, ProvisionContext<?>> contextMap = new HashMap<>();
             private final Map<Class<?>, Object> statefulSources;
@@ -83,7 +85,7 @@ public interface ResolutionContext {
             return new ResolutionContextImpl(Collections.emptyMap());
         }
 
-        private static ResolutionContext create(Map<Class<?>, Object> statefulSources) {
+        private static LinkingContext create(Map<Class<?>, Object> statefulSources) {
             return new ResolutionContextImpl(statefulSources);
         }
 

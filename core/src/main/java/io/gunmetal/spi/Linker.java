@@ -20,5 +20,5 @@ package io.gunmetal.spi;
  * @author rees.byars
  */
 public interface Linker {
-    void link(InternalProvider internalProvider, ResolutionContext linkingContext);
+    void link(InternalProvider internalProvider, ResolutionContext.LinkingContext linkingContext);
 }
