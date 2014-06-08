@@ -34,6 +34,8 @@ import io.gunmetal.testmocks.N;
 import io.gunmetal.testmocks.NewGunmetalBenchMarkModule;
 import org.junit.Test;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -76,8 +78,9 @@ public class ApplicationBuilderImplTest {
         }
 
 
-        static void routine(BlackList blackList) {
+        static Class<Void> routine(BlackList blackList) {
             System.out.println("routineeee" + blackList);
+            return Void.TYPE;
         }
 
 
@@ -117,10 +120,11 @@ public class ApplicationBuilderImplTest {
             return "3";
         }
 
-        @Main static void printStrings(@AutoCollection List<String> strings) {
+        @Main static InputStream printStrings(@AutoCollection List<String> strings) {
             for (String s : strings) {
                 System.out.println(s);
             }
+            return System.in;
         }
 
     }
@@ -205,8 +209,9 @@ public class ApplicationBuilderImplTest {
             return new PlusModule();
         }
 
-        static void r(@FromModule Cheese cheese, @Main Lib myLibrary) {
+        static OutputStream r(@FromModule Cheese cheese, @Main Lib myLibrary) {
             System.out.println("sup");
+            return System.out;
         }
 
     }

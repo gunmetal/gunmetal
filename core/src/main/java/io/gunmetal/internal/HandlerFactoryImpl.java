@@ -294,6 +294,11 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is not static.");
         }
 
+        if (method.getReturnType() == void.class) {
+            throw new IllegalArgumentException("A module's provider methods cannot have a void return type.  The method ["
+                    + method.getName() + "] in module [" + module.getName() + "] is returns void.");
+        }
+
         ComponentMetadata<Method> componentMetadata = componentMetadataResolver.resolveMetadata(method, moduleMetadata);
 
         // TODO targeted return type check

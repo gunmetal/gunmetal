@@ -17,25 +17,22 @@ class InternalProviderImpl implements InternalProvider {
 
     private final Config config;
     private final HandlerFactory handlerFactory;
-    private final HandlerCache compositeCache;
-    private final HandlerCache myCache;
+    private final HandlerCache handlerCache;
     private final Linkers linkers;
 
     InternalProviderImpl(Config config,
                          HandlerFactory handlerFactory,
-                         HandlerCache compositeCache,
-                         HandlerCache myCache,
+                         HandlerCache handlerCache,
                          Linkers linkers) {
         this.config = config;
         this.handlerFactory = handlerFactory;
-        this.compositeCache = compositeCache;
-        this.myCache = myCache;
+        this.handlerCache = handlerCache;
         this.linkers = linkers;
     }
 
     @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
         final Dependency<T> dependency = dependencyRequest.dependency();
-        DependencyRequestHandler<? extends T> requestHandler = compositeCache.get(dependency);
+        DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
         if (requestHandler != null) {
             return requestHandler
                     .handle(dependencyRequest)
@@ -43,10 +40,9 @@ class InternalProviderImpl implements InternalProvider {
                     .getProvisionStrategy();
         }
         if (config.isProvider(dependency)) {
-            requestHandler = createProviderHandler(dependencyRequest, config, this, compositeCache);
+            requestHandler = createProviderHandler(dependencyRequest, config, this, handlerCache);
             if (requestHandler != null) {
-                myCache.put(dependency, requestHandler);
-                compositeCache.put(dependency, requestHandler);
+                handlerCache.put(dependency, requestHandler);
                 return requestHandler
                         .handle(dependencyRequest)
                         .validateResponse()
@@ -55,7 +51,7 @@ class InternalProviderImpl implements InternalProvider {
         }
         requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, linkers);
         if (requestHandler != null) {
-            // we do not cache handlers for specific requests - each request gets its own
+            handlerCache.put(dependency, requestHandler);
             return requestHandler
                     .handle(dependencyRequest)
                     .validateResponse()

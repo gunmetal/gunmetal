@@ -80,14 +80,14 @@ public class GraphBuilderImpl implements GraphBuilder {
                 config.qualifierResolver(),
                 config.componentMetadataResolver());
 
-        final HandlerCache myCache = new HandlerCache();
+        final HandlerCache handlerCache = new HandlerCache(parentCache);
 
         final GraphLinker graphLinker = new GraphLinker();
 
         for (Class<?> module : rootModule.modules()) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
                     handlerFactory.createHandlersForModule(module, graphLinker);
-            myCache.putAll(moduleRequestHandlers);
+            handlerCache.putAll(moduleRequestHandlers);
         }
 
         return new GraphImpl(
@@ -95,8 +95,7 @@ public class GraphBuilderImpl implements GraphBuilder {
                 graphLinker,
                 injectorFactory,
                 handlerFactory,
-                myCache,
-                parentCache);
+                handlerCache);
     }
 
     private static class GraphImpl implements ObjectGraph {
@@ -106,28 +105,22 @@ public class GraphBuilderImpl implements GraphBuilder {
         private final InternalProvider internalProvider;
         private final InjectorFactory injectorFactory;
         private final HandlerFactory handlerFactory;
-        private final HandlerCache compositeCache;
-        private final HandlerCache myCache;
-        private final HandlerCache parentCache;
+        private final HandlerCache handlerCache;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
 
         GraphImpl(Config config,
                   GraphLinker graphLinker,
                   InjectorFactory injectorFactory,
                   HandlerFactory handlerFactory,
-                  HandlerCache myCache,
-                  HandlerCache parentCache) {
+                  HandlerCache handlerCache) {
             this.config = config;
             this.graphLinker = graphLinker;
             this.injectorFactory = injectorFactory;
             this.handlerFactory = handlerFactory;
-            this.myCache = myCache;
-            this.parentCache = parentCache;
-
-            compositeCache = new HandlerCache(parentCache, myCache);
+            this.handlerCache = handlerCache;
 
             internalProvider =
-                    new InternalProviderImpl(config, handlerFactory, compositeCache, myCache, graphLinker);
+                    new InternalProviderImpl(config, handlerFactory, handlerCache, graphLinker);
 
             graphLinker.link(internalProvider, ResolutionContext.create());
 
@@ -166,13 +159,13 @@ public class GraphBuilderImpl implements GraphBuilder {
             Dependency<T> dependency = Dependency.from(
                     qualifier,
                     dependencyType);
-            DependencyRequestHandler<? extends T> requestHandler = compositeCache.get(dependency);
+            DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
             if (requestHandler != null) {
                 return requestHandler.force().get(internalProvider, ResolutionContext.create());
             } else if (config.isProvider(dependency)) {
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
                 final Dependency<?> componentDependency = Dependency.from(dependency.qualifier(), providedType);
-                final DependencyRequestHandler<?> componentHandler = compositeCache.get(componentDependency);
+                final DependencyRequestHandler<?> componentHandler = handlerCache.get(componentDependency);
                 if (componentHandler == null) {
                     return null;
                 }
@@ -185,14 +178,14 @@ public class GraphBuilderImpl implements GraphBuilder {
         }
 
         @Override public ObjectGraph plus(Class<?> root) {
-            return new GraphBuilderImpl().build(root, compositeCache);
+            return new GraphBuilderImpl().build(root, handlerCache);
         }
 
         @Override public ObjectGraph newInstance() {
 
             GraphLinker graphLinker = new GraphLinker();
 
-            HandlerCache newMyCache = myCache.newInstance(graphLinker);
+            HandlerCache newHandlerCache = handlerCache.newInstance(graphLinker);
 
             Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
 
@@ -205,8 +198,7 @@ public class GraphBuilderImpl implements GraphBuilder {
                     graphLinker,
                     injectorFactory,
                     handlerFactory,
-                    newMyCache,
-                    parentCache);
+                    newHandlerCache);
 
             copy.injectors.putAll(injectorHashMap);
 

@@ -24,11 +24,11 @@ class HandlerCache implements LinkableComponentFactory<HandlerCache> {
 
     private final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new ConcurrentHashMap<>(64, .75f, 2);
 
-    HandlerCache(HandlerCache... caches) {
-        for (HandlerCache cache : caches) {
-            if (cache != null) {
-                requestHandlers.putAll(cache.requestHandlers);
-            }
+    HandlerCache() { }
+
+    HandlerCache(HandlerCache parentCache) {
+        if (parentCache != null) {
+            requestHandlers.putAll(parentCache.requestHandlers);
         }
     }
 
