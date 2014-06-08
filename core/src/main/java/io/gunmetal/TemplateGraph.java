@@ -5,8 +5,6 @@ package io.gunmetal;
  */
 public interface TemplateGraph {
 
-    void validate();
-
-    ObjectGraph build();
+    ObjectGraph newGraph(Object... statefulModules);
 
 }

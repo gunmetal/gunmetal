@@ -18,6 +18,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.RootModule;
+import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
@@ -43,11 +44,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GraphBuilderImpl implements GraphBuilder {
 
-    @Override public ObjectGraph build(Class<?> root) {
+    @Override public TemplateGraph build(Class<?> root) {
         return build(root, null);
     }
 
-    private ObjectGraph build(Class<?> root, final HandlerCache parentCache) {
+    private TemplateGraph build(Class<?> root, final HandlerCache parentCache) {
 
         RootModule rootModule = root.getAnnotation(RootModule.class);
 
@@ -90,7 +91,7 @@ public class GraphBuilderImpl implements GraphBuilder {
             handlerCache.putAll(moduleRequestHandlers);
         }
 
-        return new GraphImpl(
+        return new Template(
                 config,
                 graphLinker,
                 injectorFactory,
@@ -98,23 +99,21 @@ public class GraphBuilderImpl implements GraphBuilder {
                 handlerCache);
     }
 
-    private static class GraphImpl implements ObjectGraph {
+    private static class Template implements TemplateGraph {
 
         private final Config config;
-        private final GraphLinker graphLinker;
         private final InternalProvider internalProvider;
         private final InjectorFactory injectorFactory;
         private final HandlerFactory handlerFactory;
         private final HandlerCache handlerCache;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
 
-        GraphImpl(Config config,
+        Template(Config config,
                   GraphLinker graphLinker,
                   InjectorFactory injectorFactory,
                   HandlerFactory handlerFactory,
                   HandlerCache handlerCache) {
             this.config = config;
-            this.graphLinker = graphLinker;
             this.injectorFactory = injectorFactory;
             this.handlerFactory = handlerFactory;
             this.handlerCache = handlerCache;
@@ -122,7 +121,63 @@ public class GraphBuilderImpl implements GraphBuilder {
             internalProvider =
                     new InternalProviderImpl(config, handlerFactory, handlerCache, graphLinker);
 
-            graphLinker.link(internalProvider, ResolutionContext.create());
+            graphLinker.linkGraph(internalProvider, ResolutionContext.create());
+
+        }
+
+        @Override public ObjectGraph newGraph(Object... statefulModules) {
+
+            GraphLinker graphLinker = new GraphLinker();
+
+            HandlerCache newHandlerCache = handlerCache.replicate(graphLinker);
+
+            Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
+
+            for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
+                injectorHashMap.put(entry.getKey(), entry.getValue().replicate(graphLinker));
+            }
+
+            Map<Class<?>, Object> statefulModulesMap = new HashMap<>();
+
+            for (Object module : statefulModules) {
+                statefulModulesMap.put(module.getClass(), module);
+            }
+
+            GraphImpl copy = new GraphImpl(
+                    this,
+                    graphLinker,
+                    newHandlerCache,
+                    statefulModulesMap);
+
+            copy.injectors.putAll(injectorHashMap);
+
+            return copy;
+
+        }
+    }
+
+    private static class GraphImpl implements ObjectGraph {
+
+        private final Template template;
+        private final GraphLinker graphLinker;
+        private final InternalProvider internalProvider;
+        private final HandlerCache handlerCache;
+        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
+        private final Map<Class<?>, Object> statefulModules;
+
+        GraphImpl(Template template,
+                  GraphLinker graphLinker,
+                  HandlerCache handlerCache,
+                  Map<Class<?>, Object> statefulModules) {
+            this.template = template;
+            this.graphLinker = graphLinker;
+            this.handlerCache = handlerCache;
+            this.statefulModules = statefulModules;
+
+            internalProvider =
+                    new InternalProviderImpl(template.config, template.handlerFactory, handlerCache, graphLinker);
+
+            graphLinker.linkAll(internalProvider, ResolutionContext.create(statefulModules));
 
         }
 
@@ -134,17 +189,18 @@ public class GraphBuilderImpl implements GraphBuilder {
 
             if (injector == null) {
 
-                final Qualifier qualifier = config.qualifierResolver().resolve(targetClass);
+                final Qualifier qualifier = template.config.qualifierResolver().resolve(targetClass);
 
-                injector = injectorFactory.compositeInjector(
-                        config.componentMetadataResolver().resolveMetadata(
+                injector = template.injectorFactory.compositeInjector(
+                        template.config.componentMetadataResolver().resolveMetadata(
                                 targetClass,
                                 new ModuleMetadata(targetClass, qualifier, new Class<?>[0])),
                         graphLinker);
 
-                graphLinker.link(internalProvider, ResolutionContext.create());
+                graphLinker.linkAll(internalProvider, ResolutionContext.create(statefulModules));
 
                 injectors.put(targetClass, injector);
+                template.injectors.put(targetClass, injector);
             }
 
             injector.inject(injectionTarget, internalProvider, ResolutionContext.create());
@@ -154,7 +210,7 @@ public class GraphBuilderImpl implements GraphBuilder {
 
         @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
 
-            Qualifier qualifier = config.qualifierResolver().resolve(dependencySpec);
+            Qualifier qualifier = template.config.qualifierResolver().resolve(dependencySpec);
             Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
             Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
             Dependency<T> dependency = Dependency.from(
@@ -167,7 +223,7 @@ public class GraphBuilderImpl implements GraphBuilder {
 
                 return requestHandler.force().get(internalProvider, ResolutionContext.create());
 
-            } else if (config.isProvider(dependency)) {
+            } else if (template.config.isProvider(dependency)) {
 
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
                 final Dependency<?> componentDependency = Dependency.from(dependency.qualifier(), providedType);
@@ -176,7 +232,7 @@ public class GraphBuilderImpl implements GraphBuilder {
                     return null;
                 }
                 ProvisionStrategy<?> componentStrategy = componentHandler.force();
-                return new ProviderStrategyFactory(config)
+                return new ProviderStrategyFactory(template.config)
                         .<T>create(componentStrategy, internalProvider)
                         .get(internalProvider, ResolutionContext.create());
 
@@ -185,33 +241,12 @@ public class GraphBuilderImpl implements GraphBuilder {
             return null;
         }
 
-        @Override public ObjectGraph plus(Class<?> root) {
+        @Override public TemplateGraph plus(Class<?> root) {
             return new GraphBuilderImpl().build(root, handlerCache);
         }
 
-        @Override public ObjectGraph newInstance() {
-
-            GraphLinker graphLinker = new GraphLinker();
-
-            HandlerCache newHandlerCache = handlerCache.newInstance(graphLinker);
-
-            Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
-
-            for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
-                injectorHashMap.put(entry.getKey(), entry.getValue().newInjectorInstance(graphLinker));
-            }
-
-            GraphImpl copy = new GraphImpl(
-                    config,
-                    graphLinker,
-                    injectorFactory,
-                    handlerFactory,
-                    newHandlerCache);
-
-            copy.injectors.putAll(injectorHashMap);
-
-            return copy;
-
+        @Override public ObjectGraph newGraph(Object... statefulModules) {
+            return template.newGraph(statefulModules);
         }
 
     }

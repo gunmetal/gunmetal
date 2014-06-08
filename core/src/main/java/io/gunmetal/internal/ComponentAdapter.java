@@ -17,18 +17,15 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ComponentMetadata;
-import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 
 /**
  * @author rees.byars
  */
-interface ComponentAdapter<T> extends Dependent {
+interface ComponentAdapter<T> extends Dependent, Replicable<ComponentAdapter<T>> {
 
     ComponentMetadata<?> metadata();
 
     ProvisionStrategy<T> provisionStrategy();
-
-    ComponentAdapter<T> newAdapterInstance(Linkers linkers);
 
 }

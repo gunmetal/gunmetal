@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
 * @author rees.byars
 */
-class HandlerCache implements LinkableComponentFactory<HandlerCache> {
+class HandlerCache implements Replicable<HandlerCache> {
 
     private final HandlerCache parentCache;
     private final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new ConcurrentHashMap<>(64, .75f, 2);
@@ -123,11 +123,11 @@ class HandlerCache implements LinkableComponentFactory<HandlerCache> {
         collectionRequestHandler.requestHandlers.add(requestHandler);
     }
 
-    @Override public HandlerCache newInstance(Linkers linkers) {
+    @Override public HandlerCache replicate(Linkers linkers) {
 
         HandlerCache newCache = new HandlerCache(parentCache);
 
-        myHandlers.forEach(handler -> newCache.putAll(handler.newHandlerInstance(linkers)));
+        myHandlers.forEach(handler -> newCache.putAll(handler.replicate(linkers)));
 
         return newCache;
 
@@ -150,30 +150,26 @@ class HandlerCache implements LinkableComponentFactory<HandlerCache> {
 
         @Override public List<Dependency<?>> dependencies() {
             List<Dependency<?>> dependencies = new LinkedList<>();
-            for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                dependencies.addAll(requestHandler.dependencies());
-            }
+            requestHandlers.stream().forEach(handler -> dependencies.addAll(handler.dependencies()));
             return dependencies;
         }
 
         @Override public DependencyResponse<List<T>> handle(final DependencyRequest<? super List<T>> dependencyRequest) {
-            return new DependencyResponse<List<T>>() {
-                @Override public ValidatedDependencyResponse<List<T>> validateResponse() {
-                    DependencyRequest<T> subRequest =
-                            DependencyRequest.create(dependencyRequest, subDependency);
-                    for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                        requestHandler.handle(subRequest).validateResponse();
-                    }
-                    return new ValidatedDependencyResponse<List<T>>() {
-                        @Override public ProvisionStrategy<List<T>> getProvisionStrategy() {
-                            return force();
-                        }
-
-                        @Override public ValidatedDependencyResponse<List<T>> validateResponse() {
-                            return this;
-                        }
-                    };
+            return () -> {
+                DependencyRequest<T> subRequest =
+                        DependencyRequest.create(dependencyRequest, subDependency);
+                for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
+                    requestHandler.handle(subRequest).validateResponse();
                 }
+                return new DependencyResponse.ValidatedDependencyResponse<List<T>>() {
+                    @Override public ProvisionStrategy<List<T>> getProvisionStrategy() {
+                        return force();
+                    }
+
+                    @Override public ValidatedDependencyResponse<List<T>> validateResponse() {
+                        return this;
+                    }
+                };
             };
         }
 
@@ -220,10 +216,10 @@ class HandlerCache implements LinkableComponentFactory<HandlerCache> {
             };
         }
 
-        @Override public DependencyRequestHandler<List<T>> newHandlerInstance(Linkers linkers) {
+        @Override public DependencyRequestHandler<List<T>> replicate(Linkers linkers) {
             CollectionRequestHandler<T> newHandler = new CollectionRequestHandler<>(dependency, subDependency);
             for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                newHandler.requestHandlers.add(requestHandler.newHandlerInstance(linkers));
+                newHandler.requestHandlers.add(requestHandler.replicate(linkers));
             }
             return newHandler;
         }

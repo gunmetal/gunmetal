@@ -5,8 +5,8 @@ import io.gunmetal.spi.Linkers;
 /**
  * @author rees.byars
  */
-interface LinkableComponentFactory<T> {
+interface Replicable<T> {
 
-    T newInstance(Linkers linkers);
+    T replicate(Linkers linkers);
 
 }

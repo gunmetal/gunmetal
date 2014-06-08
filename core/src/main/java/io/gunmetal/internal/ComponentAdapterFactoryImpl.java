@@ -73,6 +73,20 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 postInjector);
     }
 
+    @Override public <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata, Linkers linkers) {
+        Instantiator<T> instantiator = injectorFactory.statefulMethodInstantiator(componentMetadata, linkers);
+        Injector<T> postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
+        ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
+                componentMetadata,
+                baseProvisionStrategy(componentMetadata, instantiator, postInjector),
+                linkers);
+        return componentAdapter(
+                componentMetadata,
+                provisionStrategy,
+                instantiator,
+                postInjector);
+    }
+
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata<?> componentMetadata,
                                                      final Instantiator<T> instantiator,
                                                      final Injector<T> injector) {
@@ -125,9 +139,9 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 return provisionStrategy;
             }
 
-            @Override public ComponentAdapter<T> newAdapterInstance(Linkers linkers) {
-                Injector<T> newInjector = injector.newInjectorInstance(linkers);
-                Instantiator<T> newInstantiator = instantiator.newInstantiatorInstance(linkers);
+            @Override public ComponentAdapter<T> replicate(Linkers linkers) {
+                Injector<T> newInjector = injector.replicate(linkers);
+                Instantiator<T> newInstantiator = instantiator.replicate(linkers);
                 ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
                         metadata,
                         baseProvisionStrategy(metadata, newInstantiator, newInjector),

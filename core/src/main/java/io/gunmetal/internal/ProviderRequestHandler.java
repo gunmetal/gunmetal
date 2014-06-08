@@ -69,7 +69,7 @@ class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
         return componentHandler.componentMetadata();
     }
 
-    @Override public DependencyRequestHandler<T> newHandlerInstance(Linkers linkers) {
+    @Override public DependencyRequestHandler<T> replicate(Linkers linkers) {
         return new ProviderRequestHandler<>(
                 providerRequest,
                 new DelegatingProvisionStrategy<T>(linkers),

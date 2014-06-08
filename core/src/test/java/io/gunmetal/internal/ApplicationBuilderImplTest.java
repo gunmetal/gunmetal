@@ -18,11 +18,11 @@ package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
-import io.gunmetal.ObjectGraph;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Library;
 import io.gunmetal.Module;
+import io.gunmetal.ObjectGraph;
 import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
@@ -49,6 +49,10 @@ public class ApplicationBuilderImplTest {
     @Retention(RetentionPolicy.RUNTIME)
     @io.gunmetal.Qualifier
     public @interface Main {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @io.gunmetal.Qualifier
+    public @interface Stateful {}
 
     interface Bad { }
 
@@ -108,8 +112,8 @@ public class ApplicationBuilderImplTest {
             return new ApplicationBuilderImplTest();
         }
 
-        @AutoCollection static String s1() {
-            return "1";
+        @AutoCollection static String s1(@Stateful String name) {
+            return name;
         }
 
         @AutoCollection static String s2() {
@@ -129,6 +133,22 @@ public class ApplicationBuilderImplTest {
 
     }
 
+    @Module(stateful = true)
+    @Stateful
+    static class StatefulModule {
+
+        String name;
+
+        StatefulModule(String name) {
+            this.name = name;
+        }
+
+        String name(ApplicationBuilderImplTest test) {
+            return name + test.getClass().getName();
+        }
+
+    }
+
     @Module
     static class M {
         @Lazy static M m(ApplicationBuilderImplTest test) {
@@ -139,15 +159,15 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testBuild() {
 
-        @RootModule(modules = { TestModule.class })
+        @RootModule(modules = { TestModule.class, StatefulModule.class })
         class Application { }
 
-        ObjectGraph app = new GraphBuilderImpl().build(Application.class);
+        ObjectGraph app = new GraphBuilderImpl().build(Application.class).newGraph(new StatefulModule("rees"));
 
-        app = app.newInstance();
+        app = app.newGraph(new StatefulModule("rees"));
 
-        @Main
-        class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
+        @Main class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
+
 
         ApplicationBuilderImplTest test = app.get(Dep.class);
 
@@ -167,7 +187,7 @@ public class ApplicationBuilderImplTest {
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
 
-        app = ObjectGraph.create(NewGunmetalBenchMarkModule.class);
+        app = ObjectGraph.create(NewGunmetalBenchMarkModule.class).newGraph();
 
         A a = app.get(Dep2.class);
 
@@ -242,9 +262,9 @@ public class ApplicationBuilderImplTest {
         @Main
         class Dep implements io.gunmetal.Dependency<PlusModule> { }
 
-        ObjectGraph parent = new GraphBuilderImpl().build(Parent.class);
+        ObjectGraph parent = new GraphBuilderImpl().build(Parent.class).newGraph();
 
-        ObjectGraph child = parent.plus(Child.class);
+        ObjectGraph child = parent.plus(Child.class).newGraph();
 
         PlusModule p = child.get(Dep.class);
 
@@ -263,7 +283,7 @@ public class ApplicationBuilderImplTest {
 
         assert injectTest.f != null;
 
-        ObjectGraph childCopy = child.newInstance();
+        ObjectGraph childCopy = child.newGraph();
 
         assert child.get(Dep.class) != childCopy.get(Dep.class);
 
@@ -283,7 +303,7 @@ public class ApplicationBuilderImplTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.create(App.class);
+    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.create(App.class).newGraph();
 
     @RootModule(modules = NewGunmetalBenchMarkModule.class)
     static class App { }
@@ -293,7 +313,7 @@ public class ApplicationBuilderImplTest {
     long newGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= APPLICATION_CONTAINER.newInstance().get(Dep.class).hashCode();
+            dummy |= APPLICATION_CONTAINER.newGraph().get(Dep.class).hashCode();
         }
         return dummy;
     }

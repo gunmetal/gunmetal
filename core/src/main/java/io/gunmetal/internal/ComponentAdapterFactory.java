@@ -28,5 +28,6 @@ interface ComponentAdapterFactory {
 
     <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata, Linkers linkers);
     <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata, Linkers linkers);
+    <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata, Linkers linkers);
 
 }

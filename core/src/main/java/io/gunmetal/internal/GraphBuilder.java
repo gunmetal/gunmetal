@@ -16,13 +16,13 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.ObjectGraph;
+import io.gunmetal.TemplateGraph;
 
 /**
  * @author rees.byars
  */
 public interface GraphBuilder {
 
-    ObjectGraph build(Class<?> rootModule);
+    TemplateGraph build(Class<?> rootModule);
 
 }
