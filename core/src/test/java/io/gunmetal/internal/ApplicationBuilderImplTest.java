@@ -140,6 +140,8 @@ public class ApplicationBuilderImplTest {
 
         ObjectGraph app = new GraphBuilderImpl().build(Application.class);
 
+        app = app.newInstance();
+
         @Main
         class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
 
