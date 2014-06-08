@@ -40,4 +40,6 @@ public @interface Module {
 
     AccessLevel access() default AccessLevel.UNDEFINED;
 
+    boolean stateful() default false;
+
 }

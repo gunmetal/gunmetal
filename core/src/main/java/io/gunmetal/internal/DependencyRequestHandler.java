@@ -19,7 +19,6 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
-import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-interface DependencyRequestHandler<T> {
+interface DependencyRequestHandler<T> extends Replicable<DependencyRequestHandler<T>> {
 
     List<Dependency<? super T>> targets();
 
@@ -38,7 +37,5 @@ interface DependencyRequestHandler<T> {
     ProvisionStrategy<T> force();
 
     ComponentMetadata<?> componentMetadata();
-
-    DependencyRequestHandler<T> newHandlerInstance(Linkers linkers);
 
 }

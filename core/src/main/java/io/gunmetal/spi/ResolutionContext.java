@@ -16,6 +16,9 @@
 
 package io.gunmetal.spi;
 
+import io.gunmetal.util.Generics;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +31,14 @@ public interface ResolutionContext {
 
     static ResolutionContext create() {
         return Factory.create();
+    }
+
+    static LinkingContext create(Map<Class<?>, Object> statefulSources) {
+        return Factory.create(statefulSources);
+    }
+
+    interface LinkingContext extends ResolutionContext {
+        <T> T getStatefulSource(Class<T> sourceClass);
     }
 
     interface States  {
@@ -43,12 +54,20 @@ public interface ResolutionContext {
 
     final class Factory {
 
-        private static class ResolutionContextImpl implements ResolutionContext {
+        private static class ResolutionContextImpl implements LinkingContext {
 
             private final Map<ProvisionStrategy<?>, ProvisionContext<?>> contextMap = new HashMap<>();
+            private final Map<Class<?>, Object> statefulSources;
 
-            @Override
-            public <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy) {
+            ResolutionContextImpl(Map<Class<?>, Object> statefulSources) {
+                this.statefulSources = statefulSources;
+            }
+
+            @Override public <T> T getStatefulSource(Class<T> sourceClass) {
+                return Generics.as(statefulSources.get(sourceClass));
+            }
+
+            @Override public <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy) {
 
                 @SuppressWarnings("unchecked")
                 ProvisionContext<T> strategyContext = (ProvisionContext<T>) contextMap.get(strategy);
@@ -63,7 +82,11 @@ public interface ResolutionContext {
         }
 
         private static ResolutionContext create() {
-            return new ResolutionContextImpl();
+            return new ResolutionContextImpl(Collections.emptyMap());
+        }
+
+        private static LinkingContext create(Map<Class<?>, Object> statefulSources) {
+            return new ResolutionContextImpl(statefulSources);
         }
 
     }

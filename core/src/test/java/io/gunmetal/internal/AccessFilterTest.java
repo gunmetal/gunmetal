@@ -198,23 +198,23 @@ public class AccessFilterTest {
         }
 
         public static AccessAssertion assertClass(Class<?> cls) {
-            return new AccessAssertion(AccessFilter.Factory.getAccessFilter(cls));
+            return new AccessAssertion(AccessFilter.create(cls));
         }
 
         public static AccessAssertion assertPrivateMethodOn(Class<?> cls) {
-            return new AccessAssertion(AccessFilter.Factory.getAccessFilter(getPrivateMethod(cls)));
+            return new AccessAssertion(AccessFilter.create(getPrivateMethod(cls)));
         }
 
         public static AccessAssertion assertPublicMethodOn(Class<?> cls) {
-            return new AccessAssertion(AccessFilter.Factory.getAccessFilter(getPublicMethod(cls)));
+            return new AccessAssertion(AccessFilter.create(getPublicMethod(cls)));
         }
 
         public static AccessAssertion assertProtectedMethodOn(Class<?> cls) {
-            return new AccessAssertion(AccessFilter.Factory.getAccessFilter(getProtectedMethod(cls)));
+            return new AccessAssertion(AccessFilter.create(getProtectedMethod(cls)));
         }
 
         public static AccessAssertion assertPackagePrivateMethodOn(Class<?> cls) {
-            return new AccessAssertion(AccessFilter.Factory.getAccessFilter(getPackagePrivateMethod(cls)));
+            return new AccessAssertion(AccessFilter.create(getPackagePrivateMethod(cls)));
         }
 
         public static class AccessAssertion {

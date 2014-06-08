@@ -21,17 +21,15 @@ import io.gunmetal.internal.GraphBuilderImpl;
 /**
  * @author rees.byars
  */
-public interface ObjectGraph {
+public interface ObjectGraph extends TemplateGraph {
 
     <T> ObjectGraph inject(T injectionTarget);
 
     <T, D extends Dependency<T>> T get(Class<D> dependency);
 
-    ObjectGraph plus(Class<?> rootModule);
+    TemplateGraph plus(Class<?> rootModule);
 
-    ObjectGraph newInstance();
-
-    static ObjectGraph create(Class<?> rootModule) {
+    static TemplateGraph create(Class<?> rootModule) {
         return new GraphBuilderImpl().build(rootModule);
     }
 

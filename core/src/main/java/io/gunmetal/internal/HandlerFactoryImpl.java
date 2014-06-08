@@ -64,8 +64,13 @@ class HandlerFactoryImpl implements HandlerFactory {
         RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation);
         ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
         List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
-        addForProviderMethods(
-                module, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
+        if (moduleAnnotation.stateful()) {
+            addForStatefulProviderMethods(
+                    module, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
+        } else {
+            addForProviderMethods(
+                    module, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
+        }
         for (Class<?> library : moduleAnnotation.subsumes()) {
             if (library.isAnnotationPresent(Module.class)) {
                 // TODO better message
@@ -97,7 +102,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 RequestVisitor.NONE,
-                AccessFilter.Factory.getAccessFilter(typeKey.raw()));
+                AccessFilter.create(typeKey.raw()));
     }
 
     private RequestVisitor moduleRequestVisitor(final Class<?> module, final Module moduleAnnotation) {
@@ -106,7 +111,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
         final RequestVisitor moduleClassVisitor = new RequestVisitor() {
             AccessFilter<Class<?>> classAccessFilter =
-                    AccessFilter.Factory.getAccessFilter(moduleAnnotation.access(), module);
+                    AccessFilter.create(moduleAnnotation.access(), module);
             @Override public void visit(
                     DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
                 if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
@@ -280,6 +285,25 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     }
 
+    private void addForStatefulProviderMethods(
+            Class<?> module,
+            List<DependencyRequestHandler<?>> requestHandlers,
+            RequestVisitor moduleRequestVisitor,
+            ModuleMetadata moduleMetadata,
+            Linkers linkers) {
+
+        for (final Method method : module.getDeclaredMethods()) {
+
+            requestHandlers.add(statefulRequestHandler(
+                    method,
+                    module,
+                    moduleRequestVisitor,
+                    moduleMetadata,
+                    linkers));
+        }
+
+    }
+
     private <T> DependencyRequestHandler<T> requestHandler(
             final Method method,
             Class<?> module,
@@ -294,6 +318,11 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is not static.");
         }
 
+        if (method.getReturnType() == void.class) {
+            throw new IllegalArgumentException("A module's provider methods cannot have a void return type.  The method ["
+                    + method.getName() + "] in module [" + module.getName() + "] is returns void.");
+        }
+
         ComponentMetadata<Method> componentMetadata = componentMetadataResolver.resolveMetadata(method, moduleMetadata);
 
         // TODO targeted return type check
@@ -304,7 +333,39 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapterFactory.<T>withMethodProvider(componentMetadata, linkers),
                 dependencies,
                 moduleRequestVisitor,
-                AccessFilter.Factory.getAccessFilter(method));
+                AccessFilter.create(method));
+    }
+
+    private <T> DependencyRequestHandler<T> statefulRequestHandler(
+            final Method method,
+            Class<?> module,
+            final RequestVisitor moduleRequestVisitor,
+            final ModuleMetadata moduleMetadata,
+            Linkers linkers) {
+
+        int modifiers = method.getModifiers();
+
+        if (Modifier.isStatic(modifiers)) {
+            throw new IllegalArgumentException("A stateful module's provider methods must not be static.  The method ["
+                    + method.getName() + "] in module [" + module.getName() + "] is static.");
+        }
+
+        if (method.getReturnType() == void.class) {
+            throw new IllegalArgumentException("A module's provider methods cannot have a void return type.  The method ["
+                    + method.getName() + "] in module [" + module.getName() + "] is returns void.");
+        }
+
+        ComponentMetadata<Method> componentMetadata = componentMetadataResolver.resolveMetadata(method, moduleMetadata);
+
+        // TODO targeted return type check
+        final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
+                Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
+
+        return requestHandler(
+                componentAdapterFactory.<T>withStatefulMethodProvider(componentMetadata, linkers),
+                dependencies,
+                moduleRequestVisitor,
+                AccessFilter.create(method));
     }
 
     private <T> DependencyRequestHandler<T> requestHandler(
@@ -344,9 +405,9 @@ class HandlerFactoryImpl implements HandlerFactory {
                 return componentAdapter.metadata();
             }
 
-            @Override public DependencyRequestHandler<T> newHandlerInstance(Linkers linkers) {
+            @Override public DependencyRequestHandler<T> replicate(Linkers linkers) {
                 return requestHandler(
-                        componentAdapter.newAdapterInstance(linkers),
+                        componentAdapter.replicate(linkers),
                         targets,
                         moduleRequestVisitor,
                         classAccessFilter);

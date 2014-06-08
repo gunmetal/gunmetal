@@ -18,11 +18,11 @@ package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
-import io.gunmetal.ObjectGraph;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Library;
 import io.gunmetal.Module;
+import io.gunmetal.ObjectGraph;
 import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
@@ -34,6 +34,8 @@ import io.gunmetal.testmocks.N;
 import io.gunmetal.testmocks.NewGunmetalBenchMarkModule;
 import org.junit.Test;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -47,6 +49,10 @@ public class ApplicationBuilderImplTest {
     @Retention(RetentionPolicy.RUNTIME)
     @io.gunmetal.Qualifier
     public @interface Main {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @io.gunmetal.Qualifier
+    public @interface Stateful {}
 
     interface Bad { }
 
@@ -76,8 +82,9 @@ public class ApplicationBuilderImplTest {
         }
 
 
-        static void routine(BlackList blackList) {
+        static Class<Void> routine(BlackList blackList) {
             System.out.println("routineeee" + blackList);
+            return Void.TYPE;
         }
 
 
@@ -105,8 +112,8 @@ public class ApplicationBuilderImplTest {
             return new ApplicationBuilderImplTest();
         }
 
-        @AutoCollection static String s1() {
-            return "1";
+        @AutoCollection static String s1(@Stateful String name) {
+            return name;
         }
 
         @AutoCollection static String s2() {
@@ -117,10 +124,27 @@ public class ApplicationBuilderImplTest {
             return "3";
         }
 
-        @Main static void printStrings(@AutoCollection List<String> strings) {
+        @Main static InputStream printStrings(@AutoCollection List<String> strings) {
             for (String s : strings) {
                 System.out.println(s);
             }
+            return System.in;
+        }
+
+    }
+
+    @Module(stateful = true)
+    @Stateful
+    static class StatefulModule {
+
+        String name;
+
+        StatefulModule(String name) {
+            this.name = name;
+        }
+
+        String name(ApplicationBuilderImplTest test) {
+            return name + test.getClass().getName();
         }
 
     }
@@ -135,13 +159,15 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testBuild() {
 
-        @RootModule(modules = { TestModule.class })
+        @RootModule(modules = { TestModule.class, StatefulModule.class })
         class Application { }
 
-        ObjectGraph app = new GraphBuilderImpl().build(Application.class);
+        ObjectGraph app = new GraphBuilderImpl().build(Application.class).newGraph(new StatefulModule("rees"));
 
-        @Main
-        class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
+        app = app.newGraph(new StatefulModule("rees"));
+
+        @Main class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
+
 
         ApplicationBuilderImplTest test = app.get(Dep.class);
 
@@ -161,7 +187,7 @@ public class ApplicationBuilderImplTest {
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
 
-        app = ObjectGraph.create(NewGunmetalBenchMarkModule.class);
+        app = ObjectGraph.create(NewGunmetalBenchMarkModule.class).newGraph();
 
         A a = app.get(Dep2.class);
 
@@ -203,8 +229,9 @@ public class ApplicationBuilderImplTest {
             return new PlusModule();
         }
 
-        static void r(@FromModule Cheese cheese, @Main Lib myLibrary) {
+        static OutputStream r(@FromModule Cheese cheese, @Main Lib myLibrary) {
             System.out.println("sup");
+            return System.out;
         }
 
     }
@@ -235,9 +262,9 @@ public class ApplicationBuilderImplTest {
         @Main
         class Dep implements io.gunmetal.Dependency<PlusModule> { }
 
-        ObjectGraph parent = new GraphBuilderImpl().build(Parent.class);
+        ObjectGraph parent = new GraphBuilderImpl().build(Parent.class).newGraph();
 
-        ObjectGraph child = parent.plus(Child.class);
+        ObjectGraph child = parent.plus(Child.class).newGraph();
 
         PlusModule p = child.get(Dep.class);
 
@@ -256,7 +283,7 @@ public class ApplicationBuilderImplTest {
 
         assert injectTest.f != null;
 
-        ObjectGraph childCopy = child.newInstance();
+        ObjectGraph childCopy = child.newGraph();
 
         assert child.get(Dep.class) != childCopy.get(Dep.class);
 
@@ -276,7 +303,7 @@ public class ApplicationBuilderImplTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.create(App.class);
+    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.create(App.class).newGraph();
 
     @RootModule(modules = NewGunmetalBenchMarkModule.class)
     static class App { }
@@ -286,7 +313,7 @@ public class ApplicationBuilderImplTest {
     long newGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= APPLICATION_CONTAINER.newInstance().get(Dep.class).hashCode();
+            dummy |= APPLICATION_CONTAINER.newGraph().get(Dep.class).hashCode();
         }
         return dummy;
     }

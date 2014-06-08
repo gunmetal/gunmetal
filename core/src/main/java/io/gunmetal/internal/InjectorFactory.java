@@ -29,4 +29,5 @@ interface InjectorFactory {
     <T> Injector<T> lazyCompositeInjector(ComponentMetadata<?> componentMetadata);
     <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata, Linkers linkers);
     <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata, Linkers linkers);
+    <T> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, Linkers linkers);
 }

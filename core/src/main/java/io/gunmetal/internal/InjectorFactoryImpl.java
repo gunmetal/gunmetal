@@ -27,6 +27,7 @@ import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.util.Generics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -110,6 +111,16 @@ class InjectorFactoryImpl implements InjectorFactory {
                 dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
                 linkers);
         return new InstantiatorImpl<>(injector);
+    }
+
+    @Override public <T> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, Linkers linkers) {
+        final ParameterizedFunction function = new MethodFunction(componentMetadata.provider());
+        FunctionInjector<?> injector = new FunctionInjector<>(
+                function,
+                componentMetadata,
+                dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
+                linkers);
+        return new StatefulInstantiator<>(injector, Generics.as(componentMetadata.providerClass()), linkers);
     }
 
     private static Dependency<?>[] dependenciesForFunction(ParameterizedFunction function,
@@ -245,7 +256,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             }
         }
 
-        @Override public Injector<T> newInjectorInstance(Linkers linkers) {
+        @Override public Injector<T> replicate(Linkers linkers) {
             return new FieldInjector<>(field, componentMetadata, dependency, linkers);
         }
 
@@ -302,7 +313,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             }
         }
 
-        @Override public Injector<T> newInjectorInstance(Linkers linkers) {
+        @Override public Injector<T> replicate(Linkers linkers) {
             return new FunctionInjector<>(function, componentMetadata, dependencies, linkers);
         }
 
@@ -331,10 +342,10 @@ class InjectorFactoryImpl implements InjectorFactory {
             return null;
         }
 
-        @Override public Injector<T> newInjectorInstance(Linkers linkers) {
+        @Override public Injector<T> replicate(Linkers linkers) {
             List<Injector<T>> newInjectors = new ArrayList<>();
             for (Injector<T> injector : injectors) {
-                newInjectors.add(injector.newInjectorInstance(linkers));
+                newInjectors.add(injector.replicate(linkers));
             }
             return new CompositeInjector<>(newInjectors);
         }
@@ -415,13 +426,13 @@ class InjectorFactoryImpl implements InjectorFactory {
             return null;
         }
 
-        @Override public Injector<T> newInjectorInstance(Linkers linkers) {
+        @Override public Injector<T> replicate(Linkers linkers) {
             if (injectors == null) {
                 return new LazyCompositeInjector<>(classWalker, qualifierResolver, componentMetadata);
             }
             List<Injector<T>> newInjectors = new ArrayList<>();
             for (Injector<T> injector : injectors) {
-                newInjectors.add(injector.newInjectorInstance(linkers));
+                newInjectors.add(injector.replicate(linkers));
             }
             return new CompositeInjector<>(newInjectors);
         }
@@ -440,11 +451,11 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     }
 
-    private static class InstantiatorImpl<T> implements Instantiator<T> {
+    private static class InstantiatorImpl<T, S> implements Instantiator<T> {
 
-        private final Injector<?> injector;
+        private final Injector<S> injector;
 
-        InstantiatorImpl(Injector<?> injector) {
+        InstantiatorImpl(Injector<S> injector) {
             this.injector = injector;
         }
 
@@ -457,8 +468,40 @@ class InjectorFactoryImpl implements InjectorFactory {
             return (T) injector.inject(null, provider, resolutionContext);
         }
 
-        @Override public Instantiator<T> newInstantiatorInstance(Linkers linkers) {
-            return new InstantiatorImpl<>(injector.newInjectorInstance(linkers));
+        @Override public Instantiator<T> replicate(Linkers linkers) {
+            return new InstantiatorImpl<>(injector.replicate(linkers));
+        }
+
+    }
+
+    private static class StatefulInstantiator<T, S> implements Instantiator<T> {
+
+        private final Injector<S> injector;
+        private final Class<S> sourceClass;
+        private S statefulTarget;
+
+        StatefulInstantiator(Injector<S> injector, Class<S> sourceClass, Linkers linkers) {
+            this.injector = injector;
+            this.sourceClass = sourceClass;
+            linkers.addStatefulSourceLinker((p, c) -> {
+                statefulTarget = c.getStatefulSource(sourceClass);
+            });
+        }
+
+        @Override public List<Dependency<?>> dependencies() {
+            return injector.dependencies();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
+            if (statefulTarget == null) {
+                throw new IllegalStateException(); // TODO message
+            }
+            return (T) injector.inject(statefulTarget, provider, resolutionContext);
+        }
+
+        @Override public Instantiator<T> replicate(Linkers linkers) {
+            return new StatefulInstantiator<>(injector.replicate(linkers), sourceClass, linkers);
         }
 
     }
