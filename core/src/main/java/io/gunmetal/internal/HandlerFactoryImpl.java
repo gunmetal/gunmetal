@@ -97,7 +97,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 RequestVisitor.NONE,
-                AccessFilter.Factory.getAccessFilter(typeKey.raw()));
+                AccessFilter.create(typeKey.raw()));
     }
 
     private RequestVisitor moduleRequestVisitor(final Class<?> module, final Module moduleAnnotation) {
@@ -106,7 +106,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
         final RequestVisitor moduleClassVisitor = new RequestVisitor() {
             AccessFilter<Class<?>> classAccessFilter =
-                    AccessFilter.Factory.getAccessFilter(moduleAnnotation.access(), module);
+                    AccessFilter.create(moduleAnnotation.access(), module);
             @Override public void visit(
                     DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
                 if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
@@ -304,7 +304,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapterFactory.<T>withMethodProvider(componentMetadata, linkers),
                 dependencies,
                 moduleRequestVisitor,
-                AccessFilter.Factory.getAccessFilter(method));
+                AccessFilter.create(method));
     }
 
     private <T> DependencyRequestHandler<T> requestHandler(

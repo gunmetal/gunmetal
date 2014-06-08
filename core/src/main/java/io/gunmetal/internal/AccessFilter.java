@@ -30,88 +30,50 @@ interface AccessFilter<T> {
 
     boolean isAccessibleTo(T target);
 
-    final class Factory {
+    interface ClassAccessFilter extends AccessFilter<Class<?>> {
+        boolean isPublic();
+    }
 
-        private Factory() { }
+    static AccessFilter<Class<?>> create(final Method method) {
 
-        private interface ClassAccessFilter extends AccessFilter<Class<?>> {
-            boolean isPublic();
+        Class<?> declaringClass = method.getDeclaringClass();
+
+        final ClassAccessFilter classLevelFilter =
+                create(AccessLevel.get(declaringClass.getModifiers()), declaringClass);
+
+        final ClassAccessFilter methodLevelFilter =
+                Internal.getClassAccessFilterForAccessLevel(AccessLevel
+                        .get(method.getModifiers()), declaringClass);
+
+        if (classLevelFilter.isPublic() && methodLevelFilter.isPublic()) {
+            return Internal.getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, declaringClass);
         }
 
-        static AccessFilter<Class<?>> getAccessFilter(final Method method) {
+        return new AccessFilter<Class<?>>() {
 
-            Class<?> declaringClass = method.getDeclaringClass();
-
-            final ClassAccessFilter classLevelFilter =
-                    getFilter(AccessLevel.get(declaringClass.getModifiers()), declaringClass);
-
-            final ClassAccessFilter methodLevelFilter =
-                    getClassAccessFilterForAccessLevel(AccessLevel
-                            .get(method.getModifiers()), declaringClass);
-
-            if (classLevelFilter.isPublic() && methodLevelFilter.isPublic()) {
-                return getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, declaringClass);
+            @Override public AnnotatedElement filteredElement() {
+                return method;
             }
 
-            return new AccessFilter<Class<?>>() {
+            @Override public boolean isAccessibleTo(Class<?> cls) {
+                return classLevelFilter.isAccessibleTo(cls) && methodLevelFilter.isAccessibleTo(cls);
+            }
 
-                @Override public AnnotatedElement filteredElement() {
-                    return method;
-                }
+        };
 
-                @Override public boolean isAccessibleTo(Class<?> cls) {
-                    return classLevelFilter.isAccessibleTo(cls) && methodLevelFilter.isAccessibleTo(cls);
-                }
+    }
 
-            };
+    static ClassAccessFilter create(Class<?> cls) {
+        return create(AccessLevel.get(cls.getModifiers()), cls);
+    }
 
+    static ClassAccessFilter create(AccessLevel clsAccessLevel, final Class<?> cls) {
+
+        if (clsAccessLevel == AccessLevel.UNDEFINED) {
+            return create(cls);
         }
 
-        static AccessFilter<Class<?>> getAccessFilter(Class<?> cls) {
-            return getFilter(AccessLevel.get(cls.getModifiers()), cls);
-        }
-
-        static AccessFilter<Class<?>> getAccessFilter(AccessLevel accessLevel, Class<?> cls) {
-            if (accessLevel == AccessLevel.UNDEFINED) {
-                return getAccessFilter(cls);
-            }
-            return getFilter(accessLevel, cls);
-        }
-
-        private static ClassAccessFilter getFilter(AccessLevel clsAccessLevel, final Class<?> cls) {
-
-            if (cls.isLocalClass()) {
-                return new ClassAccessFilter() {
-
-                    @Override public boolean isPublic() {
-                        return false;
-                    }
-
-                    @Override public AnnotatedElement filteredElement() {
-                        return cls;
-                    }
-
-                    @Override public boolean isAccessibleTo(Class<?> cls) {
-                        return false;
-                    }
-                };
-            }
-
-            Class<?> enclosingClass = cls.getEnclosingClass();
-
-            if (enclosingClass == null) {
-                return getClassAccessFilterForAccessLevel(clsAccessLevel, cls);
-            }
-
-            final ClassAccessFilter outerFilter = getFilter(AccessLevel.get(enclosingClass.getModifiers()), enclosingClass);
-
-            final ClassAccessFilter innerFilter =
-                    getClassAccessFilterForAccessLevel(clsAccessLevel, enclosingClass);
-
-            if (outerFilter.isPublic() && innerFilter.isPublic()) {
-                return getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, cls);
-            }
-
+        if (cls.isLocalClass()) {
             return new ClassAccessFilter() {
 
                 @Override public boolean isPublic() {
@@ -123,35 +85,66 @@ interface AccessFilter<T> {
                 }
 
                 @Override public boolean isAccessibleTo(Class<?> cls) {
-                    return outerFilter.isAccessibleTo(cls) && innerFilter.isAccessibleTo(cls);
+                    return false;
                 }
             };
+        }
+
+        Class<?> enclosingClass = cls.getEnclosingClass();
+
+        if (enclosingClass == null) {
+            return Internal.getClassAccessFilterForAccessLevel(clsAccessLevel, cls);
+        }
+
+        final ClassAccessFilter outerFilter = create(AccessLevel.get(enclosingClass.getModifiers()), enclosingClass);
+
+        final ClassAccessFilter innerFilter =
+                Internal.getClassAccessFilterForAccessLevel(clsAccessLevel, enclosingClass);
+
+        if (outerFilter.isPublic() && innerFilter.isPublic()) {
+            return Internal.getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, cls);
+        }
+
+        return new ClassAccessFilter() {
+
+            @Override public boolean isPublic() {
+                return false;
+            }
+
+            @Override public AnnotatedElement filteredElement() {
+                return cls;
+            }
+
+            @Override public boolean isAccessibleTo(Class<?> cls) {
+                return outerFilter.isAccessibleTo(cls) && innerFilter.isAccessibleTo(cls);
+            }
+        };
+
+    }
+
+    abstract class Internal {
+
+        private static Class<?> getHighestEnclosingClass(Class<?> cls) {
+
+            Class<?> enclosingClass = cls.getEnclosingClass();
+
+            if (enclosingClass == null) {
+                return cls;
+            }
+
+            return getHighestEnclosingClass(enclosingClass);
 
         }
 
-        private static ClassAccessFilter getClassAccessFilterForAccessLevel(AccessLevel accessLevel, final Class<?> classOfResourceBeingRequested) {
+        private static ClassAccessFilter getClassAccessFilterForAccessLevel(
+                AccessLevel accessLevel, final Class<?> classOfResourceBeingRequested) {
 
             switch (accessLevel) {
 
                 case PRIVATE: {
 
-                    class EnclosingUtil {
-
-                        Class<?> getHighestEnclosingClass(Class<?> cls) {
-
-                            Class<?> enclosingClass = cls.getEnclosingClass();
-
-                            if (enclosingClass == null) {
-                                return cls;
-                            }
-
-                            return getHighestEnclosingClass(enclosingClass);
-
-                        }
-
-                    }
-
-                    final Class<?> resourceEnclosingClass = new EnclosingUtil().getHighestEnclosingClass(classOfResourceBeingRequested);
+                    final Class<?> resourceEnclosingClass =
+                            getHighestEnclosingClass(classOfResourceBeingRequested);
 
                     return new ClassAccessFilter() {
 
@@ -165,7 +158,7 @@ interface AccessFilter<T> {
 
                         @Override public boolean isAccessibleTo(final Class<?> classOfResourceRequestingAccess) {
                             return classOfResourceBeingRequested == classOfResourceRequestingAccess
-                                    || resourceEnclosingClass == new EnclosingUtil().getHighestEnclosingClass(classOfResourceRequestingAccess);
+                                    || resourceEnclosingClass == getHighestEnclosingClass(classOfResourceRequestingAccess);
                         }
 
                     };
@@ -247,4 +240,7 @@ interface AccessFilter<T> {
         }
 
     }
+
+
+
 }

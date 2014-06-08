@@ -1,7 +1,6 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ComponentMetadata;
-import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
@@ -19,18 +18,18 @@ class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
 
     private final DependencyRequest<T> providerRequest;
     private final ProvisionStrategy<T> providerStrategy;
-    private final Config config;
+    private final ProviderStrategyFactory providerStrategyFactory;
     private final DependencyRequestHandler<? extends C> componentHandler;
     private final Dependency<C> componentDependency;
 
     ProviderRequestHandler(DependencyRequest<T> providerRequest,
                            ProvisionStrategy<T> providerStrategy,
-                           Config config,
+                           ProviderStrategyFactory providerStrategyFactory,
                            DependencyRequestHandler<? extends C> componentHandler,
                            Dependency<C> componentDependency) {
         this.providerRequest = providerRequest;
         this.providerStrategy = providerStrategy;
-        this.config = config;
+        this.providerStrategyFactory = providerStrategyFactory;
         this.componentHandler = componentHandler;
         this.componentDependency = componentDependency;
     }
@@ -74,7 +73,7 @@ class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
         return new ProviderRequestHandler<>(
                 providerRequest,
                 new DelegatingProvisionStrategy<T>(linkers),
-                config,
+                providerStrategyFactory,
                 componentHandler,
                 componentDependency);
     }
@@ -87,8 +86,7 @@ class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
             linkers.addWiringLinker((provider, context) -> {
                 ProvisionStrategy<? extends C> componentStrategy =
                         provider.getProvisionStrategy(DependencyRequest.create(providerRequest, componentDependency));
-                delegateStrategy =
-                        new ProviderStrategyFactory(config).create(componentStrategy, provider);
+                delegateStrategy = providerStrategyFactory.create(componentStrategy, provider);
             });
         }
 

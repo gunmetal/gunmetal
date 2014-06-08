@@ -76,13 +76,14 @@ class InternalProviderImpl implements InternalProvider {
         if (componentHandler == null) {
             return null;
         }
+        ProviderStrategyFactory providerStrategyFactory = new ProviderStrategyFactory(config);
         ProvisionStrategy<? extends C> componentStrategy = componentHandler.force();
         final ProvisionStrategy<T> providerStrategy =
-                new ProviderStrategyFactory(config).create(componentStrategy, internalProvider);
+                providerStrategyFactory.create(componentStrategy, internalProvider);
         return new ProviderRequestHandler<>(
                 providerRequest,
                 providerStrategy,
-                config,
+                providerStrategyFactory,
                 componentHandler,
                 componentDependency);
 
