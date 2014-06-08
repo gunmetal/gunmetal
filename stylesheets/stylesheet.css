@@ -286,6 +286,12 @@ Full-Width Styles
 
 #header_wrap {
   background: #2E0F00;
+  
+  background: -moz-linear-gradient(top, #2E0F00, #4C1A00);
+  background: -webkit-linear-gradient(top, #2E0F00, #4C1A00);
+  background: -ms-linear-gradient(top, #2E0F00, #4C1A00);
+  background: -o-linear-gradient(top, #2E0F00, #4C1A00);
+  background: linear-gradient(top, #2E0F00, #4C1A00);
 }
 
 #header_wrap .inner {
