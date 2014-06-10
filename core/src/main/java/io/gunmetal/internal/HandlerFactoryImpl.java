@@ -33,6 +33,7 @@ import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,11 +66,11 @@ class HandlerFactoryImpl implements HandlerFactory {
         ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
         List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
         if (moduleAnnotation.stateful()) {
-            addForStatefulProviderMethods(
-                    module, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
+            Arrays.stream(module.getDeclaredMethods()).forEach(m -> requestHandlers
+                    .add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, linkers)));
         } else {
-            addForProviderMethods(
-                    module, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
+            Arrays.stream(module.getDeclaredMethods()).forEach(m -> requestHandlers
+                    .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, linkers)));
         }
         for (Class<?> library : moduleAnnotation.subsumes()) {
             if (library.isAnnotationPresent(Module.class)) {
@@ -80,8 +81,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                 // TODO better message
                 throw new IllegalArgumentException("A class without @Library cannot be subsumed");
             }
-            addForProviderMethods(
-                    library, requestHandlers, moduleRequestVisitor, moduleMetadata, linkers);
+            Arrays.stream(library.getDeclaredMethods()).forEach(m -> requestHandlers
+                    .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, linkers)));
         }
         return requestHandlers;
 
@@ -263,44 +264,6 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + "] does not have access to the module [" + module.getName() + "].");
 
         };
-
-    }
-
-    private void addForProviderMethods(
-            Class<?> module,
-            List<DependencyRequestHandler<?>> requestHandlers,
-            RequestVisitor moduleRequestVisitor,
-            ModuleMetadata moduleMetadata,
-            Linkers linkers) {
-
-        for (final Method method : module.getDeclaredMethods()) {
-
-            requestHandlers.add(requestHandler(
-                    method,
-                    module,
-                    moduleRequestVisitor,
-                    moduleMetadata,
-                    linkers));
-        }
-
-    }
-
-    private void addForStatefulProviderMethods(
-            Class<?> module,
-            List<DependencyRequestHandler<?>> requestHandlers,
-            RequestVisitor moduleRequestVisitor,
-            ModuleMetadata moduleMetadata,
-            Linkers linkers) {
-
-        for (final Method method : module.getDeclaredMethods()) {
-
-            requestHandlers.add(statefulRequestHandler(
-                    method,
-                    module,
-                    moduleRequestVisitor,
-                    moduleMetadata,
-                    linkers));
-        }
 
     }
 

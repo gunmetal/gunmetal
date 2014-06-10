@@ -17,15 +17,16 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
+import io.gunmetal.Lazy;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
-import io.gunmetal.Lazy;
 import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
+import io.gunmetal.Ref;
 import io.gunmetal.RootModule;
 import io.gunmetal.testmocks.A;
 import io.gunmetal.testmocks.AA;
@@ -39,6 +40,7 @@ import java.io.OutputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -147,6 +149,15 @@ public class ApplicationBuilderImplTest {
             return name + test.getClass().getName();
         }
 
+        @Lazy StatefulModule statefulModule() {
+            return this;
+        }
+
+        List<StatefulModule> statefulModules(@FromModule Ref<StatefulModule> statefulModuleRef) {
+            assert statefulModuleRef.get() == statefulModuleRef.get();
+            return Collections.singletonList(statefulModuleRef.get());
+        }
+
     }
 
     @Module
@@ -154,6 +165,7 @@ public class ApplicationBuilderImplTest {
         @Lazy static M m(ApplicationBuilderImplTest test) {
             return new M();
         }
+
     }
 
     @Test
