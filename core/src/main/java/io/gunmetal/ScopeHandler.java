@@ -16,6 +16,8 @@
 
 package io.gunmetal;
 
+import io.gunmetal.spi.ProvisionStrategyDecorator;
+
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -31,7 +33,7 @@ import java.lang.annotation.Target;
 @Documented
 public @interface ScopeHandler {
 
-    Class<? extends ProviderDecorator> type();
+    Class<? extends ProvisionStrategyDecorator> type();
 
     Class<? extends Annotation> annotation();
 

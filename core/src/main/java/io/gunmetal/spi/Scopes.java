@@ -20,5 +20,11 @@ package io.gunmetal.spi;
  * @author rees.byars
  */
 public enum Scopes implements Scope {
-    EAGER_SINGLETON, LAZY_SINGLETON, PROTOTYPE, UNDEFINED
+
+    SINGLETON, PROTOTYPE, UNDEFINED;
+
+    public boolean canInject(Scope o) {
+        return true;
+    }
+
 }

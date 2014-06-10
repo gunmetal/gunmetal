@@ -20,4 +20,7 @@ package io.gunmetal.spi;
  * @author rees.byars
  */
 public interface Scope {
+
+    boolean canInject(Scope scope);
+
 }

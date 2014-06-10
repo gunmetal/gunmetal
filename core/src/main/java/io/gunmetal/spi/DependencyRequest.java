@@ -25,6 +25,8 @@ public interface DependencyRequest<T> {
 
     Qualifier sourceQualifier();
 
+    Scope sourceScope();
+
     ModuleMetadata sourceModule();
 
     Dependency<T> dependency();
@@ -41,6 +43,10 @@ public interface DependencyRequest<T> {
             @Override
             public Qualifier sourceQualifier() {
                 return requestingComponent.qualifier();
+            }
+
+            @Override public Scope sourceScope() {
+                return requestingComponent.scope();
             }
 
             @Override
@@ -70,6 +76,10 @@ public interface DependencyRequest<T> {
             @Override
             public Qualifier sourceQualifier() {
                 return dependencyRequest.sourceQualifier();
+            }
+
+            @Override public Scope sourceScope() {
+                return dependencyRequest.sourceScope();
             }
 
             @Override

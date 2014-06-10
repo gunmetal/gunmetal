@@ -206,6 +206,10 @@ class HandlerCache implements Replicable<HandlerCache> {
                     return Scopes.PROTOTYPE;
                 }
 
+                @Override public boolean eager() {
+                    return false;
+                }
+
                 @Override public boolean isOverrideEnabled() {
                     return false;
                 }

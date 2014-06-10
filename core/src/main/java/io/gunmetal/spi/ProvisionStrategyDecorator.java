@@ -26,4 +26,11 @@ public interface ProvisionStrategyDecorator {
             ProvisionStrategy<T> delegateStrategy,
             Linkers linkers);
 
+    static <T> ProvisionStrategy<T> none(
+            ComponentMetadata<?> componentMetadata,
+            ProvisionStrategy<T> delegateStrategy,
+            Linkers linkers) {
+        return delegateStrategy;
+    }
+
 }

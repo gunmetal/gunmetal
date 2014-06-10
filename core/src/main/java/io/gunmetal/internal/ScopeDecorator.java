@@ -16,7 +16,6 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.ProviderDecorator;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
@@ -50,26 +49,17 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
             return delegateStrategy;
         }
 
-        if (scope == Scopes.EAGER_SINGLETON) {
+        if (scope == Scopes.SINGLETON && componentMetadata.eager()) {
             return new ProvisionStrategy<T>() {
-                volatile T singleton;
-                {
-                    linkers.addEagerLinker(this::get);
-                }
+                T singleton;
+                { linkers.addEagerLinker(this::get); }
                 @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                    if (singleton == null) {
-                        synchronized (this) {
-                            if (singleton == null) {
-                                singleton = delegateStrategy.get(internalProvider, resolutionContext);
-                            }
-                        }
-                    }
                     return singleton;
                 }
             };
         }
 
-        if (scope == Scopes.LAZY_SINGLETON) {
+        if (scope == Scopes.SINGLETON) {
             return new ProvisionStrategy<T>() {
                 volatile T singleton;
                 @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
@@ -83,18 +73,10 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
                     return singleton;
                 }
             };
-
-
         }
 
-        return new ProvisionStrategy<T>() {
-            ProviderDecorator providerDecorator = scopeBindings.decoratorFor(scope);
-            @Override
-            public T get(final InternalProvider internalProvider, final ResolutionContext resolutionContext) {
-                return providerDecorator.decorate(componentMetadata, () ->
-                        delegateStrategy.get(internalProvider, resolutionContext)).get();
-            }
-        };
+        return scopeBindings.decoratorFor(scope).decorate(componentMetadata, delegateStrategy, linkers);
+
     }
 
 }

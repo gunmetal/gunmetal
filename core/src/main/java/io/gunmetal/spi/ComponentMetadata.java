@@ -33,6 +33,8 @@ public abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     public abstract Scope scope();
 
+    public abstract boolean eager();
+
     public abstract boolean isOverrideEnabled();
 
     public abstract boolean isCollectionElement();

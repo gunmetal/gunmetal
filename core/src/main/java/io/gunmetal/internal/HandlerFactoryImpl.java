@@ -337,6 +337,12 @@ class HandlerFactoryImpl implements HandlerFactory {
                                                      final RequestVisitor moduleRequestVisitor,
                                                      final AccessFilter<Class<?>> classAccessFilter) {
 
+        RequestVisitor scopeVisitor = (dependencyRequest, response) -> {
+            if (!componentAdapter.metadata().scope().canInject(dependencyRequest.sourceScope())) {
+                response.addError("mis-scoped"); // TODO message
+            }
+        };
+
         return new DependencyRequestHandler<T>() {
 
             @Override public List<Dependency<? super T>> targets() {
@@ -351,6 +357,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 MutableDependencyResponse<T> response =
                         new DependencyResponseImpl<>(componentAdapter.provisionStrategy());
                 moduleRequestVisitor.visit(dependencyRequest, response);
+                scopeVisitor.visit(dependencyRequest, response);
                 if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceOrigin())) {
                     response.addError(
                             "The class [" + dependencyRequest.sourceOrigin().getName()
