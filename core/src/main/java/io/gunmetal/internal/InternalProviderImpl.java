@@ -1,11 +1,13 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Ref;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -49,6 +51,29 @@ class InternalProviderImpl implements InternalProvider {
                         .getProvisionStrategy();
             }
         }
+        if (dependency.typeKey().raw() == Ref.class) {
+            requestHandler = handlerForTypeParam(dependencyRequest, handlerCache);
+            if (requestHandler != null) {
+                ProvisionStrategy<?> componentStrategy =
+                        requestHandler
+                                .handle(dependencyRequest)
+                                .validateResponse()
+                                .getProvisionStrategy();
+                return (p, c) -> Generics.<T>as(new Ref() {
+                    volatile Object o;
+                    @Override public Object get() {
+                        if (o == null) {
+                            synchronized (this) {
+                                if (o == null) {
+                                    o = componentStrategy.get(p, c);
+                                }
+                            }
+                        }
+                        return o;
+                    }
+                });
+            }
+        }
         requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, linkers);
         if (requestHandler != null) {
             handlerCache.put(dependency, requestHandler);
@@ -57,7 +82,7 @@ class InternalProviderImpl implements InternalProvider {
                     .validateResponse()
                     .getProvisionStrategy();
         }
-        throw new DependencyException("missing dependency " + dependency.toString()); // TODO
+        throw new DependencyException("missing dependency " + dependency.typeKey().raw()); // TODO
     }
 
     private <T, C> DependencyRequestHandler<T> createProviderHandler(
@@ -83,6 +108,15 @@ class InternalProviderImpl implements InternalProvider {
                 componentHandler,
                 componentDependency);
 
+    }
+
+    private <T> DependencyRequestHandler<? extends T> handlerForTypeParam(
+            final DependencyRequest<?> providerRequest,
+            final HandlerCache handlerCache) {
+        Dependency<?> providerDependency = providerRequest.dependency();
+        Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
+        final Dependency<T> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
+        return handlerCache.get(componentDependency);
     }
 
 }

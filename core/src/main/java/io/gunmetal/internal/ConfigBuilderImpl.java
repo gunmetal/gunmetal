@@ -17,9 +17,9 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
+import io.gunmetal.Lazy;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
-import io.gunmetal.Lazy;
 import io.gunmetal.Option;
 import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
@@ -125,8 +125,9 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                         if (scopeAnnotation == null) {
                             if (annotatedElement.isAnnotationPresent(Lazy.class)) {
                                 scope = Scopes.LAZY_SINGLETON;
+                            } else {
+                                scope = Scopes.EAGER_SINGLETON;
                             }
-                            scope = Scopes.EAGER_SINGLETON;
                         } else {
                             if (scopeAnnotation instanceof Prototype) {
                                 scope = Scopes.PROTOTYPE;

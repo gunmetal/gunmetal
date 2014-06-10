@@ -68,4 +68,8 @@ public final class TypeKey<T> {
         return type().equals(typeKeyTarget.type());
     }
 
+    @Override public String toString() {
+        return "typeKey[ raw:" + raw.getName() + ", type:" + type.getTypeName() + " ]";
+    }
+
 }
