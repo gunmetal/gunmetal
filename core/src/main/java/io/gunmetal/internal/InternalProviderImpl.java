@@ -59,19 +59,7 @@ class InternalProviderImpl implements InternalProvider {
                                 .handle(dependencyRequest)
                                 .validateResponse()
                                 .getProvisionStrategy();
-                return (p, c) -> Generics.<T>as(new Ref() {
-                    volatile Object o;
-                    @Override public Object get() {
-                        if (o == null) {
-                            synchronized (this) {
-                                if (o == null) {
-                                    o = componentStrategy.get(p, c);
-                                }
-                            }
-                        }
-                        return o;
-                    }
-                });
+                return Generics.as(createRefStrategy(componentStrategy));
             }
         }
         requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, linkers);
@@ -117,6 +105,22 @@ class InternalProviderImpl implements InternalProvider {
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency<T> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
         return handlerCache.get(componentDependency);
+    }
+
+    private <T> ProvisionStrategy<Ref<T>> createRefStrategy(ProvisionStrategy<T> provisionStrategy) {
+        return (p, c) -> new Ref<T>() {
+            volatile T o;
+            @Override public T get() {
+                if (o == null) {
+                    synchronized (this) {
+                        if (o == null) {
+                            o = provisionStrategy.get(p, c);
+                        }
+                    }
+                }
+                return o;
+            }
+        };
     }
 
 }
