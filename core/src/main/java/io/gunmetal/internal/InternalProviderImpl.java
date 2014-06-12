@@ -69,7 +69,7 @@ class InternalProviderImpl implements InternalProvider {
                     .validateResponse()
                     .getProvisionStrategy();
         }
-        throw new DependencyException("missing dependency " + dependency.typeKey().raw()); // TODO
+        throw new DependencyException("missing dependency " + dependency); // TODO
     }
 
     private <T, C> DependencyRequestHandler<T> createReferenceHandler(

@@ -16,10 +16,14 @@
 
 package io.gunmetal.spi;
 
+import java.lang.reflect.AnnotatedElement;
+
 /**
  * @author rees.byars
  */
 public interface DependencyRequest<T> {
+
+    AnnotatedElement source();
 
     Class<?> sourceOrigin();
 
@@ -35,13 +39,15 @@ public interface DependencyRequest<T> {
 
         return new DependencyRequest<T>() {
 
-            @Override
-            public Class<?> sourceOrigin() {
+            @Override public AnnotatedElement source() {
+                return requestingComponent.provider();
+            }
+
+            @Override public Class<?> sourceOrigin() {
                 return requestingComponent.providerClass();
             }
 
-            @Override
-            public Qualifier sourceQualifier() {
+            @Override public Qualifier sourceQualifier() {
                 return requestingComponent.qualifier();
             }
 
@@ -49,13 +55,11 @@ public interface DependencyRequest<T> {
                 return requestingComponent.scope();
             }
 
-            @Override
-            public ModuleMetadata sourceModule() {
+            @Override public ModuleMetadata sourceModule() {
                 return requestingComponent.moduleMetadata();
             }
 
-            @Override
-            public Dependency<T> dependency() {
+            @Override public Dependency<T> dependency() {
                 return dependency;
             }
 
@@ -68,13 +72,15 @@ public interface DependencyRequest<T> {
 
         return new DependencyRequest<T>() {
 
-            @Override
-            public Class<?> sourceOrigin() {
+            @Override public AnnotatedElement source() {
+                return dependencyRequest.source();
+            }
+
+            @Override public Class<?> sourceOrigin() {
                 return dependencyRequest.sourceOrigin();
             }
 
-            @Override
-            public Qualifier sourceQualifier() {
+            @Override public Qualifier sourceQualifier() {
                 return dependencyRequest.sourceQualifier();
             }
 
@@ -82,13 +88,11 @@ public interface DependencyRequest<T> {
                 return dependencyRequest.sourceScope();
             }
 
-            @Override
-            public ModuleMetadata sourceModule() {
+            @Override public ModuleMetadata sourceModule() {
                 return dependencyRequest.sourceModule();
             }
 
-            @Override
-            public Dependency<T> dependency() {
+            @Override public Dependency<T> dependency() {
                 return dependency;
             }
 

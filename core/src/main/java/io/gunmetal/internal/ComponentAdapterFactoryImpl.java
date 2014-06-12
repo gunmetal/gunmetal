@@ -73,7 +73,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 postInjector);
     }
 
-    @Override public <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata, Linkers linkers) {
+    @Override public <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata,
+                                                                        Linkers linkers) {
         Instantiator<T> instantiator = injectorFactory.statefulMethodInstantiator(componentMetadata, linkers);
         Injector<T> postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
         ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(

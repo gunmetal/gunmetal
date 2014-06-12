@@ -69,7 +69,7 @@ public final class TypeKey<T> {
     }
 
     @Override public String toString() {
-        return "typeKey[ raw:" + raw.getName() + ", type:" + type.getTypeName() + " ]";
+        return "typeKey[ " + type.getTypeName() + " ]";
     }
 
 }

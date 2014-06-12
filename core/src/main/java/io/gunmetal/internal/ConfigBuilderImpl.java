@@ -93,7 +93,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     Scope scope;
                     boolean overrideEnabled = false;
                     boolean collectionElement = false;
-                    boolean eager = false;
+                    boolean eager = true;
 
                     Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
 
@@ -327,6 +327,10 @@ public class ConfigBuilderImpl implements ConfigBuilder {
 
                 @Override public int hashCode() {
                     return hashCode;
+                }
+
+                @Override public String toString() {
+                    return "qualifier[ " + Arrays.toString(qualifiers()) + " ]";
                 }
 
             };
