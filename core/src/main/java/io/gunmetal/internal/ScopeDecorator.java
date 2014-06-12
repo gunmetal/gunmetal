@@ -49,19 +49,10 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
             return delegateStrategy;
         }
 
-        if (scope == Scopes.SINGLETON && componentMetadata.eager()) {
-            return new ProvisionStrategy<T>() {
-                T singleton;
-                { linkers.addEagerLinker(this::get); }
-                @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                    return singleton;
-                }
-            };
-        }
-
         if (scope == Scopes.SINGLETON) {
             return new ProvisionStrategy<T>() {
                 volatile T singleton;
+                { if (componentMetadata.eager()) linkers.addEagerLinker(this::get); }
                 @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                     if (singleton == null) {
                         synchronized (this) {

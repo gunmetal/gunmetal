@@ -355,7 +355,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
             @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
                 MutableDependencyResponse<T> response =
-                        new DependencyResponseImpl<>(componentAdapter.provisionStrategy());
+                        new DependencyResponseImpl<>(dependencyRequest, componentAdapter.provisionStrategy());
                 moduleRequestVisitor.visit(dependencyRequest, response);
                 scopeVisitor.visit(dependencyRequest, response);
                 if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceOrigin())) {
@@ -413,9 +413,12 @@ class HandlerFactoryImpl implements HandlerFactory {
     private static class DependencyResponseImpl<T> implements MutableDependencyResponse<T> {
 
         List<String> errors;
+        final DependencyRequest<? super T> dependencyRequest;
         final ProvisionStrategy<? extends T> provisionStrategy;
 
-        DependencyResponseImpl(ProvisionStrategy<T> provisionStrategy) {
+        DependencyResponseImpl(DependencyRequest<? super T> dependencyRequest,
+                               ProvisionStrategy<T> provisionStrategy) {
+            this.dependencyRequest = dependencyRequest;
             this.provisionStrategy = provisionStrategy;
         }
 
@@ -428,7 +431,10 @@ class HandlerFactoryImpl implements HandlerFactory {
 
         @Override public ValidatedDependencyResponse<T> validateResponse() {
             if (errors != null) {
-                StringBuilder stringBuilder = new StringBuilder("There were errors processing a dependency \n");
+                StringBuilder stringBuilder = new StringBuilder("There were errors processing a dependency:\n");
+                stringBuilder.append("    Request by:            ").append(dependencyRequest.source()).append("\n");
+                stringBuilder.append("    Dependency requested:  ").append(dependencyRequest.dependency()).append("\n");
+                stringBuilder.append("    ").append("Reasons for failure: \n");
                 for (String error : errors) {
                     stringBuilder.append("    ").append(error).append("\n");
                 }

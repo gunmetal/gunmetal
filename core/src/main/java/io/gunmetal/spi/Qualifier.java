@@ -42,6 +42,10 @@ public interface Qualifier {
             return true;
         }
 
+        @Override public String toString() {
+            return "qualifier[ NONE ]";
+        }
+
     };
 
     Object[] qualifiers();

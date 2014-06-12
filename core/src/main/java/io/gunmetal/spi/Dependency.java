@@ -59,7 +59,7 @@ public final class Dependency<T> {
     }
 
     @Override public String toString() {
-        return "dependency[" + qualifier().toString() + typeKey().toString() + "]";
+        return "dependency[ " + qualifier().toString() + ", " + typeKey().toString() + " ]";
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
