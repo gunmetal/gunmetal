@@ -40,4 +40,9 @@ public enum  AccessLevel {
             return PACKAGE_PRIVATE;
         }
     }
+
+    @Override public String toString() {
+        return "accessLevel[ " + super.toString() + " ]";
+    }
+
 }

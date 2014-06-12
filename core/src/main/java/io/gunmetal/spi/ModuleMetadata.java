@@ -51,4 +51,8 @@ public final class ModuleMetadata {
         return target instanceof ModuleMetadata && ((ModuleMetadata) target).moduleClass() == moduleClass();
     }
 
+    @Override public String toString() {
+        return "module[ " + qualifier() + ", class[ " + moduleClass.getName() + " ] ]";
+    }
+
 }

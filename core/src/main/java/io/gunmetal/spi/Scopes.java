@@ -27,4 +27,8 @@ public enum Scopes implements Scope {
         return true;
     }
 
+    @Override public String toString() {
+        return "scope[ " + super.toString() + " ]";
+    }
+
 }

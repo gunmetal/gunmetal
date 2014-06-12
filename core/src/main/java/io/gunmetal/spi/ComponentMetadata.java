@@ -39,8 +39,6 @@ public abstract class ComponentMetadata<P extends AnnotatedElement> {
 
     public abstract boolean isCollectionElement();
 
-    // abstract boolean isProxy();  TODO scoped proxy invoke(..) { method.invoke(provider.get(), ...); ... }
-
     @Override public int hashCode() {
         return provider().hashCode() * 67 + qualifier().hashCode();
     }
@@ -55,6 +53,10 @@ public abstract class ComponentMetadata<P extends AnnotatedElement> {
         ComponentMetadata<?> componentMetadataTarget = (ComponentMetadata<?>) target;
         return componentMetadataTarget.qualifier().equals(qualifier())
                 && componentMetadataTarget.provider().equals(provider());
+    }
+
+    @Override public String toString() {
+        return "component[ " + qualifier() + ", provider[ " + provider() + "] ]";
     }
 
 }
