@@ -49,16 +49,10 @@ interface AccessFilter<T> {
             return Internal.getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, declaringClass);
         }
 
-        return new AccessFilter<Class<?>>() {
-
-            @Override public AnnotatedElement filteredElement() {
-                return method;
-            }
-
+        return new Internal.BaseAccessFilter<Class<?>>(method) {
             @Override public boolean isAccessibleTo(Class<?> cls) {
                 return classLevelFilter.isAccessibleTo(cls) && methodLevelFilter.isAccessibleTo(cls);
             }
-
         };
 
     }
@@ -74,16 +68,7 @@ interface AccessFilter<T> {
         }
 
         if (cls.isLocalClass()) {
-            return new ClassAccessFilter() {
-
-                @Override public boolean isPublic() {
-                    return false;
-                }
-
-                @Override public AnnotatedElement filteredElement() {
-                    return cls;
-                }
-
+            return new Internal.BaseClassAccessFilter(cls, false) {
                 @Override public boolean isAccessibleTo(Class<?> cls) {
                     return false;
                 }
@@ -105,16 +90,7 @@ interface AccessFilter<T> {
             return Internal.getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, cls);
         }
 
-        return new ClassAccessFilter() {
-
-            @Override public boolean isPublic() {
-                return false;
-            }
-
-            @Override public AnnotatedElement filteredElement() {
-                return cls;
-            }
-
+        return new Internal.BaseClassAccessFilter(cls, false) {
             @Override public boolean isAccessibleTo(Class<?> cls) {
                 return outerFilter.isAccessibleTo(cls) && innerFilter.isAccessibleTo(cls);
             }
@@ -123,6 +99,40 @@ interface AccessFilter<T> {
     }
 
     abstract class Internal {
+
+        private static abstract class BaseAccessFilter<T> implements AccessFilter<T> {
+
+            private final AnnotatedElement annotatedElement;
+
+            BaseAccessFilter(AnnotatedElement annotatedElement) {
+                this.annotatedElement = annotatedElement;
+            }
+
+            @Override public final AnnotatedElement filteredElement() {
+                return annotatedElement;
+            }
+
+            @Override public String toString() {
+                return "accessFilter[ " + annotatedElement + " ]";
+            }
+
+        }
+
+        private static abstract class BaseClassAccessFilter
+                extends BaseAccessFilter<Class<?>> implements ClassAccessFilter {
+
+            private final boolean isPublic;
+
+            BaseClassAccessFilter(AnnotatedElement annotatedElement, boolean isPublic) {
+                super(annotatedElement);
+                this.isPublic = isPublic;
+            }
+
+            @Override public final boolean isPublic() {
+                return isPublic;
+            }
+
+        }
 
         private static Class<?> getHighestEnclosingClass(Class<?> cls) {
 
@@ -146,15 +156,7 @@ interface AccessFilter<T> {
                     final Class<?> resourceEnclosingClass =
                             getHighestEnclosingClass(classOfResourceBeingRequested);
 
-                    return new ClassAccessFilter() {
-
-                        @Override public boolean isPublic() {
-                            return false;
-                        }
-
-                        @Override public AnnotatedElement filteredElement() {
-                            return classOfResourceBeingRequested;
-                        }
+                    return new BaseClassAccessFilter(classOfResourceBeingRequested, false) {
 
                         @Override public boolean isAccessibleTo(final Class<?> classOfResourceRequestingAccess) {
                             return classOfResourceBeingRequested == classOfResourceRequestingAccess
@@ -168,15 +170,7 @@ interface AccessFilter<T> {
 
                     final Package packageOfResourceBeingRequested = classOfResourceBeingRequested.getPackage();
 
-                    return new ClassAccessFilter() {
-
-                        @Override public boolean isPublic() {
-                            return false;
-                        }
-
-                        @Override public AnnotatedElement filteredElement() {
-                            return classOfResourceBeingRequested;
-                        }
+                    return new BaseClassAccessFilter(classOfResourceBeingRequested, false) {
 
                         @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return (packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage())
@@ -191,15 +185,7 @@ interface AccessFilter<T> {
 
                     final Package packageOfResourceBeingRequested = classOfResourceBeingRequested.getPackage();
 
-                    return new ClassAccessFilter() {
-
-                        @Override public boolean isPublic() {
-                            return false;
-                        }
-
-                        @Override public AnnotatedElement filteredElement() {
-                            return classOfResourceBeingRequested;
-                        }
+                    return new BaseClassAccessFilter(classOfResourceBeingRequested, false) {
 
                         @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage();
@@ -211,15 +197,7 @@ interface AccessFilter<T> {
 
                 case PUBLIC: {
 
-                    return new ClassAccessFilter() {
-
-                        @Override public boolean isPublic() {
-                            return true;
-                        }
-
-                        @Override public AnnotatedElement filteredElement() {
-                            return classOfResourceBeingRequested;
-                        }
+                    return new BaseClassAccessFilter(classOfResourceBeingRequested, true) {
 
                         @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return true;

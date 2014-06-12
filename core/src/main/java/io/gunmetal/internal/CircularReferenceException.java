@@ -47,7 +47,7 @@ class CircularReferenceException extends RuntimeException {
     @Override
     public String getMessage() {
         if (reverseStrategy != null) {
-            return super.getMessage() + " of with metadata [" + metadata() + "]";
+            return super.getMessage() + " of with " + metadata();
         }
         return super.getMessage();
     }
