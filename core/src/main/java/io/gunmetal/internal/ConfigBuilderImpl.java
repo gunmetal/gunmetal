@@ -17,15 +17,13 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
-import io.gunmetal.Lazy;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
+import io.gunmetal.Lazy;
 import io.gunmetal.Option;
 import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
-import io.gunmetal.ProviderDecorator;
-import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ComponentMetadataResolver;
@@ -35,7 +33,9 @@ import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.ScopeBindings;
 import io.gunmetal.spi.Scopes;
@@ -93,6 +93,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                     Scope scope;
                     boolean overrideEnabled = false;
                     boolean collectionElement = false;
+                    boolean eager = false;
 
                     Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
 
@@ -107,6 +108,8 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                             } else if (annotationType == AutoCollection.class) {
                                 collectionElement = true;
                                 qualifiers.add(annotation);
+                            } else if (annotationType == Lazy.class) {
+                                eager = false;
                             }
                             if (annotationType.isAnnotationPresent(io.gunmetal.Scope.class)) {
                                 scopeAnnotation = annotation;
@@ -123,11 +126,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                             qualifier = QualifierBuilder.qualifier(qualifiers.toArray());
                         }
                         if (scopeAnnotation == null) {
-                            if (annotatedElement.isAnnotationPresent(Lazy.class)) {
-                                scope = Scopes.LAZY_SINGLETON;
-                            } else {
-                                scope = Scopes.EAGER_SINGLETON;
-                            }
+                            scope = Scopes.SINGLETON;
                         } else {
                             if (scopeAnnotation instanceof Prototype) {
                                 scope = Scopes.PROTOTYPE;
@@ -169,6 +168,10 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                                 return resolver.scope;
                             }
 
+                            @Override public boolean eager() {
+                                return resolver.eager;
+                            }
+
                             @Override public boolean isOverrideEnabled() {
                                 return resolver.overrideEnabled;
                             }
@@ -206,6 +209,10 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                                 return resolver.scope;
                             }
 
+                            @Override public boolean eager() {
+                                return resolver.eager;
+                            }
+
                             @Override public boolean isOverrideEnabled() {
                                 return resolver.overrideEnabled;
                             }
@@ -234,7 +241,7 @@ public class ConfigBuilderImpl implements ConfigBuilder {
             @Override public ScopeBindings scopeBindings() {
                 return scope -> {
                     if (scope == Scopes.UNDEFINED) {
-                        return ProviderDecorator::none;
+                        return ProvisionStrategyDecorator::none;
                     }
                     throw new UnsupportedOperationException();
                 };

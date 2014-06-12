@@ -16,11 +16,9 @@
 
 package io.gunmetal.spi;
 
-import io.gunmetal.ProviderDecorator;
-
 /**
  * @author rees.byars
  */
 public interface ScopeBindings {
-    ProviderDecorator decoratorFor(Scope scope);
+    ProvisionStrategyDecorator decoratorFor(Scope scope);
 }

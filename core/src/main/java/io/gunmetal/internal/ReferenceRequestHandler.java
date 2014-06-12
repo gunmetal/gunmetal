@@ -14,28 +14,28 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
+class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
 
-    private final DependencyRequest<T> providerRequest;
-    private final ProvisionStrategy<T> providerStrategy;
-    private final ProviderStrategyFactory providerStrategyFactory;
+    private final DependencyRequest<T> referenceRequest;
+    private final ProvisionStrategy<T> referenceStrategy;
+    private final ReferenceStrategyFactory referenceStrategyFactory;
     private final DependencyRequestHandler<? extends C> componentHandler;
     private final Dependency<C> componentDependency;
 
-    ProviderRequestHandler(DependencyRequest<T> providerRequest,
-                           ProvisionStrategy<T> providerStrategy,
-                           ProviderStrategyFactory providerStrategyFactory,
-                           DependencyRequestHandler<? extends C> componentHandler,
-                           Dependency<C> componentDependency) {
-        this.providerRequest = providerRequest;
-        this.providerStrategy = providerStrategy;
-        this.providerStrategyFactory = providerStrategyFactory;
+    ReferenceRequestHandler(DependencyRequest<T> referenceRequest,
+                            ProvisionStrategy<T> referenceStrategy,
+                            ReferenceStrategyFactory referenceStrategyFactory,
+                            DependencyRequestHandler<? extends C> componentHandler,
+                            Dependency<C> componentDependency) {
+        this.referenceRequest = referenceRequest;
+        this.referenceStrategy = referenceStrategy;
+        this.referenceStrategyFactory = referenceStrategyFactory;
         this.componentHandler = componentHandler;
         this.componentDependency = componentDependency;
     }
 
     @Override public List<Dependency<? super T>> targets() {
-        return Collections.<Dependency<? super T>>singletonList(providerRequest.dependency());
+        return Collections.<Dependency<? super T>>singletonList(referenceRequest.dependency());
     }
 
     @Override public List<Dependency<?>> dependencies() {
@@ -44,13 +44,13 @@ class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
 
     @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
         final DependencyResponse<?> componentResponse =
-                componentHandler.handle(DependencyRequest.create(providerRequest, componentDependency));
+                componentHandler.handle(DependencyRequest.create(referenceRequest, componentDependency));
         return new DependencyResponse<T>() {
             @Override public ValidatedDependencyResponse<T> validateResponse() {
                 componentResponse.validateResponse();
                 return new ValidatedDependencyResponse<T>() {
                     @Override public ProvisionStrategy<T> getProvisionStrategy() {
-                        return providerStrategy;
+                        return referenceStrategy;
                     }
 
                     @Override public ValidatedDependencyResponse<T> validateResponse() {
@@ -62,7 +62,7 @@ class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
     }
 
     @Override public ProvisionStrategy<T> force() {
-        return providerStrategy;
+        return referenceStrategy;
     }
 
     @Override public ComponentMetadata<?> componentMetadata() {
@@ -70,10 +70,10 @@ class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
     }
 
     @Override public DependencyRequestHandler<T> replicate(Linkers linkers) {
-        return new ProviderRequestHandler<>(
-                providerRequest,
+        return new ReferenceRequestHandler<>(
+                referenceRequest,
                 new DelegatingProvisionStrategy<T>(linkers),
-                providerStrategyFactory,
+                referenceStrategyFactory,
                 componentHandler,
                 componentDependency);
     }
@@ -83,10 +83,10 @@ class ProviderRequestHandler<T, C> implements DependencyRequestHandler<T> {
         ProvisionStrategy<T> delegateStrategy;
 
         DelegatingProvisionStrategy(Linkers linkers) {
-            linkers.addWiringLinker((provider, context) -> {
+            linkers.addWiringLinker((reference, context) -> {
                 ProvisionStrategy<? extends C> componentStrategy =
-                        provider.getProvisionStrategy(DependencyRequest.create(providerRequest, componentDependency));
-                delegateStrategy = providerStrategyFactory.create(componentStrategy, provider);
+                        reference.getProvisionStrategy(DependencyRequest.create(referenceRequest, componentDependency));
+                delegateStrategy = referenceStrategyFactory.create(componentStrategy, reference);
             });
         }
 

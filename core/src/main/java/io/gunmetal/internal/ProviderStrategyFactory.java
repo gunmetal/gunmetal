@@ -10,7 +10,7 @@ import io.gunmetal.util.Generics;
 /**
  * @author rees.byars
  */
-class ProviderStrategyFactory {
+class ProviderStrategyFactory implements ReferenceStrategyFactory {
 
     private final Config config;
 
@@ -18,7 +18,7 @@ class ProviderStrategyFactory {
         this.config = config;
     }
 
-    <T> ProvisionStrategy<T> create(final ProvisionStrategy<?> componentStrategy,
+    public <T> ProvisionStrategy<T> create(final ProvisionStrategy<?> componentStrategy,
                                     final InternalProvider internalProvider) {
 
         final Object provider = config.provider(new Provider<Object>() {

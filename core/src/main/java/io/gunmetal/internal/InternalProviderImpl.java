@@ -1,5 +1,6 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Provider;
 import io.gunmetal.Ref;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
@@ -7,7 +8,6 @@ import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -42,7 +42,7 @@ class InternalProviderImpl implements InternalProvider {
                     .getProvisionStrategy();
         }
         if (config.isProvider(dependency)) {
-            requestHandler = createProviderHandler(dependencyRequest, config, this, handlerCache);
+            requestHandler = createReferenceHandler(dependencyRequest, () -> new ProviderStrategyFactory(config));
             if (requestHandler != null) {
                 handlerCache.put(dependency, requestHandler);
                 return requestHandler
@@ -52,26 +52,13 @@ class InternalProviderImpl implements InternalProvider {
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
-            requestHandler = handlerForTypeParam(dependencyRequest, handlerCache);
+            requestHandler = createReferenceHandler(dependencyRequest, RefStrategyFactory::new);
             if (requestHandler != null) {
-                ProvisionStrategy<?> componentStrategy =
-                        requestHandler
-                                .handle(dependencyRequest)
-                                .validateResponse()
-                                .getProvisionStrategy();
-                return (p, c) -> Generics.<T>as(new Ref() {
-                    volatile Object o;
-                    @Override public Object get() {
-                        if (o == null) {
-                            synchronized (this) {
-                                if (o == null) {
-                                    o = componentStrategy.get(p, c);
-                                }
-                            }
-                        }
-                        return o;
-                    }
-                });
+                handlerCache.put(dependency, requestHandler);
+                return requestHandler
+                        .handle(dependencyRequest)
+                        .validateResponse()
+                        .getProvisionStrategy();
             }
         }
         requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, linkers);
@@ -85,38 +72,23 @@ class InternalProviderImpl implements InternalProvider {
         throw new DependencyException("missing dependency " + dependency.typeKey().raw()); // TODO
     }
 
-    private <T, C> DependencyRequestHandler<T> createProviderHandler(
-            final DependencyRequest<T> providerRequest,
-            final Config config,
-            final InternalProvider internalProvider,
-            final HandlerCache handlerCache) {
-        Dependency<T> providerDependency = providerRequest.dependency();
+    private <T, C> DependencyRequestHandler<T> createReferenceHandler(
+            final DependencyRequest<T> refRequest, Provider<ReferenceStrategyFactory> factoryProvider) {
+        Dependency<?> providerDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
         final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
         if (componentHandler == null) {
             return null;
         }
-        ProviderStrategyFactory providerStrategyFactory = new ProviderStrategyFactory(config);
         ProvisionStrategy<? extends C> componentStrategy = componentHandler.force();
-        final ProvisionStrategy<T> providerStrategy =
-                providerStrategyFactory.create(componentStrategy, internalProvider);
-        return new ProviderRequestHandler<>(
-                providerRequest,
+        final ProvisionStrategy<T> providerStrategy = factoryProvider.get().create(componentStrategy, this);
+        return new ReferenceRequestHandler<>(
+                refRequest,
                 providerStrategy,
-                providerStrategyFactory,
+                factoryProvider.get(),
                 componentHandler,
                 componentDependency);
-
-    }
-
-    private <T> DependencyRequestHandler<? extends T> handlerForTypeParam(
-            final DependencyRequest<?> providerRequest,
-            final HandlerCache handlerCache) {
-        Dependency<?> providerDependency = providerRequest.dependency();
-        Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
-        final Dependency<T> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        return handlerCache.get(componentDependency);
     }
 
 }
