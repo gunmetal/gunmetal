@@ -5,6 +5,6 @@ package io.gunmetal;
  */
 public interface TemplateGraph {
 
-    ObjectGraph newGraph(Object... statefulModules);
+    ObjectGraph newInstance(Object... statefulModules);
 
 }

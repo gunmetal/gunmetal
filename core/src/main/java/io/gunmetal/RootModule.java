@@ -30,10 +30,6 @@ import java.lang.annotation.Target;
 @Documented
 public @interface RootModule {
 
-    Option[] options() default { };
-
-    ScopeHandler[] scopes() default { };
-
     Class<?>[] modules() default { };
 
 }

@@ -174,9 +174,9 @@ public class ApplicationBuilderImplTest {
         @RootModule(modules = { TestModule.class, StatefulModule.class })
         class Application { }
 
-        ObjectGraph app = new GraphBuilderImpl().build(Application.class).newGraph(new StatefulModule("rees"));
+        ObjectGraph app = new GraphBuilder().build(Application.class).newInstance(new StatefulModule("rees"));
 
-        app = app.newGraph(new StatefulModule("rees"));
+        app = app.newInstance(new StatefulModule("rees"));
 
         @Main class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
 
@@ -200,7 +200,10 @@ public class ApplicationBuilderImplTest {
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
 
-        app = ObjectGraph.create(NewGunmetalBenchMarkModule.class).newGraph();
+        app = ObjectGraph
+                .builder()
+                .build(NewGunmetalBenchMarkModule.class)
+                .newInstance();
 
         A a = app.get(Dep2.class);
 
@@ -225,7 +228,7 @@ public class ApplicationBuilderImplTest {
         @RootModule(modules = { TestModule.class, M.class })
         class Application { }
 
-        new GraphBuilderImpl().build(Application.class);
+        new GraphBuilder().build(Application.class);
     }
 
     @Module(subsumes = MyLibrary.class)
@@ -275,9 +278,9 @@ public class ApplicationBuilderImplTest {
         @Main
         class Dep implements io.gunmetal.Dependency<PlusModule> { }
 
-        ObjectGraph parent = new GraphBuilderImpl().build(Parent.class).newGraph();
+        ObjectGraph parent = new GraphBuilder().build(Parent.class).newInstance();
 
-        ObjectGraph child = parent.plus(Child.class).newGraph();
+        ObjectGraph child = parent.plus().build(Child.class).newInstance();
 
         PlusModule p = child.get(Dep.class);
 
@@ -296,7 +299,7 @@ public class ApplicationBuilderImplTest {
 
         assert injectTest.f != null;
 
-        ObjectGraph childCopy = child.newGraph();
+        ObjectGraph childCopy = child.newInstance();
 
         assert child.get(Dep.class) != childCopy.get(Dep.class);
 
@@ -316,7 +319,7 @@ public class ApplicationBuilderImplTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.create(App.class).newGraph();
+    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.builder().build(App.class).newInstance();
 
     @RootModule(modules = NewGunmetalBenchMarkModule.class)
     static class App { }
@@ -326,7 +329,7 @@ public class ApplicationBuilderImplTest {
     long newGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= APPLICATION_CONTAINER.newGraph().get(Dep.class).hashCode();
+            dummy |= APPLICATION_CONTAINER.newInstance().get(Dep.class).hashCode();
         }
         return dummy;
     }
