@@ -17,7 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.ObjectGraph;
-import io.gunmetal.RootModule;
+import io.gunmetal.Provider;
 import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ComponentMetadata;
@@ -102,13 +102,11 @@ public class GraphBuilder {
         return this;
     }
 
-    public TemplateGraph build(Class<?> root) {
-        return build(root, parentCache);
+    public TemplateGraph build(Class<?> ... modules) {
+        return build(modules, parentCache);
     }
 
-    private TemplateGraph build(Class<?> root, final HandlerCache parentCache) {
-
-        RootModule rootModule = root.getAnnotation(RootModule.class);
+    private TemplateGraph build(Class<?>[] modules, final HandlerCache parentCache) {
 
         InjectorFactory injectorFactory = new InjectorFactoryImpl(
                 qualifierResolver,
@@ -141,7 +139,7 @@ public class GraphBuilder {
 
         final GraphLinker graphLinker = new GraphLinker();
 
-        for (Class<?> module : rootModule.modules()) {
+        for (Class<?> module : modules) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
                     handlerFactory.createHandlersForModule(module, graphLinker);
             handlerCache.putAll(moduleRequestHandlers);
@@ -262,6 +260,24 @@ public class GraphBuilder {
             injector.inject(injectionTarget, internalProvider, ResolutionContext.create());
 
             return this;
+        }
+
+        @Override public <T> T inject(Provider<T> injectionTarget) {
+            T t = injectionTarget.get();
+            inject(t);
+            return t;
+        }
+
+        @Override public <T> T inject(Class<T> injectionTarget) {
+            Qualifier qualifier = qualifierResolver.resolve(injectionTarget);
+            Instantiator<T> instantiator = template.injectorFactory.constructorInstantiator(
+                    componentMetadataResolver.resolveMetadata(
+                            injectionTarget,
+                            new ModuleMetadata(injectionTarget, qualifier, new Class<?>[0])),
+                    graphLinker);
+            T t = instantiator.newInstance(internalProvider, ResolutionContext.create());
+            inject(t);
+            return t;
         }
 
         @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {

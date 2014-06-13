@@ -139,84 +139,30 @@ final class Defaults {
 
             @Override public ComponentMetadata<Method> resolveMetadata(final Method method,
                                                                        final ModuleMetadata moduleMetadata) {
-
                 final Resolver resolver = new Resolver(method, moduleMetadata);
-
-                return new ComponentMetadata<Method>() {
-
-                    @Override public Method provider() {
-                        return method;
-                    }
-
-                    @Override public Class<?> providerClass() {
-                        return method.getDeclaringClass();
-                    }
-
-                    @Override public ModuleMetadata moduleMetadata() {
-                        return moduleMetadata;
-                    }
-
-                    @Override public Qualifier qualifier() {
-                        return resolver.qualifier;
-                    }
-
-                    @Override public Scope scope() {
-                        return resolver.scope;
-                    }
-
-                    @Override public boolean eager() {
-                        return resolver.eager;
-                    }
-
-                    @Override public boolean isOverrideEnabled() {
-                        return resolver.overrideEnabled;
-                    }
-
-                    @Override public boolean isCollectionElement() {
-                        return resolver.collectionElement;
-                    }
-                };
+                return new ComponentMetadata<>(
+                        method,
+                        method.getDeclaringClass(),
+                        moduleMetadata,
+                        resolver.qualifier,
+                        resolver.scope,
+                        resolver.eager,
+                        resolver.overrideEnabled,
+                        resolver.collectionElement);
             }
 
             @Override public ComponentMetadata<Class<?>> resolveMetadata(final Class<?> cls,
                                                                          final ModuleMetadata moduleMetadata) {
-
                 final Resolver resolver = new Resolver(cls, moduleMetadata);
-
-                return new ComponentMetadata<Class<?>>() {
-
-                    @Override public Class<?> provider() {
-                        return cls;
-                    }
-
-                    @Override public Class<?> providerClass() {
-                        return cls;
-                    }
-
-                    @Override public ModuleMetadata moduleMetadata() {
-                        return moduleMetadata;
-                    }
-
-                    @Override public Qualifier qualifier() {
-                        return resolver.qualifier;
-                    }
-
-                    @Override public Scope scope() {
-                        return resolver.scope;
-                    }
-
-                    @Override public boolean eager() {
-                        return resolver.eager;
-                    }
-
-                    @Override public boolean isOverrideEnabled() {
-                        return resolver.overrideEnabled;
-                    }
-
-                    @Override public boolean isCollectionElement() {
-                        return resolver.collectionElement;
-                    }
-                };
+                return new ComponentMetadata<Class<?>>(
+                        cls,
+                        cls,
+                        moduleMetadata,
+                        resolver.qualifier,
+                        resolver.scope,
+                        resolver.eager,
+                        resolver.overrideEnabled,
+                        resolver.collectionElement);
             }
         };
     }

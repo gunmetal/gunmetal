@@ -6,8 +6,6 @@ import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.spi.Qualifier;
-import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.Scopes;
 import io.gunmetal.util.Generics;
 
@@ -185,37 +183,23 @@ class HandlerCache implements Replicable<HandlerCache> {
         }
 
         @Override public ComponentMetadata<?> componentMetadata() {
-            return new ComponentMetadata<Class<?>>() {
+            return new ComponentMetadata<Class<?>>(
+                    null,
+                    null,
+                    null,
+                    dependency.qualifier(),
+                    Scopes.PROTOTYPE,
+                    false,
+                    false,
+                    false) {
                 @Override public Class<?> provider() {
                     throw new UnsupportedOperationException(); // TODO
                 }
-
                 @Override public Class<?> providerClass() {
                     throw new UnsupportedOperationException(); // TODO
                 }
-
                 @Override public ModuleMetadata moduleMetadata() {
                     throw new UnsupportedOperationException(); // TODO
-                }
-
-                @Override public Qualifier qualifier() {
-                    return dependency.qualifier();
-                }
-
-                @Override public Scope scope() {
-                    return Scopes.PROTOTYPE;
-                }
-
-                @Override public boolean eager() {
-                    return false;
-                }
-
-                @Override public boolean isOverrideEnabled() {
-                    return false;
-                }
-
-                @Override public boolean isCollectionElement() {
-                    return false;
                 }
             };
         }

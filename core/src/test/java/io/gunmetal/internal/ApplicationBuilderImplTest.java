@@ -27,7 +27,6 @@ import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.Ref;
-import io.gunmetal.RootModule;
 import io.gunmetal.testmocks.A;
 import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.F;
@@ -171,10 +170,9 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testBuild() {
 
-        @RootModule(modules = { TestModule.class, StatefulModule.class })
-        class Application { }
-
-        ObjectGraph app = new GraphBuilder().build(Application.class).newInstance(new StatefulModule("rees"));
+        ObjectGraph app = new GraphBuilder()
+                .build(TestModule.class, StatefulModule.class)
+                .newInstance(new StatefulModule("rees"));
 
         app = app.newInstance(new StatefulModule("rees"));
 
@@ -224,11 +222,7 @@ public class ApplicationBuilderImplTest {
 
     @Test(expected = DependencyException.class)
     public void testBlackList() {
-
-        @RootModule(modules = { TestModule.class, M.class })
-        class Application { }
-
-        new GraphBuilder().build(Application.class);
+        new GraphBuilder().build(TestModule.class, M.class);
     }
 
     @Module(subsumes = MyLibrary.class)
@@ -269,18 +263,12 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testPlus() {
 
-        @RootModule(modules = { TestModule.class })
-        class Parent { }
-
-        @RootModule(modules = { PlusModule.class })
-        class Child { }
-
         @Main
         class Dep implements io.gunmetal.Dependency<PlusModule> { }
 
-        ObjectGraph parent = new GraphBuilder().build(Parent.class).newInstance();
+        ObjectGraph parent = new GraphBuilder().build(TestModule.class).newInstance();
 
-        ObjectGraph child = parent.plus().build(Child.class).newInstance();
+        ObjectGraph child = parent.plus().build(PlusModule.class).newInstance();
 
         PlusModule p = child.get(Dep.class);
 
@@ -319,10 +307,7 @@ public class ApplicationBuilderImplTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.builder().build(App.class).newInstance();
-
-    @RootModule(modules = NewGunmetalBenchMarkModule.class)
-    static class App { }
+    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class).newInstance();
 
     static class Dep implements io.gunmetal.Dependency<AA> { }
 
