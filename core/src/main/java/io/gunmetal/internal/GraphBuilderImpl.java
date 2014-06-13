@@ -20,14 +20,17 @@ import io.gunmetal.ObjectGraph;
 import io.gunmetal.RootModule;
 import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ComponentMetadataResolver;
 import io.gunmetal.spi.Config;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.util.Generics;
 
@@ -93,7 +96,9 @@ public class GraphBuilderImpl implements GraphBuilder {
         }
 
         return new Template(
-                config,
+                config.qualifierResolver(),
+                config.componentMetadataResolver(),
+                config.providerAdapter(),
                 graphLinker,
                 injectorFactory,
                 handlerFactory,
@@ -102,25 +107,31 @@ public class GraphBuilderImpl implements GraphBuilder {
 
     private static class Template implements TemplateGraph {
 
-        private final Config config;
+        private final QualifierResolver qualifierResolver;
+        private final ComponentMetadataResolver metadataResolver;
+        private final ProviderAdapter providerAdapter;
         private final InternalProvider internalProvider;
         private final InjectorFactory injectorFactory;
         private final HandlerFactory handlerFactory;
         private final HandlerCache handlerCache;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
 
-        Template(Config config,
-                  GraphLinker graphLinker,
-                  InjectorFactory injectorFactory,
-                  HandlerFactory handlerFactory,
-                  HandlerCache handlerCache) {
-            this.config = config;
+        Template(QualifierResolver qualifierResolver,
+                 ComponentMetadataResolver metadataResolver,
+                 ProviderAdapter providerAdapter,
+                 GraphLinker graphLinker,
+                 InjectorFactory injectorFactory,
+                 HandlerFactory handlerFactory,
+                 HandlerCache handlerCache) {
+            this.qualifierResolver = qualifierResolver;
+            this.metadataResolver = metadataResolver;
+            this.providerAdapter = providerAdapter;
             this.injectorFactory = injectorFactory;
             this.handlerFactory = handlerFactory;
             this.handlerCache = handlerCache;
 
             internalProvider =
-                    new InternalProviderImpl(config, handlerFactory, handlerCache, graphLinker);
+                    new InternalProviderImpl(providerAdapter, handlerFactory, handlerCache, graphLinker);
 
             graphLinker.linkGraph(internalProvider, ResolutionContext.create(Collections.emptyMap()));
 
@@ -176,7 +187,11 @@ public class GraphBuilderImpl implements GraphBuilder {
             this.statefulModules = statefulModules;
 
             internalProvider =
-                    new InternalProviderImpl(template.config, template.handlerFactory, handlerCache, graphLinker);
+                    new InternalProviderImpl(
+                            template.providerAdapter,
+                            template.handlerFactory,
+                            handlerCache,
+                            graphLinker);
 
             graphLinker.linkAll(internalProvider, ResolutionContext.create(statefulModules));
 
@@ -190,10 +205,10 @@ public class GraphBuilderImpl implements GraphBuilder {
 
             if (injector == null) {
 
-                final Qualifier qualifier = template.config.qualifierResolver().resolve(targetClass);
+                final Qualifier qualifier = template.qualifierResolver.resolve(targetClass);
 
                 injector = template.injectorFactory.compositeInjector(
-                        template.config.componentMetadataResolver().resolveMetadata(
+                        template.metadataResolver.resolveMetadata(
                                 targetClass,
                                 new ModuleMetadata(targetClass, qualifier, new Class<?>[0])),
                         graphLinker);
@@ -211,7 +226,7 @@ public class GraphBuilderImpl implements GraphBuilder {
 
         @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
 
-            Qualifier qualifier = template.config.qualifierResolver().resolve(dependencySpec);
+            Qualifier qualifier = template.qualifierResolver.resolve(dependencySpec);
             Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
             Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
             Dependency<T> dependency = Dependency.from(
@@ -224,7 +239,7 @@ public class GraphBuilderImpl implements GraphBuilder {
 
                 return requestHandler.force().get(internalProvider, ResolutionContext.create());
 
-            } else if (template.config.isProvider(dependency)) {
+            } else if (template.providerAdapter.isProvider(dependency)) {
 
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
                 final Dependency<?> componentDependency = Dependency.from(dependency.qualifier(), providedType);
@@ -233,7 +248,7 @@ public class GraphBuilderImpl implements GraphBuilder {
                     return null;
                 }
                 ProvisionStrategy<?> componentStrategy = componentHandler.force();
-                return new ProviderStrategyFactory(template.config)
+                return new ProviderStrategyFactory(template.providerAdapter)
                         .<T>create(componentStrategy, internalProvider)
                         .get(internalProvider, ResolutionContext.create());
 

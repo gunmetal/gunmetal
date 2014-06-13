@@ -1,8 +1,8 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.Provider;
-import io.gunmetal.spi.Config;
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.util.Generics;
@@ -12,16 +12,16 @@ import io.gunmetal.util.Generics;
  */
 class ProviderStrategyFactory implements ReferenceStrategyFactory {
 
-    private final Config config;
+    private final ProviderAdapter providerAdapter;
 
-    ProviderStrategyFactory(Config config) {
-        this.config = config;
+    ProviderStrategyFactory(ProviderAdapter providerAdapter) {
+        this.providerAdapter = providerAdapter;
     }
 
     public <T> ProvisionStrategy<T> create(final ProvisionStrategy<?> componentStrategy,
                                     final InternalProvider internalProvider) {
 
-        final Object provider = config.provider(new Provider<Object>() {
+        final Object provider = providerAdapter.provider(new Provider<Object>() {
 
             final ThreadLocal<ResolutionContext> contextThreadLocal = new ThreadLocal<>();
 

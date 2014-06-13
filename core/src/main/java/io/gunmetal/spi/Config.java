@@ -16,8 +16,6 @@
 
 package io.gunmetal.spi;
 
-import io.gunmetal.Provider;
-
 /**
  * @author rees.byars
  */
@@ -33,8 +31,6 @@ public interface Config {
 
     ScopeBindings scopeBindings();
 
-    boolean isProvider(Dependency<?> dependency);
-
-    Object provider(Provider<?> provider);
+    ProviderAdapter providerAdapter();
 
 }

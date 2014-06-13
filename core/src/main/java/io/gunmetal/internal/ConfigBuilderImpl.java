@@ -33,6 +33,7 @@ import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
@@ -247,12 +248,15 @@ public class ConfigBuilderImpl implements ConfigBuilder {
                 };
             }
 
-            @Override public boolean isProvider(Dependency<?> dependency) {
-                return Provider.class.isAssignableFrom(dependency.typeKey().raw());
-            }
-
-            @Override public Object provider(Provider<?> provider) {
-                return provider;
+            @Override public ProviderAdapter providerAdapter() {
+                return new ProviderAdapter() {
+                    @Override public boolean isProvider(Dependency<?> dependency) {
+                        return Provider.class.isAssignableFrom(dependency.typeKey().raw());
+                    }
+                    @Override public Object provider(Provider<?> provider) {
+                        return provider;
+                    }
+                };
             }
 
         };

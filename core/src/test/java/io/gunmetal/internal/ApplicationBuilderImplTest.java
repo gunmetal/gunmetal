@@ -17,9 +17,9 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
-import io.gunmetal.Lazy;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
+import io.gunmetal.Lazy;
 import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
@@ -182,6 +182,7 @@ public class ApplicationBuilderImplTest {
 
 
         ApplicationBuilderImplTest test = app.get(Dep.class);
+
 
         class BadDep implements io.gunmetal.Dependency<Circ> { }
 
