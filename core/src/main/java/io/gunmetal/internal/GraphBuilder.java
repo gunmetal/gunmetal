@@ -56,7 +56,7 @@ public class GraphBuilder {
     private ComponentMetadataResolver componentMetadataResolver;
     private ConstructorResolver constructorResolver;
     private ProviderAdapter providerAdapter;
-    private GraphImpl parentGraph;
+    private Graph parentGraph;
 
     public GraphBuilder() {
         Defaults defaults = new Defaults();
@@ -67,7 +67,7 @@ public class GraphBuilder {
         this.providerAdapter = defaults.providerAdapter();
     }
 
-    GraphBuilder(GraphImpl parentGraph) {
+    GraphBuilder(Graph parentGraph) {
         this.parentGraph = parentGraph;
     }
 
@@ -97,10 +97,6 @@ public class GraphBuilder {
     }
 
     public TemplateGraph build(Class<?> ... modules) {
-        return build(modules, parentGraph);
-    }
-
-    private TemplateGraph build(Class<?>[] modules, final GraphImpl parentGraph) {
 
         List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
         Map<Scope, ProvisionStrategyDecorator> scopeDecorators = new HashMap<>();
@@ -206,13 +202,11 @@ public class GraphBuilder {
             HandlerCache newHandlerCache = handlerCache.replicate(graphContext);
 
             Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
-
             for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
                 injectorHashMap.put(entry.getKey(), entry.getValue().replicate(graphContext));
             }
 
             Map<Class<?>, Instantiator<?>> instantiatorHashMap = new HashMap<>();
-
             for (Map.Entry<Class<?>, Instantiator<?>> entry : instantiators.entrySet()) {
                 instantiatorHashMap.put(entry.getKey(), entry.getValue().replicate(graphContext));
             }
@@ -226,7 +220,7 @@ public class GraphBuilder {
 
             graphLinker.linkAll(internalProvider, ResolutionContext.create());
 
-            GraphImpl copy = new GraphImpl(
+            Graph copy = new Graph(
                     this,
                     graphLinker,
                     internalProvider,
@@ -241,7 +235,7 @@ public class GraphBuilder {
         }
     }
 
-    private class GraphImpl implements ObjectGraph {
+    private class Graph implements ObjectGraph {
 
         private final Template template;
         private final GraphLinker graphLinker;
@@ -251,11 +245,11 @@ public class GraphBuilder {
         private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
         private final GraphContext graphContext;
 
-        GraphImpl(Template template,
-                  GraphLinker graphLinker,
-                  InternalProvider internalProvider,
-                  HandlerCache handlerCache,
-                  GraphContext graphContext) {
+        Graph(Template template,
+              GraphLinker graphLinker,
+              InternalProvider internalProvider,
+              HandlerCache handlerCache,
+              GraphContext graphContext) {
             this.template = template;
             this.graphLinker = graphLinker;
             this.internalProvider = internalProvider;
