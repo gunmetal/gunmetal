@@ -96,7 +96,7 @@ public class GraphBuilder {
         return this;
     }
 
-    public TemplateGraph build(Class<?> ... modules) {
+    public TemplateGraph buildTemplate(Class<?>... modules) {
 
         List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
         Map<Scope, ProvisionStrategyDecorator> scopeDecorators = new HashMap<>();
@@ -148,7 +148,12 @@ public class GraphBuilder {
         HandlerCache handlerCache = new HandlerCache(parentGraph == null ? null : parentGraph.handlerCache);
 
         GraphLinker graphLinker = new GraphLinker();
-        GraphContext graphContext = GraphContext.create(ProvisionStrategyDecorator::none, graphLinker, Collections.emptyMap());
+        GraphContext graphContext = GraphContext.create(
+                ProvisionStrategyDecorator::none,
+                graphLinker,
+                Collections.emptyMap(),
+                parentGraph == null ? Collections.emptySet() : parentGraph.graphContext.loadedModules()
+        );
 
         for (Class<?> module : modules) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
@@ -197,7 +202,12 @@ public class GraphBuilder {
                 statefulModulesMap.put(module.getClass(), module);
             }
 
-            GraphContext graphContext = GraphContext.create(strategyDecorator, graphLinker, statefulModulesMap);
+            GraphContext graphContext = GraphContext.create(
+                    strategyDecorator,
+                    graphLinker,
+                    statefulModulesMap,
+                    parentGraph == null ? Collections.emptySet() : parentGraph.graphContext.loadedModules()
+            );
 
             HandlerCache newHandlerCache = handlerCache.replicate(graphContext);
 

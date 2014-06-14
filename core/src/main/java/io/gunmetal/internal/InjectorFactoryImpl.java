@@ -121,7 +121,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
                 context.linkers());
         Class<S> cls = Generics.as(componentMetadata.providerClass());
-        S s =  context.getStatefulSource(cls);
+        S s =  context.statefulSource(cls);
         return new StatefulInstantiator<>(injector, cls, s);
     }
 
@@ -494,11 +494,14 @@ class InjectorFactoryImpl implements InjectorFactory {
 
         @SuppressWarnings("unchecked")
         @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
+            if (statefulTarget == null) {
+                throw new IllegalStateException("Missing stateful module " + sourceClass); // TODO message
+            }
             return (T) injector.inject(statefulTarget, provider, resolutionContext);
         }
 
         @Override public Instantiator<T> replicate(GraphContext context) {
-            return new StatefulInstantiator<>(injector.replicate(context), sourceClass, context.getStatefulSource(sourceClass));
+            return new StatefulInstantiator<>(injector.replicate(context), sourceClass, context.statefulSource(sourceClass));
         }
 
     }

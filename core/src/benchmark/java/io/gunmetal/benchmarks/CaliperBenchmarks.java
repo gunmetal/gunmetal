@@ -43,19 +43,19 @@ public class CaliperBenchmarks {
     @BeforeExperiment() void setUp() {
         OBJECT_GRAPH = dagger.ObjectGraph.create(new DaggerBenchMarkModule());
         INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
-        APPLICATION_CONTAINER = io.gunmetal.ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class).newInstance();
+        APPLICATION_CONTAINER = io.gunmetal.ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class).newInstance();
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
         class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
         newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
-        template = io.gunmetal.ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class);
+        template = io.gunmetal.ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class);
     }
 
     @Benchmark long newGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            io.gunmetal.ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class).newInstance().inject(injectionTarget);
+            io.gunmetal.ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class).newInstance().inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
         return dummy;

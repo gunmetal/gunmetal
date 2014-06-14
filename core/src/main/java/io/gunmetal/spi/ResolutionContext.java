@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public interface ResolutionContext {
 
-    <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy);
+    <T> ProvisionContext<T> provisionContext(ComponentMetadata<?> componentMetadata);
 
     static ResolutionContext create() {
         return Factory.create();
@@ -45,16 +45,16 @@ public interface ResolutionContext {
 
         private static class ResolutionContextImpl implements ResolutionContext {
 
-            private final Map<ProvisionStrategy<?>, ProvisionContext<?>> contextMap = new HashMap<>();
+            private final Map<ComponentMetadata<?>, ProvisionContext<?>> contextMap = new HashMap<>();
 
-            @Override public <T> ProvisionContext<T> getProvisionContext(ProvisionStrategy<T> strategy) {
+            @Override public <T> ProvisionContext<T> provisionContext(ComponentMetadata<?> componentMetadata) {
 
                 @SuppressWarnings("unchecked")
-                ProvisionContext<T> strategyContext = (ProvisionContext<T>) contextMap.get(strategy);
+                ProvisionContext<T> strategyContext = (ProvisionContext<T>) contextMap.get(componentMetadata);
 
                 if (strategyContext == null) {
                     strategyContext = new ProvisionContext<>();
-                    contextMap.put(strategy, strategyContext);
+                    contextMap.put(componentMetadata, strategyContext);
                 }
 
                 return strategyContext;

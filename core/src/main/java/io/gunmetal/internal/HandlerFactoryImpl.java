@@ -56,14 +56,18 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module,
                                                                                GraphContext context) {
+        if (context.loadedModules().contains(module)) {
+            return Collections.emptyList();
+        }
+
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {
             throw new IllegalArgumentException("The module class [" + module.getName()
                     + "] must be annotated with @Module()");
         }
-        RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation);
-        ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
-        List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
+        final RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation);
+        final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
+        final List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
         if (moduleAnnotation.stateful()) {
             Arrays.stream(module.getDeclaredMethods()).forEach(m -> requestHandlers
                     .add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context)));
@@ -82,6 +86,9 @@ class HandlerFactoryImpl implements HandlerFactory {
             }
             Arrays.stream(library.getDeclaredMethods()).forEach(m -> requestHandlers
                     .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context)));
+        }
+        for (Class<?> m : moduleAnnotation.dependsOn()) {
+            requestHandlers.addAll(createHandlersForModule(m, context));
         }
         return requestHandlers;
 
