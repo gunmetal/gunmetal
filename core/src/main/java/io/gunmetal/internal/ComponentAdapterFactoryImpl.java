@@ -88,7 +88,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                                                            final Injector<T> injector) {
         return new ProvisionStrategy<T>() {
             @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                ResolutionContext.ProvisionContext<T> strategyContext = resolutionContext.getProvisionContext(this);
+                ResolutionContext.ProvisionContext<T> strategyContext =
+                        resolutionContext.provisionContext(componentMetadata);
                 if (strategyContext.state != ResolutionContext.States.NEW) {
                     if (strategyContext.state == ResolutionContext.States.PRE_INJECTION) {
                         return strategyContext.component;

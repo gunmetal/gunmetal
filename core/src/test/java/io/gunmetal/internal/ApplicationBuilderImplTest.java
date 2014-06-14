@@ -72,7 +72,7 @@ public class ApplicationBuilderImplTest {
         @Inject ApplicationBuilderImplTest applicationBuilderImplTest;
     }
 
-    @Module(notAccessibleFrom = TestModule.BlackList.class)
+    @Module(notAccessibleFrom = TestModule.BlackList.class, dependsOn = StatefulModule.class)
     static class TestModule {
 
         static Bad providedCirc(Provider<Circ> circProvider) {
@@ -204,8 +204,8 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testBuild() {
 
-        ObjectGraph app = new GraphBuilder()
-                .build(TestModule.class, StatefulModule.class)
+        ObjectGraph app = ObjectGraph.builder()
+                .buildTemplate(TestModule.class)
                 .newInstance(new StatefulModule("rees"));
 
         app = app.newInstance(new StatefulModule("rees"));
@@ -234,7 +234,7 @@ public class ApplicationBuilderImplTest {
 
         app = ObjectGraph
                 .builder()
-                .build(NewGunmetalBenchMarkModule.class)
+                .buildTemplate(NewGunmetalBenchMarkModule.class)
                 .newInstance();
 
         A a = app.get(Dep2.class);
@@ -256,7 +256,7 @@ public class ApplicationBuilderImplTest {
 
     @Test(expected = DependencyException.class)
     public void testBlackList() {
-        new GraphBuilder().build(TestModule.class, M.class);
+        new GraphBuilder().buildTemplate(TestModule.class, M.class);
     }
 
     @Module(subsumes = MyLibrary.class)
@@ -300,9 +300,11 @@ public class ApplicationBuilderImplTest {
         @Main
         class Dep implements io.gunmetal.Dependency<PlusModule> { }
 
-        ObjectGraph parent = new GraphBuilder().build(TestModule.class).newInstance();
+        ObjectGraph parent = ObjectGraph.builder()
+                .buildTemplate(TestModule.class)
+                .newInstance(new StatefulModule("plus"));
 
-        ObjectGraph child = parent.plus().build(PlusModule.class).newInstance();
+        ObjectGraph child = parent.plus().buildTemplate(PlusModule.class).newInstance();
 
         PlusModule p = child.get(Dep.class);
 
@@ -341,7 +343,7 @@ public class ApplicationBuilderImplTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class).newInstance();
+    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class).newInstance();
 
     static class Dep implements io.gunmetal.Dependency<AA> { }
 
