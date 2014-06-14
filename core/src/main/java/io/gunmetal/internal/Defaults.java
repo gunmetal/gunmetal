@@ -31,11 +31,9 @@ import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProviderAdapter;
-import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.Scope;
-import io.gunmetal.spi.ScopeBindings;
 import io.gunmetal.spi.Scopes;
 import io.gunmetal.util.Generics;
 
@@ -177,15 +175,6 @@ final class Defaults {
                 }
                 return Generics.as(cls.getDeclaredConstructors()[0]);
             }
-        };
-    }
-
-    public ScopeBindings scopeBindings() {
-        return scope -> {
-            if (scope == Scopes.UNDEFINED) {
-                return ProvisionStrategyDecorator::none;
-            }
-            throw new UnsupportedOperationException();
         };
     }
 

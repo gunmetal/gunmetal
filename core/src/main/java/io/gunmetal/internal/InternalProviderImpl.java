@@ -5,7 +5,6 @@ import io.gunmetal.Ref;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategy;
 
@@ -20,16 +19,16 @@ class InternalProviderImpl implements InternalProvider {
     private final ProviderAdapter providerAdapter;
     private final HandlerFactory handlerFactory;
     private final HandlerCache handlerCache;
-    private final Linkers linkers;
+    private final GraphContext context;
 
     InternalProviderImpl(ProviderAdapter providerAdapter,
                          HandlerFactory handlerFactory,
                          HandlerCache handlerCache,
-                         Linkers linkers) {
+                         GraphContext context) {
         this.providerAdapter = providerAdapter;
         this.handlerFactory = handlerFactory;
         this.handlerCache = handlerCache;
-        this.linkers = linkers;
+        this.context = context;
     }
 
     @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
@@ -61,7 +60,7 @@ class InternalProviderImpl implements InternalProvider {
                         .getProvisionStrategy();
             }
         }
-        requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, linkers);
+        requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, context);
         if (requestHandler != null) {
             handlerCache.put(dependency, requestHandler);
             return requestHandler

@@ -20,15 +20,14 @@ import io.gunmetal.BlackList;
 import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.WhiteList;
-import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ComponentMetadataResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
-import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.Method;
@@ -56,7 +55,7 @@ class HandlerFactoryImpl implements HandlerFactory {
     }
 
     @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module,
-                                                                               Linkers linkers) {
+                                                                               GraphContext context) {
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {
             throw new IllegalArgumentException("The module class [" + module.getName()
@@ -67,10 +66,10 @@ class HandlerFactoryImpl implements HandlerFactory {
         List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
         if (moduleAnnotation.stateful()) {
             Arrays.stream(module.getDeclaredMethods()).forEach(m -> requestHandlers
-                    .add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, linkers)));
+                    .add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context)));
         } else {
             Arrays.stream(module.getDeclaredMethods()).forEach(m -> requestHandlers
-                    .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, linkers)));
+                    .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context)));
         }
         for (Class<?> library : moduleAnnotation.subsumes()) {
             if (library.isAnnotationPresent(Module.class)) {
@@ -82,14 +81,14 @@ class HandlerFactoryImpl implements HandlerFactory {
                 throw new IllegalArgumentException("A class without @Library cannot be subsumed");
             }
             Arrays.stream(library.getDeclaredMethods()).forEach(m -> requestHandlers
-                    .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, linkers)));
+                    .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context)));
         }
         return requestHandlers;
 
     }
 
     @Override public <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(
-            final DependencyRequest<T> dependencyRequest, Linkers linkers) {
+            final DependencyRequest<T> dependencyRequest, GraphContext context) {
         final Dependency<T> dependency = dependencyRequest.dependency();
         final TypeKey<T> typeKey = dependency.typeKey();
         if (!isInstantiable(typeKey.raw())) {
@@ -98,7 +97,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         final Class<? super T> cls = typeKey.raw();
         final ModuleMetadata moduleMetadata = new ModuleMetadata(cls, dependency.qualifier(), new Class<?>[0]);
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
-                componentMetadataResolver.resolveMetadata(cls, moduleMetadata), linkers);
+                componentMetadataResolver.resolveMetadata(cls, moduleMetadata), context);
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
@@ -272,7 +271,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             Class<?> module,
             final RequestVisitor moduleRequestVisitor,
             final ModuleMetadata moduleMetadata,
-            Linkers linkers) {
+            GraphContext context) {
 
         int modifiers = method.getModifiers();
 
@@ -293,7 +292,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
 
         return requestHandler(
-                componentAdapterFactory.<T>withMethodProvider(componentMetadata, linkers),
+                componentAdapterFactory.<T>withMethodProvider(componentMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
                 AccessFilter.create(method));
@@ -304,7 +303,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             Class<?> module,
             final RequestVisitor moduleRequestVisitor,
             final ModuleMetadata moduleMetadata,
-            Linkers linkers) {
+            GraphContext context) {
 
         int modifiers = method.getModifiers();
 
@@ -325,7 +324,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
 
         return requestHandler(
-                componentAdapterFactory.<T>withStatefulMethodProvider(componentMetadata, linkers),
+                componentAdapterFactory.<T>withStatefulMethodProvider(componentMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
                 AccessFilter.create(method));
@@ -375,9 +374,9 @@ class HandlerFactoryImpl implements HandlerFactory {
                 return componentAdapter.metadata();
             }
 
-            @Override public DependencyRequestHandler<T> replicate(Linkers linkers) {
+            @Override public DependencyRequestHandler<T> replicate(GraphContext context) {
                 return requestHandler(
-                        componentAdapter.replicate(linkers),
+                        componentAdapter.replicate(context),
                         targets,
                         moduleRequestVisitor,
                         classAccessFilter);

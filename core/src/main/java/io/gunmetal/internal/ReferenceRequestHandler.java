@@ -69,10 +69,10 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
         return componentHandler.componentMetadata();
     }
 
-    @Override public DependencyRequestHandler<T> replicate(Linkers linkers) {
+    @Override public DependencyRequestHandler<T> replicate(GraphContext context) {
         return new ReferenceRequestHandler<>(
                 referenceRequest,
-                new DelegatingProvisionStrategy<T>(linkers),
+                new DelegatingProvisionStrategy<T>(context.linkers()),
                 referenceStrategyFactory,
                 componentHandler,
                 componentDependency);

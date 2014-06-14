@@ -17,7 +17,6 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ComponentMetadata;
-import io.gunmetal.spi.Linkers;
 
 import java.lang.reflect.Method;
 
@@ -26,8 +25,13 @@ import java.lang.reflect.Method;
  */
 interface ComponentAdapterFactory {
 
-    <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata, Linkers linkers);
-    <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata, Linkers linkers);
-    <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata, Linkers linkers);
+    <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata,
+                                              GraphContext context);
+
+    <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata,
+                                               GraphContext context);
+
+    <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata,
+                                                       GraphContext context);
 
 }

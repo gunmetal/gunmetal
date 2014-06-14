@@ -3,7 +3,6 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
-import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Scopes;
@@ -121,11 +120,11 @@ class HandlerCache implements Replicable<HandlerCache> {
         collectionRequestHandler.requestHandlers.add(requestHandler);
     }
 
-    @Override public HandlerCache replicate(Linkers linkers) {
+    @Override public HandlerCache replicate(GraphContext context) {
 
         HandlerCache newCache = new HandlerCache(parentCache);
 
-        myHandlers.forEach(handler -> newCache.putAll(handler.replicate(linkers)));
+        myHandlers.forEach(handler -> newCache.putAll(handler.replicate(context)));
 
         return newCache;
 
@@ -204,10 +203,10 @@ class HandlerCache implements Replicable<HandlerCache> {
             };
         }
 
-        @Override public DependencyRequestHandler<List<T>> replicate(Linkers linkers) {
+        @Override public DependencyRequestHandler<List<T>> replicate(GraphContext context) {
             CollectionRequestHandler<T> newHandler = new CollectionRequestHandler<>(dependency, subDependency);
             for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                newHandler.requestHandlers.add(requestHandler.replicate(linkers));
+                newHandler.requestHandlers.add(requestHandler.replicate(context));
             }
             return newHandler;
         }

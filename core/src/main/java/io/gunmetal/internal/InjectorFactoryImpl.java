@@ -256,8 +256,8 @@ class InjectorFactoryImpl implements InjectorFactory {
             }
         }
 
-        @Override public Injector<T> replicate(Linkers linkers) {
-            return new FieldInjector<>(field, componentMetadata, dependency, linkers);
+        @Override public Injector<T> replicate(GraphContext context) {
+            return new FieldInjector<>(field, componentMetadata, dependency, context.linkers());
         }
 
         @Override public List<Dependency<?>> dependencies() {
@@ -313,8 +313,8 @@ class InjectorFactoryImpl implements InjectorFactory {
             }
         }
 
-        @Override public Injector<T> replicate(Linkers linkers) {
-            return new FunctionInjector<>(function, componentMetadata, dependencies, linkers);
+        @Override public Injector<T> replicate(GraphContext context) {
+            return new FunctionInjector<>(function, componentMetadata, dependencies, context.linkers());
         }
 
         @Override public List<Dependency<?>> dependencies() {
@@ -342,10 +342,10 @@ class InjectorFactoryImpl implements InjectorFactory {
             return null;
         }
 
-        @Override public Injector<T> replicate(Linkers linkers) {
+        @Override public Injector<T> replicate(GraphContext context) {
             List<Injector<T>> newInjectors = new ArrayList<>();
             for (Injector<T> injector : injectors) {
-                newInjectors.add(injector.replicate(linkers));
+                newInjectors.add(injector.replicate(context));
             }
             return new CompositeInjector<>(newInjectors);
         }
@@ -426,13 +426,13 @@ class InjectorFactoryImpl implements InjectorFactory {
             return null;
         }
 
-        @Override public Injector<T> replicate(Linkers linkers) {
+        @Override public Injector<T> replicate(GraphContext context) {
             if (injectors == null) {
                 return new LazyCompositeInjector<>(classWalker, qualifierResolver, componentMetadata);
             }
             List<Injector<T>> newInjectors = new ArrayList<>();
             for (Injector<T> injector : injectors) {
-                newInjectors.add(injector.replicate(linkers));
+                newInjectors.add(injector.replicate(context));
             }
             return new CompositeInjector<>(newInjectors);
         }
@@ -468,8 +468,8 @@ class InjectorFactoryImpl implements InjectorFactory {
             return (T) injector.inject(null, provider, resolutionContext);
         }
 
-        @Override public Instantiator<T> replicate(Linkers linkers) {
-            return new InstantiatorImpl<>(injector.replicate(linkers));
+        @Override public Instantiator<T> replicate(GraphContext context) {
+            return new InstantiatorImpl<>(injector.replicate(context));
         }
 
     }
@@ -500,8 +500,8 @@ class InjectorFactoryImpl implements InjectorFactory {
             return (T) injector.inject(statefulTarget, provider, resolutionContext);
         }
 
-        @Override public Instantiator<T> replicate(Linkers linkers) {
-            return new StatefulInstantiator<>(injector.replicate(linkers), sourceClass, linkers);
+        @Override public Instantiator<T> replicate(GraphContext context) {
+            return new StatefulInstantiator<>(injector.replicate(context), sourceClass, context.linkers());
         }
 
     }

@@ -33,7 +33,8 @@ import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ResolutionContext;
-import io.gunmetal.spi.ScopeBindings;
+import io.gunmetal.spi.Scope;
+import io.gunmetal.spi.Scopes;
 import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
@@ -49,12 +50,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author rees.byars
  */
 public class GraphBuilder {
-    
+
+    private final Map<Scope, Class<? extends ProvisionStrategyDecorator>> scopeBindings = new HashMap<>();
+
     private ClassWalker classWalker;
     private QualifierResolver qualifierResolver;
     private ComponentMetadataResolver componentMetadataResolver;
     private ConstructorResolver constructorResolver;
-    private ScopeBindings scopeBindings;
     private ProviderAdapter providerAdapter;
     private HandlerCache parentCache;
 
@@ -64,7 +66,6 @@ public class GraphBuilder {
         this.qualifierResolver = defaults.qualifierResolver();
         this.componentMetadataResolver = defaults.componentMetadataResolver();
         this.constructorResolver = defaults.constructorResolver();
-        this.scopeBindings = defaults.scopeBindings();
         this.providerAdapter = defaults.providerAdapter();
     }
 
@@ -92,8 +93,8 @@ public class GraphBuilder {
         return this;
     }
 
-    public GraphBuilder withScopeBindings(ScopeBindings scopeBindings) {
-        this.scopeBindings = scopeBindings;
+    public GraphBuilder withScopeBinding(Scope scope, Class<? extends ProvisionStrategyDecorator> decorator) {
+        scopeBindings.put(scope, decorator);
         return this;
     }
 
@@ -113,40 +114,31 @@ public class GraphBuilder {
                 constructorResolver,
                 classWalker);
 
-        final List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
-        strategyDecorators.add(new ScopeDecorator(scopeBindings));
-        ProvisionStrategyDecorator compositeStrategyDecorator = new ProvisionStrategyDecorator() {
-            @Override public <T> ProvisionStrategy<T> decorate(
-                    ComponentMetadata<?> componentMetadata,
-                    ProvisionStrategy<T> delegateStrategy,
-                    Linkers linkers) {
-                for (ProvisionStrategyDecorator decorator : strategyDecorators) {
-                    delegateStrategy = decorator.decorate(componentMetadata, delegateStrategy, linkers);
-                }
-                return delegateStrategy;
-            }
-        };
+        ComponentAdapterFactory componentAdapterFactory =
+                new ComponentAdapterFactoryImpl(injectorFactory);
 
-        final ComponentAdapterFactory componentAdapterFactory =
-                new ComponentAdapterFactoryImpl(injectorFactory, compositeStrategyDecorator);
-
-        final HandlerFactory handlerFactory = new HandlerFactoryImpl(
+        HandlerFactory handlerFactory = new HandlerFactoryImpl(
                 componentAdapterFactory,
                 qualifierResolver,
                 componentMetadataResolver);
 
-        final HandlerCache handlerCache = new HandlerCache(parentCache);
+        HandlerCache handlerCache = new HandlerCache(parentCache);
 
-        final GraphLinker graphLinker = new GraphLinker();
+        GraphLinker graphLinker = new GraphLinker();
+        GraphContext graphContext = GraphContext.create(ProvisionStrategyDecorator::none, graphLinker);
 
         for (Class<?> module : modules) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
-                    handlerFactory.createHandlersForModule(module, graphLinker);
+                    handlerFactory.createHandlersForModule(module, graphContext);
             handlerCache.putAll(moduleRequestHandlers);
         }
 
+        InternalProvider internalProvider =
+                new InternalProviderImpl(providerAdapter, handlerFactory, handlerCache, graphContext);
+
+        graphLinker.linkGraph(internalProvider, ResolutionContext.create(Collections.emptyMap()));
+
         return new Template(
-                graphLinker,
                 injectorFactory,
                 handlerFactory,
                 handlerCache);
@@ -154,37 +146,57 @@ public class GraphBuilder {
 
     private class Template implements TemplateGraph {
 
-        private final InternalProvider internalProvider;
         private final InjectorFactory injectorFactory;
         private final HandlerFactory handlerFactory;
         private final HandlerCache handlerCache;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
+        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
 
-        Template(GraphLinker graphLinker,
-                 InjectorFactory injectorFactory,
+        Template(InjectorFactory injectorFactory,
                  HandlerFactory handlerFactory,
                  HandlerCache handlerCache) {
             this.injectorFactory = injectorFactory;
             this.handlerFactory = handlerFactory;
             this.handlerCache = handlerCache;
-
-            internalProvider =
-                    new InternalProviderImpl(providerAdapter, handlerFactory, handlerCache, graphLinker);
-
-            graphLinker.linkGraph(internalProvider, ResolutionContext.create(Collections.emptyMap()));
-
         }
 
         @Override public ObjectGraph newInstance(Object... statefulModules) {
 
             GraphLinker graphLinker = new GraphLinker();
 
-            HandlerCache newHandlerCache = handlerCache.replicate(graphLinker);
+            List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
+            strategyDecorators.add(new ScopeDecorator(scope -> {
+                if (scope == Scopes.UNDEFINED) {
+                    return ProvisionStrategyDecorator::none;
+                }
+                throw new UnsupportedOperationException();
+            }));
+            ProvisionStrategyDecorator compositeStrategyDecorator = new ProvisionStrategyDecorator() {
+                @Override public <T> ProvisionStrategy<T> decorate(
+                        ComponentMetadata<?> componentMetadata,
+                        ProvisionStrategy<T> delegateStrategy,
+                        Linkers linkers) {
+                    for (ProvisionStrategyDecorator decorator : strategyDecorators) {
+                        delegateStrategy = decorator.decorate(componentMetadata, delegateStrategy, linkers);
+                    }
+                    return delegateStrategy;
+                }
+            };
+
+            GraphContext graphContext = GraphContext.create(compositeStrategyDecorator, graphLinker);
+
+            HandlerCache newHandlerCache = handlerCache.replicate(graphContext);
 
             Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
 
             for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
-                injectorHashMap.put(entry.getKey(), entry.getValue().replicate(graphLinker));
+                injectorHashMap.put(entry.getKey(), entry.getValue().replicate(graphContext));
+            }
+
+            Map<Class<?>, Instantiator<?>> instantiatorHashMap = new HashMap<>();
+
+            for (Map.Entry<Class<?>, Instantiator<?>> entry : instantiators.entrySet()) {
+                instantiatorHashMap.put(entry.getKey(), entry.getValue().replicate(graphContext));
             }
 
             Map<Class<?>, Object> statefulModulesMap = new HashMap<>();
@@ -193,13 +205,24 @@ public class GraphBuilder {
                 statefulModulesMap.put(module.getClass(), module);
             }
 
+            InternalProvider internalProvider =
+                    new InternalProviderImpl(
+                            providerAdapter,
+                            handlerFactory,
+                            newHandlerCache,
+                            graphContext);
+
+            graphLinker.linkAll(internalProvider, ResolutionContext.create(statefulModulesMap));
+
             GraphImpl copy = new GraphImpl(
                     this,
                     graphLinker,
+                    internalProvider,
                     newHandlerCache,
                     statefulModulesMap);
 
             copy.injectors.putAll(injectorHashMap);
+            copy.instantiators.putAll(instantiatorHashMap);
 
             return copy;
 
@@ -213,26 +236,19 @@ public class GraphBuilder {
         private final InternalProvider internalProvider;
         private final HandlerCache handlerCache;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
+        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
         private final Map<Class<?>, Object> statefulModules;
 
         GraphImpl(Template template,
                   GraphLinker graphLinker,
+                  InternalProvider internalProvider,
                   HandlerCache handlerCache,
                   Map<Class<?>, Object> statefulModules) {
             this.template = template;
             this.graphLinker = graphLinker;
+            this.internalProvider = internalProvider;
             this.handlerCache = handlerCache;
             this.statefulModules = statefulModules;
-
-            internalProvider =
-                    new InternalProviderImpl(
-                            providerAdapter,
-                            template.handlerFactory,
-                            handlerCache,
-                            graphLinker);
-
-            graphLinker.linkAll(internalProvider, ResolutionContext.create(statefulModules));
-
         }
 
         @Override public <T> ObjectGraph inject(T injectionTarget) {
@@ -269,12 +285,24 @@ public class GraphBuilder {
         }
 
         @Override public <T> T inject(Class<T> injectionTarget) {
-            Qualifier qualifier = qualifierResolver.resolve(injectionTarget);
-            Instantiator<T> instantiator = template.injectorFactory.constructorInstantiator(
-                    componentMetadataResolver.resolveMetadata(
-                            injectionTarget,
-                            new ModuleMetadata(injectionTarget, qualifier, new Class<?>[0])),
-                    graphLinker);
+
+            Instantiator<T> instantiator = Generics.as(instantiators.get(injectionTarget));
+
+            if (instantiator == null) {
+
+                final Qualifier qualifier = qualifierResolver.resolve(injectionTarget);
+
+                instantiator = template.injectorFactory.constructorInstantiator(
+                        componentMetadataResolver.resolveMetadata(
+                                injectionTarget,
+                                new ModuleMetadata(injectionTarget, qualifier, new Class<?>[0])),
+                        graphLinker);
+
+                graphLinker.linkAll(internalProvider, ResolutionContext.create(statefulModules));
+
+                instantiators.put(injectionTarget, instantiator);
+                template.instantiators.put(injectionTarget, instantiator);
+            }
             T t = instantiator.newInstance(internalProvider, ResolutionContext.create());
             inject(t);
             return t;
@@ -319,8 +347,7 @@ public class GraphBuilder {
                     .withComponentMetadataResolver(componentMetadataResolver)
                     .withConstructorResolver(constructorResolver)
                     .withProviderAdapter(providerAdapter)
-                    .withQualifierResolver(qualifierResolver)
-                    .withScopeBindings(scopeBindings);
+                    .withQualifierResolver(qualifierResolver);
         }
 
         @Override public ObjectGraph newInstance(Object... statefulModules) {
