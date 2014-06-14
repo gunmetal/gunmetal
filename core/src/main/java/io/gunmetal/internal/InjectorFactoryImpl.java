@@ -60,7 +60,7 @@ class InjectorFactoryImpl implements InjectorFactory {
     }
 
     @Override public <T> Injector<T> compositeInjector(final ComponentMetadata<Class<?>> componentMetadata,
-                                                       final Linkers linkers) {
+                                                       final GraphContext context) {
         final List<Injector<T>> injectors = new ArrayList<>();
         classWalker.walk(componentMetadata.provider(), new ClassWalker.InjectedMemberVisitor() {
             @Override public void visit(final Field field) {
@@ -69,7 +69,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                 field,
                                 componentMetadata.moduleMetadata().qualifier()),
                         field.getGenericType());
-                injectors.add(new FieldInjector<>(field, componentMetadata, dependency, linkers));
+                injectors.add(new FieldInjector<>(field, componentMetadata, dependency, context.linkers()));
             }
             @Override public void visit(Method method) {
                 final ParameterizedFunction function = new MethodFunction(method);
@@ -80,7 +80,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                 function,
                                 qualifierResolver,
                                 componentMetadata.moduleMetadata().qualifier()),
-                        linkers));
+                        context.linkers()));
             }
         });
         return new CompositeInjector<>(injectors);
@@ -91,36 +91,38 @@ class InjectorFactoryImpl implements InjectorFactory {
     }
 
     @Override public <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata,
-                                                                 Linkers linkers) {
+                                                                 GraphContext context) {
         Constructor<?> constructor = constructorResolver.resolve(componentMetadata.provider());
         final ParameterizedFunction function = new ConstructorFunction(constructor);
         Injector<?> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
                 dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
-                linkers);
+                context.linkers());
         return new InstantiatorImpl<>(injector);
     }
 
     @Override public <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata,
-                                                            Linkers linkers) {
+                                                            GraphContext context) {
         final ParameterizedFunction function = new MethodFunction(componentMetadata.provider());
         Injector<?> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
                 dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
-                linkers);
+                context.linkers());
         return new InstantiatorImpl<>(injector);
     }
 
-    @Override public <T> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, Linkers linkers) {
+    @Override public <T, S> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, GraphContext context) {
         final ParameterizedFunction function = new MethodFunction(componentMetadata.provider());
-        FunctionInjector<?> injector = new FunctionInjector<>(
+        FunctionInjector<S> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
                 dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
-                linkers);
-        return new StatefulInstantiator<>(injector, Generics.as(componentMetadata.providerClass()), linkers);
+                context.linkers());
+        Class<S> cls = Generics.as(componentMetadata.providerClass());
+        S s =  context.getStatefulSource(cls);
+        return new StatefulInstantiator<>(injector, cls, s);
     }
 
     private static Dependency<?>[] dependenciesForFunction(ParameterizedFunction function,
@@ -480,12 +482,10 @@ class InjectorFactoryImpl implements InjectorFactory {
         private final Class<S> sourceClass;
         private S statefulTarget;
 
-        StatefulInstantiator(Injector<S> injector, Class<S> sourceClass, Linkers linkers) {
+        StatefulInstantiator(Injector<S> injector, Class<S> sourceClass, S statefulTarget) {
             this.injector = injector;
             this.sourceClass = sourceClass;
-            linkers.addStatefulSourceLinker((p, c) -> {
-                statefulTarget = c.getStatefulSource(sourceClass);
-            });
+            this.statefulTarget = statefulTarget;
         }
 
         @Override public List<Dependency<?>> dependencies() {
@@ -494,14 +494,11 @@ class InjectorFactoryImpl implements InjectorFactory {
 
         @SuppressWarnings("unchecked")
         @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-            if (statefulTarget == null) {
-                throw new IllegalStateException(); // TODO message
-            }
             return (T) injector.inject(statefulTarget, provider, resolutionContext);
         }
 
         @Override public Instantiator<T> replicate(GraphContext context) {
-            return new StatefulInstantiator<>(injector.replicate(context), sourceClass, context.linkers());
+            return new StatefulInstantiator<>(injector.replicate(context), sourceClass, context.getStatefulSource(sourceClass));
         }
 
     }

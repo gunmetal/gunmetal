@@ -14,33 +14,25 @@ import java.util.Queue;
 class GraphLinker implements Linkers {
 
     private final Queue<Linker> postWiringLinkers = new LinkedList<>();
-    private final Queue<Linker> statefulSourceLinkers = new LinkedList<>();
     private final Queue<Linker> eagerLinkers = new LinkedList<>();
 
     @Override public synchronized void addWiringLinker(Linker linker) {
         postWiringLinkers.add(linker);
     }
 
-    @Override public synchronized void addStatefulSourceLinker(Linker linker) {
-        statefulSourceLinkers.add(linker);
-    }
-
     @Override public synchronized void addEagerLinker(Linker linker) {
         eagerLinkers.add(linker);
     }
 
-    synchronized void linkGraph(InternalProvider internalProvider, ResolutionContext.LinkingContext linkingContext) {
+    synchronized void linkGraph(InternalProvider internalProvider, ResolutionContext linkingContext) {
         while (!postWiringLinkers.isEmpty()) {
             postWiringLinkers.remove().link(internalProvider, linkingContext);
         }
     }
 
-    synchronized void linkAll(InternalProvider internalProvider, ResolutionContext.LinkingContext linkingContext) {
+    synchronized void linkAll(InternalProvider internalProvider, ResolutionContext linkingContext) {
         while (!postWiringLinkers.isEmpty()) {
             postWiringLinkers.remove().link(internalProvider, linkingContext);
-        }
-        while (!statefulSourceLinkers.isEmpty()) {
-            statefulSourceLinkers.remove().link(internalProvider, linkingContext);
         }
         while (!eagerLinkers.isEmpty()) {
             eagerLinkers.remove().link(internalProvider, linkingContext);

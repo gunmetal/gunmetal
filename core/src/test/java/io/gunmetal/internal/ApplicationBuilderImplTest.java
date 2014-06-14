@@ -27,6 +27,11 @@ import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.Ref;
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Linkers;
+import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
+import io.gunmetal.spi.Scope;
 import io.gunmetal.testmocks.A;
 import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.F;
@@ -41,6 +46,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author rees.byars
@@ -54,6 +60,10 @@ public class ApplicationBuilderImplTest {
     @Retention(RetentionPolicy.RUNTIME)
     @io.gunmetal.Qualifier
     public @interface Stateful {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @io.gunmetal.Scope(scopeEnum = CustomScopes.class, name = "TEST")
+    public @interface TestScope {}
 
     interface Bad { }
 
@@ -132,6 +142,24 @@ public class ApplicationBuilderImplTest {
             return System.in;
         }
 
+        @Lazy static List<? extends ProvisionStrategyDecorator> decorators() {
+            return Collections.singletonList(new ProvisionStrategyDecorator() {
+                @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
+                    return delegateStrategy;
+                }
+            });
+        }
+
+        @Lazy static Map<? extends Scope, ? extends ProvisionStrategyDecorator> scopeDecorators() {
+            return Collections.singletonMap(
+                    CustomScopes.TEST,
+                    new ProvisionStrategyDecorator() {
+                        @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
+                            return delegateStrategy;
+                        }
+                    });
+        }
+
     }
 
     @Module(stateful = true)
@@ -164,7 +192,13 @@ public class ApplicationBuilderImplTest {
         @Lazy static M m(ApplicationBuilderImplTest test) {
             return new M();
         }
+    }
 
+    enum CustomScopes implements Scope {
+        TEST;
+        @Override public boolean canInject(Scope scope) {
+            return scope.equals(scope);
+        }
     }
 
     @Test

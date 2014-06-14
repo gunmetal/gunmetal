@@ -21,7 +21,6 @@ import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.OverrideEnabled;
-import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ComponentMetadata;
@@ -94,7 +93,7 @@ final class Defaults {
                 List<Object> qualifiers = new LinkedList<>();
                 // TODO addAll(asList not great
                 qualifiers.addAll(Arrays.asList(moduleMetadata.qualifier().qualifiers()));
-                Annotation scopeAnnotation = null;
+                io.gunmetal.Scope scopeAnnotation = null;
                 for (Annotation annotation : annotatedElement.getAnnotations()) {
                     Class<? extends Annotation> annotationType = annotation.annotationType();
                     if (annotationType == OverrideEnabled.class) {
@@ -106,7 +105,7 @@ final class Defaults {
                         eager = false;
                     }
                     if (annotationType.isAnnotationPresent(io.gunmetal.Scope.class)) {
-                        scopeAnnotation = annotation;
+                        scopeAnnotation = annotationType.getAnnotation(io.gunmetal.Scope.class);
                     }
                     if (annotationType.isAnnotationPresent(io.gunmetal.Qualifier.class)
                             && !qualifiers.contains(annotation)) {
@@ -122,10 +121,13 @@ final class Defaults {
                 if (scopeAnnotation == null) {
                     scope = Scopes.SINGLETON;
                 } else {
-                    if (scopeAnnotation instanceof Prototype) {
-                        scope = Scopes.PROTOTYPE;
-                    } else {
-                        throw new UnsupportedOperationException(); // TODO unsupported scope
+                    for (Enum<? extends Scope> s : scopeAnnotation.scopeEnum().getEnumConstants()) {
+                        if (s.name().equals(scopeAnnotation.name())) {
+                            scope = Generics.as(s);
+                        }
+                    }
+                    if (scope == null) {
+                        throw new UnsupportedOperationException(); // TODO name not found on enum
                     }
                 }
 

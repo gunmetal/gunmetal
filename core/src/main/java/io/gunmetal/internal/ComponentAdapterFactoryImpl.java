@@ -40,8 +40,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata,
                                                                GraphContext context) {
         Instantiator<T> instantiator =
-                injectorFactory.constructorInstantiator(componentMetadata, context.linkers());
-        Injector<T> postInjector = injectorFactory.compositeInjector(componentMetadata, context.linkers());
+                injectorFactory.constructorInstantiator(componentMetadata, context);
+        Injector<T> postInjector = injectorFactory.compositeInjector(componentMetadata, context);
         ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector),
@@ -55,7 +55,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
 
     @Override public <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata,
                                                                 GraphContext context) {
-        Instantiator<T> instantiator = injectorFactory.methodInstantiator(componentMetadata, context.linkers());
+        Instantiator<T> instantiator = injectorFactory.methodInstantiator(componentMetadata, context);
         Injector<T> postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
         ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                 componentMetadata,
@@ -70,7 +70,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
 
     @Override public <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata,
                                                                         GraphContext context) {
-        Instantiator<T> instantiator = injectorFactory.statefulMethodInstantiator(componentMetadata, context.linkers());
+        Instantiator<T> instantiator = injectorFactory.statefulMethodInstantiator(componentMetadata, context);
         Injector<T> postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
         ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                 componentMetadata,

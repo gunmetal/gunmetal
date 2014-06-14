@@ -23,8 +23,6 @@ public interface Linkers {
 
     void addWiringLinker(Linker linker);
 
-    void addStatefulSourceLinker(Linker linker);
-
     void addEagerLinker(Linker linker);
 
 }

@@ -17,7 +17,6 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ComponentMetadata;
-import io.gunmetal.spi.Linkers;
 
 import java.lang.reflect.Method;
 
@@ -25,9 +24,9 @@ import java.lang.reflect.Method;
  * @author rees.byars
  */
 interface InjectorFactory {
-    <T> Injector<T> compositeInjector(ComponentMetadata<Class<?>> componentMetadata, Linkers linkers);
+    <T> Injector<T> compositeInjector(ComponentMetadata<Class<?>> componentMetadata, GraphContext context);
     <T> Injector<T> lazyCompositeInjector(ComponentMetadata<?> componentMetadata);
-    <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata, Linkers linkers);
-    <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata, Linkers linkers);
-    <T> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, Linkers linkers);
+    <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata, GraphContext context);
+    <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata, GraphContext context);
+    <T, S> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, GraphContext context);
 }
