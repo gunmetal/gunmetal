@@ -3,11 +3,8 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
-import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.spi.Qualifier;
-import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.Scopes;
 import io.gunmetal.util.Generics;
 
@@ -123,11 +120,11 @@ class HandlerCache implements Replicable<HandlerCache> {
         collectionRequestHandler.requestHandlers.add(requestHandler);
     }
 
-    @Override public HandlerCache replicate(Linkers linkers) {
+    @Override public HandlerCache replicate(GraphContext context) {
 
         HandlerCache newCache = new HandlerCache(parentCache);
 
-        myHandlers.forEach(handler -> newCache.putAll(handler.replicate(linkers)));
+        myHandlers.forEach(handler -> newCache.putAll(handler.replicate(context)));
 
         return newCache;
 
@@ -185,45 +182,31 @@ class HandlerCache implements Replicable<HandlerCache> {
         }
 
         @Override public ComponentMetadata<?> componentMetadata() {
-            return new ComponentMetadata<Class<?>>() {
+            return new ComponentMetadata<Class<?>>(
+                    null,
+                    null,
+                    null,
+                    dependency.qualifier(),
+                    Scopes.PROTOTYPE,
+                    false,
+                    false,
+                    false) {
                 @Override public Class<?> provider() {
                     throw new UnsupportedOperationException(); // TODO
                 }
-
                 @Override public Class<?> providerClass() {
                     throw new UnsupportedOperationException(); // TODO
                 }
-
                 @Override public ModuleMetadata moduleMetadata() {
                     throw new UnsupportedOperationException(); // TODO
-                }
-
-                @Override public Qualifier qualifier() {
-                    return dependency.qualifier();
-                }
-
-                @Override public Scope scope() {
-                    return Scopes.PROTOTYPE;
-                }
-
-                @Override public boolean eager() {
-                    return false;
-                }
-
-                @Override public boolean isOverrideEnabled() {
-                    return false;
-                }
-
-                @Override public boolean isCollectionElement() {
-                    return false;
                 }
             };
         }
 
-        @Override public DependencyRequestHandler<List<T>> replicate(Linkers linkers) {
+        @Override public DependencyRequestHandler<List<T>> replicate(GraphContext context) {
             CollectionRequestHandler<T> newHandler = new CollectionRequestHandler<>(dependency, subDependency);
             for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                newHandler.requestHandlers.add(requestHandler.replicate(linkers));
+                newHandler.requestHandlers.add(requestHandler.replicate(context));
             }
             return newHandler;
         }

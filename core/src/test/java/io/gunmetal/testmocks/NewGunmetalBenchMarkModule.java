@@ -16,11 +16,9 @@
 
 package io.gunmetal.testmocks;
 
-import io.gunmetal.RootModule;
 import io.gunmetal.Module;
 import io.gunmetal.Prototype;
 
-@RootModule(modules = NewGunmetalBenchMarkModule.class)
 @Module
 public class NewGunmetalBenchMarkModule {
 

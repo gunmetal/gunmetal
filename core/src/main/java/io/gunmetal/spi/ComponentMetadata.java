@@ -21,31 +21,72 @@ import java.lang.reflect.AnnotatedElement;
 /**
  * @author rees.byars
  */
-public abstract class ComponentMetadata<P extends AnnotatedElement> {
+public class ComponentMetadata<P extends AnnotatedElement> {
 
-    public abstract P provider();
+    private final P provider;
+    private final Class<?> providerClass;
+    private final ModuleMetadata moduleMetadata;
+    private final Qualifier qualifier;
+    private final Scope scope;
+    private final boolean eager;
+    private final boolean isOverrideEnabled;
+    private final boolean isCollectionElement;
+    
+    public ComponentMetadata(P provider,
+                      Class<?> providerClass,
+                      ModuleMetadata moduleMetadata,
+                      Qualifier qualifier,
+                      Scope scope,
+                      boolean eager,
+                      boolean isOverrideEnabled,
+                      boolean isCollectionElement) {
+        this.provider = provider;
+        this.providerClass = providerClass;
+        this.moduleMetadata = moduleMetadata;
+        this.qualifier = qualifier;
+        this.scope = scope;
+        this.eager = eager;
+        this.isOverrideEnabled = isOverrideEnabled;
+        this.isCollectionElement = isCollectionElement;
+    }
 
-    public abstract Class<?> providerClass();
+    public P provider() {
+        return provider;
+    }
 
-    public abstract ModuleMetadata moduleMetadata();
+    public Class<?> providerClass() {
+        return providerClass;
+    }
 
-    public abstract Qualifier qualifier();
+    public ModuleMetadata moduleMetadata() {
+        return moduleMetadata;
+    }
 
-    public abstract Scope scope();
+    public Qualifier qualifier() {
+        return qualifier;
+    }
 
-    public abstract boolean eager();
+    public Scope scope() {
+        return scope;
+    }
 
-    public abstract boolean isOverrideEnabled();
+    public boolean eager() {
+        return eager;
+    }
 
-    public abstract boolean isCollectionElement();
+    public boolean isOverrideEnabled() {
+        return isOverrideEnabled;
+    }
 
-    // abstract boolean isProxy();  TODO scoped proxy invoke(..) { method.invoke(provider.get(), ...); ... }
+    public boolean isCollectionElement() {
+        return isCollectionElement;
+    }
 
-    @Override public int hashCode() {
+    @Override public final int hashCode() {
         return provider().hashCode() * 67 + qualifier().hashCode();
     }
 
-    @Override public boolean equals(Object target) {
+    @Override public final boolean equals(Object target) {
         if (target == this) {
             return true;
         }
@@ -55,6 +96,10 @@ public abstract class ComponentMetadata<P extends AnnotatedElement> {
         ComponentMetadata<?> componentMetadataTarget = (ComponentMetadata<?>) target;
         return componentMetadataTarget.qualifier().equals(qualifier())
                 && componentMetadataTarget.provider().equals(provider());
+    }
+
+    @Override public final String toString() {
+        return "component[ " + qualifier() + ", provider[ " + provider() + "] ]";
     }
 
 }

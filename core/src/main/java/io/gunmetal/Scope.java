@@ -30,4 +30,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-public @interface Scope { }
+public @interface Scope {
+
+    Class<? extends Enum<? extends io.gunmetal.spi.Scope>> scopeEnum();
+
+    String name();
+
+}

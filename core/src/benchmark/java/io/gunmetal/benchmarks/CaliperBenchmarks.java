@@ -6,7 +6,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import io.gunmetal.ObjectGraph;
-import io.gunmetal.RootModule;
 import io.gunmetal.TemplateGraph;
 import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.E;
@@ -39,27 +38,24 @@ public class CaliperBenchmarks {
     Injector INJECTOR;
     TemplateGraph template;
 
-    @RootModule(modules = NewGunmetalBenchMarkModule.class)
-    static class App { }
-
     static class Dep implements io.gunmetal.Dependency<AA> { }
 
     @BeforeExperiment() void setUp() {
         OBJECT_GRAPH = dagger.ObjectGraph.create(new DaggerBenchMarkModule());
         INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
-        APPLICATION_CONTAINER = io.gunmetal.ObjectGraph.create(App.class).newGraph();
+        APPLICATION_CONTAINER = io.gunmetal.ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class).newInstance();
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
         class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
         newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
-        template = io.gunmetal.ObjectGraph.create(App.class);
+        template = io.gunmetal.ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class);
     }
 
     @Benchmark long newGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            io.gunmetal.ObjectGraph.create(App.class).newGraph().inject(injectionTarget);
+            io.gunmetal.ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class).newInstance().inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
         return dummy;
@@ -68,7 +64,7 @@ public class CaliperBenchmarks {
     @Benchmark long template(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= template.newGraph().get(Dep.class).hashCode();
+            dummy |= template.newInstance().get(Dep.class).hashCode();
         }
         return dummy;
     }

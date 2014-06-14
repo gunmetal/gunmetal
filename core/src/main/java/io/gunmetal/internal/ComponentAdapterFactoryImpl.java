@@ -19,9 +19,7 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
 
 import java.lang.reflect.Method;
@@ -34,23 +32,20 @@ import java.util.List;
 class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
 
     private final InjectorFactory injectorFactory;
-    private final ProvisionStrategyDecorator strategyDecorator;
 
-    ComponentAdapterFactoryImpl(InjectorFactory injectorFactory,
-                                ProvisionStrategyDecorator strategyDecorator) {
+    ComponentAdapterFactoryImpl(InjectorFactory injectorFactory) {
         this.injectorFactory = injectorFactory;
-        this.strategyDecorator = strategyDecorator;
     }
 
     @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata,
-                                                               Linkers linkers) {
+                                                               GraphContext context) {
         Instantiator<T> instantiator =
-                injectorFactory.constructorInstantiator(componentMetadata, linkers);
-        Injector<T> postInjector = injectorFactory.compositeInjector(componentMetadata, linkers);
-        ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
+                injectorFactory.constructorInstantiator(componentMetadata, context);
+        Injector<T> postInjector = injectorFactory.compositeInjector(componentMetadata, context);
+        ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector),
-                linkers);
+                context.linkers());
         return componentAdapter(
                 componentMetadata,
                 provisionStrategy,
@@ -59,13 +54,13 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     }
 
     @Override public <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata,
-                                                                Linkers linkers) {
-        Instantiator<T> instantiator = injectorFactory.methodInstantiator(componentMetadata, linkers);
+                                                                GraphContext context) {
+        Instantiator<T> instantiator = injectorFactory.methodInstantiator(componentMetadata, context);
         Injector<T> postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
-        ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
+        ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector),
-                linkers);
+                context.linkers());
         return componentAdapter(
                 componentMetadata,
                 provisionStrategy,
@@ -74,13 +69,13 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     }
 
     @Override public <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata,
-                                                                        Linkers linkers) {
-        Instantiator<T> instantiator = injectorFactory.statefulMethodInstantiator(componentMetadata, linkers);
+                                                                        GraphContext context) {
+        Instantiator<T> instantiator = injectorFactory.statefulMethodInstantiator(componentMetadata, context);
         Injector<T> postInjector = injectorFactory.lazyCompositeInjector(componentMetadata);
-        ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
+        ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                 componentMetadata,
                 baseProvisionStrategy(componentMetadata, instantiator, postInjector),
-                linkers);
+                context.linkers());
         return componentAdapter(
                 componentMetadata,
                 provisionStrategy,
@@ -89,8 +84,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     }
 
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata<?> componentMetadata,
-                                                     final Instantiator<T> instantiator,
-                                                     final Injector<T> injector) {
+                                                           final Instantiator<T> instantiator,
+                                                           final Injector<T> injector) {
         return new ProvisionStrategy<T>() {
             @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 ResolutionContext.ProvisionContext<T> strategyContext = resolutionContext.getProvisionContext(this);
@@ -139,17 +134,15 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             @Override public ProvisionStrategy<T> provisionStrategy() {
                 return provisionStrategy;
             }
-
-            @Override public ComponentAdapter<T> replicate(Linkers linkers) {
-                Injector<T> newInjector = injector.replicate(linkers);
-                Instantiator<T> newInstantiator = instantiator.replicate(linkers);
-                ProvisionStrategy<T> provisionStrategy = strategyDecorator.decorate(
+            @Override public ComponentAdapter<T> replicate(GraphContext context) {
+                Injector<T> newInjector = injector.replicate(context);
+                Instantiator<T> newInstantiator = instantiator.replicate(context);
+                ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                         metadata,
                         baseProvisionStrategy(metadata, newInstantiator, newInjector),
-                        linkers);
+                        context.linkers());
                 return componentAdapter(metadata, provisionStrategy, newInstantiator, newInjector);
             }
-
             @Override public List<Dependency<?>> dependencies() {
                 List<Dependency<?>> dependencies = new LinkedList<>();
                 dependencies.addAll(instantiator.dependencies());

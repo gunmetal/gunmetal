@@ -17,9 +17,9 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
-import io.gunmetal.Lazy;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
+import io.gunmetal.Lazy;
 import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
@@ -27,7 +27,11 @@ import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.Ref;
-import io.gunmetal.RootModule;
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Linkers;
+import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
+import io.gunmetal.spi.Scope;
 import io.gunmetal.testmocks.A;
 import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.F;
@@ -42,6 +46,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author rees.byars
@@ -55,6 +60,10 @@ public class ApplicationBuilderImplTest {
     @Retention(RetentionPolicy.RUNTIME)
     @io.gunmetal.Qualifier
     public @interface Stateful {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @io.gunmetal.Scope(scopeEnum = CustomScopes.class, name = "TEST")
+    public @interface TestScope {}
 
     interface Bad { }
 
@@ -133,6 +142,24 @@ public class ApplicationBuilderImplTest {
             return System.in;
         }
 
+        @Lazy static List<? extends ProvisionStrategyDecorator> decorators() {
+            return Collections.singletonList(new ProvisionStrategyDecorator() {
+                @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
+                    return delegateStrategy;
+                }
+            });
+        }
+
+        @Lazy static Map<? extends Scope, ? extends ProvisionStrategyDecorator> scopeDecorators() {
+            return Collections.singletonMap(
+                    CustomScopes.TEST,
+                    new ProvisionStrategyDecorator() {
+                        @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
+                            return delegateStrategy;
+                        }
+                    });
+        }
+
     }
 
     @Module(stateful = true)
@@ -165,23 +192,29 @@ public class ApplicationBuilderImplTest {
         @Lazy static M m(ApplicationBuilderImplTest test) {
             return new M();
         }
+    }
 
+    enum CustomScopes implements Scope {
+        TEST;
+        @Override public boolean canInject(Scope scope) {
+            return scope.equals(scope);
+        }
     }
 
     @Test
     public void testBuild() {
 
-        @RootModule(modules = { TestModule.class, StatefulModule.class })
-        class Application { }
+        ObjectGraph app = new GraphBuilder()
+                .build(TestModule.class, StatefulModule.class)
+                .newInstance(new StatefulModule("rees"));
 
-        ObjectGraph app = new GraphBuilderImpl().build(Application.class).newGraph(new StatefulModule("rees"));
-
-        app = app.newGraph(new StatefulModule("rees"));
+        app = app.newInstance(new StatefulModule("rees"));
 
         @Main class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
 
 
         ApplicationBuilderImplTest test = app.get(Dep.class);
+
 
         class BadDep implements io.gunmetal.Dependency<Circ> { }
 
@@ -199,7 +232,10 @@ public class ApplicationBuilderImplTest {
 
         class Dep2 implements io.gunmetal.Dependency<A> { }
 
-        app = ObjectGraph.create(NewGunmetalBenchMarkModule.class).newGraph();
+        app = ObjectGraph
+                .builder()
+                .build(NewGunmetalBenchMarkModule.class)
+                .newInstance();
 
         A a = app.get(Dep2.class);
 
@@ -220,11 +256,7 @@ public class ApplicationBuilderImplTest {
 
     @Test(expected = DependencyException.class)
     public void testBlackList() {
-
-        @RootModule(modules = { TestModule.class, M.class })
-        class Application { }
-
-        new GraphBuilderImpl().build(Application.class);
+        new GraphBuilder().build(TestModule.class, M.class);
     }
 
     @Module(subsumes = MyLibrary.class)
@@ -265,18 +297,12 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testPlus() {
 
-        @RootModule(modules = { TestModule.class })
-        class Parent { }
-
-        @RootModule(modules = { PlusModule.class })
-        class Child { }
-
         @Main
         class Dep implements io.gunmetal.Dependency<PlusModule> { }
 
-        ObjectGraph parent = new GraphBuilderImpl().build(Parent.class).newGraph();
+        ObjectGraph parent = new GraphBuilder().build(TestModule.class).newInstance();
 
-        ObjectGraph child = parent.plus(Child.class).newGraph();
+        ObjectGraph child = parent.plus().build(PlusModule.class).newInstance();
 
         PlusModule p = child.get(Dep.class);
 
@@ -295,7 +321,7 @@ public class ApplicationBuilderImplTest {
 
         assert injectTest.f != null;
 
-        ObjectGraph childCopy = child.newGraph();
+        ObjectGraph childCopy = child.newInstance();
 
         assert child.get(Dep.class) != childCopy.get(Dep.class);
 
@@ -315,17 +341,14 @@ public class ApplicationBuilderImplTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.create(App.class).newGraph();
-
-    @RootModule(modules = NewGunmetalBenchMarkModule.class)
-    static class App { }
+    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.builder().build(NewGunmetalBenchMarkModule.class).newInstance();
 
     static class Dep implements io.gunmetal.Dependency<AA> { }
 
     long newGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= APPLICATION_CONTAINER.newGraph().get(Dep.class).hashCode();
+            dummy |= APPLICATION_CONTAINER.newInstance().get(Dep.class).hashCode();
         }
         return dummy;
     }
