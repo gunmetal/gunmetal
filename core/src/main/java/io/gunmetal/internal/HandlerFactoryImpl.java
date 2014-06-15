@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author rees.byars
@@ -55,8 +56,9 @@ class HandlerFactoryImpl implements HandlerFactory {
     }
 
     @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module,
-                                                                               GraphContext context) {
-        if (context.loadedModules().contains(module)) {
+                                                                               GraphContext context,
+                                                                               Set<Class<?>> loadedModules) {
+        if (loadedModules.contains(module)) {
             return Collections.emptyList();
         }
 
@@ -88,7 +90,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                     .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context)));
         }
         for (Class<?> m : moduleAnnotation.dependsOn()) {
-            requestHandlers.addAll(createHandlersForModule(m, context));
+            requestHandlers.addAll(createHandlersForModule(m, context, loadedModules));
         }
         return requestHandlers;
 
@@ -116,20 +118,15 @@ class HandlerFactoryImpl implements HandlerFactory {
         final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation);
         final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation);
         final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
-        final RequestVisitor moduleClassVisitor = new RequestVisitor() {
-            AccessFilter<Class<?>> classAccessFilter =
-                    AccessFilter.create(moduleAnnotation.access(), module);
-            @Override public void visit(
-                    DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> response) {
-                if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
-                    response.addError(
-                            "The module [" + dependencyRequest.sourceModule().moduleClass().getName()
-                                    + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
-                    );
-                }
+        final AccessFilter<Class<?>> classAccessFilter = AccessFilter.create(moduleAnnotation.access(), module);
+        final RequestVisitor moduleClassVisitor = (dependencyRequest, response) -> {
+            if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
+                response.addError(
+                        "The module [" + dependencyRequest.sourceModule().moduleClass().getName()
+                                + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
+                );
             }
         };
-
         return (dependencyRequest, response) -> {
             moduleClassVisitor.visit(dependencyRequest, response);
             dependsOnVisitor.visit(dependencyRequest, response);

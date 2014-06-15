@@ -42,8 +42,10 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -151,13 +153,16 @@ public class GraphBuilder {
         GraphContext graphContext = GraphContext.create(
                 ProvisionStrategyDecorator::none,
                 graphLinker,
-                Collections.emptyMap(),
-                parentGraph == null ? Collections.emptySet() : parentGraph.graphContext.loadedModules()
+                Collections.emptyMap()
         );
+        Set<Class<?>> loadedModules = new HashSet<>();
+        if (parentGraph != null) {
+            loadedModules.addAll(parentGraph.template.loadedModules);
+        }
 
         for (Class<?> module : modules) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
-                    handlerFactory.createHandlersForModule(module, graphContext);
+                    handlerFactory.createHandlersForModule(module, graphContext, loadedModules);
             handlerCache.putAll(moduleRequestHandlers);
         }
 
@@ -170,7 +175,8 @@ public class GraphBuilder {
                 injectorFactory,
                 strategyDecorator,
                 handlerFactory,
-                handlerCache);
+                handlerCache,
+                loadedModules);
     }
 
     private class Template implements TemplateGraph {
@@ -179,17 +185,20 @@ public class GraphBuilder {
         private final ProvisionStrategyDecorator strategyDecorator;
         private final HandlerFactory handlerFactory;
         private final HandlerCache handlerCache;
+        private final Set<Class<?>> loadedModules;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
         private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
 
         Template(InjectorFactory injectorFactory,
                  ProvisionStrategyDecorator strategyDecorator,
                  HandlerFactory handlerFactory,
-                 HandlerCache handlerCache) {
+                 HandlerCache handlerCache,
+                 Set<Class<?>> loadedModules) {
             this.injectorFactory = injectorFactory;
             this.strategyDecorator = strategyDecorator;
             this.handlerFactory = handlerFactory;
             this.handlerCache = handlerCache;
+            this.loadedModules = loadedModules;
         }
 
         @Override public ObjectGraph newInstance(Object... statefulModules) {
@@ -205,8 +214,7 @@ public class GraphBuilder {
             GraphContext graphContext = GraphContext.create(
                     strategyDecorator,
                     graphLinker,
-                    statefulModulesMap,
-                    parentGraph == null ? Collections.emptySet() : parentGraph.graphContext.loadedModules()
+                    statefulModulesMap
             );
 
             HandlerCache newHandlerCache = handlerCache.replicate(graphContext);
