@@ -120,11 +120,11 @@ class HandlerCache implements Replicable<HandlerCache> {
         collectionRequestHandler.requestHandlers.add(requestHandler);
     }
 
-    @Override public HandlerCache replicate(GraphContext context) {
+    @Override public HandlerCache replicateWith(GraphContext context) {
 
         HandlerCache newCache = new HandlerCache(parentCache);
 
-        myHandlers.forEach(handler -> newCache.putAll(handler.replicate(context)));
+        myHandlers.forEach(handler -> newCache.putAll(handler.replicateWith(context)));
 
         return newCache;
 
@@ -203,10 +203,10 @@ class HandlerCache implements Replicable<HandlerCache> {
             };
         }
 
-        @Override public DependencyRequestHandler<List<T>> replicate(GraphContext context) {
+        @Override public DependencyRequestHandler<List<T>> replicateWith(GraphContext context) {
             CollectionRequestHandler<T> newHandler = new CollectionRequestHandler<>(dependency, subDependency);
             for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                newHandler.requestHandlers.add(requestHandler.replicate(context));
+                newHandler.requestHandlers.add(requestHandler.replicateWith(context));
             }
             return newHandler;
         }

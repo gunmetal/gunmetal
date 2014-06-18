@@ -350,7 +350,7 @@ public class ApplicationBuilderImplTest {
     long newGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= APPLICATION_CONTAINER.newInstance().get(Dep.class).hashCode();
+            dummy |= newGunmetalProvider.get().hashCode();
         }
         return dummy;
     }

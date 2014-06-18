@@ -135,9 +135,9 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             @Override public ProvisionStrategy<T> provisionStrategy() {
                 return provisionStrategy;
             }
-            @Override public ComponentAdapter<T> replicate(GraphContext context) {
-                Injector<T> newInjector = injector.replicate(context);
-                Instantiator<T> newInstantiator = instantiator.replicate(context);
+            @Override public ComponentAdapter<T> replicateWith(GraphContext context) {
+                Injector<T> newInjector = injector.replicateWith(context);
+                Instantiator<T> newInstantiator = instantiator.replicateWith(context);
                 ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                         metadata,
                         baseProvisionStrategy(metadata, newInstantiator, newInjector),

@@ -30,6 +30,7 @@ import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.TypeKey;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -87,7 +88,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 throw new IllegalArgumentException("A class without @Library cannot be subsumed");
             }
             Arrays.stream(library.getDeclaredMethods()).forEach(m -> requestHandlers
-                    .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context)));
+                    .add(libRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context)));
         }
         for (Class<?> m : moduleAnnotation.dependsOn()) {
             requestHandlers.addAll(createHandlersForModule(m, context, loadedModules));
@@ -183,6 +184,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
             boolean qualifierMatch =
                     blackListQualifier.qualifiers().length > 0
+                    && dependencyRequest.sourceQualifier().qualifiers().length > 0
                     && dependencyRequest.sourceQualifier().intersects(blackListQualifier);
 
             if (qualifierMatch) {
@@ -302,6 +304,47 @@ class HandlerFactoryImpl implements HandlerFactory {
                 AccessFilter.create(method));
     }
 
+    private <T> DependencyRequestHandler<T> libRequestHandler(
+            final Method method,
+            Class<?> module,
+            final RequestVisitor moduleRequestVisitor,
+            final ModuleMetadata moduleMetadata,
+            GraphContext context) {
+
+        int modifiers = method.getModifiers();
+
+        if (!Modifier.isStatic(modifiers)) {
+            throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
+                    + method.getName() + "] in module [" + module.getName() + "] is not static.");
+        }
+
+        if (method.getReturnType() == void.class) {
+            throw new IllegalArgumentException("A module's provider methods cannot have a void return type.  The method ["
+                    + method.getName() + "] in module [" + module.getName() + "] is returns void.");
+        }
+
+        ComponentMetadata<Method> componentMetadata = componentMetadataResolver.resolveMetadata(method, moduleMetadata);
+
+        // TODO targeted return type check
+        final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
+                Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
+
+        final AccessFilter<Class<?>> accessFilter = AccessFilter.create(method);
+
+        return requestHandler(
+                componentAdapterFactory.<T>withMethodProvider(componentMetadata, context),
+                dependencies,
+                moduleRequestVisitor,
+                new AccessFilter<Class<?>>() {
+                    @Override public AnnotatedElement filteredElement() {
+                        return method;
+                    }
+                    @Override public boolean isAccessibleTo(Class<?> target) {
+                        return target == moduleMetadata.moduleClass() || accessFilter.isAccessibleTo(target);
+                    }
+                });
+    }
+
     private <T> DependencyRequestHandler<T> statefulRequestHandler(
             final Method method,
             Class<?> module,
@@ -361,7 +404,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                         new DependencyResponseImpl<>(dependencyRequest, componentAdapter.provisionStrategy());
                 moduleRequestVisitor.visit(dependencyRequest, response);
                 scopeVisitor.visit(dependencyRequest, response);
-                if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceOrigin())) {
+                if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
                     response.addError(
                             "The class [" + dependencyRequest.sourceOrigin().getName()
                             + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
@@ -378,9 +421,9 @@ class HandlerFactoryImpl implements HandlerFactory {
                 return componentAdapter.metadata();
             }
 
-            @Override public DependencyRequestHandler<T> replicate(GraphContext context) {
+            @Override public DependencyRequestHandler<T> replicateWith(GraphContext context) {
                 return requestHandler(
-                        componentAdapter.replicate(context),
+                        componentAdapter.replicateWith(context),
                         targets,
                         moduleRequestVisitor,
                         classAccessFilter);

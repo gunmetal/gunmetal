@@ -217,16 +217,16 @@ public class GraphBuilder {
                     statefulModulesMap
             );
 
-            HandlerCache newHandlerCache = handlerCache.replicate(graphContext);
+            HandlerCache newHandlerCache = handlerCache.replicateWith(graphContext);
 
             Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
             for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
-                injectorHashMap.put(entry.getKey(), entry.getValue().replicate(graphContext));
+                injectorHashMap.put(entry.getKey(), entry.getValue().replicateWith(graphContext));
             }
 
             Map<Class<?>, Instantiator<?>> instantiatorHashMap = new HashMap<>();
             for (Map.Entry<Class<?>, Instantiator<?>> entry : instantiators.entrySet()) {
-                instantiatorHashMap.put(entry.getKey(), entry.getValue().replicate(graphContext));
+                instantiatorHashMap.put(entry.getKey(), entry.getValue().replicateWith(graphContext));
             }
 
             InternalProvider internalProvider =
