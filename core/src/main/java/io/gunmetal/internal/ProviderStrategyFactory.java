@@ -18,8 +18,9 @@ class ProviderStrategyFactory implements ReferenceStrategyFactory {
         this.providerAdapter = providerAdapter;
     }
 
-    public <T> ProvisionStrategy<T> create(final ProvisionStrategy<?> componentStrategy,
-                                    final InternalProvider internalProvider) {
+    public <T> ProvisionStrategy<T> create(
+            final ProvisionStrategy<?> componentStrategy,
+            final InternalProvider internalProvider) {
 
         final Object provider = providerAdapter.provider(new Provider<Object>() {
 

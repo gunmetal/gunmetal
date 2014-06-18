@@ -19,6 +19,7 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.DependencyRequest;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author rees.byars
@@ -26,7 +27,8 @@ import java.util.List;
 interface HandlerFactory {
 
     List<DependencyRequestHandler<?>> createHandlersForModule(Class<?> module,
-                                                              GraphContext context);
+                                                              GraphContext context,
+                                                              Set<Class<?>> loadedModules);
 
     <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(DependencyRequest<T> dependencyRequest,
                                                               GraphContext context);

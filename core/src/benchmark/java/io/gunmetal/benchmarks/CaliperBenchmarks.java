@@ -141,7 +141,7 @@ public class CaliperBenchmarks {
         return dummy;
     }
 
-    @Benchmark long newGunmetalProvider(int reps) {
+    @Benchmark long gnewGunmetalProvider(int reps) {
         io.gunmetal.Provider<N> provider = newGunmetalProvider;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
