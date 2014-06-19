@@ -411,8 +411,9 @@ class InjectorFactoryImpl implements InjectorFactory {
                 }
             });
         }
-        @Override public Object inject(T target, InternalProvider internalProvider,
-                                       ResolutionContext resolutionContext) {
+
+        @Override public Object inject(
+                T target, InternalProvider internalProvider, ResolutionContext resolutionContext) {
             if (injectors == null) {
                 synchronized (this) {
                     if (injectors == null) {
