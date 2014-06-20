@@ -30,7 +30,7 @@ public class ObjectGraphTest {
         assertNotNull(
                 configGraph
                         .plus()
-                        .buildTemplate(UiModule.class)
+                        .buildTemplate(UiModule.class, WsModule.class)
                         .newInstance()
                         .get(ControllerDependency.class));
 

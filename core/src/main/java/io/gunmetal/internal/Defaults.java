@@ -71,7 +71,7 @@ final class Defaults {
             @Override public Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier) {
                 // TODO somewhat inefficient
                 if (parameter.isAnnotationPresent(FromModule.class)) {
-                    return parentQualifier;
+                    return QualifierBuilder.qualifier(parameter, io.gunmetal.Qualifier.class).merge(parentQualifier);
                 }
                 return QualifierBuilder.qualifier(parameter, io.gunmetal.Qualifier.class);
             }
@@ -211,7 +211,7 @@ final class Defaults {
         }
 
         static Qualifier qualifier(final Object[] q) {
-            Arrays.sort(q);
+            Arrays.sort(q, (o1, o2) -> o1.getClass().getName().compareTo(o2.getClass().getName()));
             return new Qualifier() {
 
                 Object[] qualifiers = q;
