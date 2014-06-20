@@ -62,6 +62,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         if (loadedModules.contains(module)) {
             return Collections.emptyList();
         }
+        loadedModules.add(module);
 
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {

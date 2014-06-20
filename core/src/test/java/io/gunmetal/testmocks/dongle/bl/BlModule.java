@@ -2,8 +2,10 @@ package io.gunmetal.testmocks.dongle.bl;
 
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
+import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.Provider;
+import io.gunmetal.Ref;
 import io.gunmetal.testmocks.dongle.dal.DalModule;
 import io.gunmetal.testmocks.dongle.dal.DongleDao;
 import io.gunmetal.testmocks.dongle.layers.Bl;
@@ -20,7 +22,8 @@ public class BlModule {
     @Dal class BlackList implements io.gunmetal.BlackList { }
 
     public static DongleService dongleService(@Dal DongleDao dongleDao,
-                                              @FromModule DonglerFactory donglerFactory) {
+                                              @FromModule DonglerFactory donglerFactory,
+                                              @FromModule Ref<RuntimeException> runtimeExceptionRef) {
         return new DongleService() { };
     }
 
@@ -34,6 +37,10 @@ public class BlModule {
 
     static DonglerFactory donglerFactory(@AutoCollection @Bl Provider<List<Dongler>> donglers) {
         return name -> new Dongler(name, donglers.get());
+    }
+
+    @Lazy static RuntimeException runtimeException() {
+        throw new UnsupportedOperationException("this dependency should not be instantiated");
     }
 
 }

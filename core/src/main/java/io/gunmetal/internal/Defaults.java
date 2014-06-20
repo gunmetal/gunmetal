@@ -211,7 +211,7 @@ final class Defaults {
         }
 
         static Qualifier qualifier(final Object[] q) {
-            Arrays.sort(q, (o1, o2) -> o1.hashCode() >= o2.hashCode() ? 1 : 0);
+            Arrays.sort(q, (o1, o2) -> o1.getClass().getName().compareTo(o2.getClass().getName()));
             return new Qualifier() {
 
                 Object[] qualifiers = q;
@@ -255,7 +255,7 @@ final class Defaults {
 
                 @Override public boolean equals(Object o) {
                     return o instanceof Qualifier
-                            && (this == o || equals(((Qualifier) o).qualifiers(), qualifiers));
+                            && (this == o || Arrays.equals(((Qualifier) o).qualifiers(), qualifiers));
                 }
 
                 @Override public int hashCode() {
@@ -264,35 +264,6 @@ final class Defaults {
 
                 @Override public String toString() {
                     return "qualifier[ " + Arrays.toString(qualifiers()) + " ]";
-                }
-
-                boolean equals(Object[] a, Object[] a2) {
-
-                    // TODO can this be optimized?
-
-                    if (a==a2)
-                        return true;
-                    if (a==null || a2==null)
-                        return false;
-
-                    int length = a.length;
-                    if (a2.length != length)
-                        return false;
-
-                    for (int i=0; i<length; i++) {
-                        Object o1 = a[i];
-                        boolean found = false;
-                        for (int ii=0; ii<length; ii++) {
-                            Object o2 = a2[ii];
-                            if (o1!=null && o2!=null && o1.equals(o2))
-                                found = true;
-                        }
-                        if (!found) {
-                            return false;
-                        }
-                    }
-
-                    return true;
                 }
 
             };
