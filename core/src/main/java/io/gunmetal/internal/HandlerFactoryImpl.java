@@ -73,18 +73,12 @@ class HandlerFactoryImpl implements HandlerFactory {
         final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
         final List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
         if (moduleAnnotation.stateful()) {
-            Arrays.stream(module.getDeclaredMethods()).filter(Method::isSynthetic).forEach(m -> {
-                if (!m.isSynthetic()) {
-                    requestHandlers
-                            .add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
-                }
+            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
+                requestHandlers.add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
             });
         } else {
-            Arrays.stream(module.getDeclaredMethods()).forEach(m -> {
-                if (!m.isSynthetic()) {
-                    requestHandlers
-                            .add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
-                }
+            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
+                requestHandlers.add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
             });
         }
         for (Class<?> library : moduleAnnotation.subsumes()) {
@@ -96,11 +90,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                 // TODO better message
                 throw new IllegalArgumentException("A class without @Library cannot be subsumed");
             }
-            Arrays.stream(library.getDeclaredMethods()).forEach(m -> {
-                if (!m.isSynthetic()) {
-                    requestHandlers
-                            .add(libRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
-                }
+            Arrays.stream(library.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
+                requestHandlers.add(libRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
             });
         }
         for (Class<?> m : moduleAnnotation.dependsOn()) {

@@ -5,6 +5,7 @@ import io.gunmetal.testmocks.dongle.layers.Ui;
 import io.gunmetal.testmocks.dongle.layers.Ws;
 import io.gunmetal.testmocks.dongle.ui.DongleController;
 import io.gunmetal.testmocks.dongle.ui.UiModule;
+import io.gunmetal.testmocks.dongle.ui.UserModule;
 import io.gunmetal.testmocks.dongle.ws.DongleResource;
 import io.gunmetal.testmocks.dongle.ws.WsModule;
 import org.junit.Test;
@@ -31,7 +32,7 @@ public class ObjectGraphTest {
                 configGraph
                         .plus()
                         .buildTemplate(UiModule.class, WsModule.class)
-                        .newInstance()
+                        .newInstance(new UserModule("test"))
                         .get(ControllerDependency.class));
 
         assertNotNull(
