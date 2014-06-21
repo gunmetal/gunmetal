@@ -1,5 +1,6 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Overrides;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
@@ -58,11 +59,13 @@ class HandlerCache implements Replicable<HandlerCache> {
                 // TODO better messages.
                 // TODO This could randomly pass/fail in case of multiple non-override enabled
                 // TODO handlers with a single enabled handler.  Low priority.
-                if (previousComponent.isOverrideEnabled() && currentComponent.isOverrideEnabled()) {
+                if (previousComponent.overrides().allowMappingOverride()
+                        && currentComponent.overrides().allowMappingOverride()) {
                     throw new RuntimeException("more than one of type with override enabled");
-                } else if (!previousComponent.isOverrideEnabled() && !currentComponent.isOverrideEnabled()) {
+                } else if (!previousComponent.overrides().allowMappingOverride()
+                        && !currentComponent.overrides().allowMappingOverride()) {
                     throw new RuntimeException("more than one of type without override enabled");
-                } else if (currentComponent.isOverrideEnabled()) {
+                } else if (currentComponent.overrides().allowMappingOverride()) {
                     requestHandlers.put(dependency, requestHandler);
                     myHandlers.add(requestHandler);
                 } // else keep previous
@@ -188,7 +191,7 @@ class HandlerCache implements Replicable<HandlerCache> {
                     null,
                     dependency.qualifier(),
                     Scopes.PROTOTYPE,
-                    false,
+                    Overrides.NONE,
                     false,
                     false) {
                 @Override public Class<?> provider() {

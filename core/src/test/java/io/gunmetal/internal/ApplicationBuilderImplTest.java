@@ -18,12 +18,12 @@ package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
+import io.gunmetal.Overrides;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
-import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Prototype;
 import io.gunmetal.Provider;
 import io.gunmetal.Ref;
@@ -75,11 +75,11 @@ public class ApplicationBuilderImplTest {
     @Module(notAccessibleFrom = TestModule.BlackList.class, dependsOn = StatefulModule.class)
     static class TestModule {
 
-        static Bad providedCirc(Provider<Circ> circProvider) {
+        @Overrides(allowCycle = true) static Bad providedCirc(Provider<Circ> circProvider) {
             return circProvider.get();
         }
 
-        @Prototype static Circ circ() {
+        @Prototype @Overrides(allowCycle = true) static Circ circ() {
             return new Circ();
         }
 
@@ -99,7 +99,7 @@ public class ApplicationBuilderImplTest {
         }
 
 
-        @OverrideEnabled static TestModule tm(ArrayList<Integer> integers) {
+        @Overrides(allowMappingOverride = true) static TestModule tm(ArrayList<Integer> integers) {
             return new TestModule();
         }
 
@@ -205,6 +205,7 @@ public class ApplicationBuilderImplTest {
     public void testBuild() {
 
         ObjectGraph app = ObjectGraph.builder()
+                .requireAcyclic()
                 .buildTemplate(TestModule.class)
                 .newInstance(new StatefulModule("rees"));
 

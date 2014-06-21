@@ -16,6 +16,8 @@
 
 package io.gunmetal.spi;
 
+import io.gunmetal.Overrides;
+
 import java.lang.reflect.AnnotatedElement;
 
 /**
@@ -28,8 +30,8 @@ public class ComponentMetadata<P extends AnnotatedElement> {
     private final ModuleMetadata moduleMetadata;
     private final Qualifier qualifier;
     private final Scope scope;
+    private final Overrides overrides;
     private final boolean eager;
-    private final boolean isOverrideEnabled;
     private final boolean isCollectionElement;
     
     public ComponentMetadata(P provider,
@@ -37,16 +39,16 @@ public class ComponentMetadata<P extends AnnotatedElement> {
                       ModuleMetadata moduleMetadata,
                       Qualifier qualifier,
                       Scope scope,
+                      Overrides overrides,
                       boolean eager,
-                      boolean isOverrideEnabled,
                       boolean isCollectionElement) {
         this.provider = provider;
         this.providerClass = providerClass;
         this.moduleMetadata = moduleMetadata;
         this.qualifier = qualifier;
         this.scope = scope;
+        this.overrides = overrides;
         this.eager = eager;
-        this.isOverrideEnabled = isOverrideEnabled;
         this.isCollectionElement = isCollectionElement;
     }
 
@@ -70,12 +72,12 @@ public class ComponentMetadata<P extends AnnotatedElement> {
         return scope;
     }
 
-    public boolean eager() {
-        return eager;
+    public Overrides overrides() {
+        return overrides;
     }
 
-    public boolean isOverrideEnabled() {
-        return isOverrideEnabled;
+    public boolean eager() {
+        return eager;
     }
 
     public boolean isCollectionElement() {

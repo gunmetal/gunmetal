@@ -20,19 +20,27 @@ class InternalProviderImpl implements InternalProvider {
     private final HandlerFactory handlerFactory;
     private final HandlerCache handlerCache;
     private final GraphContext context;
+    private final boolean requireInterfaces;
 
     InternalProviderImpl(ProviderAdapter providerAdapter,
                          HandlerFactory handlerFactory,
                          HandlerCache handlerCache,
-                         GraphContext context) {
+                         GraphContext context,
+                         boolean requireInterfaces) {
         this.providerAdapter = providerAdapter;
         this.handlerFactory = handlerFactory;
         this.handlerCache = handlerCache;
         this.context = context;
+        this.requireInterfaces = requireInterfaces;
     }
 
     @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
         final Dependency<T> dependency = dependencyRequest.dependency();
+        if (requireInterfaces &&
+                !(dependency.typeKey().raw().isInterface()
+                        || dependencyRequest.sourceComponent().overrides().allowNonInterface())) {
+            throw new IllegalArgumentException("Dependency is not an interface -> " + dependency); // TODO message
+        }
         DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
         if (requestHandler != null) {
             return requestHandler

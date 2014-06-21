@@ -32,9 +32,11 @@ import java.util.List;
 class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
 
     private final InjectorFactory injectorFactory;
+    private final boolean requireAcyclic;
 
-    ComponentAdapterFactoryImpl(InjectorFactory injectorFactory) {
+    ComponentAdapterFactoryImpl(InjectorFactory injectorFactory, boolean requireAcyclic) {
         this.injectorFactory = injectorFactory;
+        this.requireAcyclic = requireAcyclic;
     }
 
     @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata,
@@ -99,6 +101,35 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata<?> componentMetadata,
                                                            final Instantiator<T> instantiator,
                                                            final Injector<T> injector) {
+
+        if (!requireAcyclic || componentMetadata.overrides().allowCycle()) {
+            return cyclicResolutionProvisionStrategy(componentMetadata, instantiator, injector);
+        }
+
+        return (internalProvider, resolutionContext) -> {
+            ResolutionContext.ProvisionContext<T> strategyContext =
+                    resolutionContext.provisionContext(componentMetadata);
+            if (strategyContext.state != ResolutionContext.States.NEW) {
+                throw new CircularReferenceException(componentMetadata);
+            }
+            strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
+            try {
+                strategyContext.component = instantiator.newInstance(internalProvider, resolutionContext);
+                strategyContext.state = ResolutionContext.States.PRE_INJECTION;
+                injector.inject(strategyContext.component, internalProvider, resolutionContext);
+                strategyContext.state = ResolutionContext.States.NEW;
+                return strategyContext.component;
+            } catch (CircularReferenceException e) {
+                e.push(componentMetadata);
+                throw e;
+            }
+        };
+
+    }
+
+    private <T> ProvisionStrategy<T> cyclicResolutionProvisionStrategy(final ComponentMetadata<?> componentMetadata,
+                                                           final Instantiator<T> instantiator,
+                                                           final Injector<T> injector) {
         return new ProvisionStrategy<T>() {
             @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 ResolutionContext.ProvisionContext<T> strategyContext =
@@ -129,6 +160,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                     } else if (e.getReverseStrategy() == null) {
                         e.setReverseStrategy(this);
                     }
+                    e.push(componentMetadata);
                     throw e;
                 }
             }

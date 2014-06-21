@@ -311,7 +311,10 @@ class InjectorFactoryImpl implements InjectorFactory {
             try {
                 return function.invoke(target, parameters);
             } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-                throw new RuntimeException("TODO injection exception", e);
+                if (e.getCause() != null && e.getCause() instanceof RuntimeException) {
+                    throw (RuntimeException) e.getCause();
+                }
+                throw new RuntimeException(e);
             }
         }
 

@@ -18,9 +18,9 @@ package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
+import io.gunmetal.Overrides;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
-import io.gunmetal.OverrideEnabled;
 import io.gunmetal.Provider;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ComponentMetadata;
@@ -84,7 +84,7 @@ final class Defaults {
 
             Qualifier qualifier;
             Scope scope;
-            boolean overrideEnabled = false;
+            Overrides overrides = Overrides.NONE;
             boolean collectionElement = false;
             boolean eager = true;
 
@@ -96,8 +96,8 @@ final class Defaults {
                 io.gunmetal.Scope scopeAnnotation = null;
                 for (Annotation annotation : annotatedElement.getAnnotations()) {
                     Class<? extends Annotation> annotationType = annotation.annotationType();
-                    if (annotationType == OverrideEnabled.class) {
-                        overrideEnabled = true;
+                    if (annotationType == Overrides.class) {
+                        overrides = (Overrides) annotation;
                     } else if (annotationType == AutoCollection.class) {
                         collectionElement = true;
                         qualifiers.add(annotation);
@@ -146,8 +146,8 @@ final class Defaults {
                         moduleMetadata,
                         resolver.qualifier,
                         resolver.scope,
+                        resolver.overrides,
                         resolver.eager,
-                        resolver.overrideEnabled,
                         resolver.collectionElement);
             }
 
@@ -160,8 +160,8 @@ final class Defaults {
                         moduleMetadata,
                         resolver.qualifier,
                         resolver.scope,
+                        resolver.overrides,
                         resolver.eager,
-                        resolver.overrideEnabled,
                         resolver.collectionElement);
             }
         };

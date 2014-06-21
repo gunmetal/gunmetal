@@ -25,6 +25,10 @@ public class ObjectGraphTest {
 
         ObjectGraph configGraph = ObjectGraph
                 .builder()
+                .requireAcyclic()
+                .requireExplicitModuleDependencies()
+                .restrictSetterInjection()
+                .restrictFieldInjection()
                 .buildTemplate(RootModule.class)
                 .newInstance();
 

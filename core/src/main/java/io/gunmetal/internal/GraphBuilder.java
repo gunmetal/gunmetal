@@ -37,6 +37,7 @@ import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.Scopes;
 import io.gunmetal.util.Generics;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GraphBuilder {
 
+    private MutableGraphMetadata graphMetadata;
     private ClassWalker classWalker;
     private QualifierResolver qualifierResolver;
     private ComponentMetadataResolver componentMetadataResolver;
@@ -67,10 +69,100 @@ public class GraphBuilder {
         this.componentMetadataResolver = defaults.componentMetadataResolver();
         this.constructorResolver = defaults.constructorResolver();
         this.providerAdapter = defaults.providerAdapter();
+        graphMetadata = new MutableGraphMetadata();
     }
 
-    GraphBuilder(Graph parentGraph) {
+    private GraphBuilder(Graph parentGraph,
+                         MutableGraphMetadata graphMetadata,
+                         ClassWalker classWalker,
+                         QualifierResolver qualifierResolver,
+                         ComponentMetadataResolver componentMetadataResolver,
+                         ConstructorResolver constructorResolver,
+                         ProviderAdapter providerAdapter) {
         this.parentGraph = parentGraph;
+        this.graphMetadata = graphMetadata;
+        this.classWalker = classWalker;
+        this.qualifierResolver = qualifierResolver;
+        this.componentMetadataResolver = componentMetadataResolver;
+        this.constructorResolver = constructorResolver;
+        this.providerAdapter = providerAdapter;
+    }
+
+    private GraphBuilder plus(Graph parentGraph) {
+        return new GraphBuilder(
+                parentGraph,
+                graphMetadata,
+                classWalker,
+                qualifierResolver,
+                componentMetadataResolver,
+                constructorResolver,
+                providerAdapter);
+    }
+
+    public GraphBuilder requireQualifiers() {
+        graphMetadata.setRequireQualifiers(true);
+        return this;
+    }
+
+    public GraphBuilder restrictPluralQualifiers() {
+        graphMetadata.setRestrictPluralQualifiers(true);
+        return this;
+    }
+
+    public GraphBuilder requireInterfaces() {
+        graphMetadata.setRequireInterfaces(true);
+        return this;
+    }
+
+    public GraphBuilder requireAcyclic() {
+        graphMetadata.setRequireAcyclic(true);
+        return this;
+    }
+
+    public GraphBuilder requireExplicitModuleDependencies() {
+        graphMetadata.setRequireExplicitModuleDependencies(true);
+        return this;
+    }
+
+    public GraphBuilder restrictFieldInjection() {
+        graphMetadata.setRestrictFieldInjection(true);
+        return this;
+    }
+
+    public GraphBuilder restrictSetterInjection() {
+        graphMetadata.setRestrictSetterInjection(true);
+        return this;
+    }
+
+    public GraphBuilder withInjectAnnotation(Class<? extends Annotation> injectAnnotation) {
+        graphMetadata.setInjectAnnotation(injectAnnotation);
+        return this;
+    }
+
+    public GraphBuilder withQualifierAnnotation(Class<? extends Annotation> qualifierAnnotation) {
+        graphMetadata.setQualifierAnnotation(qualifierAnnotation);
+        return this;
+    }
+
+    public GraphBuilder withEagerAnnotation(Class<? extends Annotation> eagerAnnotation, boolean indicatesEager) {
+        graphMetadata.setEagerAnnotation(eagerAnnotation);
+        graphMetadata.setIndicatesEager(indicatesEager);
+        return this;
+    }
+
+    public GraphBuilder withJsr330Metadata() {
+        // TODO @Scope and @Singleton handling and @Inject constructor resolver
+        return restrictPluralQualifiers()
+                .withInjectAnnotation(javax.inject.Inject.class)
+                .withQualifierAnnotation(javax.inject.Qualifier.class)
+                .withProviderAdapter(new ProviderAdapter() {
+                    @Override public boolean isProvider(Dependency<?> dependency) {
+                        return javax.inject.Provider.class.isAssignableFrom(dependency.typeKey().raw());
+                    }
+                    @Override public Object provider(Provider<?> provider) {
+                        return (javax.inject.Provider) provider::get;
+                    }
+                });
     }
 
     public GraphBuilder withClassWalker(ClassWalker classWalker) {
@@ -140,12 +232,13 @@ public class GraphBuilder {
                 classWalker);
 
         ComponentAdapterFactory componentAdapterFactory =
-                new ComponentAdapterFactoryImpl(injectorFactory);
+                new ComponentAdapterFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
 
         HandlerFactory handlerFactory = new HandlerFactoryImpl(
                 componentAdapterFactory,
                 qualifierResolver,
-                componentMetadataResolver);
+                componentMetadataResolver,
+                graphMetadata.isRequireExplicitModuleDependencies());
 
         HandlerCache handlerCache = new HandlerCache(parentGraph == null ? null : parentGraph.handlerCache);
 
@@ -167,7 +260,12 @@ public class GraphBuilder {
         }
 
         InternalProvider internalProvider =
-                new InternalProviderImpl(providerAdapter, handlerFactory, handlerCache, graphContext);
+                new InternalProviderImpl(
+                        providerAdapter,
+                        handlerFactory,
+                        handlerCache,
+                        graphContext,
+                        graphMetadata.isRequireInterfaces());
 
         graphLinker.linkGraph(internalProvider, ResolutionContext.create());
 
@@ -234,7 +332,8 @@ public class GraphBuilder {
                             providerAdapter,
                             handlerFactory,
                             newHandlerCache,
-                            graphContext);
+                            graphContext,
+                            graphMetadata.isRequireInterfaces());
 
             graphLinker.linkAll(internalProvider, ResolutionContext.create());
 
@@ -366,12 +465,7 @@ public class GraphBuilder {
         }
 
         @Override public GraphBuilder plus() {
-            return new GraphBuilder(this)
-                    .withClassWalker(classWalker)
-                    .withComponentMetadataResolver(componentMetadataResolver)
-                    .withConstructorResolver(constructorResolver)
-                    .withProviderAdapter(providerAdapter)
-                    .withQualifierResolver(qualifierResolver);
+            return GraphBuilder.this.plus(this);
         }
 
         @Override public ObjectGraph newInstance(Object... statefulModules) {

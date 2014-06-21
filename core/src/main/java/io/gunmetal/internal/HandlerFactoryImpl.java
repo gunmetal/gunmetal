@@ -47,13 +47,16 @@ class HandlerFactoryImpl implements HandlerFactory {
     private final ComponentAdapterFactory componentAdapterFactory;
     private final QualifierResolver qualifierResolver;
     private final ComponentMetadataResolver componentMetadataResolver;
+    private final boolean requireExplicitModuleDependencies;
 
     HandlerFactoryImpl(ComponentAdapterFactory componentAdapterFactory,
                        QualifierResolver qualifierResolver,
-                       ComponentMetadataResolver componentMetadataResolver) {
+                       ComponentMetadataResolver componentMetadataResolver,
+                       boolean requireExplicitModuleDependencies) {
         this.componentAdapterFactory = componentAdapterFactory;
         this.qualifierResolver = qualifierResolver;
         this.componentMetadataResolver = componentMetadataResolver;
+        this.requireExplicitModuleDependencies = requireExplicitModuleDependencies;
     }
 
     @Override public List<DependencyRequestHandler<?>> createHandlersForModule(final Class<?> module,
@@ -259,8 +262,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                 return;
             }
 
-            if (requestSourceModule.referencedModules().length == 0) {
-                return; //TODO
+            if (requestSourceModule.referencedModules().length == 0 && !requireExplicitModuleDependencies) {
+                return;
             }
 
             for (Class<?> dependency : requestSourceModule.referencedModules()) {
