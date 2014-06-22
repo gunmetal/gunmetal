@@ -1,10 +1,16 @@
 package io.gunmetal;
 
+import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Linkers;
+import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.testmocks.dongle.config.RootModule;
 import io.gunmetal.testmocks.dongle.layers.Ui;
 import io.gunmetal.testmocks.dongle.layers.Ws;
+import io.gunmetal.testmocks.dongle.scope.Scopes;
 import io.gunmetal.testmocks.dongle.ui.DongleController;
 import io.gunmetal.testmocks.dongle.ui.UiModule;
+import io.gunmetal.testmocks.dongle.ui.UserModule;
 import io.gunmetal.testmocks.dongle.ws.DongleResource;
 import io.gunmetal.testmocks.dongle.ws.WsModule;
 import org.junit.Test;
@@ -24,6 +30,29 @@ public class ObjectGraphTest {
 
         ObjectGraph configGraph = ObjectGraph
                 .builder()
+                .requireAcyclic()
+                .requireExplicitModuleDependencies()
+                .restrictSetterInjection()
+                .restrictFieldInjection()
+                .addScope(
+                        io.gunmetal.testmocks.dongle.scope.Thread.class,
+                        Scopes.THREAD,
+                        new ProvisionStrategyDecorator() {
+                            @Override public <T> ProvisionStrategy<T> decorate(
+                                    ComponentMetadata<?> componentMetadata,
+                                    final ProvisionStrategy<T> delegateStrategy,
+                                    Linkers linkers) {
+                                final ThreadLocal<T> threadLocal = new ThreadLocal<>();
+                                return (p, c) -> {
+                                    T t = threadLocal.get();
+                                    if (t == null) {
+                                        t = delegateStrategy.get(p, c);
+                                        threadLocal.set(t);
+                                    }
+                                    return t;
+                                };
+                            }
+                        })
                 .buildTemplate(RootModule.class)
                 .newInstance();
 
@@ -31,7 +60,7 @@ public class ObjectGraphTest {
                 configGraph
                         .plus()
                         .buildTemplate(UiModule.class, WsModule.class)
-                        .newInstance()
+                        .newInstance(new UserModule("test"))
                         .get(ControllerDependency.class));
 
         assertNotNull(

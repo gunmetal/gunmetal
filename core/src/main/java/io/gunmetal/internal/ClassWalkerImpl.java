@@ -28,21 +28,35 @@ import java.lang.reflect.Method;
 class ClassWalkerImpl implements ClassWalker {
 
     private final InjectionResolver injectionResolver;
+    private final boolean restrictFieldInjection;
+    private final boolean restrictSetterInjection;
 
-    ClassWalkerImpl(InjectionResolver injectionResolver) {
+    ClassWalkerImpl(InjectionResolver injectionResolver,
+                    boolean restrictFieldInjection,
+                    boolean restrictSetterInjection) {
         this.injectionResolver = injectionResolver;
+        this.restrictFieldInjection = restrictFieldInjection;
+        this.restrictSetterInjection = restrictSetterInjection;
     }
 
-    @Override public void walk(Class<?> classToWalk, InjectedMemberVisitor memberVisitor) {
+    @Override public void walk(Class<?> classToWalk,
+                               InjectedMemberVisitor<Field> fieldVisitor,
+                               InjectedMemberVisitor<Method> methodVisitor) {
         for (Class<?> cls = classToWalk; cls != Object.class; cls = cls.getSuperclass()) {
-            for (final Field field : cls.getDeclaredFields()) {
+            for (Field field : cls.getDeclaredFields()) {
                 if (injectionResolver.shouldInject(field)) {
-                    memberVisitor.visit(field);
+                    if (restrictFieldInjection) {
+                        throw new IllegalArgumentException("Field injection restricted [" + field + "]");
+                    }
+                    fieldVisitor.visit(field);
                 }
             }
-            for (final Method method : cls.getDeclaredMethods()) {
+            for (Method method : cls.getDeclaredMethods()) {
                 if (injectionResolver.shouldInject(method)) {
-                    memberVisitor.visit(method);
+                    if (restrictSetterInjection) {
+                        throw new IllegalArgumentException("Method injection restricted [" + method + "]");
+                    }
+                    methodVisitor.visit(method);
                 }
             }
         }

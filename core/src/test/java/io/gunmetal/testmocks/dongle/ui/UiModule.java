@@ -3,7 +3,7 @@ package io.gunmetal.testmocks.dongle.ui;
 import io.gunmetal.FromModule;
 import io.gunmetal.Module;
 import io.gunmetal.testmocks.dongle.auth.AuthAdapter;
-import io.gunmetal.testmocks.dongle.auth.AuthModule;
+import io.gunmetal.testmocks.dongle.auth.AuthLib;
 import io.gunmetal.testmocks.dongle.auth.AuthService;
 import io.gunmetal.testmocks.dongle.bl.BlModule;
 import io.gunmetal.testmocks.dongle.bl.DongleService;
@@ -17,7 +17,10 @@ import java.util.Map;
 /**
  * @author rees.byars
  */
-@Ui @Module(subsumes = AuthModule.class, dependsOn = BlModule.class, onlyAccessibleFrom = UiModule.WhiteList.class)
+@Ui @Module(
+        subsumes = AuthLib.class,
+        dependsOn = {BlModule.class, UserModule.class},
+        onlyAccessibleFrom = UiModule.WhiteList.class)
 public class UiModule {
 
     @Ui class WhiteList implements io.gunmetal.WhiteList { }
@@ -29,7 +32,7 @@ public class UiModule {
         return new DongleController();
     }
 
-    @Thread private static Map<String, String> requestContext() {
+    @Thread private static Map<String, String> requestContext(@FromModule User user) {
         return new HashMap<>();
     }
 

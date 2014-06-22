@@ -23,6 +23,8 @@ import java.lang.reflect.AnnotatedElement;
  */
 public interface DependencyRequest<T> {
 
+    // TODO cleanup duplication between methods here and those on the component metadata
+
     AnnotatedElement source();
 
     Class<?> sourceOrigin();
@@ -32,6 +34,8 @@ public interface DependencyRequest<T> {
     Scope sourceScope();
 
     ModuleMetadata sourceModule();
+
+    ComponentMetadata<?> sourceComponent();
 
     Dependency<T> dependency();
 
@@ -57,6 +61,10 @@ public interface DependencyRequest<T> {
 
             @Override public ModuleMetadata sourceModule() {
                 return requestingComponent.moduleMetadata();
+            }
+
+            @Override public ComponentMetadata<?> sourceComponent() {
+                return requestingComponent;
             }
 
             @Override public Dependency<T> dependency() {
@@ -90,6 +98,10 @@ public interface DependencyRequest<T> {
 
             @Override public ModuleMetadata sourceModule() {
                 return dependencyRequest.sourceModule();
+            }
+
+            @Override public ComponentMetadata<?> sourceComponent() {
+                return dependencyRequest.sourceComponent();
             }
 
             @Override public Dependency<T> dependency() {

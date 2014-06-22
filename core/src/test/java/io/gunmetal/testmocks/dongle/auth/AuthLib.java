@@ -7,7 +7,7 @@ import io.gunmetal.Library;
  * @author rees.byars
  */
 @Library
-public class AuthModule {
+public class AuthLib {
 
     private static AuthService authService(@FromModule AuthAdapter authAdapter) {
         return new AuthService();

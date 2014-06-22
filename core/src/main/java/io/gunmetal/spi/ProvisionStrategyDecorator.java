@@ -17,7 +17,6 @@
 package io.gunmetal.spi;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author rees.byars
@@ -35,9 +34,6 @@ public interface ProvisionStrategyDecorator {
             Linkers linkers) {
         return delegateStrategy;
     }
-
-    class ScopeDecoratorsDependency
-            implements io.gunmetal.Dependency<Map<? extends Scope, ? extends ProvisionStrategyDecorator>> { }
 
     class DecoratorsDependency
             implements io.gunmetal.Dependency<List<? extends ProvisionStrategyDecorator>> { }

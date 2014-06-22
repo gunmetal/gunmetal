@@ -52,7 +52,7 @@ public class ClassWalkerImplTest {
     public void testWalk(@Mocked final InjectionResolver injectionResolver,
                          @Mocked final ClassWalker.InjectedMemberVisitor memberVisitor) {
 
-        ClassWalker walker = new ClassWalkerImpl(injectionResolver);
+        ClassWalker walker = new ClassWalkerImpl(injectionResolver, false, false);
 
         new Expectations() {
             {
@@ -62,7 +62,7 @@ public class ClassWalkerImplTest {
             }
         };
 
-        walker.walk(getClass(), memberVisitor);
+        walker.walk(getClass(), memberVisitor, memberVisitor);
 
         new Expectations() {
             {
@@ -74,7 +74,7 @@ public class ClassWalkerImplTest {
             }
         };
 
-        walker.walk(Inner.class, memberVisitor);
+        walker.walk(Inner.class, memberVisitor, memberVisitor);
 
     }
 }
