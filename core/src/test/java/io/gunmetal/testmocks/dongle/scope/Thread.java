@@ -9,6 +9,6 @@ import java.lang.annotation.RetentionPolicy;
  * @author rees.byars
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Scope(scopeEnum = Scopes.class, name = "THREAD")
+@Scope
 public @interface Thread {
 }

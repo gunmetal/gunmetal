@@ -3,7 +3,7 @@ package io.gunmetal.testmocks.dongle.ui;
 import io.gunmetal.FromModule;
 import io.gunmetal.Module;
 import io.gunmetal.testmocks.dongle.auth.AuthAdapter;
-import io.gunmetal.testmocks.dongle.auth.AuthModule;
+import io.gunmetal.testmocks.dongle.auth.AuthLib;
 import io.gunmetal.testmocks.dongle.auth.AuthService;
 import io.gunmetal.testmocks.dongle.bl.BlModule;
 import io.gunmetal.testmocks.dongle.bl.DongleService;
@@ -18,7 +18,7 @@ import java.util.Map;
  * @author rees.byars
  */
 @Ui @Module(
-        subsumes = AuthModule.class,
+        subsumes = AuthLib.class,
         dependsOn = {BlModule.class, UserModule.class},
         onlyAccessibleFrom = UiModule.WhiteList.class)
 public class UiModule {

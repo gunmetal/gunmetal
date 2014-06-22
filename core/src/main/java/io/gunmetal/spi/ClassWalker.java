@@ -24,11 +24,12 @@ import java.lang.reflect.Method;
  */
 public interface ClassWalker {
 
-    void walk(Class<?> classToWalk, InjectedMemberVisitor memberVisitor);
+    void walk(Class<?> classToWalk,
+              InjectedMemberVisitor<Field> fieldVisitor,
+              InjectedMemberVisitor<Method> methodVisitor);
 
-    interface InjectedMemberVisitor {
-        void visit(Field injectedField);
-        void visit(Method injectedMethod);
+    interface InjectedMemberVisitor<M> {
+        void visit(M member);
     }
 
 }

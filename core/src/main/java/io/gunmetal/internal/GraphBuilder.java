@@ -16,14 +16,14 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.Inject;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.Provider;
 import io.gunmetal.TemplateGraph;
-import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ComponentMetadata;
-import io.gunmetal.spi.ComponentMetadataResolver;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ModuleMetadata;
@@ -31,10 +31,14 @@ import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
-import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.Scopes;
+import io.gunmetal.spi.impl.AnnotationInjectionResolver;
+import io.gunmetal.spi.impl.ExactlyOneConstructorResolver;
+import io.gunmetal.spi.impl.GunmetalProviderAdapter;
+import io.gunmetal.spi.impl.Jsr330ProviderAdapter;
+import io.gunmetal.spi.impl.LeastGreedyConstructorResolver;
 import io.gunmetal.util.Generics;
 
 import java.lang.annotation.Annotation;
@@ -52,60 +56,60 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author rees.byars
  */
-public class GraphBuilder {
+public final class GraphBuilder {
 
     private MutableGraphMetadata graphMetadata;
-    private ClassWalker classWalker;
-    private QualifierResolver qualifierResolver;
-    private ComponentMetadataResolver componentMetadataResolver;
+    private InjectionResolver injectionResolver;
+    private ConfigurableMetadataResolver configurableMetadataResolver;
     private ConstructorResolver constructorResolver;
     private ProviderAdapter providerAdapter;
+    private Map<Scope, ProvisionStrategyDecorator> scopeDecorators;
     private Graph parentGraph;
 
     public GraphBuilder() {
-        Defaults defaults = new Defaults();
-        this.classWalker = defaults.classWalker();
-        this.qualifierResolver = defaults.qualifierResolver();
-        this.componentMetadataResolver = defaults.componentMetadataResolver();
-        this.constructorResolver = defaults.constructorResolver();
-        this.providerAdapter = defaults.providerAdapter();
         graphMetadata = new MutableGraphMetadata();
+        injectionResolver = new AnnotationInjectionResolver(Inject.class);
+        configurableMetadataResolver = new ConfigurableMetadataResolver();
+        constructorResolver = new LeastGreedyConstructorResolver();
+        providerAdapter = new GunmetalProviderAdapter();
+        scopeDecorators = new HashMap<>();
+        scopeDecorators.put(Scopes.UNDEFINED, ProvisionStrategyDecorator::none);
     }
 
     private GraphBuilder(Graph parentGraph,
                          MutableGraphMetadata graphMetadata,
-                         ClassWalker classWalker,
-                         QualifierResolver qualifierResolver,
-                         ComponentMetadataResolver componentMetadataResolver,
+                         InjectionResolver injectionResolver,
+                         ConfigurableMetadataResolver configurableMetadataResolver,
                          ConstructorResolver constructorResolver,
-                         ProviderAdapter providerAdapter) {
+                         ProviderAdapter providerAdapter,
+                         Map<Scope, ProvisionStrategyDecorator> scopeDecorators) {
         this.parentGraph = parentGraph;
         this.graphMetadata = graphMetadata;
-        this.classWalker = classWalker;
-        this.qualifierResolver = qualifierResolver;
-        this.componentMetadataResolver = componentMetadataResolver;
+        this.injectionResolver = injectionResolver;
+        this.configurableMetadataResolver = configurableMetadataResolver;
         this.constructorResolver = constructorResolver;
         this.providerAdapter = providerAdapter;
+        this.scopeDecorators = scopeDecorators;
     }
 
     private GraphBuilder plus(Graph parentGraph) {
         return new GraphBuilder(
                 parentGraph,
-                graphMetadata,
-                classWalker,
-                qualifierResolver,
-                componentMetadataResolver,
+                graphMetadata.replicate(),
+                injectionResolver,
+                configurableMetadataResolver.replicate(),
                 constructorResolver,
-                providerAdapter);
+                providerAdapter,
+                new HashMap<>(scopeDecorators));
     }
 
     public GraphBuilder requireQualifiers() {
-        graphMetadata.setRequireQualifiers(true);
+        configurableMetadataResolver.requireQualifiers(true);
         return this;
     }
 
     public GraphBuilder restrictPluralQualifiers() {
-        graphMetadata.setRestrictPluralQualifiers(true);
+        configurableMetadataResolver.restrictPluralQualifiers(true);
         return this;
     }
 
@@ -134,49 +138,38 @@ public class GraphBuilder {
         return this;
     }
 
-    public GraphBuilder withInjectAnnotation(Class<? extends Annotation> injectAnnotation) {
-        graphMetadata.setInjectAnnotation(injectAnnotation);
+    public GraphBuilder withQualifierType(Class<? extends Annotation> qualifierType) {
+        configurableMetadataResolver.qualifierType(qualifierType);
         return this;
     }
 
-    public GraphBuilder withQualifierAnnotation(Class<? extends Annotation> qualifierAnnotation) {
-        graphMetadata.setQualifierAnnotation(qualifierAnnotation);
+    public GraphBuilder withEagerType(Class<? extends Annotation> eagerType, boolean indicatesEager) {
+        configurableMetadataResolver.eagerType(eagerType, indicatesEager);
         return this;
     }
 
-    public GraphBuilder withEagerAnnotation(Class<? extends Annotation> eagerAnnotation, boolean indicatesEager) {
-        graphMetadata.setEagerAnnotation(eagerAnnotation);
-        graphMetadata.setIndicatesEager(indicatesEager);
+    public GraphBuilder addScope(Class<? extends Annotation> scopeType,
+                                 Scope scope,
+                                 ProvisionStrategyDecorator scopeDecorator) {
+        configurableMetadataResolver.addScope(scopeType, scope);
+        scopeDecorators.put(scope, scopeDecorator);
         return this;
     }
 
     public GraphBuilder withJsr330Metadata() {
-        // TODO @Scope and @Singleton handling and @Inject constructor resolver
-        return restrictPluralQualifiers()
-                .withInjectAnnotation(javax.inject.Inject.class)
-                .withQualifierAnnotation(javax.inject.Qualifier.class)
-                .withProviderAdapter(new ProviderAdapter() {
-                    @Override public boolean isProvider(Dependency<?> dependency) {
-                        return javax.inject.Provider.class.isAssignableFrom(dependency.typeKey().raw());
-                    }
-                    @Override public Object provider(Provider<?> provider) {
-                        return (javax.inject.Provider) provider::get;
-                    }
-                });
+        configurableMetadataResolver
+                .scopeType(javax.inject.Scope.class)
+                .addScope(javax.inject.Singleton.class, Scopes.SINGLETON)
+                .addScope(null, Scopes.PROTOTYPE)
+                .qualifierType(javax.inject.Qualifier.class)
+                .restrictPluralQualifiers(true);
+        return withInjectionResolver(new AnnotationInjectionResolver(javax.inject.Inject.class))
+                .withConstructorResolver(new ExactlyOneConstructorResolver(injectionResolver))
+                .withProviderAdapter(new Jsr330ProviderAdapter());
     }
 
-    public GraphBuilder withClassWalker(ClassWalker classWalker) {
-        this.classWalker = classWalker;
-        return this;
-    }
-
-    public GraphBuilder withQualifierResolver(QualifierResolver qualifierResolver) {
-        this.qualifierResolver = qualifierResolver;
-        return this;
-    }
-
-    public GraphBuilder withComponentMetadataResolver(ComponentMetadataResolver componentMetadataResolver) {
-        this.componentMetadataResolver = componentMetadataResolver;
+    public GraphBuilder withInjectionResolver(InjectionResolver injectionResolver) {
+        this.injectionResolver = injectionResolver;
         return this;
     }
 
@@ -193,14 +186,7 @@ public class GraphBuilder {
     public TemplateGraph buildTemplate(Class<?>... modules) {
 
         List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
-        Map<Scope, ProvisionStrategyDecorator> scopeDecorators = new HashMap<>();
-        scopeDecorators.put(Scopes.UNDEFINED, ProvisionStrategyDecorator::none);
         if (parentGraph != null) {
-            Map<? extends Scope, ? extends ProvisionStrategyDecorator> parentScopeDecorators =
-                    parentGraph.get(ProvisionStrategyDecorator.ScopeDecoratorsDependency.class);
-            if (parentScopeDecorators != null) {
-                scopeDecorators.putAll(parentScopeDecorators);
-            }
             List<? extends ProvisionStrategyDecorator> parentDecorators =
                     parentGraph.get(ProvisionStrategyDecorator.DecoratorsDependency.class);
             if (parentDecorators != null) {
@@ -227,17 +213,20 @@ public class GraphBuilder {
         };
 
         InjectorFactory injectorFactory = new InjectorFactoryImpl(
-                qualifierResolver,
+                configurableMetadataResolver,
                 constructorResolver,
-                classWalker);
+                new ClassWalkerImpl(
+                        injectionResolver,
+                        graphMetadata.isRestrictFieldInjection(),
+                        graphMetadata.isRestrictSetterInjection()));
 
         ComponentAdapterFactory componentAdapterFactory =
                 new ComponentAdapterFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
 
         HandlerFactory handlerFactory = new HandlerFactoryImpl(
                 componentAdapterFactory,
-                qualifierResolver,
-                componentMetadataResolver,
+                configurableMetadataResolver,
+                configurableMetadataResolver,
                 graphMetadata.isRequireExplicitModuleDependencies());
 
         HandlerCache handlerCache = new HandlerCache(parentGraph == null ? null : parentGraph.handlerCache);
@@ -382,10 +371,10 @@ public class GraphBuilder {
 
             if (injector == null) {
 
-                final Qualifier qualifier = qualifierResolver.resolve(targetClass);
+                final Qualifier qualifier = configurableMetadataResolver.resolve(targetClass);
 
                 injector = template.injectorFactory.compositeInjector(
-                        componentMetadataResolver.resolveMetadata(
+                        configurableMetadataResolver.resolveMetadata(
                                 targetClass,
                                 new ModuleMetadata(targetClass, qualifier, new Class<?>[0])),
                         graphContext);
@@ -413,10 +402,10 @@ public class GraphBuilder {
 
             if (instantiator == null) {
 
-                final Qualifier qualifier = qualifierResolver.resolve(injectionTarget);
+                final Qualifier qualifier = configurableMetadataResolver.resolve(injectionTarget);
 
                 instantiator = template.injectorFactory.constructorInstantiator(
-                        componentMetadataResolver.resolveMetadata(
+                        configurableMetadataResolver.resolveMetadata(
                                 injectionTarget,
                                 new ModuleMetadata(injectionTarget, qualifier, new Class<?>[0])),
                         graphContext);
@@ -433,7 +422,7 @@ public class GraphBuilder {
 
         @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
 
-            Qualifier qualifier = qualifierResolver.resolve(dependencySpec);
+            Qualifier qualifier = configurableMetadataResolver.resolve(dependencySpec);
             Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
             Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
             Dependency<T> dependency = Dependency.from(

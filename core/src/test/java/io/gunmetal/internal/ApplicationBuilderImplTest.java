@@ -62,7 +62,7 @@ public class ApplicationBuilderImplTest {
     public @interface Stateful {}
 
     @Retention(RetentionPolicy.RUNTIME)
-    @io.gunmetal.Scope(scopeEnum = CustomScopes.class, name = "TEST")
+    @io.gunmetal.Scope
     public @interface TestScope {}
 
     interface Bad { }

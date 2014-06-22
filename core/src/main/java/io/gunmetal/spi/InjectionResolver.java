@@ -16,13 +16,11 @@
 
 package io.gunmetal.spi;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.lang.reflect.AnnotatedElement;
 
 /**
  * @author rees.byars
  */
 public interface InjectionResolver {
-    boolean shouldInject(Field field);
-    boolean shouldInject(Method method);
+    boolean shouldInject(AnnotatedElement element);
 }

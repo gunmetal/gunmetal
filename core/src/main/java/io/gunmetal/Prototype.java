@@ -16,8 +16,6 @@
 
 package io.gunmetal;
 
-import io.gunmetal.spi.Scopes;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,6 +28,6 @@ import java.lang.annotation.Target;
 @Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Scope(scopeEnum = Scopes.class, name = "PROTOTYPE")
+@Scope
 @Prototype
 public @interface Prototype { }
