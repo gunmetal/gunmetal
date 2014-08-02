@@ -4,6 +4,7 @@ import io.gunmetal.Overrides;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Scopes;
@@ -36,19 +37,19 @@ class HandlerCache implements Replicable<HandlerCache> {
         }
     }
 
-    void putAll(List<DependencyRequestHandler<?>> requestHandlers) {
+    void putAll(List<DependencyRequestHandler<?>> requestHandlers, Errors errors) {
         for (DependencyRequestHandler<?> requestHandler : requestHandlers) {
-            putAll(requestHandler);
+            putAll(requestHandler, errors);
         }
     }
 
-    <T> void putAll(DependencyRequestHandler<T> requestHandler) {
+    <T> void putAll(DependencyRequestHandler<T> requestHandler, Errors errors) {
         for (Dependency<? super T> dependency : requestHandler.targets()) {
-            put(dependency, requestHandler);
+            put(dependency, requestHandler, errors);
         }
     }
 
-    <T> void put(final Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler) {
+    <T> void put(final Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler, Errors errors) {
         ComponentMetadata<?> currentComponent = requestHandler.componentMetadata();
         if (currentComponent.isCollectionElement()) {
             putCollectionElement(dependency, requestHandler);
@@ -61,10 +62,10 @@ class HandlerCache implements Replicable<HandlerCache> {
                 // TODO handlers with a single enabled handler.  Low priority.
                 if (previousComponent.overrides().allowMappingOverride()
                         && currentComponent.overrides().allowMappingOverride()) {
-                    throw new RuntimeException("more than one of type with override enabled");
+                    errors.add("more than one of type with override enabled");
                 } else if (!previousComponent.overrides().allowMappingOverride()
                         && !currentComponent.overrides().allowMappingOverride()) {
-                    throw new RuntimeException("more than one of type without override enabled");
+                    errors.add("more than one of type without override enabled");
                 } else if (currentComponent.overrides().allowMappingOverride()) {
                     requestHandlers.put(dependency, requestHandler);
                     myHandlers.add(requestHandler);
@@ -127,7 +128,7 @@ class HandlerCache implements Replicable<HandlerCache> {
 
         HandlerCache newCache = new HandlerCache(parentCache);
 
-        myHandlers.forEach(handler -> newCache.putAll(handler.replicateWith(context)));
+        myHandlers.forEach(handler -> newCache.putAll(handler.replicateWith(context), context.errors()));
 
         return newCache;
 

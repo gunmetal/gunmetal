@@ -54,7 +54,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 componentMetadata,
                 context,
                 injectorFactory.methodInstantiator(componentMetadata, context),
-                injectorFactory.lazyCompositeInjector(componentMetadata));
+                injectorFactory.lazyCompositeInjector(componentMetadata, context));
     }
 
     @Override public <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata,
@@ -63,7 +63,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 componentMetadata,
                 context,
                 injectorFactory.statefulMethodInstantiator(componentMetadata, context),
-                injectorFactory.lazyCompositeInjector(componentMetadata));
+                injectorFactory.lazyCompositeInjector(componentMetadata, context));
     }
 
     private <T> ComponentAdapter<T> componentAdapter(
@@ -73,7 +73,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
             final Injector<T> injector) {
         ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                 metadata,
-                baseProvisionStrategy(metadata, instantiator, injector),
+                baseProvisionStrategy(metadata, instantiator, injector, context),
                 context.linkers());
         return new ComponentAdapter<T>() {
             @Override public ComponentMetadata<?> metadata() {
@@ -100,10 +100,11 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
 
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata<?> componentMetadata,
                                                            final Instantiator<T> instantiator,
-                                                           final Injector<T> injector) {
+                                                           final Injector<T> injector,
+                                                           GraphContext context) {
 
         if (!requireAcyclic || componentMetadata.overrides().allowCycle()) {
-            return cyclicResolutionProvisionStrategy(componentMetadata, instantiator, injector);
+            return cyclicResolutionProvisionStrategy(componentMetadata, instantiator, injector, context);
         }
 
         return (internalProvider, resolutionContext) -> {
@@ -113,23 +114,19 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 throw new CircularReferenceException(componentMetadata);
             }
             strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
-            try {
-                strategyContext.component = instantiator.newInstance(internalProvider, resolutionContext);
-                strategyContext.state = ResolutionContext.States.PRE_INJECTION;
-                injector.inject(strategyContext.component, internalProvider, resolutionContext);
-                strategyContext.state = ResolutionContext.States.NEW;
-                return strategyContext.component;
-            } catch (CircularReferenceException e) {
-                e.push(componentMetadata);
-                throw e;
-            }
+            strategyContext.component = instantiator.newInstance(internalProvider, resolutionContext);
+            strategyContext.state = ResolutionContext.States.PRE_INJECTION;
+            injector.inject(strategyContext.component, internalProvider, resolutionContext);
+            strategyContext.state = ResolutionContext.States.NEW;
+            return strategyContext.component;
         };
 
     }
 
     private <T> ProvisionStrategy<T> cyclicResolutionProvisionStrategy(final ComponentMetadata<?> componentMetadata,
                                                            final Instantiator<T> instantiator,
-                                                           final Injector<T> injector) {
+                                                           final Injector<T> injector,
+                                                           final GraphContext context) {
         return new ProvisionStrategy<T>() {
             @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 ResolutionContext.ProvisionContext<T> strategyContext =
@@ -152,8 +149,8 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                     if (e.metadata().equals(componentMetadata)) {
                         ProvisionStrategy<?> reverseStrategy = e.getReverseStrategy();
                         if (reverseStrategy == null) {
-                            throw new IllegalArgumentException("The component [" + componentMetadata.toString()
-                                    + "] depends on itself");
+                            context.errors().add(
+                                    "The component [" + componentMetadata.toString() + "] depends on itself");
                         }
                         e.getReverseStrategy().get(internalProvider, resolutionContext);
                         return strategyContext.component;

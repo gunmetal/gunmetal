@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ClassWalker;
+import io.gunmetal.spi.ComponentErrors;
 import io.gunmetal.spi.InjectionResolver;
 
 import java.lang.reflect.Field;
@@ -41,12 +42,13 @@ class ClassWalkerImpl implements ClassWalker {
 
     @Override public void walk(Class<?> classToWalk,
                                InjectedMemberVisitor<Field> fieldVisitor,
-                               InjectedMemberVisitor<Method> methodVisitor) {
+                               InjectedMemberVisitor<Method> methodVisitor,
+                               ComponentErrors errors) {
         for (Class<?> cls = classToWalk; cls != Object.class; cls = cls.getSuperclass()) {
             for (Field field : cls.getDeclaredFields()) {
                 if (injectionResolver.shouldInject(field)) {
                     if (restrictFieldInjection) {
-                        throw new IllegalArgumentException("Field injection restricted [" + field + "]");
+                        errors.add("Field injection restricted [" + field + "]");
                     }
                     fieldVisitor.visit(field);
                 }
@@ -54,7 +56,7 @@ class ClassWalkerImpl implements ClassWalker {
             for (Method method : cls.getDeclaredMethods()) {
                 if (injectionResolver.shouldInject(method)) {
                     if (restrictSetterInjection) {
-                        throw new IllegalArgumentException("Method injection restricted [" + method + "]");
+                        errors.add("Method injection restricted [" + method + "]");
                     }
                     methodVisitor.visit(method);
                 }
