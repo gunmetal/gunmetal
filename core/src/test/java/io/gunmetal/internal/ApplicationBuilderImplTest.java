@@ -255,7 +255,7 @@ public class ApplicationBuilderImplTest {
 
     }
 
-    @Test(expected = DependencyException.class)
+    @Test(expected = RuntimeException.class)
     public void testBlackList() {
         new GraphBuilder().buildTemplate(TestModule.class, M.class);
     }

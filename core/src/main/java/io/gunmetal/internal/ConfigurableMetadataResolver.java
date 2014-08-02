@@ -18,8 +18,8 @@ import io.gunmetal.spi.Scopes;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -157,7 +157,7 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
 
         Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
 
-            List<Object> qualifiers = new LinkedList<>();
+            List<Object> qualifiers = new ArrayList<>();
             Class<? extends Annotation> scopeAnnotationType = null;
             for (Annotation annotation : annotatedElement.getAnnotations()) {
                 Class<? extends Annotation> annotationType = annotation.annotationType();

@@ -33,6 +33,7 @@ import io.gunmetal.spi.TypeKey;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -69,12 +70,13 @@ class HandlerFactoryImpl implements HandlerFactory {
 
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {
-            throw new IllegalArgumentException("The module class [" + module.getName()
+            context.errors().add("The module class [" + module.getName()
                     + "] must be annotated with @Module()");
+            return Collections.emptyList();
         }
         final RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation, context);
         final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation, context);
-        final List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
+        final List<DependencyRequestHandler<?>> requestHandlers = new ArrayList<>();
         if (moduleAnnotation.stateful()) {
             Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
                 requestHandlers.add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
@@ -87,11 +89,11 @@ class HandlerFactoryImpl implements HandlerFactory {
         for (Class<?> library : moduleAnnotation.subsumes()) {
             if (library.isAnnotationPresent(Module.class)) {
                 // TODO better message
-                throw new IllegalArgumentException("A class with @Module cannot be subsumed");
+                context.errors().add("A class with @Module cannot be subsumed");
             }
             if (!library.isAnnotationPresent(Library.class)) {
                 // TODO better message
-                throw new IllegalArgumentException("A class without @Library cannot be subsumed");
+                context.errors().add("A class without @Library cannot be subsumed");
             }
             Arrays.stream(library.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
                 requestHandlers.add(libRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
@@ -119,7 +121,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 RequestVisitor.NONE,
-                AccessFilter.create(typeKey.raw()));
+                AccessFilter.create(typeKey.raw()),
+                context);
     }
 
     private RequestVisitor moduleRequestVisitor(final Class<?> module,
@@ -311,7 +314,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapterFactory.<T>withMethodProvider(componentMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
-                AccessFilter.create(method));
+                AccessFilter.create(method),
+                context);
     }
 
     private <T> DependencyRequestHandler<T> libRequestHandler(
@@ -353,7 +357,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                     @Override public boolean isAccessibleTo(Class<?> target) {
                         return target == moduleMetadata.moduleClass() || accessFilter.isAccessibleTo(target);
                     }
-                });
+                },
+                context);
     }
 
     private <T> DependencyRequestHandler<T> statefulRequestHandler(
@@ -386,14 +391,16 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapterFactory.<T>withStatefulMethodProvider(componentMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
-                AccessFilter.create(method));
+                AccessFilter.create(method),
+                context);
     }
 
     private <T> DependencyRequestHandler<T> requestHandler(
                                                      final ComponentAdapter<T> componentAdapter,
                                                      final List<Dependency<? super T>> targets,
                                                      final RequestVisitor moduleRequestVisitor,
-                                                     final AccessFilter<Class<?>> classAccessFilter) {
+                                                     final AccessFilter<Class<?>> classAccessFilter,
+                                                     GraphContext context) {
 
         RequestVisitor scopeVisitor = (dependencyRequest, response) -> {
             if (!componentAdapter.metadata().scope().canInject(dependencyRequest.sourceScope())) {
@@ -413,7 +420,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
             @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
                 MutableDependencyResponse<T> response =
-                        new DependencyResponseImpl<>(dependencyRequest, componentAdapter.provisionStrategy());
+                        new DependencyResponseImpl<>(dependencyRequest, componentAdapter.provisionStrategy(), context);
                 moduleRequestVisitor.visit(dependencyRequest, response);
                 scopeVisitor.visit(dependencyRequest, response);
                 if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
@@ -438,7 +445,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                         componentAdapter.replicateWith(context),
                         targets,
                         moduleRequestVisitor,
-                        classAccessFilter);
+                        classAccessFilter,
+                        context);
             }
 
         };
@@ -473,11 +481,14 @@ class HandlerFactoryImpl implements HandlerFactory {
         List<String> errors;
         final DependencyRequest<? super T> dependencyRequest;
         final ProvisionStrategy<? extends T> provisionStrategy;
+        final GraphContext context;
 
         DependencyResponseImpl(DependencyRequest<? super T> dependencyRequest,
-                               ProvisionStrategy<T> provisionStrategy) {
+                               ProvisionStrategy<T> provisionStrategy,
+                               GraphContext context) {
             this.dependencyRequest = dependencyRequest;
             this.provisionStrategy = provisionStrategy;
+            this.context = context;
         }
 
         @Override public void addError(String errorMessage) {
@@ -489,14 +500,11 @@ class HandlerFactoryImpl implements HandlerFactory {
 
         @Override public ValidatedDependencyResponse<T> validateResponse() {
             if (errors != null) {
-                StringBuilder stringBuilder = new StringBuilder("There were errors processing a dependency:\n");
-                stringBuilder.append("    Request by:            ").append(dependencyRequest.source()).append("\n");
-                stringBuilder.append("    Dependency requested:  ").append(dependencyRequest.dependency()).append("\n");
-                stringBuilder.append("    ").append("Reasons for failure: \n");
                 for (String error : errors) {
-                    stringBuilder.append("    ").append(error).append("\n");
+                    context.errors().add(
+                            dependencyRequest.sourceComponent(),
+                            "Denied request for " + dependencyRequest.dependency() + ".  Reason -> " + error);
                 }
-                throw new DependencyException(stringBuilder.toString());
             }
             return new ValidatedDependencyResponse<T>() {
                 @Override public ProvisionStrategy<? extends T> getProvisionStrategy() {
