@@ -15,8 +15,13 @@ class GraphErrors implements Errors {
 
     private volatile Map<ComponentMetadata<?>, List<String>> componentErrors;
     private volatile List<String> generalErrors;
+    private volatile boolean failFast = false;
 
     @Override public synchronized Errors add(ComponentMetadata<?> componentMetadata, String errorMessage) {
+        if (failFast) {
+            throw new RuntimeException(
+                    "\n    Errors for " + componentMetadata + " -> " + errorMessage);
+        }
         if (componentErrors == null) {
             componentErrors = new HashMap<>();
         }
@@ -30,6 +35,9 @@ class GraphErrors implements Errors {
     }
 
     @Override public synchronized Errors add(String errorMessage) {
+        if (failFast) {
+            throw new RuntimeException(errorMessage);
+        }
         if (generalErrors == null) {
             generalErrors = new LinkedList<>();
         }
@@ -37,7 +45,9 @@ class GraphErrors implements Errors {
         return this;
     }
 
-    @Override public void throwIfNotEmpty() {
+    synchronized void throwIfNotEmpty() {
+
+        failFast = true;
 
         if (componentErrors == null && generalErrors == null) {
             return;
@@ -45,32 +55,28 @@ class GraphErrors implements Errors {
 
         StringBuilder builder = new StringBuilder("There were errors building the ObjectGraph -> \n");
 
-        synchronized (this) {
+        final String tab = "    ";
 
-            final String tab = "    ";
-
-            if (componentErrors != null) {
-                for (Map.Entry<ComponentMetadata<?>, List<String>> entry : componentErrors.entrySet()) {
-                    builder
-                            .append("\n")
-                            .append(tab)
-                            .append("Errors for ")
-                            .append(entry.getKey())
-                            .append(" -> ");
-                    for (String errorMessage : entry.getValue()) {
-                        builder.append("\n").append(tab).append(tab).append(errorMessage);
-                    }
+        if (componentErrors != null) {
+            for (Map.Entry<ComponentMetadata<?>, List<String>> entry : componentErrors.entrySet()) {
+                builder
+                        .append("\n")
+                        .append(tab)
+                        .append("Errors for ")
+                        .append(entry.getKey())
+                        .append(" -> ");
+                for (String errorMessage : entry.getValue()) {
+                    builder.append("\n").append(tab).append(tab).append(errorMessage);
                 }
-                componentErrors = null;
             }
+            componentErrors = null;
+        }
 
-            if (generalErrors != null) {
-                for (String errorMessage : generalErrors) {
-                    builder.append("\n").append(tab).append("graph error -> ").append(errorMessage);
-                }
-                generalErrors = null;
+        if (generalErrors != null) {
+            for (String errorMessage : generalErrors) {
+                builder.append("\n").append(tab).append("graph error -> ").append(errorMessage);
             }
-
+            generalErrors = null;
         }
 
         throw new RuntimeException(builder.toString());

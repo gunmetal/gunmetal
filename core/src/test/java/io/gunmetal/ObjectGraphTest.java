@@ -43,7 +43,7 @@ public class ObjectGraphTest {
                                     final ProvisionStrategy<T> delegateStrategy,
                                     Linkers linkers) {
                                 final ThreadLocal<T> threadLocal = new ThreadLocal<>();
-                                return (p, c) -> {
+                                ProvisionStrategy<T> provisionStrategy = (p, c) -> {
                                     T t = threadLocal.get();
                                     if (t == null) {
                                         t = delegateStrategy.get(p, c);
@@ -51,6 +51,8 @@ public class ObjectGraphTest {
                                     }
                                     return t;
                                 };
+                                { if (componentMetadata.eager()) linkers.addEagerLinker(provisionStrategy::get); }
+                                return provisionStrategy;
                             }
                         })
                 .buildTemplate(RootModule.class)

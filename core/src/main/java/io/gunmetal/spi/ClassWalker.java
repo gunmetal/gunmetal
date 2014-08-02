@@ -27,6 +27,7 @@ public interface ClassWalker {
     void walk(Class<?> classToWalk,
               InjectedMemberVisitor<Field> fieldVisitor,
               InjectedMemberVisitor<Method> methodVisitor,
+              ComponentMetadata<?> componentMetadata,
               ComponentErrors errors);
 
     interface InjectedMemberVisitor<M> {

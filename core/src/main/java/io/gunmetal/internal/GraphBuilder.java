@@ -23,7 +23,6 @@ import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
-import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
@@ -233,7 +232,7 @@ public final class GraphBuilder {
         HandlerCache handlerCache = new HandlerCache(parentGraph == null ? null : parentGraph.handlerCache);
 
         GraphLinker graphLinker = new GraphLinker();
-        Errors errors = new GraphErrors();
+        GraphErrors errors = new GraphErrors();
         GraphContext graphContext = GraphContext.create(
                 ProvisionStrategyDecorator::none,
                 graphLinker,
@@ -302,7 +301,7 @@ public final class GraphBuilder {
             }
 
             GraphLinker graphLinker = new GraphLinker();
-            Errors errors = new GraphErrors();
+            GraphErrors errors = new GraphErrors();
             GraphContext graphContext = GraphContext.create(
                     strategyDecorator,
                     graphLinker,
@@ -357,7 +356,6 @@ public final class GraphBuilder {
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
         private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
         private final GraphContext graphContext;
-        private final Errors postBuildErrors = new FailFastErrors();
 
         Graph(Template template,
               GraphLinker graphLinker,
@@ -379,13 +377,13 @@ public final class GraphBuilder {
 
             if (injector == null) {
 
-                final Qualifier qualifier = configurableMetadataResolver.resolve(targetClass, postBuildErrors);
+                final Qualifier qualifier = configurableMetadataResolver.resolve(targetClass, graphContext.errors());
 
                 injector = template.injectorFactory.compositeInjector(
                         configurableMetadataResolver.resolveMetadata(
                                 targetClass,
                                 new ModuleMetadata(targetClass, qualifier, new Class<?>[0]),
-                                postBuildErrors),
+                                graphContext.errors()),
                         graphContext);
 
                 graphLinker.linkAll(internalProvider, ResolutionContext.create());
@@ -411,13 +409,13 @@ public final class GraphBuilder {
 
             if (instantiator == null) {
 
-                final Qualifier qualifier = configurableMetadataResolver.resolve(injectionTarget, postBuildErrors);
+                final Qualifier qualifier = configurableMetadataResolver.resolve(injectionTarget, graphContext.errors());
 
                 instantiator = template.injectorFactory.constructorInstantiator(
                         configurableMetadataResolver.resolveMetadata(
                                 injectionTarget,
                                 new ModuleMetadata(injectionTarget, qualifier, new Class<?>[0]),
-                                postBuildErrors),
+                                graphContext.errors()),
                         graphContext);
 
                 graphLinker.linkAll(internalProvider, ResolutionContext.create());
@@ -432,7 +430,7 @@ public final class GraphBuilder {
 
         @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
 
-            Qualifier qualifier = configurableMetadataResolver.resolve(dependencySpec, postBuildErrors);
+            Qualifier qualifier = configurableMetadataResolver.resolve(dependencySpec, graphContext.errors());
             Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
             Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
             Dependency<T> dependency = Dependency.from(

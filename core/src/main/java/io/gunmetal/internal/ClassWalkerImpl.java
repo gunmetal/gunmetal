@@ -16,8 +16,10 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.Overrides;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ComponentErrors;
+import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.InjectionResolver;
 
 import java.lang.reflect.Field;
@@ -43,20 +45,27 @@ class ClassWalkerImpl implements ClassWalker {
     @Override public void walk(Class<?> classToWalk,
                                InjectedMemberVisitor<Field> fieldVisitor,
                                InjectedMemberVisitor<Method> methodVisitor,
+                               ComponentMetadata<?> componentMetadata,
                                ComponentErrors errors) {
         for (Class<?> cls = classToWalk; cls != Object.class; cls = cls.getSuperclass()) {
             for (Field field : cls.getDeclaredFields()) {
                 if (injectionResolver.shouldInject(field)) {
-                    if (restrictFieldInjection) {
-                        errors.add("Field injection restricted [" + field + "]");
+                    if (restrictFieldInjection && !componentMetadata.overrides().allowFieldInjection()) {
+                        Overrides overrides = field.getAnnotation(Overrides.class);
+                        if (overrides == null || !overrides.allowFieldInjection()) {
+                            errors.add("Field injection restricted [" + field + "]");
+                        }
                     }
                     fieldVisitor.visit(field);
                 }
             }
             for (Method method : cls.getDeclaredMethods()) {
                 if (injectionResolver.shouldInject(method)) {
-                    if (restrictSetterInjection) {
-                        errors.add("Method injection restricted [" + method + "]");
+                    if (restrictSetterInjection && !componentMetadata.overrides().allowSetterInjection()) {
+                        Overrides overrides = method.getAnnotation(Overrides.class);
+                        if (overrides == null || !overrides.allowSetterInjection()) {
+                            errors.add("Method injection restricted [" + method + "]");
+                        }
                     }
                     methodVisitor.visit(method);
                 }
