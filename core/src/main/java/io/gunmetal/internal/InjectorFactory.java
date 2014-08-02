@@ -25,7 +25,7 @@ import java.lang.reflect.Method;
  */
 interface InjectorFactory {
     <T> Injector<T> compositeInjector(ComponentMetadata<Class<?>> componentMetadata, GraphContext context);
-    <T> Injector<T> lazyCompositeInjector(ComponentMetadata<?> componentMetadata);
+    <T> Injector<T> lazyCompositeInjector(ComponentMetadata<?> componentMetadata, GraphContext context);
     <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata, GraphContext context);
     <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata, GraphContext context);
     <T, S> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, GraphContext context);

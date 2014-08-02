@@ -7,8 +7,8 @@ import java.lang.reflect.Method;
  */
 public interface ComponentMetadataResolver {
 
-    ComponentMetadata<Method> resolveMetadata(Method method, ModuleMetadata moduleMetadata);
+    ComponentMetadata<Method> resolveMetadata(Method method, ModuleMetadata moduleMetadata, Errors errors);
 
-    ComponentMetadata<Class<?>> resolveMetadata(Class<?> cls, ModuleMetadata moduleMetadata);
+    ComponentMetadata<Class<?>> resolveMetadata(Class<?> cls, ModuleMetadata moduleMetadata, Errors errors);
 
 }

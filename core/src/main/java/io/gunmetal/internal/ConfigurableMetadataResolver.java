@@ -5,8 +5,10 @@ import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Overrides;
 import io.gunmetal.Prototype;
+import io.gunmetal.spi.ComponentErrors;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ComponentMetadataResolver;
+import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
@@ -83,52 +85,64 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         return this;
     }
 
-    @Override public ComponentMetadata<Method> resolveMetadata(Method method, ModuleMetadata moduleMetadata) {
+    @Override public ComponentMetadata<Method> resolveMetadata(Method method,
+                                                               ModuleMetadata moduleMetadata,
+                                                               Errors errors) {
         final Resolver resolver = new Resolver(method, moduleMetadata);
-        return new ComponentMetadata<>(
-                method,
-                method.getDeclaringClass(),
-                moduleMetadata,
-                validate(resolver.qualifier),
-                resolver.scope,
-                resolver.overrides,
-                resolver.eager,
-                resolver.collectionElement);
+        ComponentMetadata<Method> componentMetadata =
+                new ComponentMetadata<>(
+                        method,
+                        method.getDeclaringClass(),
+                        moduleMetadata,
+                        resolver.qualifier,
+                        resolver.scope,
+                        resolver.overrides,
+                        resolver.eager,
+                        resolver.collectionElement);
+        validate(componentMetadata.qualifier(), (error) -> errors.add(componentMetadata, error));
+        return componentMetadata;
     }
 
-    @Override public ComponentMetadata<Class<?>> resolveMetadata(Class<?> cls, ModuleMetadata moduleMetadata) {
+    @Override public ComponentMetadata<Class<?>> resolveMetadata(Class<?> cls,
+                                                                 ModuleMetadata moduleMetadata,
+                                                                 Errors errors) {
         final Resolver resolver = new Resolver(cls, moduleMetadata);
-        return new ComponentMetadata<Class<?>>(
-                cls,
-                cls,
-                moduleMetadata,
-                validate(resolver.qualifier),
-                resolver.scope,
-                resolver.overrides,
-                resolver.eager,
-                resolver.collectionElement);
+        ComponentMetadata<Class<?>> componentMetadata =
+                new ComponentMetadata<Class<?>>(
+                    cls,
+                    cls,
+                    moduleMetadata,
+                    resolver.qualifier,
+                    resolver.scope,
+                    resolver.overrides,
+                    resolver.eager,
+                    resolver.collectionElement);
+        validate(componentMetadata.qualifier(), (error) -> errors.add(componentMetadata, error));
+        return componentMetadata;
     }
 
-    @Override public Qualifier resolve(AnnotatedElement annotatedElement) {
+    @Override public Qualifier resolve(AnnotatedElement annotatedElement, Errors errors) {
         return Qualifier.from(annotatedElement, qualifierType);
     }
 
-    @Override public Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier) {
+    @Override public Qualifier resolveDependencyQualifier(AnnotatedElement parameter,
+                                                          Qualifier parentQualifier,
+                                                          ComponentErrors errors) {
         // TODO somewhat inefficient
         if (parameter.isAnnotationPresent(FromModule.class)) {
-            return validate(Qualifier.from(parameter, qualifierType).merge(parentQualifier));
+            return validate(Qualifier.from(parameter, qualifierType).merge(parentQualifier), errors);
         }
-        return validate(Qualifier.from(parameter, qualifierType));
+        return validate(Qualifier.from(parameter, qualifierType), errors);
     }
 
-    private Qualifier validate(Qualifier qualifier) {
+    private Qualifier validate(Qualifier qualifier, ComponentErrors errors) {
         // TODO should probably move to do for component only?
         // TODO dont count gunmetal qualifiers?
         if (restrictPluralQualifiers && qualifier.qualifiers().length > 1) {
-            throw new IllegalArgumentException("Plural qualifiers restricted -> " + qualifier); // TODO
+            errors.add("Plural qualifiers restricted -> " + qualifier); // TODO
         }
         if (requireQualifiers && qualifier.qualifiers().length == 0) {
-            throw new IllegalArgumentException("Qualifier required -> " + qualifier); // TODO
+            errors.add("Qualifier required -> " + qualifier); // TODO
         }
         return qualifier;
     }
@@ -172,7 +186,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
 
             scope = scopeMap.get(scopeAnnotationType);
             if (scope == null) {
-                throw new UnsupportedOperationException("Scope is not mapped -> " + scopeAnnotationType); // TODO
+                // TODO message and look into adding to an errors instance
+                throw new UnsupportedOperationException("Scope is not mapped -> " + scopeAnnotationType);
             }
 
         }

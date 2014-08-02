@@ -23,6 +23,7 @@ import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
@@ -198,7 +199,7 @@ public final class GraphBuilder {
             if (decorator != null) {
                 return decorator;
             }
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException(); // TODO
         }));
         ProvisionStrategyDecorator strategyDecorator = new ProvisionStrategyDecorator() {
             @Override public <T> ProvisionStrategy<T> decorate(
@@ -232,9 +233,11 @@ public final class GraphBuilder {
         HandlerCache handlerCache = new HandlerCache(parentGraph == null ? null : parentGraph.handlerCache);
 
         GraphLinker graphLinker = new GraphLinker();
+        Errors errors = new GraphErrors();
         GraphContext graphContext = GraphContext.create(
                 ProvisionStrategyDecorator::none,
                 graphLinker,
+                errors,
                 Collections.emptyMap()
         );
         Set<Class<?>> loadedModules = new HashSet<>();
@@ -245,7 +248,7 @@ public final class GraphBuilder {
         for (Class<?> module : modules) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
                     handlerFactory.createHandlersForModule(module, graphContext, loadedModules);
-            handlerCache.putAll(moduleRequestHandlers);
+            handlerCache.putAll(moduleRequestHandlers, errors);
         }
 
         InternalProvider internalProvider =
@@ -257,6 +260,7 @@ public final class GraphBuilder {
                         graphMetadata.isRequireInterfaces());
 
         graphLinker.linkGraph(internalProvider, ResolutionContext.create());
+        errors.throwIfNotEmpty();
 
         return new Template(
                 injectorFactory,
@@ -290,7 +294,6 @@ public final class GraphBuilder {
 
         @Override public ObjectGraph newInstance(Object... statefulModules) {
 
-            GraphLinker graphLinker = new GraphLinker();
 
             Map<Class<?>, Object> statefulModulesMap = new HashMap<>();
 
@@ -298,9 +301,12 @@ public final class GraphBuilder {
                 statefulModulesMap.put(module.getClass(), module);
             }
 
+            GraphLinker graphLinker = new GraphLinker();
+            Errors errors = new GraphErrors();
             GraphContext graphContext = GraphContext.create(
                     strategyDecorator,
                     graphLinker,
+                    errors,
                     statefulModulesMap
             );
 
@@ -325,6 +331,7 @@ public final class GraphBuilder {
                             graphMetadata.isRequireInterfaces());
 
             graphLinker.linkAll(internalProvider, ResolutionContext.create());
+            errors.throwIfNotEmpty();
 
             Graph copy = new Graph(
                     this,
@@ -350,6 +357,7 @@ public final class GraphBuilder {
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
         private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
         private final GraphContext graphContext;
+        private final Errors postBuildErrors = new FailFastErrors();
 
         Graph(Template template,
               GraphLinker graphLinker,
@@ -371,12 +379,13 @@ public final class GraphBuilder {
 
             if (injector == null) {
 
-                final Qualifier qualifier = configurableMetadataResolver.resolve(targetClass);
+                final Qualifier qualifier = configurableMetadataResolver.resolve(targetClass, postBuildErrors);
 
                 injector = template.injectorFactory.compositeInjector(
                         configurableMetadataResolver.resolveMetadata(
                                 targetClass,
-                                new ModuleMetadata(targetClass, qualifier, new Class<?>[0])),
+                                new ModuleMetadata(targetClass, qualifier, new Class<?>[0]),
+                                postBuildErrors),
                         graphContext);
 
                 graphLinker.linkAll(internalProvider, ResolutionContext.create());
@@ -402,12 +411,13 @@ public final class GraphBuilder {
 
             if (instantiator == null) {
 
-                final Qualifier qualifier = configurableMetadataResolver.resolve(injectionTarget);
+                final Qualifier qualifier = configurableMetadataResolver.resolve(injectionTarget, postBuildErrors);
 
                 instantiator = template.injectorFactory.constructorInstantiator(
                         configurableMetadataResolver.resolveMetadata(
                                 injectionTarget,
-                                new ModuleMetadata(injectionTarget, qualifier, new Class<?>[0])),
+                                new ModuleMetadata(injectionTarget, qualifier, new Class<?>[0]),
+                                postBuildErrors),
                         graphContext);
 
                 graphLinker.linkAll(internalProvider, ResolutionContext.create());
@@ -422,7 +432,7 @@ public final class GraphBuilder {
 
         @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
 
-            Qualifier qualifier = configurableMetadataResolver.resolve(dependencySpec);
+            Qualifier qualifier = configurableMetadataResolver.resolve(dependencySpec, postBuildErrors);
             Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
             Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
             Dependency<T> dependency = Dependency.from(

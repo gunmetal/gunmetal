@@ -24,7 +24,6 @@ import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.util.Generics;
@@ -69,7 +68,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                     Dependency<?> dependency = Dependency.from(
                             qualifierResolver.resolveDependencyQualifier(
                                     field,
-                                    componentMetadata.moduleMetadata().qualifier()),
+                                    componentMetadata.moduleMetadata().qualifier(),
+                                    (error) -> context.errors().add(componentMetadata, error)),
                             field.getGenericType());
                     injectors.add(new FieldInjector<>(field, componentMetadata, dependency, context.linkers()));
                 },
@@ -79,18 +79,21 @@ class InjectorFactoryImpl implements InjectorFactory {
                             function,
                             componentMetadata,
                             dependenciesForFunction(
+                                    componentMetadata,
                                     function,
                                     qualifierResolver,
-                                    componentMetadata.moduleMetadata().qualifier()),
+                                    context),
                             context.linkers()));
-                });
+                },
+                (error) -> context.errors().add(componentMetadata, error));
 
         return new CompositeInjector<>(injectors);
 
     }
 
-    @Override public <T> Injector<T> lazyCompositeInjector(final ComponentMetadata<?> componentMetadata) {
-        return new LazyCompositeInjector<>(classWalker, qualifierResolver, componentMetadata);
+    @Override public <T> Injector<T> lazyCompositeInjector(final ComponentMetadata<?> componentMetadata,
+                                                           GraphContext context) {
+        return new LazyCompositeInjector<>(classWalker, qualifierResolver, componentMetadata, context);
     }
 
     @Override public <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata,
@@ -100,7 +103,11 @@ class InjectorFactoryImpl implements InjectorFactory {
         Injector<?> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
-                dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
+                dependenciesForFunction(
+                        componentMetadata,
+                        function,
+                        qualifierResolver,
+                        context),
                 context.linkers());
         return new InstantiatorImpl<>(injector);
     }
@@ -111,7 +118,11 @@ class InjectorFactoryImpl implements InjectorFactory {
         Injector<?> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
-                dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
+                dependenciesForFunction(
+                        componentMetadata,
+                        function,
+                        qualifierResolver,
+                        context),
                 context.linkers());
         return new InstantiatorImpl<>(injector);
     }
@@ -121,21 +132,29 @@ class InjectorFactoryImpl implements InjectorFactory {
         FunctionInjector<S> injector = new FunctionInjector<>(
                 function,
                 componentMetadata,
-                dependenciesForFunction(function, qualifierResolver, componentMetadata.moduleMetadata().qualifier()),
+                dependenciesForFunction(
+                        componentMetadata,
+                        function,
+                        qualifierResolver,
+                        context),
                 context.linkers());
         Class<S> cls = Generics.as(componentMetadata.providerClass());
         S s =  context.statefulSource(cls);
         return new StatefulInstantiator<>(injector, cls, s);
     }
 
-    private static Dependency<?>[] dependenciesForFunction(ParameterizedFunction function,
+    private static Dependency<?>[] dependenciesForFunction(ComponentMetadata<?> componentMetadata,
+                                                           ParameterizedFunction function,
                                                            QualifierResolver qualifierResolver,
-                                                           Qualifier parentQualifier) {
+                                                           GraphContext context) {
         Dependency<?>[] dependencies = new Dependency<?>[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
             Parameter parameter = new Parameter(function, i);
             dependencies[i] = Dependency.from(
-                    qualifierResolver.resolveDependencyQualifier(parameter, parentQualifier),
+                    qualifierResolver.resolveDependencyQualifier(
+                            parameter,
+                            componentMetadata.moduleMetadata().qualifier(),
+                            (error) -> context.errors().add(componentMetadata, error)),
                     parameter.type);
         }
         return dependencies;
@@ -376,18 +395,20 @@ class InjectorFactoryImpl implements InjectorFactory {
         private final ClassWalker classWalker;
         private final QualifierResolver qualifierResolver;
         private final ComponentMetadata<?> componentMetadata;
+        private final GraphContext context;
         private volatile List<Injector<T>> injectors;
 
         LazyCompositeInjector(ClassWalker classWalker,
                               QualifierResolver qualifierResolver,
-                              ComponentMetadata<?> componentMetadata) {
+                              ComponentMetadata<?> componentMetadata,
+                              GraphContext context) {
             this.classWalker = classWalker;
             this.qualifierResolver = qualifierResolver;
             this.componentMetadata = componentMetadata;
+            this.context = context;
         }
 
-        void init(Class<?> targetClass,
-                  final InternalProvider internalProvider) {
+        void init(Class<?> targetClass, final InternalProvider internalProvider) {
 
             injectors = new ArrayList<>();
 
@@ -396,7 +417,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                         Dependency<?> dependency = Dependency.from(
                                 qualifierResolver.resolveDependencyQualifier(
                                         field,
-                                        componentMetadata.moduleMetadata().qualifier()),
+                                        componentMetadata.moduleMetadata().qualifier(),
+                                        (error) -> context.errors().add(componentMetadata, error)),
                                 field.getGenericType());
                         ProvisionStrategy<?> provisionStrategy = internalProvider.getProvisionStrategy(
                                 DependencyRequest.create(componentMetadata, dependency));
@@ -406,9 +428,10 @@ class InjectorFactoryImpl implements InjectorFactory {
                         ParameterizedFunction function = new MethodFunction(method);
                         Dependency<?>[] dependencies =
                                 dependenciesForFunction(
+                                        componentMetadata,
                                         function,
                                         qualifierResolver,
-                                        componentMetadata.moduleMetadata().qualifier());
+                                        context);
                         ProvisionStrategy<?>[] provisionStrategies = new ProvisionStrategy<?>[dependencies.length];
                         for (int i = 0; i < dependencies.length; i++) {
                             provisionStrategies[i] = internalProvider.getProvisionStrategy(
@@ -419,7 +442,8 @@ class InjectorFactoryImpl implements InjectorFactory {
                                 componentMetadata,
                                 dependencies,
                                 provisionStrategies));
-                    });
+                    },
+                    (error) -> context.errors().add(componentMetadata, error));
         }
 
         @Override public Object inject(
@@ -441,7 +465,7 @@ class InjectorFactoryImpl implements InjectorFactory {
 
         @Override public Injector<T> replicateWith(GraphContext context) {
             if (injectors == null) {
-                return new LazyCompositeInjector<>(classWalker, qualifierResolver, componentMetadata);
+                return new LazyCompositeInjector<>(classWalker, qualifierResolver, componentMetadata, context);
             }
             List<Injector<T>> newInjectors = new ArrayList<>();
             for (Injector<T> injector : injectors) {

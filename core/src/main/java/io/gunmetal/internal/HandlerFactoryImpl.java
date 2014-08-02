@@ -72,8 +72,8 @@ class HandlerFactoryImpl implements HandlerFactory {
             throw new IllegalArgumentException("The module class [" + module.getName()
                     + "] must be annotated with @Module()");
         }
-        final RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation);
-        final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
+        final RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation, context);
+        final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation, context);
         final List<DependencyRequestHandler<?>> requestHandlers = new LinkedList<>();
         if (moduleAnnotation.stateful()) {
             Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
@@ -114,7 +114,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         final Class<? super T> cls = typeKey.raw();
         final ModuleMetadata moduleMetadata = new ModuleMetadata(cls, dependency.qualifier(), new Class<?>[0]);
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
-                componentMetadataResolver.resolveMetadata(cls, moduleMetadata), context);
+                componentMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
@@ -122,9 +122,11 @@ class HandlerFactoryImpl implements HandlerFactory {
                 AccessFilter.create(typeKey.raw()));
     }
 
-    private RequestVisitor moduleRequestVisitor(final Class<?> module, final Module moduleAnnotation) {
-        final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation);
-        final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation);
+    private RequestVisitor moduleRequestVisitor(final Class<?> module,
+                                                final Module moduleAnnotation,
+                                                GraphContext context) {
+        final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation, context);
+        final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation, context);
         final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
         final AccessFilter<Class<?>> classAccessFilter = AccessFilter.create(moduleAnnotation.access(), module);
         final RequestVisitor moduleClassVisitor = (dependencyRequest, response) -> {
@@ -143,12 +145,12 @@ class HandlerFactoryImpl implements HandlerFactory {
         };
     }
 
-    private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation) {
-        final Qualifier qualifier = qualifierResolver.resolve(module);
+    private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation, GraphContext context) {
+        final Qualifier qualifier = qualifierResolver.resolve(module, context.errors());
         return new ModuleMetadata(module, qualifier, moduleAnnotation.dependsOn());
     }
 
-    private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation) {
+    private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {
 
         Class<? extends BlackList> blackListConfigClass =
                 moduleAnnotation.notAccessibleFrom();
@@ -172,7 +174,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
         }
 
-        final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
+        final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass, context.errors());
 
         return (dependencyRequest, response) -> {
 
@@ -203,7 +205,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     }
 
-    private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation) {
+    private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {
 
         Class<? extends WhiteList> whiteListConfigClass =
                 moduleAnnotation.onlyAccessibleFrom();
@@ -227,7 +229,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
         }
 
-        final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
+        final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass, context.errors());
 
         return (dependencyRequest, response) -> {
 
@@ -298,7 +300,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is returns void.");
         }
 
-        ComponentMetadata<Method> componentMetadata = componentMetadataResolver.resolveMetadata(method, moduleMetadata);
+        ComponentMetadata<Method> componentMetadata =
+                componentMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
 
         // TODO targeted return type check
         final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
@@ -330,7 +333,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is returns void.");
         }
 
-        ComponentMetadata<Method> componentMetadata = componentMetadataResolver.resolveMetadata(method, moduleMetadata);
+        ComponentMetadata<Method> componentMetadata =
+                componentMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
 
         // TODO targeted return type check
         final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
@@ -371,7 +375,8 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is returns void.");
         }
 
-        ComponentMetadata<Method> componentMetadata = componentMetadataResolver.resolveMetadata(method, moduleMetadata);
+        ComponentMetadata<Method> componentMetadata =
+                componentMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
 
         // TODO targeted return type check
         final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(

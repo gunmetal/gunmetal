@@ -39,7 +39,9 @@ class InternalProviderImpl implements InternalProvider {
         if (requireInterfaces &&
                 !(dependency.typeKey().raw().isInterface()
                         || dependencyRequest.sourceComponent().overrides().allowNonInterface())) {
-            throw new IllegalArgumentException("Dependency is not an interface -> " + dependency); // TODO message
+            context.errors().add(
+                    dependencyRequest.sourceComponent(),
+                    "Dependency is not an interface -> " + dependency);
         }
         DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
         if (requestHandler != null) {
@@ -51,7 +53,7 @@ class InternalProviderImpl implements InternalProvider {
         if (providerAdapter.isProvider(dependency)) {
             requestHandler = createReferenceHandler(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
             if (requestHandler != null) {
-                handlerCache.put(dependency, requestHandler);
+                handlerCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
                         .validateResponse()
@@ -61,7 +63,7 @@ class InternalProviderImpl implements InternalProvider {
         if (dependency.typeKey().raw() == Ref.class) {
             requestHandler = createReferenceHandler(dependencyRequest, RefStrategyFactory::new);
             if (requestHandler != null) {
-                handlerCache.put(dependency, requestHandler);
+                handlerCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
                         .validateResponse()
@@ -70,13 +72,16 @@ class InternalProviderImpl implements InternalProvider {
         }
         requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, context);
         if (requestHandler != null) {
-            handlerCache.put(dependency, requestHandler);
+            handlerCache.put(dependency, requestHandler, context.errors());
             return requestHandler
                     .handle(dependencyRequest)
                     .validateResponse()
                     .getProvisionStrategy();
         }
-        throw new DependencyException("missing " + dependency); // TODO
+        context.errors().add(
+                dependencyRequest.sourceComponent(),
+                "There is no provider defined for a dependency -> " + dependency);
+        return (p, c) -> null;
     }
 
     private <T, C> DependencyRequestHandler<T> createReferenceHandler(
