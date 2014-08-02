@@ -10,7 +10,7 @@ import java.util.List;
  * @author rees.byars
  */
 @Module
-public class RootModule {
+public interface RootModule {
 
     static List<? extends ProvisionStrategyDecorator> decorators() {
         return Collections.emptyList();

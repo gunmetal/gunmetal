@@ -85,6 +85,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                     context),
                             context.linkers()));
                 },
+                componentMetadata,
                 (error) -> context.errors().add(componentMetadata, error));
 
         return new CompositeInjector<>(injectors);
@@ -266,6 +267,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                       ComponentMetadata<?> componentMetadata,
                       Dependency<?> dependency,
                       ProvisionStrategy<?> provisionStrategy) {
+            field.setAccessible(true);
             this.field = field;
             this.componentMetadata = componentMetadata;
             this.dependency = dependency;
@@ -443,6 +445,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                 dependencies,
                                 provisionStrategies));
                     },
+                    componentMetadata,
                     (error) -> context.errors().add(componentMetadata, error));
         }
 
