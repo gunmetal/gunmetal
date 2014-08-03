@@ -51,6 +51,9 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         copy.qualifierType = qualifierType;
         copy.eagerType = eagerType;
         copy.indicatesEager = indicatesEager;
+        copy.scopeType = scopeType;
+        copy.requireQualifiers = requireQualifiers;
+        copy.restrictPluralQualifiers = restrictPluralQualifiers;
         return copy;
     }
 
@@ -130,21 +133,34 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                                                           ComponentErrors errors) {
         // TODO somewhat inefficient
         if (parameter.isAnnotationPresent(FromModule.class)) {
-            return validate(Qualifier.from(parameter, qualifierType).merge(parentQualifier), errors);
+            return Qualifier.from(parameter, qualifierType).merge(parentQualifier);
         }
-        return validate(Qualifier.from(parameter, qualifierType), errors);
+        return Qualifier.from(parameter, qualifierType);
     }
 
     private Qualifier validate(Qualifier qualifier, ComponentErrors errors) {
-        // TODO should probably move to do for component only?
-        // TODO dont count gunmetal qualifiers?
-        if (restrictPluralQualifiers && qualifier.qualifiers().length > 1) {
+        if (restrictPluralQualifiers && qualifier.qualifiers().length > 1 && isPlural(qualifier)) {
             errors.add("Plural qualifiers restricted -> " + qualifier); // TODO
         }
         if (requireQualifiers && qualifier.qualifiers().length == 0) {
             errors.add("Qualifier required -> " + qualifier); // TODO
         }
         return qualifier;
+    }
+
+    private boolean isPlural(Qualifier qualifier) {
+        boolean foundQualifier = false;
+        for (Object q : qualifier.qualifiers()) {
+            if (q instanceof Annotation
+                    && ((Annotation) q).annotationType().getPackage() != AutoCollection.class.getPackage()) {
+                if (foundQualifier) {
+                    return true;
+                } else {
+                    foundQualifier = true;
+                }
+            }
+        }
+        return false;
     }
 
     private final class Resolver {

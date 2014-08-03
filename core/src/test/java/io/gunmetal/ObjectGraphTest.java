@@ -32,6 +32,7 @@ public class ObjectGraphTest {
                 .builder()
                 .requireAcyclic()
                 .requireExplicitModuleDependencies()
+                .restrictPluralQualifiers()
                 .restrictSetterInjection()
                 .restrictFieldInjection()
                 .addScope(
