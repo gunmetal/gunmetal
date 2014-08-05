@@ -128,7 +128,13 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new InstantiatorImpl<>(injector);
     }
 
-    @Override public <T, S> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, GraphContext context) {
+    @Override public <T> Instantiator<T> instanceInstantiator(ComponentMetadata<Class<?>> componentMetadata,
+                                                              GraphContext context) {
+        return new ProvidedModuleInstantiator<>(Generics.as(componentMetadata.providerClass()));
+    }
+
+    @Override public <T, S> Instantiator<T> statefulMethodInstantiator(
+            ComponentMetadata<Method> componentMetadata, Dependency<S> moduleDependency, GraphContext context) {
         ParameterizedFunction function = new MethodFunction(componentMetadata.provider());
         FunctionInjector<S> injector = new FunctionInjector<>(
                 function,
@@ -139,9 +145,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                         qualifierResolver,
                         context),
                 context.linkers());
-        Class<S> cls = Generics.as(componentMetadata.providerClass());
-        S s =  context.statefulSource(cls);
-        return new StatefulInstantiator<>(injector, cls, s);
+        return new StatefulInstantiator<>(injector, componentMetadata, moduleDependency);
     }
 
     private static Dependency<?>[] dependenciesForFunction(ComponentMetadata<?> componentMetadata,
@@ -281,7 +285,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 field.set(target, provisionStrategy.get(internalProvider, resolutionContext));
                 return null;
             } catch (IllegalAccessException e) {
-                throw new RuntimeException("TODO injection exception", e);
+                throw new RuntimeException("An unexpected exception has occurred", e);
             }
         }
 
@@ -517,13 +521,16 @@ class InjectorFactoryImpl implements InjectorFactory {
     private static class StatefulInstantiator<T, S> implements Instantiator<T> {
 
         private final Injector<S> injector;
-        private final Class<S> sourceClass;
-        private S statefulTarget;
+        private final ComponentMetadata<Method> componentMetadata;
+        private final Dependency<S> moduleDependency;
+        private volatile S statefulTarget;
 
-        StatefulInstantiator(Injector<S> injector, Class<S> sourceClass, S statefulTarget) {
+        StatefulInstantiator(Injector<S> injector,
+                             ComponentMetadata<Method> componentMetadata,
+                             Dependency<S> moduleDependency) {
             this.injector = injector;
-            this.sourceClass = sourceClass;
-            this.statefulTarget = statefulTarget;
+            this.componentMetadata = componentMetadata;
+            this.moduleDependency = moduleDependency;
         }
 
         @Override public List<Dependency<?>> dependencies() {
@@ -533,7 +540,17 @@ class InjectorFactoryImpl implements InjectorFactory {
         @SuppressWarnings("unchecked")
         @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
             if (statefulTarget == null) {
-                throw new IllegalStateException("Missing stateful module " + sourceClass); // TODO message
+                synchronized (this) {
+                    if (statefulTarget == null) {
+                        ProvisionStrategy<? extends S> provisionStrategy = provider
+                                .getProvisionStrategy(DependencyRequest.create(componentMetadata, moduleDependency));
+                        if (provisionStrategy == null) {
+                            throw new IllegalStateException(
+                                    "Missing stateful module defined by " + moduleDependency);
+                        }
+                        statefulTarget = provisionStrategy.get(provider, resolutionContext);
+                    }
+                }
             }
             return (T) injector.inject(statefulTarget, provider, resolutionContext);
         }
@@ -541,8 +558,41 @@ class InjectorFactoryImpl implements InjectorFactory {
         @Override public Instantiator<T> replicateWith(GraphContext context) {
             return new StatefulInstantiator<>(
                     injector.replicateWith(context),
-                    sourceClass,
-                    context.statefulSource(sourceClass));
+                    componentMetadata,
+                    moduleDependency);
+        }
+
+    }
+
+    private static class ProvidedModuleInstantiator<T> implements Instantiator<T> {
+
+        private final Class<T> moduleClass;
+        private final T instance;
+
+        ProvidedModuleInstantiator(Class<T> moduleClass) {
+            this.moduleClass = moduleClass;
+            this.instance = null;
+        }
+
+        ProvidedModuleInstantiator(Class<T> moduleClass,
+                                   T instance) {
+            this.moduleClass = moduleClass;
+            this.instance = instance;
+        }
+
+        @Override public List<Dependency<?>> dependencies() {
+            return Collections.emptyList();
+        }
+
+        @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
+            // TODO null message
+            return instance;
+        }
+
+        @Override public Instantiator<T> replicateWith(GraphContext context) {
+            return new ProvidedModuleInstantiator<>(
+                    moduleClass,
+                    context.statefulSource(moduleClass));
         }
 
     }

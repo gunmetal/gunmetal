@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,6 +29,7 @@ class HandlerCache implements Replicable<HandlerCache> {
 
     private final HandlerCache parentCache;
     private final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new ConcurrentHashMap<>(64, .75f, 2);
+    private final Set<Dependency<?>> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Queue<DependencyRequestHandler<?>> myHandlers = new LinkedList<>();
 
     HandlerCache(HandlerCache parentCache) {
@@ -54,24 +56,29 @@ class HandlerCache implements Replicable<HandlerCache> {
         if (currentComponent.isCollectionElement()) {
             putCollectionElement(dependency, requestHandler);
         } else {
-            DependencyRequestHandler<?> previous = requestHandlers.get(dependency);
+            DependencyRequestHandler<?> previous = requestHandlers.put(dependency, requestHandler);
             if (previous != null) {
                 ComponentMetadata<?> previousComponent = previous.componentMetadata();
-                // TODO better messages.
-                // TODO This could randomly pass/fail in case of multiple non-override enabled
-                // TODO handlers with a single enabled handler.  Low priority.
+                // TODO better messages, include components, keep list?
                 if (previousComponent.overrides().allowMappingOverride()
                         && currentComponent.overrides().allowMappingOverride()) {
                     errors.add("more than one of type with override enabled");
-                } else if (!previousComponent.overrides().allowMappingOverride()
-                        && !currentComponent.overrides().allowMappingOverride()) {
+                    requestHandlers.put(dependency, previous);
+                } else if (
+                        (overriddenDependencies.contains(dependency)
+                                && !currentComponent.overrides().allowMappingOverride())
+                        || (!previousComponent.overrides().allowMappingOverride()
+                                && !currentComponent.overrides().allowMappingOverride())) {
                     errors.add("more than one of type without override enabled");
+                    requestHandlers.put(dependency, previous);
                 } else if (currentComponent.overrides().allowMappingOverride()) {
-                    requestHandlers.put(dependency, requestHandler);
                     myHandlers.add(requestHandler);
-                } // else keep previous
+                    overriddenDependencies.add(dependency);
+                } else if (previousComponent.overrides().allowMappingOverride()) {
+                    requestHandlers.put(dependency, previous);
+                    overriddenDependencies.add(dependency);
+                }
             } else {
-                requestHandlers.put(dependency, requestHandler);
                 myHandlers.add(requestHandler);
             }
         }
@@ -193,6 +200,7 @@ class HandlerCache implements Replicable<HandlerCache> {
                     dependency.qualifier(),
                     Scopes.PROTOTYPE,
                     Overrides.NONE,
+                    false,
                     false,
                     false) {
                 @Override public Class<?> provider() {

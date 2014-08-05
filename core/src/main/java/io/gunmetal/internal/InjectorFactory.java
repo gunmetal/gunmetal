@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Dependency;
 
 import java.lang.reflect.Method;
 
@@ -28,5 +29,7 @@ interface InjectorFactory {
     <T> Injector<T> lazyCompositeInjector(ComponentMetadata<?> componentMetadata, GraphContext context);
     <T> Instantiator<T> constructorInstantiator(ComponentMetadata<Class<?>> componentMetadata, GraphContext context);
     <T> Instantiator<T> methodInstantiator(ComponentMetadata<Method> componentMetadata, GraphContext context);
-    <T, S> Instantiator<T> statefulMethodInstantiator(ComponentMetadata<Method> componentMetadata, GraphContext context);
+    <T> Instantiator<T> instanceInstantiator(ComponentMetadata<Class<?>> componentMetadata, GraphContext context);
+    <T, S> Instantiator<T> statefulMethodInstantiator(
+            ComponentMetadata<Method> componentMetadata, Dependency<S> moduleDependency, GraphContext context);
 }

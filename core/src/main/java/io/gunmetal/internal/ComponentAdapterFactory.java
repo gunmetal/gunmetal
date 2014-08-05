@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.Dependency;
 
 import java.lang.reflect.Method;
 
@@ -32,6 +33,9 @@ interface ComponentAdapterFactory {
                                                GraphContext context);
 
     <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata,
+                                                       Dependency<?> moduleDependency,
                                                        GraphContext context);
 
+    <T> ComponentAdapter<T> withProvidedModule(ComponentMetadata<Class<?>> componentMetadata,
+                                               GraphContext context);
 }

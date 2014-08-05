@@ -3,6 +3,7 @@ package io.gunmetal.internal;
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
+import io.gunmetal.Module;
 import io.gunmetal.Overrides;
 import io.gunmetal.Prototype;
 import io.gunmetal.spi.ComponentErrors;
@@ -101,7 +102,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                         resolver.scope,
                         resolver.overrides,
                         resolver.eager,
-                        resolver.collectionElement);
+                        resolver.collectionElement,
+                        resolver.isModule);
         validate(componentMetadata.qualifier(), (error) -> errors.add(componentMetadata, error));
         return componentMetadata;
     }
@@ -119,7 +121,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                     resolver.scope,
                     resolver.overrides,
                     resolver.eager,
-                    resolver.collectionElement);
+                    resolver.collectionElement,
+                    resolver.isModule);
         validate(componentMetadata.qualifier(), (error) -> errors.add(componentMetadata, error));
         return componentMetadata;
     }
@@ -140,10 +143,10 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
 
     private Qualifier validate(Qualifier qualifier, ComponentErrors errors) {
         if (restrictPluralQualifiers && qualifier.qualifiers().length > 1 && isPlural(qualifier)) {
-            errors.add("Plural qualifiers restricted -> " + qualifier); // TODO
+            errors.add("Plural qualifiers restricted -> " + qualifier);
         }
         if (requireQualifiers && qualifier.qualifiers().length == 0) {
-            errors.add("Qualifier required -> " + qualifier); // TODO
+            errors.add("Qualifier required -> " + qualifier);
         }
         return qualifier;
     }
@@ -170,6 +173,7 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         Overrides overrides = Overrides.NONE;
         boolean collectionElement = false;
         boolean eager = !indicatesEager;
+        boolean isModule = false;
 
         Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
 
@@ -184,6 +188,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                     qualifiers.add(annotation);
                 } else if (annotationType == eagerType) {
                     eager = indicatesEager;
+                } else if (annotationType == Module.class) {
+                    isModule = true;
                 }
                 if (annotationType.isAnnotationPresent(scopeType)) {
                     scopeAnnotationType = annotationType;

@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Module {
@@ -41,5 +41,7 @@ public @interface Module {
     AccessLevel access() default AccessLevel.UNDEFINED;
 
     boolean stateful() default false;
+
+    boolean provided() default true;
 
 }

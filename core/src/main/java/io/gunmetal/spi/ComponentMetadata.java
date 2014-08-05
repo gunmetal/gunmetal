@@ -33,6 +33,7 @@ public class ComponentMetadata<P extends AnnotatedElement> {
     private final Overrides overrides;
     private final boolean eager;
     private final boolean isCollectionElement;
+    private final boolean isModule;
     
     public ComponentMetadata(P provider,
                       Class<?> providerClass,
@@ -41,7 +42,8 @@ public class ComponentMetadata<P extends AnnotatedElement> {
                       Scope scope,
                       Overrides overrides,
                       boolean eager,
-                      boolean isCollectionElement) {
+                      boolean isCollectionElement,
+                      boolean isModule) {
         this.provider = provider;
         this.providerClass = providerClass;
         this.moduleMetadata = moduleMetadata;
@@ -50,6 +52,7 @@ public class ComponentMetadata<P extends AnnotatedElement> {
         this.overrides = overrides;
         this.eager = eager;
         this.isCollectionElement = isCollectionElement;
+        this.isModule = isModule;
     }
 
     public P provider() {
@@ -84,6 +87,10 @@ public class ComponentMetadata<P extends AnnotatedElement> {
         return isCollectionElement;
     }
 
+    public boolean isModule() {
+        return isModule;
+    }
+
     @Override public final int hashCode() {
         return provider().hashCode() * 67 + qualifier().hashCode();
     }
@@ -103,5 +110,4 @@ public class ComponentMetadata<P extends AnnotatedElement> {
     @Override public final String toString() {
         return "component[ " + qualifier() + ", provider[ " + provider() + "] ]";
     }
-
 }
