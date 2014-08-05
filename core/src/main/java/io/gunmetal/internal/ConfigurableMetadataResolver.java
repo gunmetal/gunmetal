@@ -3,6 +3,7 @@ package io.gunmetal.internal;
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
+import io.gunmetal.Module;
 import io.gunmetal.Overrides;
 import io.gunmetal.Prototype;
 import io.gunmetal.spi.ComponentErrors;
@@ -51,6 +52,9 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         copy.qualifierType = qualifierType;
         copy.eagerType = eagerType;
         copy.indicatesEager = indicatesEager;
+        copy.scopeType = scopeType;
+        copy.requireQualifiers = requireQualifiers;
+        copy.restrictPluralQualifiers = restrictPluralQualifiers;
         return copy;
     }
 
@@ -98,7 +102,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                         resolver.scope,
                         resolver.overrides,
                         resolver.eager,
-                        resolver.collectionElement);
+                        resolver.collectionElement,
+                        resolver.isModule);
         validate(componentMetadata.qualifier(), (error) -> errors.add(componentMetadata, error));
         return componentMetadata;
     }
@@ -116,7 +121,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                     resolver.scope,
                     resolver.overrides,
                     resolver.eager,
-                    resolver.collectionElement);
+                    resolver.collectionElement,
+                    resolver.isModule);
         validate(componentMetadata.qualifier(), (error) -> errors.add(componentMetadata, error));
         return componentMetadata;
     }
@@ -130,21 +136,34 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                                                           ComponentErrors errors) {
         // TODO somewhat inefficient
         if (parameter.isAnnotationPresent(FromModule.class)) {
-            return validate(Qualifier.from(parameter, qualifierType).merge(parentQualifier), errors);
+            return Qualifier.from(parameter, qualifierType).merge(parentQualifier);
         }
-        return validate(Qualifier.from(parameter, qualifierType), errors);
+        return Qualifier.from(parameter, qualifierType);
     }
 
     private Qualifier validate(Qualifier qualifier, ComponentErrors errors) {
-        // TODO should probably move to do for component only?
-        // TODO dont count gunmetal qualifiers?
-        if (restrictPluralQualifiers && qualifier.qualifiers().length > 1) {
-            errors.add("Plural qualifiers restricted -> " + qualifier); // TODO
+        if (restrictPluralQualifiers && qualifier.qualifiers().length > 1 && isPlural(qualifier)) {
+            errors.add("Plural qualifiers restricted -> " + qualifier);
         }
         if (requireQualifiers && qualifier.qualifiers().length == 0) {
-            errors.add("Qualifier required -> " + qualifier); // TODO
+            errors.add("Qualifier required -> " + qualifier);
         }
         return qualifier;
+    }
+
+    private boolean isPlural(Qualifier qualifier) {
+        boolean foundQualifier = false;
+        for (Object q : qualifier.qualifiers()) {
+            if (q instanceof Annotation
+                    && ((Annotation) q).annotationType().getPackage() != AutoCollection.class.getPackage()) {
+                if (foundQualifier) {
+                    return true;
+                } else {
+                    foundQualifier = true;
+                }
+            }
+        }
+        return false;
     }
 
     private final class Resolver {
@@ -154,6 +173,7 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         Overrides overrides = Overrides.NONE;
         boolean collectionElement = false;
         boolean eager = !indicatesEager;
+        boolean isModule = false;
 
         Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
 
@@ -168,6 +188,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                     qualifiers.add(annotation);
                 } else if (annotationType == eagerType) {
                     eager = indicatesEager;
+                } else if (annotationType == Module.class) {
+                    isModule = true;
                 }
                 if (annotationType.isAnnotationPresent(scopeType)) {
                     scopeAnnotationType = annotationType;

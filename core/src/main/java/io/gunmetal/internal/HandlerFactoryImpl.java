@@ -78,6 +78,11 @@ class HandlerFactoryImpl implements HandlerFactory {
         final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation, context);
         final List<DependencyRequestHandler<?>> requestHandlers = new ArrayList<>();
         if (moduleAnnotation.stateful()) {
+            if (!moduleAnnotation.provided()) {
+                requestHandlers.add(managedModuleRequestHandler(module, moduleMetadata, context));
+            } else {
+                requestHandlers.add(providedModuleRequestHandler(module, moduleMetadata, context));
+            }
             Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
                 requestHandlers.add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
             });
@@ -318,6 +323,42 @@ class HandlerFactoryImpl implements HandlerFactory {
                 context);
     }
 
+    private <T> DependencyRequestHandler<T> managedModuleRequestHandler(Class<T> module,
+                                                                        ModuleMetadata moduleMetadata,
+                                                                        GraphContext context) {
+        Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
+        ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
+                componentMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
+        return requestHandler(
+                componentAdapter,
+                Collections.<Dependency<? super T>>singletonList(dependency),
+                (dependencyRequest, dependencyResponse) -> {
+                    if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
+                        dependencyResponse.addError("Module can only be requested by its providers"); // TODO
+                    }
+                },
+                AccessFilter.create(module),
+                context);
+    }
+
+    private <T> DependencyRequestHandler<T> providedModuleRequestHandler(Class<T> module,
+                                                                        ModuleMetadata moduleMetadata,
+                                                                        GraphContext context) {
+        Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
+        ComponentAdapter<T> componentAdapter = componentAdapterFactory.withProvidedModule(
+                componentMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
+        return requestHandler(
+                componentAdapter,
+                Collections.<Dependency<? super T>>singletonList(dependency),
+                (dependencyRequest, dependencyResponse) -> {
+                    if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
+                        dependencyResponse.addError("Module can only be requested by its providers"); // TODO
+                    }
+                },
+                AccessFilter.create(module),
+                context);
+    }
+
     private <T> DependencyRequestHandler<T> libRequestHandler(
             final Method method,
             Class<?> module,
@@ -383,12 +424,18 @@ class HandlerFactoryImpl implements HandlerFactory {
         ComponentMetadata<Method> componentMetadata =
                 componentMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
 
+        Dependency<T> componentDependency =
+                Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType());
+
+        Dependency<?> moduleDependency =
+                Dependency.from(moduleMetadata.qualifier(), module);
+
         // TODO targeted return type check
-        final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
-                Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
+        final List<Dependency<? super T>> dependencies =
+                Collections.<Dependency<? super T>>singletonList(componentDependency);
 
         return requestHandler(
-                componentAdapterFactory.<T>withStatefulMethodProvider(componentMetadata, context),
+                componentAdapterFactory.<T>withStatefulMethodProvider(componentMetadata, moduleDependency, context),
                 dependencies,
                 moduleRequestVisitor,
                 AccessFilter.create(method),

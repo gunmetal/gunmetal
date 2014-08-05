@@ -58,11 +58,21 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
     }
 
     @Override public <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata,
+                                                                        Dependency<?> moduleDependency,
                                                                         GraphContext context) {
         return componentAdapter(
                 componentMetadata,
                 context,
-                injectorFactory.statefulMethodInstantiator(componentMetadata, context),
+                injectorFactory.statefulMethodInstantiator(componentMetadata, moduleDependency, context),
+                injectorFactory.lazyCompositeInjector(componentMetadata, context));
+    }
+
+    @Override public <T> ComponentAdapter<T> withProvidedModule(ComponentMetadata<Class<?>> componentMetadata,
+                                                                GraphContext context) {
+        return componentAdapter(
+                componentMetadata,
+                context,
+                injectorFactory.instanceInstantiator(componentMetadata, context),
                 injectorFactory.lazyCompositeInjector(componentMetadata, context));
     }
 
