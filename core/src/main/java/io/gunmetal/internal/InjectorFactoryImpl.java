@@ -523,7 +523,6 @@ class InjectorFactoryImpl implements InjectorFactory {
         private final Injector<S> injector;
         private final ComponentMetadata<Method> componentMetadata;
         private final Dependency<S> moduleDependency;
-        private volatile S statefulTarget;
 
         StatefulInstantiator(Injector<S> injector,
                              ComponentMetadata<Method> componentMetadata,
@@ -539,20 +538,14 @@ class InjectorFactoryImpl implements InjectorFactory {
 
         @SuppressWarnings("unchecked")
         @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-            if (statefulTarget == null) {
-                synchronized (this) {
-                    if (statefulTarget == null) {
-                        ProvisionStrategy<? extends S> provisionStrategy = provider
-                                .getProvisionStrategy(DependencyRequest.create(componentMetadata, moduleDependency));
-                        if (provisionStrategy == null) {
-                            throw new IllegalStateException(
-                                    "Missing stateful module defined by " + moduleDependency);
-                        }
-                        statefulTarget = provisionStrategy.get(provider, resolutionContext);
-                    }
-                }
+            ProvisionStrategy<? extends S> provisionStrategy = provider
+                    .getProvisionStrategy(DependencyRequest.create(componentMetadata, moduleDependency));
+            if (provisionStrategy == null) {
+                throw new IllegalStateException(
+                        "Missing stateful module defined by " + moduleDependency);
             }
-            return (T) injector.inject(statefulTarget, provider, resolutionContext);
+            return (T) injector.inject(
+                    provisionStrategy.get(provider, resolutionContext), provider, resolutionContext);
         }
 
         @Override public Instantiator<T> replicateWith(GraphContext context) {
