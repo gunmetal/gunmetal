@@ -176,10 +176,6 @@ public class ApplicationBuilderImplTest {
             return name + test.getClass().getName();
         }
 
-        @Lazy StatefulModule statefulModule() {
-            return this;
-        }
-
         List<StatefulModule> statefulModules(@FromModule Ref<StatefulModule> statefulModuleRef) {
             assert statefulModuleRef.get() == statefulModuleRef.get();
             return Collections.singletonList(statefulModuleRef.get());
