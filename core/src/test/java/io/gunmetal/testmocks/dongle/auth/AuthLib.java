@@ -1,15 +1,15 @@
 package io.gunmetal.testmocks.dongle.auth;
 
 import io.gunmetal.FromModule;
-import io.gunmetal.Library;
+import io.gunmetal.Module;
 
 /**
  * @author rees.byars
  */
-@Library
+@Module(lib = true, provided = false, stateful = true)
 public class AuthLib {
 
-    private static AuthService authService(@FromModule AuthAdapter authAdapter) {
+    private AuthService authService(@FromModule AuthAdapter authAdapter) {
         return new AuthService();
     }
 

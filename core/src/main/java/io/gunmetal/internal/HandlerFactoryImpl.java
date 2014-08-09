@@ -17,7 +17,6 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.BlackList;
-import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.WhiteList;
 import io.gunmetal.spi.ComponentMetadata;
@@ -28,6 +27,7 @@ import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
+import io.gunmetal.spi.Scopes;
 import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.AnnotatedElement;
@@ -77,36 +77,14 @@ class HandlerFactoryImpl implements HandlerFactory {
         final RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation, context);
         final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation, context);
         final List<DependencyRequestHandler<?>> requestHandlers = new ArrayList<>();
-        if (moduleAnnotation.stateful()) {
-            if (!moduleAnnotation.provided()) {
-                requestHandlers.add(managedModuleRequestHandler(module, moduleMetadata, context));
-            } else {
-                requestHandlers.add(providedModuleRequestHandler(module, moduleMetadata, context));
-            }
-            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
-                requestHandlers.add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
-            });
-        } else {
-            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
-                requestHandlers.add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
-            });
-        }
-        for (Class<?> library : moduleAnnotation.subsumes()) {
-            if (library.isAnnotationPresent(Module.class)) {
-                // TODO better message
-                context.errors().add("A class with @Module cannot be subsumed");
-            }
-            if (!library.isAnnotationPresent(Library.class)) {
-                // TODO better message
-                context.errors().add("A class without @Library cannot be subsumed");
-            }
-            Arrays.stream(library.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
-                requestHandlers.add(libRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
-            });
-        }
-        for (Class<?> m : moduleAnnotation.dependsOn()) {
-            requestHandlers.addAll(createHandlersForModule(m, context, loadedModules));
-        }
+        addRequestHandlers(
+                moduleAnnotation,
+                module,
+                requestHandlers,
+                moduleMetadata,
+                moduleRequestVisitor,
+                context,
+                loadedModules);
         return requestHandlers;
 
     }
@@ -119,9 +97,12 @@ class HandlerFactoryImpl implements HandlerFactory {
             return null;
         }
         final Class<? super T> cls = typeKey.raw();
-        final ModuleMetadata moduleMetadata = new ModuleMetadata(cls, dependency.qualifier(), new Class<?>[0]);
+        final ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library, okay?
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
                 componentMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
+        if (!componentAdapter.metadata().qualifier().equals(dependency.qualifier())) {
+            return null;
+        }
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
@@ -289,6 +270,65 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     }
 
+    private void addRequestHandlers(Module moduleAnnotation,
+                                    Class<?> module,
+                                    List<DependencyRequestHandler<?>> requestHandlers,
+                                    ModuleMetadata moduleMetadata,
+                                    RequestVisitor moduleRequestVisitor,
+                                    GraphContext context,
+                                    Set<Class<?>> loadedModules) {
+        if (moduleAnnotation.stateful()) {
+            if (!moduleAnnotation.provided()) {
+                requestHandlers.add(managedModuleRequestHandler(module, moduleMetadata, context));
+            } else {
+                requestHandlers.add(providedModuleRequestHandler(module, moduleMetadata, context));
+            }
+            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
+                requestHandlers.add(statefulRequestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
+            });
+        } else {
+            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
+                requestHandlers.add(requestHandler(m, module, moduleRequestVisitor, moduleMetadata, context));
+            });
+        }
+        for (Class<?> library : moduleAnnotation.subsumes()) {
+            Module libModule = library.getAnnotation(Module.class);
+            // TODO allow provided? require prototype?
+            Qualifier libQualifier = qualifierResolver.resolve(library, context.errors());
+            if (libModule == null) {
+                context.errors().add("A class without @Module cannot be subsumed");
+            } else if (!libModule.lib()) {
+                context.errors().add("@Module.lib must be true to be subsumed");
+            } else if (libQualifier != Qualifier.NONE) {
+                context.errors().add("Library " + library.getName() + " should not have a qualifier -> " + libQualifier);
+            }
+            addRequestHandlers(
+                    libModule,
+                    library,
+                    requestHandlers,
+                    moduleMetadata,
+                    moduleRequestVisitor,
+                    context,
+                    loadedModules);
+        }
+        for (Class<?> m : moduleAnnotation.dependsOn()) {
+            requestHandlers.addAll(createHandlersForModule(m, context, loadedModules));
+        }
+    }
+
+    private AccessFilter<Class<?>> decorateForModule(ModuleMetadata moduleMetadata,
+                                                     AccessFilter<Class<?>> accessFilter) {
+        return new AccessFilter<Class<?>>() {
+            @Override public AnnotatedElement filteredElement() {
+                return accessFilter.filteredElement();
+            }
+            @Override public boolean isAccessibleTo(Class<?> target) {
+                // supports library access
+                return target == moduleMetadata.moduleClass() || accessFilter.isAccessibleTo(target);
+            }
+        };
+    }
+
     private <T> DependencyRequestHandler<T> requestHandler(
             final Method method,
             Class<?> module,
@@ -319,7 +359,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapterFactory.<T>withMethodProvider(componentMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
-                AccessFilter.create(method),
+                decorateForModule(moduleMetadata, AccessFilter.create(method)),
                 context);
     }
 
@@ -337,7 +377,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                         dependencyResponse.addError("Module can only be requested by its providers"); // TODO
                     }
                 },
-                AccessFilter.create(module),
+                decorateForModule(moduleMetadata, AccessFilter.create(module)),
                 context);
     }
 
@@ -345,8 +385,13 @@ class HandlerFactoryImpl implements HandlerFactory {
                                                                         ModuleMetadata moduleMetadata,
                                                                         GraphContext context) {
         Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
+        ComponentMetadata<Class<?>> componentMetadata =
+                componentMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors());
+        if (componentMetadata.scope() != Scopes.SINGLETON) {
+            context.errors().add(componentMetadata, "Provided modules must have a scope of singleton");
+        }
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withProvidedModule(
-                componentMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
+                componentMetadata, context);
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
@@ -355,50 +400,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                         dependencyResponse.addError("Module can only be requested by its providers"); // TODO
                     }
                 },
-                AccessFilter.create(module),
-                context);
-    }
-
-    private <T> DependencyRequestHandler<T> libRequestHandler(
-            final Method method,
-            Class<?> module,
-            final RequestVisitor moduleRequestVisitor,
-            final ModuleMetadata moduleMetadata,
-            GraphContext context) {
-
-        int modifiers = method.getModifiers();
-
-        if (!Modifier.isStatic(modifiers)) {
-            throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
-                    + method.getName() + "] in module [" + module.getName() + "] is not static.");
-        }
-
-        if (method.getReturnType() == void.class) {
-            throw new IllegalArgumentException("A module's provider methods cannot have a void return type.  The method ["
-                    + method.getName() + "] in module [" + module.getName() + "] is returns void.");
-        }
-
-        ComponentMetadata<Method> componentMetadata =
-                componentMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
-
-        // TODO targeted return type check
-        final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
-                Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
-
-        final AccessFilter<Class<?>> accessFilter = AccessFilter.create(method);
-
-        return requestHandler(
-                componentAdapterFactory.<T>withMethodProvider(componentMetadata, context),
-                dependencies,
-                moduleRequestVisitor,
-                new AccessFilter<Class<?>>() {
-                    @Override public AnnotatedElement filteredElement() {
-                        return method;
-                    }
-                    @Override public boolean isAccessibleTo(Class<?> target) {
-                        return target == moduleMetadata.moduleClass() || accessFilter.isAccessibleTo(target);
-                    }
-                },
+                decorateForModule(moduleMetadata, AccessFilter.create(module)),
                 context);
     }
 
@@ -438,7 +440,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapterFactory.<T>withStatefulMethodProvider(componentMetadata, moduleDependency, context),
                 dependencies,
                 moduleRequestVisitor,
-                AccessFilter.create(method),
+                decorateForModule(moduleMetadata, AccessFilter.create(method)),
                 context);
     }
 

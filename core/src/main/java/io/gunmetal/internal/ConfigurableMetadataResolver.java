@@ -104,7 +104,7 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                         resolver.eager,
                         resolver.collectionElement,
                         resolver.isModule);
-        validate(componentMetadata.qualifier(), (error) -> errors.add(componentMetadata, error));
+        validate(componentMetadata, (error) -> errors.add(componentMetadata, error));
         return componentMetadata;
     }
 
@@ -123,7 +123,7 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                     resolver.eager,
                     resolver.collectionElement,
                     resolver.isModule);
-        validate(componentMetadata.qualifier(), (error) -> errors.add(componentMetadata, error));
+        validate(componentMetadata, (error) -> errors.add(componentMetadata, error));
         return componentMetadata;
     }
 
@@ -141,14 +141,18 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         return Qualifier.from(parameter, qualifierType);
     }
 
-    private Qualifier validate(Qualifier qualifier, ComponentErrors errors) {
-        if (restrictPluralQualifiers && qualifier.qualifiers().length > 1 && isPlural(qualifier)) {
-            errors.add("Plural qualifiers restricted -> " + qualifier);
+    private void validate(ComponentMetadata<?> componentMetadata, ComponentErrors errors) {
+        if (restrictPluralQualifiers
+                && !componentMetadata.overrides().allowPluralQualifier()
+                && componentMetadata.qualifier().qualifiers().length > 1
+                && isPlural(componentMetadata.qualifier())) {
+            errors.add("Plural qualifiers restricted -> " + componentMetadata.qualifier());
         }
-        if (requireQualifiers && qualifier.qualifiers().length == 0) {
-            errors.add("Qualifier required -> " + qualifier);
+        if (requireQualifiers
+                && !componentMetadata.overrides().allowNoQualifier()
+                && componentMetadata.qualifier().qualifiers().length == 0) {
+            errors.add("Qualifier required -> " + componentMetadata.qualifier());
         }
-        return qualifier;
     }
 
     private boolean isPlural(Qualifier qualifier) {

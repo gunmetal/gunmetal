@@ -44,4 +44,6 @@ public @interface Module {
 
     boolean provided() default true;
 
+    boolean lib() default false;
+
 }
