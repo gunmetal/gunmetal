@@ -113,6 +113,7 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                                                            final Injector<T> injector,
                                                            GraphContext context) {
 
+        // TODO support needs to be added to allow the override to work
         if (!requireAcyclic || componentMetadata.overrides().allowCycle()) {
             return cyclicResolutionProvisionStrategy(componentMetadata, instantiator, injector, context);
         }

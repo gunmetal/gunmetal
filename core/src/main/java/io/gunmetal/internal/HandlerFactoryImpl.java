@@ -97,7 +97,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             return null;
         }
         final Class<? super T> cls = typeKey.raw();
-        final ModuleMetadata moduleMetadata = new ModuleMetadata(cls, dependency.qualifier(), new Class<?>[0]);
+        final ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library, okay?
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
                 componentMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
         if (!componentAdapter.metadata().qualifier().equals(dependency.qualifier())) {
