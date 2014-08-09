@@ -21,7 +21,6 @@ import io.gunmetal.FromModule;
 import io.gunmetal.Overrides;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
-import io.gunmetal.Library;
 import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.Prototype;
@@ -279,7 +278,7 @@ public class ApplicationBuilderImplTest {
 
     interface Lib { }
 
-    @Library
+    @Module(lib = true)
     static class MyLibrary implements Lib {
 
         static Lib huh(@FromModule Cheese cheese) {
