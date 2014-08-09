@@ -98,7 +98,9 @@ class InternalProviderImpl implements InternalProvider {
         context.errors().add(
                 dependencyRequest.sourceComponent(),
                 "There is no provider defined for a dependency -> " + dependency);
-        return (p, c) -> null;
+
+        // TODO shouldn't need to cast
+        return (p, c) -> { ((GraphErrors) context.errors()).throwIfNotEmpty(); return null; };
     }
 
     private <T, C> DependencyRequestHandler<T> createReferenceHandler(
