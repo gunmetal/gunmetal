@@ -34,6 +34,7 @@ public class ComponentMetadata<P extends AnnotatedElement> {
     private final boolean eager;
     private final boolean isCollectionElement;
     private final boolean isModule;
+    private final boolean isProvided;
     
     public ComponentMetadata(P provider,
                       Class<?> providerClass,
@@ -43,7 +44,8 @@ public class ComponentMetadata<P extends AnnotatedElement> {
                       Overrides overrides,
                       boolean eager,
                       boolean isCollectionElement,
-                      boolean isModule) {
+                      boolean isModule,
+                      boolean isProvided) {
         this.provider = provider;
         this.providerClass = providerClass;
         this.moduleMetadata = moduleMetadata;
@@ -53,6 +55,7 @@ public class ComponentMetadata<P extends AnnotatedElement> {
         this.eager = eager;
         this.isCollectionElement = isCollectionElement;
         this.isModule = isModule;
+        this.isProvided = isProvided;
     }
 
     public P provider() {
@@ -89,6 +92,10 @@ public class ComponentMetadata<P extends AnnotatedElement> {
 
     public boolean isModule() {
         return isModule;
+    }
+
+    public boolean isProvided() {
+        return isProvided;
     }
 
     @Override public final int hashCode() {
