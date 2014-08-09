@@ -97,7 +97,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             return null;
         }
         final Class<? super T> cls = typeKey.raw();
-        final ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library, okay?
+        final ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
                 componentMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
         if (!componentAdapter.metadata().qualifier().equals(dependency.qualifier())) {
@@ -107,7 +107,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 RequestVisitor.NONE,
-                AccessFilter.create(typeKey.raw()),
+                decorateForModule(moduleMetadata, AccessFilter.create(cls)),
                 context);
     }
 
