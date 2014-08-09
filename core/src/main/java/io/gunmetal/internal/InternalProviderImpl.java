@@ -10,6 +10,8 @@ import io.gunmetal.spi.ProvisionStrategy;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
 * @author rees.byars
@@ -21,6 +23,7 @@ class InternalProviderImpl implements InternalProvider {
     private final HandlerCache handlerCache;
     private final GraphContext context;
     private final boolean requireInterfaces;
+    private final Queue<Dependency<?>> dependencies = new LinkedList<>();
 
     InternalProviderImpl(ProviderAdapter providerAdapter,
                          HandlerFactory handlerFactory,
@@ -35,7 +38,15 @@ class InternalProviderImpl implements InternalProvider {
     }
 
     @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
+
         final Dependency<T> dependency = dependencyRequest.dependency();
+
+        if (dependencies.contains(dependency)) {
+            // circular dependency request, make "lazy"
+            return (p, c) -> getProvisionStrategy(dependencyRequest).get(p, c);
+        }
+
+        dependencies.add(dependency);
         if (requireInterfaces &&
                 !(dependency.typeKey().raw().isInterface()
                         || dependencyRequest.sourceComponent().overrides().allowNonInterface())) {
@@ -45,6 +56,7 @@ class InternalProviderImpl implements InternalProvider {
         }
         DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
         if (requestHandler != null) {
+            dependencies.remove();
             return requestHandler
                     .handle(dependencyRequest)
                     .validateResponse()
@@ -53,6 +65,7 @@ class InternalProviderImpl implements InternalProvider {
         if (providerAdapter.isProvider(dependency)) {
             requestHandler = createReferenceHandler(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
             if (requestHandler != null) {
+                dependencies.remove();
                 handlerCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
@@ -63,6 +76,7 @@ class InternalProviderImpl implements InternalProvider {
         if (dependency.typeKey().raw() == Ref.class) {
             requestHandler = createReferenceHandler(dependencyRequest, RefStrategyFactory::new);
             if (requestHandler != null) {
+                dependencies.remove();
                 handlerCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
@@ -70,14 +84,17 @@ class InternalProviderImpl implements InternalProvider {
                         .getProvisionStrategy();
             }
         }
+
         requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, context);
         if (requestHandler != null) {
+            dependencies.remove();
             handlerCache.put(dependency, requestHandler, context.errors());
             return requestHandler
                     .handle(dependencyRequest)
                     .validateResponse()
                     .getProvisionStrategy();
         }
+
         context.errors().add(
                 dependencyRequest.sourceComponent(),
                 "There is no provider defined for a dependency -> " + dependency);

@@ -578,7 +578,10 @@ class InjectorFactoryImpl implements InjectorFactory {
         }
 
         @Override public T newInstance(InternalProvider provider, ResolutionContext resolutionContext) {
-            // TODO null message
+            // TODO message
+            if (instance == null) {
+                throw new IllegalStateException(moduleClass + " is null");
+            }
             return instance;
         }
 

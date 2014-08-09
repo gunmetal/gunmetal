@@ -28,6 +28,7 @@ import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
+import io.gunmetal.spi.Scopes;
 import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.AnnotatedElement;
@@ -122,6 +123,9 @@ class HandlerFactoryImpl implements HandlerFactory {
         final ModuleMetadata moduleMetadata = new ModuleMetadata(cls, dependency.qualifier(), new Class<?>[0]);
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
                 componentMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
+        if (!componentAdapter.metadata().qualifier().equals(dependency.qualifier())) {
+            return null;
+        }
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
@@ -345,8 +349,13 @@ class HandlerFactoryImpl implements HandlerFactory {
                                                                         ModuleMetadata moduleMetadata,
                                                                         GraphContext context) {
         Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
+        ComponentMetadata<Class<?>> componentMetadata =
+                componentMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors());
+        if (componentMetadata.scope() != Scopes.SINGLETON) {
+            context.errors().add(componentMetadata, "Provided modules must have a scope of singleton");
+        }
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withProvidedModule(
-                componentMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
+                componentMetadata, context);
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
