@@ -17,6 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.Inject;
+import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.Provider;
 import io.gunmetal.TemplateGraph;
@@ -382,7 +383,7 @@ public final class GraphBuilder {
                 injector = template.injectorFactory.compositeInjector(
                         configurableMetadataResolver.resolveMetadata(
                                 targetClass,
-                                new ModuleMetadata(targetClass, qualifier, new Class<?>[0]),
+                                new ModuleMetadata(targetClass, qualifier, Module.NONE),
                                 graphContext.errors()),
                         graphContext);
 
@@ -414,7 +415,7 @@ public final class GraphBuilder {
                 instantiator = template.injectorFactory.constructorInstantiator(
                         configurableMetadataResolver.resolveMetadata(
                                 injectionTarget,
-                                new ModuleMetadata(injectionTarget, qualifier, new Class<?>[0]),
+                                new ModuleMetadata(injectionTarget, qualifier, Module.NONE),
                                 graphContext.errors()),
                         graphContext);
 

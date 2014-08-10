@@ -10,7 +10,7 @@ import io.gunmetal.Provides;
 @Module(lib = true, provided = false, stateful = true)
 public class AuthLib {
 
-    @Provides private AuthService authService(@FromModule AuthAdapter authAdapter) {
+    @Provides private AuthService authService(@FromModule AuthAdapter authAdapter, @FromModule Author author) {
         return new AuthService();
     }
 

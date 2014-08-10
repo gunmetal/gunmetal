@@ -16,6 +16,8 @@
 
 package io.gunmetal.spi;
 
+import io.gunmetal.Module;
+
 /**
  * @author rees.byars
  */
@@ -23,12 +25,12 @@ public final class ModuleMetadata {
 
     private final Class<?> moduleClass;
     private final Qualifier qualifier;
-    private final Class<?>[] referencedModules;
+    private final Module module;
 
-    public ModuleMetadata(Class<?> moduleClass, Qualifier qualifier, Class<?>[] referencedModules) {
+    public ModuleMetadata(Class<?> moduleClass, Qualifier qualifier, Module module) {
         this.moduleClass = moduleClass;
         this.qualifier = qualifier;
-        this.referencedModules = referencedModules;
+        this.module = module;
     }
 
     public Class<?> moduleClass() {
@@ -40,7 +42,11 @@ public final class ModuleMetadata {
     }
 
     public Class<?>[] referencedModules() {
-        return referencedModules;
+        return module.dependsOn();
+    }
+
+    public Module moduleAnnotation() {
+        return module;
     }
 
     @Override public int hashCode() {

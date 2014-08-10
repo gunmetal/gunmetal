@@ -16,6 +16,7 @@
 
 package io.gunmetal;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -45,5 +46,45 @@ public @interface Module {
     boolean provided() default true;
 
     boolean lib() default false;
+
+    Module NONE = new Module() {
+
+        @Override public Class<? extends Annotation> annotationType() {
+            return Module.class;
+        }
+
+        @Override public Class<?>[] dependsOn() {
+            return new Class<?>[0];
+        }
+
+        @Override public Class<?>[] subsumes() {
+            return new Class<?>[0];
+        }
+
+        @Override public Class<? extends BlackList> notAccessibleFrom() {
+            return BlackList.class;
+        }
+
+        @Override public Class<? extends WhiteList> onlyAccessibleFrom() {
+            return WhiteList.class;
+        }
+
+        @Override public AccessLevel access() {
+            return AccessLevel.UNDEFINED;
+        }
+
+        @Override public boolean stateful() {
+            return false;
+        }
+
+        @Override public boolean provided() {
+            return false;
+        }
+
+        @Override public boolean lib() {
+            return false;
+        }
+
+    };
 
 }
