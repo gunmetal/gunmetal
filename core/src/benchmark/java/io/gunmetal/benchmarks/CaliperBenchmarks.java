@@ -11,6 +11,7 @@ import io.gunmetal.testmocks.AA;
 import io.gunmetal.testmocks.E;
 import io.gunmetal.testmocks.N;
 import io.gunmetal.testmocks.NewGunmetalBenchMarkModule;
+import io.gunmetal.testmocks.SlimGunmetalBenchMarkModule;
 import se.jbee.inject.bootstrap.Bootstrap;
 
 import javax.inject.Inject;
@@ -49,6 +50,10 @@ public class CaliperBenchmarks {
         class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
         newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
         template = io.gunmetal.ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class);
+
+        guiceProvider(100);
+        newGunmetalProvider(100);
+
     }
 
     @Benchmark long newGunmetalStandup(int reps) {
@@ -78,6 +83,57 @@ public class CaliperBenchmarks {
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
             dagger.ObjectGraph.create(new DaggerBenchMarkModule()).inject(injectionTarget);
+            dummy |= injectionTarget.hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long slimGunmetalStandup(int reps) {
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            InjectionTarget injectionTarget = new InjectionTarget();
+            io.gunmetal.ObjectGraph.builder()
+                    .requireAcyclic()
+                    .buildTemplate(SlimGunmetalBenchMarkModule.class)
+                    .newInstance()
+                    .inject(injectionTarget);
+            dummy |= injectionTarget.hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long zeroGunmetalStandup(int reps) {
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            InjectionTarget injectionTarget = new InjectionTarget();
+            io.gunmetal.ObjectGraph.builder()
+                    .requireAcyclic()
+                    .buildTemplate()
+                    .newInstance()
+                    .inject(injectionTarget);
+            dummy |= injectionTarget.hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long slimTemplate(int reps) {
+        int dummy = 0;
+        TemplateGraph templateGraph = io.gunmetal.ObjectGraph.builder()
+                .requireAcyclic()
+                .buildTemplate(SlimGunmetalBenchMarkModule.class);
+        for (long i = 0; i < reps; i++) {
+            InjectionTarget injectionTarget = new InjectionTarget();
+            templateGraph.newInstance().inject(injectionTarget);
+            dummy |= injectionTarget.hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long slimDaggerStandup(int reps) {
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            InjectionTarget injectionTarget = new InjectionTarget();
+            dagger.ObjectGraph.create(new DaggerSlimBenchMarkModule()).inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
         return dummy;
@@ -141,6 +197,15 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             dummy |= injector.getInstance(key).hashCode();
+        }
+        return dummy;
+    }
+
+    @Benchmark long newGunmetalProvider(int reps) {
+        io.gunmetal.Provider<N> provider = newGunmetalProvider;
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= provider.get().hashCode();
         }
         return dummy;
     }
