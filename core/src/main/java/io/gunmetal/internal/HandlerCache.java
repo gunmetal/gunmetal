@@ -203,7 +203,8 @@ class HandlerCache implements Replicable<HandlerCache> {
                     false,
                     false,
                     false,
-                    false) {
+                    false,
+                    true) {
                 @Override public Class<?> provider() {
                     throw new UnsupportedOperationException(); // TODO
                 }

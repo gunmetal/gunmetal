@@ -29,5 +29,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Scope
-@Prototype
-public @interface Prototype { }
+@Singleton
+public @interface Singleton { }

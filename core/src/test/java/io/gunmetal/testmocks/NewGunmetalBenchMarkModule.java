@@ -17,128 +17,129 @@
 package io.gunmetal.testmocks;
 
 import io.gunmetal.Module;
-import io.gunmetal.Prototype;
+import io.gunmetal.Provides;
+import io.gunmetal.Singleton;
 
 @Module
 public class NewGunmetalBenchMarkModule {
 
-    @Prototype public static AA aa(A a, BB bb, R r, E e, E ee, S s) {
+    @Provides public static AA aa(A a, BB bb, R r, E e, E ee, S s) {
         return new AA(a, bb, r, e, ee, s);
     }
 
-    @Prototype public static BB bb(B b, CC cc, R r, E e, E ee, S s) {
+    @Provides public static BB bb(B b, CC cc, R r, E e, E ee, S s) {
         return new BB(b, cc, r, e, ee, s);
     }
 
-    @Prototype public static CC cc(C c, DD dd, R r, E e, E ee, S s) {
+    @Provides public static CC cc(C c, DD dd, R r, E e, E ee, S s) {
         return new CC(c, dd, r, e, ee, s);
     }
 
-    @Prototype public static DD dd(D d, R r, E e, E ee, S s) {
+    @Provides public static DD dd(D d, R r, E e, E ee, S s) {
         return new DD(d, r, e, ee, s);
     }
 
-    @Prototype public static A a(B b) {
+    @Provides public static A a(B b) {
         return new A(b);
     }
 
-    @Prototype public static B b(C c) {
+    @Provides public static B b(C c) {
         return new B(c);
     }
 
-    @Prototype public static C c(D d) {
+    @Provides public static C c(D d) {
         return new C(d);
     }
 
-    @Prototype public static D d(E e) {
+    @Provides public static D d(E e) {
         return new D(e);
     }
 
-    public static E e(F f) {
+    @Singleton @Provides public static E e(F f) {
         return new E(f);
     }
 
-    @Prototype public static F f(G g) {
+    @Provides public static F f(G g) {
         return new F(g);
     }
 
-    @Prototype public static G g(H h) {
+    @Provides public static G g(H h) {
         return new G(h);
     }
 
-    @Prototype public static H h(I i) {
+    @Provides public static H h(I i) {
         return new H(i);
     }
 
-    @Prototype public static I i(J j) {
+    @Provides public static I i(J j) {
         return new I(j);
     }
 
-    @Prototype public static J j(K k) {
+    @Provides public static J j(K k) {
         return new J(k);
     }
 
-    @Prototype public static K k(L l) {
+    @Provides public static K k(L l) {
         return new K(l);
     }
 
-    @Prototype public static L l(M m) {
+    @Provides public static L l(M m) {
         return new L(m);
     }
 
-    @Prototype public static M m(N n) {
+    @Provides public static M m(N n) {
         return new M(n);
     }
 
-    @Prototype public static N n(O o) {
+    @Provides public static N n(O o) {
         return new N(o);
     }
 
-    @Prototype public static O o(P p) {
+    @Provides public static O o(P p) {
         return new O(p);
     }
 
-    @Prototype public static P p(Q q) {
+    @Provides public static P p(Q q) {
         return new P(q);
     }
 
-    @Prototype public static Q q(R r) {
+    @Provides public static Q q(R r) {
         return new Q(r);
     }
 
-    @Prototype public static R r(S s) {
+    @Provides public static R r(S s) {
         return new R(s);
     }
 
-    @Prototype public static S s(T t) {
+    @Provides public static S s(T t) {
         return new S(t);
     }
 
-    @Prototype public static T t(U u) {
+    @Provides public static T t(U u) {
         return new T(u);
     }
 
-    @Prototype public static U u(V v) {
+    @Provides public static U u(V v) {
         return new U(v);
     }
 
-    @Prototype public static V v(W w) {
+    @Provides public static V v(W w) {
         return new V(w);
     }
 
-    @Prototype public static W w(X x) {
+    @Provides public static W w(X x) {
         return new W(x);
     }
 
-    @Prototype public static X x(Y y) {
+    @Provides public static X x(Y y) {
         return new X(y);
     }
 
-    @Prototype public static Y y(Z z) {
+    @Provides public static Y y(Z z) {
         return new Y(z);
     }
 
-    @Prototype public static Z z() {
+    @Provides public static Z z() {
         return new Z();
     }
 

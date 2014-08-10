@@ -5,6 +5,7 @@ import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.Provider;
+import io.gunmetal.Provides;
 import io.gunmetal.Ref;
 import io.gunmetal.testmocks.dongle.dal.DalModule;
 import io.gunmetal.testmocks.dongle.dal.DongleDao;
@@ -21,25 +22,25 @@ public class BlModule {
 
     @Dal class BlackList implements io.gunmetal.BlackList { }
 
-    public static DongleService dongleService(@Dal DongleDao dongleDao,
+    @Provides public static DongleService dongleService(@Dal DongleDao dongleDao,
                                               @FromModule DonglerFactory donglerFactory,
                                               @FromModule Ref<RuntimeException> runtimeExceptionRef) {
         return new DongleService() { };
     }
 
-    @AutoCollection static Dongler dongler1() {
+    @Provides @AutoCollection static Dongler dongler1() {
         return new Dongler();
     }
 
-    @AutoCollection static Dongler dongler2() {
+    @Provides @AutoCollection static Dongler dongler2() {
         return new Dongler();
     }
 
-    static DonglerFactory donglerFactory(@AutoCollection @Bl Provider<List<Dongler>> donglers) {
+    @Provides static DonglerFactory donglerFactory(@AutoCollection @Bl Provider<List<Dongler>> donglers) {
         return name -> new Dongler(name, donglers.get());
     }
 
-    @Lazy static RuntimeException runtimeException() {
+    @Provides @Lazy static RuntimeException runtimeException() {
         throw new UnsupportedOperationException("this dependency should not be instantiated");
     }
 

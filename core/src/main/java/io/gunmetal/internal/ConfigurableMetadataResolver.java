@@ -5,8 +5,9 @@ import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.Overrides;
-import io.gunmetal.Prototype;
 import io.gunmetal.Provided;
+import io.gunmetal.Provides;
+import io.gunmetal.Singleton;
 import io.gunmetal.spi.ComponentErrors;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.ComponentMetadataResolver;
@@ -40,8 +41,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
 
     ConfigurableMetadataResolver() {
         scopeMap = new HashMap<>();
-        scopeMap.put(Prototype.class, Scopes.PROTOTYPE);
-        scopeMap.put(null, Scopes.SINGLETON);
+        scopeMap.put(Singleton.class, Scopes.SINGLETON);
+        scopeMap.put(null, Scopes.PROTOTYPE);
     }
 
     private ConfigurableMetadataResolver(Map<Class<? extends Annotation>, Scope> scopeMap) {
@@ -105,7 +106,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                         resolver.eager,
                         resolver.collectionElement,
                         resolver.isModule,
-                        resolver.isProvided);
+                        resolver.isProvided,
+                        resolver.isProvider);
         validate(componentMetadata, (error) -> errors.add(componentMetadata, error));
         return componentMetadata;
     }
@@ -125,7 +127,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                     resolver.eager,
                     resolver.collectionElement,
                     resolver.isModule,
-                    resolver.isProvided);
+                    resolver.isProvided,
+                    resolver.isProvider);
         validate(componentMetadata, (error) -> errors.add(componentMetadata, error));
         return componentMetadata;
     }
@@ -183,6 +186,7 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         boolean eager = !indicatesEager;
         boolean isModule = false;
         boolean isProvided = false;
+        boolean isProvider = false;
 
         Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
             this.moduleMetadata = moduleMetadata;
@@ -209,7 +213,9 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
 
         private void processAnnotation(Annotation annotation) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
-            if (annotationType == Overrides.class) {
+            if (annotationType == Provides.class) {
+                isProvider = true;
+            } else if (annotationType == Overrides.class) {
                 overrides = (Overrides) annotation;
             } else if (annotationType == AutoCollection.class) {
                 collectionElement = true;
