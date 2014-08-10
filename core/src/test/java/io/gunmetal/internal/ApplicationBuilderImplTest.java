@@ -244,9 +244,16 @@ public class ApplicationBuilderImplTest {
             F f;
         }
 
+        class InjectTest2 {
+            @Inject
+            F f;
+        }
+
         InjectTest injectTest = new InjectTest();
 
         app.inject(injectTest);
+
+        app.inject(new InjectTest2());
 
         assert injectTest.f != null;
 
@@ -315,9 +322,16 @@ public class ApplicationBuilderImplTest {
             F f;
         }
 
+        class InjectTest2 {
+            @Inject
+            F f;
+        }
+
         InjectTest injectTest = new InjectTest();
 
         child.inject(injectTest);
+
+        child.inject(new InjectTest2());
 
         assert injectTest.f != null;
 

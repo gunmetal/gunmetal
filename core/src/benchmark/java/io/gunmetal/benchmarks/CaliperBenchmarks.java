@@ -139,6 +139,14 @@ public class CaliperBenchmarks {
         return dummy;
     }
 
+    @Benchmark long zeroGuiceStandup(int reps) {
+        int dummy = 0;
+        for (long i = 0; i < reps; i++) {
+            dummy |= Guice.createInjector().getInstance(AA.class).hashCode();
+        }
+        return dummy;
+    }
+
     @Benchmark long guiceStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {

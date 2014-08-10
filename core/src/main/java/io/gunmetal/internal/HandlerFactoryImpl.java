@@ -90,14 +90,14 @@ class HandlerFactoryImpl implements HandlerFactory {
     }
 
     @Override public <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(
-            final DependencyRequest<T> dependencyRequest, GraphContext context) {
-        final Dependency<T> dependency = dependencyRequest.dependency();
-        final TypeKey<T> typeKey = dependency.typeKey();
+            DependencyRequest<T> dependencyRequest, GraphContext context) {
+        Dependency<T> dependency = dependencyRequest.dependency();
+        TypeKey<T> typeKey = dependency.typeKey();
         if (!isInstantiable(typeKey.raw())) {
             return null;
         }
-        final Class<? super T> cls = typeKey.raw();
-        final ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library
+        Class<? super T> cls = typeKey.raw();
+        ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library
         ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
                 componentMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
         if (!componentAdapter.metadata().qualifier().equals(dependency.qualifier())) {
@@ -106,7 +106,9 @@ class HandlerFactoryImpl implements HandlerFactory {
         return requestHandler(
                 componentAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
-                RequestVisitor.NONE,
+                moduleMetadata.moduleAnnotation() == Module.NONE ?
+                        RequestVisitor.NONE :
+                        moduleRequestVisitor(moduleMetadata.moduleClass(), moduleMetadata.moduleAnnotation(), context),
                 decorateForModule(moduleMetadata, AccessFilter.create(cls)),
                 context);
     }
@@ -136,7 +138,7 @@ class HandlerFactoryImpl implements HandlerFactory {
 
     private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation, GraphContext context) {
         final Qualifier qualifier = qualifierResolver.resolve(module, context.errors());
-        return new ModuleMetadata(module, qualifier, moduleAnnotation.dependsOn());
+        return new ModuleMetadata(module, qualifier, moduleAnnotation);
     }
 
     private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {

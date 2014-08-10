@@ -69,8 +69,8 @@ interface AccessFilter<T> {
 
         if (cls.isLocalClass()) {
             return new Internal.BaseClassAccessFilter(cls, false) {
-                @Override public boolean isAccessibleTo(Class<?> cls) {
-                    return false;
+                @Override public boolean isAccessibleTo(Class<?> other) {
+                    return cls == other;
                 }
             };
         }
