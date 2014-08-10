@@ -18,14 +18,15 @@ package io.gunmetal.internal;
 
 import io.gunmetal.AutoCollection;
 import io.gunmetal.FromModule;
-import io.gunmetal.Overrides;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
-import io.gunmetal.Prototype;
+import io.gunmetal.Overrides;
 import io.gunmetal.Provider;
+import io.gunmetal.Provides;
 import io.gunmetal.Ref;
+import io.gunmetal.Singleton;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
@@ -74,11 +75,11 @@ public class ApplicationBuilderImplTest {
     @Module(notAccessibleFrom = TestModule.BlackList.class, dependsOn = StatefulModule.class)
     static class TestModule {
 
-        @Overrides(allowCycle = true) static Bad providedCirc(Provider<Circ> circProvider) {
+        @Provides @Singleton @Overrides(allowCycle = true) static Bad providedCirc(Provider<Circ> circProvider) {
             return circProvider.get();
         }
 
-        @Prototype @Overrides(allowCycle = true) static Circ circ() {
+        @Provides @Overrides(allowCycle = true) static Circ circ() {
             return new Circ();
         }
 
@@ -92,25 +93,25 @@ public class ApplicationBuilderImplTest {
         }
 
 
-        static Class<Void> routine(BlackList blackList) {
+        @Provides @Singleton static Class<Void> routine(BlackList blackList) {
             System.out.println("routineeee" + blackList);
             return Void.TYPE;
         }
 
 
-        @Overrides(allowMappingOverride = true) static TestModule tm(ArrayList<Integer> integers) {
+        @Provides @Singleton @Overrides(allowMappingOverride = true) static TestModule tm(ArrayList<Integer> integers) {
             return new TestModule();
         }
 
-        static TestModule tmO() {
+        @Provides @Singleton static TestModule tmO() {
             return new TestModule();
         }
 
-        @Main static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
+        @Provides @Singleton @Main static ApplicationBuilderImplTest test(ApplicationBuilderImplTest test) {
             return new ApplicationBuilderImplTest();
         }
 
-        static Object test2(Provider<ApplicationBuilderImplTest> test, BlackList blackList) {
+        @Provides @Singleton static Object test2(Provider<ApplicationBuilderImplTest> test, BlackList blackList) {
             System.out.println(test.get());
             System.out.println(test.get());
 
@@ -118,30 +119,30 @@ public class ApplicationBuilderImplTest {
             return test.get();
         }
 
-        @Prototype static ApplicationBuilderImplTest testy() {
+        @Provides static ApplicationBuilderImplTest testy() {
             return new ApplicationBuilderImplTest();
         }
 
-        @AutoCollection static String s1(@Stateful String name) {
+        @Provides @Singleton @AutoCollection static String s1(@Stateful String name) {
             return name;
         }
 
-        @AutoCollection static String s2() {
+        @Provides @Singleton @AutoCollection static String s2() {
             return "2";
         }
 
-        @AutoCollection static String s3() {
+        @Provides @Singleton @AutoCollection static String s3() {
             return "3";
         }
 
-        @Main static InputStream printStrings(@AutoCollection List<String> strings) {
+        @Provides @Singleton @Main static InputStream printStrings(@AutoCollection List<String> strings) {
             for (String s : strings) {
                 System.out.println(s);
             }
             return System.in;
         }
 
-        @Lazy static List<? extends ProvisionStrategyDecorator> decorators() {
+        @Provides @Singleton @Lazy static List<? extends ProvisionStrategyDecorator> decorators() {
             return Collections.singletonList(new ProvisionStrategyDecorator() {
                 @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
                     return delegateStrategy;
@@ -149,7 +150,7 @@ public class ApplicationBuilderImplTest {
             });
         }
 
-        @Lazy static Map<? extends Scope, ? extends ProvisionStrategyDecorator> scopeDecorators() {
+        @Provides @Singleton @Lazy static Map<? extends Scope, ? extends ProvisionStrategyDecorator> scopeDecorators() {
             return Collections.singletonMap(
                     CustomScopes.TEST,
                     new ProvisionStrategyDecorator() {
@@ -163,6 +164,7 @@ public class ApplicationBuilderImplTest {
 
     @Module(stateful = true)
     @Stateful
+    @Singleton
     static class StatefulModule {
 
         String name;
@@ -171,11 +173,11 @@ public class ApplicationBuilderImplTest {
             this.name = name;
         }
 
-        String name(ApplicationBuilderImplTest test) {
+        @Provides @Singleton String name(ApplicationBuilderImplTest test) {
             return name + test.getClass().getName();
         }
 
-        List<StatefulModule> statefulModules(@FromModule Ref<StatefulModule> statefulModuleRef) {
+        @Provides @Singleton List<StatefulModule> statefulModules(@FromModule Ref<StatefulModule> statefulModuleRef) {
             assert statefulModuleRef.get() == statefulModuleRef.get();
             return Collections.singletonList(statefulModuleRef.get());
         }
@@ -184,7 +186,7 @@ public class ApplicationBuilderImplTest {
 
     @Module
     static class M {
-        @Lazy static M m(ApplicationBuilderImplTest test) {
+        @Provides @Singleton @Lazy static M m(ApplicationBuilderImplTest test) {
             return new M();
         }
     }
@@ -261,15 +263,15 @@ public class ApplicationBuilderImplTest {
 
         @Inject ApplicationBuilderImplTest applicationBuilderImplTest;
 
-        static PlusModule plusModule() {
+        @Provides @Singleton static PlusModule plusModule() {
             return new PlusModule();
         }
 
-        static Cheese cheese() {
+        @Provides @Singleton static Cheese cheese() {
             return new PlusModule();
         }
 
-        static OutputStream r(@FromModule Cheese cheese, @Main Lib myLibrary) {
+        @Provides @Singleton static OutputStream r(@FromModule Cheese cheese, @Main Lib myLibrary) {
             System.out.println("sup");
             return System.out;
         }
@@ -281,7 +283,7 @@ public class ApplicationBuilderImplTest {
     @Module(lib = true)
     static class MyLibrary implements Lib {
 
-        static Lib huh(@FromModule Cheese cheese) {
+        @Provides @Singleton static Lib huh(@FromModule Cheese cheese) {
             System.out.println("sup library");
             return new MyLibrary();
         }

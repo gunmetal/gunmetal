@@ -2,6 +2,7 @@ package io.gunmetal.testmocks.dongle.auth;
 
 import io.gunmetal.FromModule;
 import io.gunmetal.Module;
+import io.gunmetal.Provides;
 
 /**
  * @author rees.byars
@@ -9,7 +10,7 @@ import io.gunmetal.Module;
 @Module(lib = true, provided = false, stateful = true)
 public class AuthLib {
 
-    private AuthService authService(@FromModule AuthAdapter authAdapter) {
+    @Provides private AuthService authService(@FromModule AuthAdapter authAdapter) {
         return new AuthService();
     }
 

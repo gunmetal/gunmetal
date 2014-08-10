@@ -2,6 +2,7 @@ package io.gunmetal.testmocks.dongle.ui;
 
 import io.gunmetal.FromModule;
 import io.gunmetal.Module;
+import io.gunmetal.Provides;
 import io.gunmetal.testmocks.dongle.auth.AuthAdapter;
 import io.gunmetal.testmocks.dongle.auth.AuthLib;
 import io.gunmetal.testmocks.dongle.auth.AuthService;
@@ -25,18 +26,18 @@ public class UiModule {
 
     @Ui class WhiteList implements io.gunmetal.WhiteList { }
 
-    @Thread static DongleController dongleController(
+    @Provides @Thread static DongleController dongleController(
             @Bl DongleService dongleService,
             @FromModule AuthService authService,
             @FromModule Map<String, String> requestContext) {
         return new DongleController();
     }
 
-    @Thread private static Map<String, String> requestContext(@FromModule User user) {
+    @Provides @Thread private static Map<String, String> requestContext(@FromModule User user) {
         return new HashMap<>();
     }
 
-    private static AuthAdapter authAdapter() {
+    @Provides private static AuthAdapter authAdapter() {
         return new AuthAdapter() { };
     }
 
