@@ -18,6 +18,6 @@ Nice things about Gunmetal:
     - small, intuitive API for small learning curve and quickly ramping up teams for rapid development
     - highly flexible API for easily handling those pain-in-the-ass corner cases without hacks
 
-Core values:  TRACEABILITY & SIMPLICITY -- MODULARITY & VISIBILITY -- SPEED & POWER
+Traceability & Simplicity -- Modularity & Visibility -- Speed & Power
 
 The initial release of Gunmetal is tentatively targeted for some time in 2014. 
