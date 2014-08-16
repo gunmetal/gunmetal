@@ -36,6 +36,7 @@ public class ComponentMetadata<P extends AnnotatedElement> {
     private final boolean isModule;
     private final boolean isProvided;
     private final boolean isProvider;
+    private final int hashCode;
     
     public ComponentMetadata(P provider,
                       Class<?> providerClass,
@@ -59,6 +60,7 @@ public class ComponentMetadata<P extends AnnotatedElement> {
         this.isModule = isModule;
         this.isProvided = isProvided;
         this.isProvider = isProvider;
+        hashCode = provider().hashCode() * 67 + qualifier().hashCode();
     }
 
     public P provider() {
@@ -106,7 +108,7 @@ public class ComponentMetadata<P extends AnnotatedElement> {
     }
 
     @Override public final int hashCode() {
-        return provider().hashCode() * 67 + qualifier().hashCode();
+        return hashCode;
     }
 
     @Override public final boolean equals(Object target) {

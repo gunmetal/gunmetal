@@ -28,10 +28,12 @@ public final class Dependency<T> {
 
     private final Qualifier qualifier;
     private final TypeKey<T> typeKey;
+    private final int hashCode;
 
     private Dependency(Qualifier qualifier, TypeKey<T> typeKey) {
         this.qualifier = qualifier;
         this.typeKey = typeKey;
+        hashCode = typeKey().hashCode() * 67 + qualifier().hashCode();
     }
 
     public Qualifier qualifier() {
@@ -43,7 +45,7 @@ public final class Dependency<T> {
     }
 
     @Override public int hashCode() {
-        return typeKey().hashCode() * 67 + qualifier().hashCode();
+        return hashCode;
     }
 
     @Override public boolean equals(Object target) {
@@ -63,13 +65,11 @@ public final class Dependency<T> {
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
-        final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<>(qualifier, typeKey);
+        return new Dependency<>(qualifier, Types.typeKey(type));
     }
 
     public static <T> Dependency<T> from(final Qualifier qualifier, ParameterizedType type) {
-        final TypeKey<T> typeKey = Types.typeKey(type);
-        return new Dependency<>(qualifier, typeKey);
+        return new Dependency<>(qualifier, Types.typeKey(type));
     }
 
     private static final class Types {

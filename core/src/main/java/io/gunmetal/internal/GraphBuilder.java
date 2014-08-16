@@ -277,8 +277,8 @@ public final class GraphBuilder {
         private final HandlerFactory handlerFactory;
         private final HandlerCache handlerCache;
         private final Set<Class<?>> loadedModules;
-        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
-        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
+        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
+        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(0, .75f, 4);
 
         Template(InjectorFactory injectorFactory,
                  ProvisionStrategyDecorator strategyDecorator,
@@ -354,8 +354,8 @@ public final class GraphBuilder {
         private final GraphLinker graphLinker;
         private final InternalProvider internalProvider;
         private final HandlerCache handlerCache;
-        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
-        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
+        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
+        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(0, .75f, 4);
         private final GraphContext graphContext;
 
         Graph(Template template,
@@ -452,9 +452,8 @@ public final class GraphBuilder {
                 if (componentHandler == null) {
                     return null;
                 }
-                ProvisionStrategy<?> componentStrategy = componentHandler.force();
                 return new ProviderStrategyFactory(providerAdapter)
-                        .<T>create(componentStrategy, internalProvider)
+                        .<T>create(componentHandler.force(), internalProvider)
                         .get(internalProvider, ResolutionContext.create());
 
             }
