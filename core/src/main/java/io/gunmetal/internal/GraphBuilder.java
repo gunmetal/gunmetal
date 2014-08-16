@@ -230,7 +230,7 @@ public final class GraphBuilder {
                 configurableMetadataResolver,
                 graphMetadata.isRequireExplicitModuleDependencies());
 
-        HandlerCache handlerCache = new HandlerCache(parentGraph == null ? null : parentGraph.handlerCache);
+        GraphCache graphCache = new GraphCache(parentGraph == null ? null : parentGraph.graphCache);
 
         GraphLinker graphLinker = new GraphLinker();
         GraphErrors errors = new GraphErrors();
@@ -248,14 +248,14 @@ public final class GraphBuilder {
         for (Class<?> module : modules) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
                     handlerFactory.createHandlersForModule(module, graphContext, loadedModules);
-            handlerCache.putAll(moduleRequestHandlers, errors);
+            graphCache.putAll(moduleRequestHandlers, errors);
         }
 
         InternalProvider internalProvider =
-                new InternalProviderImpl(
+                new GraphProvider(
                         providerAdapter,
                         handlerFactory,
-                        handlerCache,
+                        graphCache,
                         graphContext,
                         graphMetadata.isRequireInterfaces());
 
@@ -266,7 +266,7 @@ public final class GraphBuilder {
                 injectorFactory,
                 strategyDecorator,
                 handlerFactory,
-                handlerCache,
+                graphCache,
                 loadedModules);
     }
 
@@ -275,7 +275,7 @@ public final class GraphBuilder {
         private final InjectorFactory injectorFactory;
         private final ProvisionStrategyDecorator strategyDecorator;
         private final HandlerFactory handlerFactory;
-        private final HandlerCache handlerCache;
+        private final GraphCache graphCache;
         private final Set<Class<?>> loadedModules;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
         private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(0, .75f, 4);
@@ -283,12 +283,12 @@ public final class GraphBuilder {
         Template(InjectorFactory injectorFactory,
                  ProvisionStrategyDecorator strategyDecorator,
                  HandlerFactory handlerFactory,
-                 HandlerCache handlerCache,
+                 GraphCache graphCache,
                  Set<Class<?>> loadedModules) {
             this.injectorFactory = injectorFactory;
             this.strategyDecorator = strategyDecorator;
             this.handlerFactory = handlerFactory;
-            this.handlerCache = handlerCache;
+            this.graphCache = graphCache;
             this.loadedModules = loadedModules;
         }
 
@@ -310,7 +310,7 @@ public final class GraphBuilder {
                     statefulModulesMap
             );
 
-            HandlerCache newHandlerCache = handlerCache.replicateWith(graphContext);
+            GraphCache newGraphCache = graphCache.replicateWith(graphContext);
 
             Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
             for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
@@ -323,10 +323,10 @@ public final class GraphBuilder {
             }
 
             InternalProvider internalProvider =
-                    new InternalProviderImpl(
+                    new GraphProvider(
                             providerAdapter,
                             handlerFactory,
-                            newHandlerCache,
+                            newGraphCache,
                             graphContext,
                             graphMetadata.isRequireInterfaces());
 
@@ -337,7 +337,7 @@ public final class GraphBuilder {
                     this,
                     graphLinker,
                     internalProvider,
-                    newHandlerCache,
+                    newGraphCache,
                     graphContext);
 
             copy.injectors.putAll(injectorHashMap);
@@ -353,7 +353,7 @@ public final class GraphBuilder {
         private final Template template;
         private final GraphLinker graphLinker;
         private final InternalProvider internalProvider;
-        private final HandlerCache handlerCache;
+        private final GraphCache graphCache;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
         private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(0, .75f, 4);
         private final GraphContext graphContext;
@@ -361,12 +361,12 @@ public final class GraphBuilder {
         Graph(Template template,
               GraphLinker graphLinker,
               InternalProvider internalProvider,
-              HandlerCache handlerCache,
+              GraphCache graphCache,
               GraphContext graphContext) {
             this.template = template;
             this.graphLinker = graphLinker;
             this.internalProvider = internalProvider;
-            this.handlerCache = handlerCache;
+            this.graphCache = graphCache;
             this.graphContext = graphContext;
         }
 
@@ -438,7 +438,7 @@ public final class GraphBuilder {
                     qualifier,
                     dependencyType);
 
-            DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
+            DependencyRequestHandler<? extends T> requestHandler = graphCache.get(dependency);
 
             if (requestHandler != null) {
 
@@ -448,7 +448,7 @@ public final class GraphBuilder {
 
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
                 final Dependency<?> provisionDependency = Dependency.from(dependency.qualifier(), providedType);
-                final DependencyRequestHandler<?> provisionHandler = handlerCache.get(provisionDependency);
+                final DependencyRequestHandler<?> provisionHandler = graphCache.get(provisionDependency);
                 if (provisionHandler == null) {
                     return null;
                 }

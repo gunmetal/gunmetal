@@ -37,7 +37,8 @@ public class BlModule {
     }
 
     @Provides static DonglerFactory donglerFactory(@AutoCollection @Bl Provider<List<Dongler>> donglers) {
-        return name -> new Dongler(name, donglers.get());
+        List<Dongler> donglers1 = donglers.get();
+        return name -> new Dongler(name, donglers1);
     }
 
     @Provides @Lazy static RuntimeException runtimeException() {

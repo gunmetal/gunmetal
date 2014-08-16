@@ -16,23 +16,23 @@ import java.util.Queue;
 /**
 * @author rees.byars
 */
-class InternalProviderImpl implements InternalProvider {
+class GraphProvider implements InternalProvider {
 
     private final ProviderAdapter providerAdapter;
     private final HandlerFactory handlerFactory;
-    private final HandlerCache handlerCache;
+    private final GraphCache graphCache;
     private final GraphContext context;
     private final boolean requireInterfaces;
     private final Queue<Dependency<?>> dependencies = new LinkedList<>();
 
-    InternalProviderImpl(ProviderAdapter providerAdapter,
-                         HandlerFactory handlerFactory,
-                         HandlerCache handlerCache,
-                         GraphContext context,
-                         boolean requireInterfaces) {
+    GraphProvider(ProviderAdapter providerAdapter,
+                  HandlerFactory handlerFactory,
+                  GraphCache graphCache,
+                  GraphContext context,
+                  boolean requireInterfaces) {
         this.providerAdapter = providerAdapter;
         this.handlerFactory = handlerFactory;
-        this.handlerCache = handlerCache;
+        this.graphCache = graphCache;
         this.context = context;
         this.requireInterfaces = requireInterfaces;
     }
@@ -54,7 +54,7 @@ class InternalProviderImpl implements InternalProvider {
                     dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
-        DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
+        DependencyRequestHandler<? extends T> requestHandler = graphCache.get(dependency);
         if (requestHandler != null) {
             dependencies.remove();
             return requestHandler
@@ -65,7 +65,7 @@ class InternalProviderImpl implements InternalProvider {
             requestHandler = createReferenceHandler(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
             if (requestHandler != null) {
                 dependencies.remove();
-                handlerCache.put(dependency, requestHandler, context.errors());
+                graphCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
                         .provisionStrategy();
@@ -75,7 +75,7 @@ class InternalProviderImpl implements InternalProvider {
             requestHandler = createReferenceHandler(dependencyRequest, RefStrategyFactory::new);
             if (requestHandler != null) {
                 dependencies.remove();
-                handlerCache.put(dependency, requestHandler, context.errors());
+                graphCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
                         .provisionStrategy();
@@ -85,7 +85,7 @@ class InternalProviderImpl implements InternalProvider {
         requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, context);
         if (requestHandler != null) {
             dependencies.remove();
-            handlerCache.put(dependency, requestHandler, context.errors());
+            graphCache.put(dependency, requestHandler, context.errors());
             return requestHandler
                     .handle(dependencyRequest)
                     .provisionStrategy();
@@ -104,7 +104,7 @@ class InternalProviderImpl implements InternalProvider {
         Dependency<?> providerDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency<C> provisionDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        final DependencyRequestHandler<? extends C> provisionHandler = handlerCache.get(provisionDependency);
+        final DependencyRequestHandler<? extends C> provisionHandler = graphCache.get(provisionDependency);
         if (provisionHandler == null) {
             return null;
         }

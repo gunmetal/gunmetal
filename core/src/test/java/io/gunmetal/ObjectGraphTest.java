@@ -1,9 +1,11 @@
 package io.gunmetal;
 
-import io.gunmetal.spi.ProvisionMetadata;
+import com.google.common.eventbus.EventBus;
 import io.gunmetal.spi.Linkers;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
+import io.gunmetal.testmocks.dongle.bl.Dongler;
 import io.gunmetal.testmocks.dongle.config.RootModule;
 import io.gunmetal.testmocks.dongle.layers.Ui;
 import io.gunmetal.testmocks.dongle.layers.Ws;
@@ -72,6 +74,17 @@ public class ObjectGraphTest {
                         .buildTemplate(WsModule.class)
                         .newInstance()
                         .get(ResourceDependency.class));
+
+        class EventBusDep implements Dependency<EventBus> { }
+
+        ObjectGraph graph = configGraph
+                .plus()
+                .buildTemplate(UiModule.class, WsModule.class)
+                .newInstance(new UserModule("test"));
+
+        graph.get(ControllerDependency.class);
+        EventBus eventBus = graph.get(EventBusDep.class);
+        eventBus.post(new Dongler());
     }
 
 }
