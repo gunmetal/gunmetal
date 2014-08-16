@@ -43,22 +43,8 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
     }
 
     @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
-        final DependencyResponse<?> provisionResponse =
-                provisionHandler.handle(DependencyRequest.create(referenceRequest, provisionDependency));
-        return new DependencyResponse<T>() {
-            @Override public ValidatedDependencyResponse<T> validateResponse() {
-                provisionResponse.validateResponse();
-                return new ValidatedDependencyResponse<T>() {
-                    @Override public ProvisionStrategy<T> getProvisionStrategy() {
-                        return referenceStrategy;
-                    }
-
-                    @Override public ValidatedDependencyResponse<T> validateResponse() {
-                        return this;
-                    }
-                };
-            }
-        };
+        provisionHandler.handle(DependencyRequest.create(referenceRequest, provisionDependency));
+        return () -> referenceStrategy;
     }
 
     @Override public ProvisionStrategy<T> force() {

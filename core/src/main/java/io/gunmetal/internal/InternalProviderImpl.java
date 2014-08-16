@@ -59,8 +59,7 @@ class InternalProviderImpl implements InternalProvider {
             dependencies.remove();
             return requestHandler
                     .handle(dependencyRequest)
-                    .validateResponse()
-                    .getProvisionStrategy();
+                    .provisionStrategy();
         }
         if (providerAdapter.isProvider(dependency)) {
             requestHandler = createReferenceHandler(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
@@ -69,8 +68,7 @@ class InternalProviderImpl implements InternalProvider {
                 handlerCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
-                        .validateResponse()
-                        .getProvisionStrategy();
+                        .provisionStrategy();
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
@@ -80,8 +78,7 @@ class InternalProviderImpl implements InternalProvider {
                 handlerCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
-                        .validateResponse()
-                        .getProvisionStrategy();
+                        .provisionStrategy();
             }
         }
 
@@ -91,8 +88,7 @@ class InternalProviderImpl implements InternalProvider {
             handlerCache.put(dependency, requestHandler, context.errors());
             return requestHandler
                     .handle(dependencyRequest)
-                    .validateResponse()
-                    .getProvisionStrategy();
+                    .provisionStrategy();
         }
 
         context.errors().add(

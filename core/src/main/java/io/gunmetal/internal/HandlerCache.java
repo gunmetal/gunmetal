@@ -8,6 +8,7 @@ import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.Scopes;
 import io.gunmetal.util.Generics;
 
@@ -133,13 +134,9 @@ class HandlerCache implements Replicable<HandlerCache> {
     }
 
     @Override public HandlerCache replicateWith(GraphContext context) {
-
         HandlerCache newCache = new HandlerCache(parentCache);
-
         myHandlers.forEach(handler -> newCache.putAll(handler.replicateWith(context), context.errors()));
-
         return newCache;
-
     }
 
     private static class CollectionRequestHandler<T> implements DependencyRequestHandler<List<T>> {
@@ -168,17 +165,9 @@ class HandlerCache implements Replicable<HandlerCache> {
                 DependencyRequest<T> subRequest =
                         DependencyRequest.create(dependencyRequest, subDependency);
                 for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                    requestHandler.handle(subRequest).validateResponse();
+                    requestHandler.handle(subRequest);
                 }
-                return new DependencyResponse.ValidatedDependencyResponse<List<T>>() {
-                    @Override public ProvisionStrategy<List<T>> getProvisionStrategy() {
-                        return force();
-                    }
-
-                    @Override public ValidatedDependencyResponse<List<T>> validateResponse() {
-                        return this;
-                    }
-                };
+                return force();
             };
         }
 
@@ -197,7 +186,7 @@ class HandlerCache implements Replicable<HandlerCache> {
             return new ProvisionMetadata<Class<?>>(
                     CollectionRequestHandler.class,
                     CollectionRequestHandler.class,
-                    new ModuleMetadata(CollectionRequestHandler.class, dependency.qualifier(), Module.NONE),
+                    new ModuleMetadata(CollectionRequestHandler.class, Qualifier.NONE, Module.NONE),
                     dependency.qualifier(),
                     Scopes.PROTOTYPE,
                     Overrides.NONE,

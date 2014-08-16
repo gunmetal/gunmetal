@@ -156,13 +156,9 @@ class HandlerFactoryImpl implements HandlerFactory {
                 blackListConfigClass.getAnnotation(BlackList.Modules.class);
 
         if (blackListModules != null) {
-
             blackListClasses = blackListModules.value();
-
         } else {
-
             blackListClasses = new Class<?>[]{};
-
         }
 
         final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass, context.errors());
@@ -170,16 +166,11 @@ class HandlerFactoryImpl implements HandlerFactory {
         return (dependencyRequest, response) -> {
 
             Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-
             for (Class<?> blackListClass : blackListClasses) {
-
                 if (blackListClass == requestingSourceModuleClass) {
-
                     response.addError("The module [" + requestingSourceModuleClass.getName()
                             + "] does not have access to the module [" + module.getName() + "].");
-
                 }
-
             }
 
             boolean qualifierMatch =
@@ -191,9 +182,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 response.addError("The module [" + requestingSourceModuleClass.getName()
                         + "] does not have access to the module [" + module.getName() + "].");
             }
-
         };
-
     }
 
     private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {
@@ -211,13 +200,9 @@ class HandlerFactoryImpl implements HandlerFactory {
                 whiteListConfigClass.getAnnotation(WhiteList.Modules.class);
 
         if (whiteListModules != null) {
-
             whiteListClasses = whiteListModules.value();
-
         } else {
-
             whiteListClasses = new Class<?>[]{};
-
         }
 
         final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass, context.errors());
@@ -225,7 +210,6 @@ class HandlerFactoryImpl implements HandlerFactory {
         return (dependencyRequest, response) -> {
 
             Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-
             for (Class<?> whiteListClass : whiteListClasses) {
                 if (whiteListClass == requestingSourceModuleClass) {
                     return;
@@ -233,16 +217,11 @@ class HandlerFactoryImpl implements HandlerFactory {
             }
 
             boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(whiteListQualifier);
-
             if (!qualifierMatch) {
-
                 response.addError("The module [" + requestingSourceModuleClass.getName()
                         + "] does not have access to the module [" + module.getName() + "].");
-
             }
-
         };
-
     }
 
     private RequestVisitor dependsOnVisitor(final Class<?> module) {
@@ -474,7 +453,7 @@ class HandlerFactoryImpl implements HandlerFactory {
             }
 
             @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
-                MutableDependencyResponse<T> response =
+                DependencyResponseImpl<T> response =
                         new DependencyResponseImpl<>(dependencyRequest, provisionAdapter.provisionStrategy(), context);
                 moduleRequestVisitor.visit(dependencyRequest, response);
                 scopeVisitor.visit(dependencyRequest, response);
@@ -484,6 +463,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                             + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
                     );
                 }
+                response.validateResponse();
                 return response;
             }
 
@@ -529,6 +509,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         RequestVisitor NONE = (dependencyRequest, dependencyResponse) -> { };
 
         void visit(DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> dependencyResponse);
+
     }
 
     private static class DependencyResponseImpl<T> implements MutableDependencyResponse<T> {
@@ -553,7 +534,11 @@ class HandlerFactoryImpl implements HandlerFactory {
             errors.add(errorMessage);
         }
 
-        @Override public ValidatedDependencyResponse<T> validateResponse() {
+        @Override public ProvisionStrategy<? extends T> provisionStrategy() {
+            return provisionStrategy;
+        }
+
+        void validateResponse() {
             if (errors != null) {
                 for (String error : errors) {
                     context.errors().add(
@@ -561,14 +546,6 @@ class HandlerFactoryImpl implements HandlerFactory {
                             "Denied request for " + dependencyRequest.dependency() + ".  Reason -> " + error);
                 }
             }
-            return new ValidatedDependencyResponse<T>() {
-                @Override public ProvisionStrategy<? extends T> getProvisionStrategy() {
-                    return provisionStrategy;
-                }
-                @Override public ValidatedDependencyResponse<T> validateResponse() {
-                    return this;
-                }
-            };
         }
     }
 
