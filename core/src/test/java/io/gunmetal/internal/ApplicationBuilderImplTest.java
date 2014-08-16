@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.AutoCollection;
+import io.gunmetal.MultiBind;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
@@ -123,19 +123,19 @@ public class ApplicationBuilderImplTest {
             return new ApplicationBuilderImplTest();
         }
 
-        @Provides @Singleton @AutoCollection static String s1(@Stateful String name) {
+        @Provides @Singleton @MultiBind static String s1(@Stateful String name) {
             return name;
         }
 
-        @Provides @Singleton @AutoCollection static String s2() {
+        @Provides @Singleton @MultiBind static String s2() {
             return "2";
         }
 
-        @Provides @Singleton @AutoCollection static String s3() {
+        @Provides @Singleton @MultiBind static String s3() {
             return "3";
         }
 
-        @Provides @Singleton @Main static InputStream printStrings(@AutoCollection List<String> strings) {
+        @Provides @Singleton @Main static InputStream printStrings(@MultiBind List<String> strings) {
             for (String s : strings) {
                 System.out.println(s);
             }

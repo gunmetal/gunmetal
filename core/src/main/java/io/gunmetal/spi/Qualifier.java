@@ -16,7 +16,7 @@
 
 package io.gunmetal.spi;
 
-import io.gunmetal.AutoCollection;
+import io.gunmetal.MultiBind;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -72,7 +72,7 @@ public interface Qualifier {
             Class<? extends Annotation> annotationType = annotation.annotationType();
             if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
                 qualifiers.add(annotation);
-            } else if (annotationType == AutoCollection.class) {
+            } else if (annotationType == MultiBind.class) {
                 qualifiers.add(annotation);
             }
         }

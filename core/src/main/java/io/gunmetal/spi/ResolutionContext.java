@@ -27,7 +27,7 @@ public interface ResolutionContext {
     <T> ProvisionContext<T> provisionContext(ProvisionMetadata<?> provisionMetadata);
 
     static ResolutionContext create() {
-        return Factory.create();
+        return new Internal.ResolutionContextImpl();
     }
 
     interface States  {
@@ -41,7 +41,7 @@ public interface ResolutionContext {
         public T provision;
     }
 
-    final class Factory {
+    final class Internal {
 
         private static class ResolutionContextImpl implements ResolutionContext {
 
@@ -59,10 +59,6 @@ public interface ResolutionContext {
 
                 return strategyContext;
             }
-        }
-
-        private static ResolutionContext create() {
-            return new ResolutionContextImpl();
         }
 
     }

@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.AutoCollection;
+import io.gunmetal.MultiBind;
 import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
@@ -165,7 +165,7 @@ final class ConfigurableMetadataResolver implements ProvisionMetadataResolver, Q
         boolean foundQualifier = false;
         for (Object q : qualifier.qualifiers()) {
             if (q instanceof Annotation
-                    && ((Annotation) q).annotationType().getPackage() != AutoCollection.class.getPackage()) {
+                    && ((Annotation) q).annotationType().getPackage() != MultiBind.class.getPackage()) {
                 if (foundQualifier) {
                     return true;
                 } else {
@@ -217,7 +217,7 @@ final class ConfigurableMetadataResolver implements ProvisionMetadataResolver, Q
                 isProvider = true;
             } else if (annotationType == Overrides.class) {
                 overrides = (Overrides) annotation;
-            } else if (annotationType == AutoCollection.class) {
+            } else if (annotationType == MultiBind.class) {
                 collectionElement = true;
                 qualifiers.add(annotation);
             } else if (annotationType == eagerType) {

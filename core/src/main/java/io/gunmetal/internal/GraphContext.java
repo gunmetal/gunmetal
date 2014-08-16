@@ -10,41 +10,37 @@ import java.util.Map;
 /**
  * @author rees.byars
  */
-interface GraphContext {
+class GraphContext {
 
-    ProvisionStrategyDecorator strategyDecorator();
+    private final ProvisionStrategyDecorator strategyDecorator;
+    private final Linkers linkers;
+    private final Errors errors;
+    private final Map<Class<?>, Object> statefulSources;
 
-    Linkers linkers();
+    GraphContext(ProvisionStrategyDecorator strategyDecorator,
+                 Linkers linkers,
+                 Errors errors,
+                 Map<Class<?>, Object> statefulSources) {
+        this.strategyDecorator = strategyDecorator;
+        this.linkers = linkers;
+        this.errors = errors;
+        this.statefulSources = statefulSources;
+    }
 
-    Errors errors();
+    ProvisionStrategyDecorator strategyDecorator() {
+        return strategyDecorator;
+    }
 
-    <T> T statefulSource(Class<T> sourceClass);
+    Linkers linkers() {
+        return linkers;
+    }
 
-    static GraphContext create(final ProvisionStrategyDecorator strategyDecorator,
-                               final Linkers linkers,
-                               final Errors errors,
-                               final Map<Class<?>, Object> statefulSources) {
+    Errors errors() {
+        return errors;
+    }
 
-        return new GraphContext() {
-
-            @Override public ProvisionStrategyDecorator strategyDecorator() {
-                return strategyDecorator;
-            }
-
-            @Override public Linkers linkers() {
-                return linkers;
-            }
-
-            @Override public Errors errors() {
-                return errors;
-            }
-
-            @Override public <T> T statefulSource(Class<T> sourceClass) {
-                return Generics.as(statefulSources.get(sourceClass));
-            }
-
-        };
-
+    <T> T statefulSource(Class<T> sourceClass) {
+        return Generics.as(statefulSources.get(sourceClass));
     }
 
 }

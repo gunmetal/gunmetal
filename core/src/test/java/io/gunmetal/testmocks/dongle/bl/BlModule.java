@@ -1,6 +1,6 @@
 package io.gunmetal.testmocks.dongle.bl;
 
-import io.gunmetal.AutoCollection;
+import io.gunmetal.MultiBind;
 import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
@@ -28,15 +28,15 @@ public class BlModule {
         return new DongleService() { };
     }
 
-    @Provides @AutoCollection static Dongler dongler1() {
+    @Provides @MultiBind static Dongler dongler1() {
         return new Dongler();
     }
 
-    @Provides @AutoCollection static Dongler dongler2() {
+    @Provides @MultiBind static Dongler dongler2() {
         return new Dongler();
     }
 
-    @Provides static DonglerFactory donglerFactory(@AutoCollection @Bl Provider<List<Dongler>> donglers) {
+    @Provides static DonglerFactory donglerFactory(@MultiBind @Bl Provider<List<Dongler>> donglers) {
         List<Dongler> donglers1 = donglers.get();
         return name -> new Dongler(name, donglers1);
     }

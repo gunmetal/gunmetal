@@ -17,6 +17,8 @@ class GraphErrors implements Errors {
     private volatile List<String> generalErrors;
     private volatile boolean failFast = false;
 
+    GraphErrors() { }
+
     @Override public synchronized Errors add(ProvisionMetadata<?> provisionMetadata, String errorMessage) {
         if (failFast) {
             throw new RuntimeException(

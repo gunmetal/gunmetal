@@ -25,7 +25,7 @@ class GraphCache implements Replicable<GraphCache> {
 
     private final GraphCache parentCache;
     private final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new ConcurrentHashMap<>(64, .75f, 2);
-    private final Set<Dependency<?>> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<Dependency<?>> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
     private final Queue<DependencyRequestHandler<?>> myHandlers = new LinkedList<>();
 
     GraphCache(GraphCache parentCache) {

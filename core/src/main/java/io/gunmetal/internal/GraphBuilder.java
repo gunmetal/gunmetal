@@ -234,7 +234,7 @@ public final class GraphBuilder {
 
         GraphLinker graphLinker = new GraphLinker();
         GraphErrors errors = new GraphErrors();
-        GraphContext graphContext = GraphContext.create(
+        GraphContext graphContext = new GraphContext(
                 ProvisionStrategyDecorator::none,
                 graphLinker,
                 errors,
@@ -303,7 +303,7 @@ public final class GraphBuilder {
 
             GraphLinker graphLinker = new GraphLinker();
             GraphErrors errors = new GraphErrors();
-            GraphContext graphContext = GraphContext.create(
+            GraphContext graphContext = new GraphContext(
                     strategyDecorator,
                     graphLinker,
                     errors,
