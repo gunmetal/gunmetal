@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.ProvisionStrategy;
@@ -29,55 +29,55 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
+class ProvisionAdapterFactoryImpl implements ProvisionAdapterFactory {
 
     private final InjectorFactory injectorFactory;
     private final boolean requireAcyclic;
 
-    ComponentAdapterFactoryImpl(InjectorFactory injectorFactory, boolean requireAcyclic) {
+    ProvisionAdapterFactoryImpl(InjectorFactory injectorFactory, boolean requireAcyclic) {
         this.injectorFactory = injectorFactory;
         this.requireAcyclic = requireAcyclic;
     }
 
-    @Override public <T> ComponentAdapter<T> withClassProvider(ComponentMetadata<Class<?>> componentMetadata,
+    @Override public <T> ProvisionAdapter<T> withClassProvider(ProvisionMetadata<Class<?>> provisionMetadata,
                                                                GraphContext context) {
-        return componentAdapter(
-                componentMetadata,
+        return provisionAdapter(
+                provisionMetadata,
                 context,
-                injectorFactory.constructorInstantiator(componentMetadata, context),
-                injectorFactory.compositeInjector(componentMetadata, context));
+                injectorFactory.constructorInstantiator(provisionMetadata, context),
+                injectorFactory.compositeInjector(provisionMetadata, context));
     }
 
-    @Override public <T> ComponentAdapter<T> withMethodProvider(ComponentMetadata<Method> componentMetadata,
+    @Override public <T> ProvisionAdapter<T> withMethodProvider(ProvisionMetadata<Method> provisionMetadata,
                                                                 GraphContext context) {
-        return componentAdapter(
-                componentMetadata,
+        return provisionAdapter(
+                provisionMetadata,
                 context,
-                injectorFactory.methodInstantiator(componentMetadata, context),
-                injectorFactory.lazyCompositeInjector(componentMetadata, context));
+                injectorFactory.methodInstantiator(provisionMetadata, context),
+                injectorFactory.lazyCompositeInjector(provisionMetadata, context));
     }
 
-    @Override public <T> ComponentAdapter<T> withStatefulMethodProvider(ComponentMetadata<Method> componentMetadata,
+    @Override public <T> ProvisionAdapter<T> withStatefulMethodProvider(ProvisionMetadata<Method> provisionMetadata,
                                                                         Dependency<?> moduleDependency,
                                                                         GraphContext context) {
-        return componentAdapter(
-                componentMetadata,
+        return provisionAdapter(
+                provisionMetadata,
                 context,
-                injectorFactory.statefulMethodInstantiator(componentMetadata, moduleDependency, context),
-                injectorFactory.lazyCompositeInjector(componentMetadata, context));
+                injectorFactory.statefulMethodInstantiator(provisionMetadata, moduleDependency, context),
+                injectorFactory.lazyCompositeInjector(provisionMetadata, context));
     }
 
-    @Override public <T> ComponentAdapter<T> withProvidedModule(ComponentMetadata<Class<?>> componentMetadata,
+    @Override public <T> ProvisionAdapter<T> withProvidedModule(ProvisionMetadata<Class<?>> provisionMetadata,
                                                                 GraphContext context) {
-        return componentAdapter(
-                componentMetadata,
+        return provisionAdapter(
+                provisionMetadata,
                 context,
-                injectorFactory.instanceInstantiator(componentMetadata, context),
-                injectorFactory.lazyCompositeInjector(componentMetadata, context));
+                injectorFactory.instanceInstantiator(provisionMetadata, context),
+                injectorFactory.lazyCompositeInjector(provisionMetadata, context));
     }
 
-    private <T> ComponentAdapter<T> componentAdapter(
-            final ComponentMetadata<?> metadata,
+    private <T> ProvisionAdapter<T> provisionAdapter(
+            final ProvisionMetadata<?> metadata,
             GraphContext context,
             final Instantiator<T> instantiator,
             final Injector<T> injector) {
@@ -85,15 +85,15 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
                 metadata,
                 baseProvisionStrategy(metadata, instantiator, injector, context),
                 context.linkers());
-        return new ComponentAdapter<T>() {
-            @Override public ComponentMetadata<?> metadata() {
+        return new ProvisionAdapter<T>() {
+            @Override public ProvisionMetadata<?> metadata() {
                 return metadata;
             }
             @Override public ProvisionStrategy<T> provisionStrategy() {
                 return provisionStrategy;
             }
-            @Override public ComponentAdapter<T> replicateWith(GraphContext context) {
-                return componentAdapter(
+            @Override public ProvisionAdapter<T> replicateWith(GraphContext context) {
+                return provisionAdapter(
                         metadata,
                         context,
                         instantiator.replicateWith(context),
@@ -108,67 +108,67 @@ class ComponentAdapterFactoryImpl implements ComponentAdapterFactory {
         };
     }
 
-    private <T> ProvisionStrategy<T> baseProvisionStrategy(final ComponentMetadata<?> componentMetadata,
+    private <T> ProvisionStrategy<T> baseProvisionStrategy(final ProvisionMetadata<?> provisionMetadata,
                                                            final Instantiator<T> instantiator,
                                                            final Injector<T> injector,
                                                            GraphContext context) {
 
         // TODO support needs to be added to allow the override to work
-        if (!requireAcyclic || componentMetadata.overrides().allowCycle()) {
-            return cyclicResolutionProvisionStrategy(componentMetadata, instantiator, injector, context);
+        if (!requireAcyclic || provisionMetadata.overrides().allowCycle()) {
+            return cyclicResolutionProvisionStrategy(provisionMetadata, instantiator, injector, context);
         }
 
         return (internalProvider, resolutionContext) -> {
             ResolutionContext.ProvisionContext<T> strategyContext =
-                    resolutionContext.provisionContext(componentMetadata);
+                    resolutionContext.provisionContext(provisionMetadata);
             if (strategyContext.state != ResolutionContext.States.NEW) {
-                throw new CircularReferenceException(componentMetadata);
+                throw new CircularReferenceException(provisionMetadata);
             }
             strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
-            strategyContext.component = instantiator.newInstance(internalProvider, resolutionContext);
+            strategyContext.provision = instantiator.newInstance(internalProvider, resolutionContext);
             strategyContext.state = ResolutionContext.States.PRE_INJECTION;
-            injector.inject(strategyContext.component, internalProvider, resolutionContext);
+            injector.inject(strategyContext.provision, internalProvider, resolutionContext);
             strategyContext.state = ResolutionContext.States.NEW;
-            return strategyContext.component;
+            return strategyContext.provision;
         };
 
     }
 
-    private <T> ProvisionStrategy<T> cyclicResolutionProvisionStrategy(final ComponentMetadata<?> componentMetadata,
+    private <T> ProvisionStrategy<T> cyclicResolutionProvisionStrategy(final ProvisionMetadata<?> provisionMetadata,
                                                            final Instantiator<T> instantiator,
                                                            final Injector<T> injector,
                                                            final GraphContext context) {
         return new ProvisionStrategy<T>() {
             @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 ResolutionContext.ProvisionContext<T> strategyContext =
-                        resolutionContext.provisionContext(componentMetadata);
+                        resolutionContext.provisionContext(provisionMetadata);
                 if (strategyContext.state != ResolutionContext.States.NEW) {
                     if (strategyContext.state == ResolutionContext.States.PRE_INJECTION) {
-                        return strategyContext.component;
+                        return strategyContext.provision;
                     }
-                    throw new CircularReferenceException(componentMetadata);
+                    throw new CircularReferenceException(provisionMetadata);
                 }
                 strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
                 try {
-                    strategyContext.component = instantiator.newInstance(internalProvider, resolutionContext);
+                    strategyContext.provision = instantiator.newInstance(internalProvider, resolutionContext);
                     strategyContext.state = ResolutionContext.States.PRE_INJECTION;
-                    injector.inject(strategyContext.component, internalProvider, resolutionContext);
+                    injector.inject(strategyContext.provision, internalProvider, resolutionContext);
                     strategyContext.state = ResolutionContext.States.NEW;
-                    return strategyContext.component;
+                    return strategyContext.provision;
                 } catch (CircularReferenceException e) {
                     strategyContext.state = ResolutionContext.States.NEW;
-                    if (e.metadata().equals(componentMetadata)) {
+                    if (e.metadata().equals(provisionMetadata)) {
                         ProvisionStrategy<?> reverseStrategy = e.getReverseStrategy();
                         if (reverseStrategy == null) {
                             context.errors().add(
-                                    "The component [" + componentMetadata.toString() + "] depends on itself");
+                                    "The provision [" + provisionMetadata.toString() + "] depends on itself");
                         }
                         e.getReverseStrategy().get(internalProvider, resolutionContext);
-                        return strategyContext.component;
+                        return strategyContext.provision;
                     } else if (e.getReverseStrategy() == null) {
                         e.setReverseStrategy(this);
                     }
-                    e.push(componentMetadata);
+                    e.push(provisionMetadata);
                     throw e;
                 }
             }

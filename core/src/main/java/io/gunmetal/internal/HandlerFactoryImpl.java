@@ -19,8 +19,8 @@ package io.gunmetal.internal;
 import io.gunmetal.BlackList;
 import io.gunmetal.Module;
 import io.gunmetal.WhiteList;
-import io.gunmetal.spi.ComponentMetadata;
-import io.gunmetal.spi.ComponentMetadataResolver;
+import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ProvisionMetadataResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ModuleMetadata;
@@ -45,18 +45,18 @@ import java.util.Set;
  */
 class HandlerFactoryImpl implements HandlerFactory {
 
-    private final ComponentAdapterFactory componentAdapterFactory;
+    private final ProvisionAdapterFactory provisionAdapterFactory;
     private final QualifierResolver qualifierResolver;
-    private final ComponentMetadataResolver componentMetadataResolver;
+    private final ProvisionMetadataResolver provisionMetadataResolver;
     private final boolean requireExplicitModuleDependencies;
 
-    HandlerFactoryImpl(ComponentAdapterFactory componentAdapterFactory,
+    HandlerFactoryImpl(ProvisionAdapterFactory provisionAdapterFactory,
                        QualifierResolver qualifierResolver,
-                       ComponentMetadataResolver componentMetadataResolver,
+                       ProvisionMetadataResolver provisionMetadataResolver,
                        boolean requireExplicitModuleDependencies) {
-        this.componentAdapterFactory = componentAdapterFactory;
+        this.provisionAdapterFactory = provisionAdapterFactory;
         this.qualifierResolver = qualifierResolver;
-        this.componentMetadataResolver = componentMetadataResolver;
+        this.provisionMetadataResolver = provisionMetadataResolver;
         this.requireExplicitModuleDependencies = requireExplicitModuleDependencies;
     }
 
@@ -98,13 +98,13 @@ class HandlerFactoryImpl implements HandlerFactory {
         }
         Class<? super T> cls = typeKey.raw();
         ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library
-        ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
-                componentMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
-        if (!componentAdapter.metadata().qualifier().equals(dependency.qualifier())) {
+        ProvisionAdapter<T> provisionAdapter = provisionAdapterFactory.withClassProvider(
+                provisionMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
+        if (!provisionAdapter.metadata().qualifier().equals(dependency.qualifier())) {
             return null;
         }
         return requestHandler(
-                componentAdapter,
+                provisionAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 moduleMetadata.moduleAnnotation() == Module.NONE ?
                         RequestVisitor.NONE :
@@ -156,13 +156,9 @@ class HandlerFactoryImpl implements HandlerFactory {
                 blackListConfigClass.getAnnotation(BlackList.Modules.class);
 
         if (blackListModules != null) {
-
             blackListClasses = blackListModules.value();
-
         } else {
-
             blackListClasses = new Class<?>[]{};
-
         }
 
         final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass, context.errors());
@@ -170,16 +166,11 @@ class HandlerFactoryImpl implements HandlerFactory {
         return (dependencyRequest, response) -> {
 
             Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-
             for (Class<?> blackListClass : blackListClasses) {
-
                 if (blackListClass == requestingSourceModuleClass) {
-
                     response.addError("The module [" + requestingSourceModuleClass.getName()
                             + "] does not have access to the module [" + module.getName() + "].");
-
                 }
-
             }
 
             boolean qualifierMatch =
@@ -191,9 +182,7 @@ class HandlerFactoryImpl implements HandlerFactory {
                 response.addError("The module [" + requestingSourceModuleClass.getName()
                         + "] does not have access to the module [" + module.getName() + "].");
             }
-
         };
-
     }
 
     private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {
@@ -211,13 +200,9 @@ class HandlerFactoryImpl implements HandlerFactory {
                 whiteListConfigClass.getAnnotation(WhiteList.Modules.class);
 
         if (whiteListModules != null) {
-
             whiteListClasses = whiteListModules.value();
-
         } else {
-
             whiteListClasses = new Class<?>[]{};
-
         }
 
         final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass, context.errors());
@@ -225,7 +210,6 @@ class HandlerFactoryImpl implements HandlerFactory {
         return (dependencyRequest, response) -> {
 
             Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-
             for (Class<?> whiteListClass : whiteListClasses) {
                 if (whiteListClass == requestingSourceModuleClass) {
                     return;
@@ -233,16 +217,11 @@ class HandlerFactoryImpl implements HandlerFactory {
             }
 
             boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(whiteListQualifier);
-
             if (!qualifierMatch) {
-
                 response.addError("The module [" + requestingSourceModuleClass.getName()
                         + "] does not have access to the module [" + module.getName() + "].");
-
             }
-
         };
-
     }
 
     private RequestVisitor dependsOnVisitor(final Class<?> module) {
@@ -293,11 +272,11 @@ class HandlerFactoryImpl implements HandlerFactory {
             });
         } else {
             Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
-                ComponentMetadata<Method> componentMetadata =
-                        componentMetadataResolver.resolveMetadata(m, moduleMetadata, context.errors());
-                if (componentMetadata.isProvider()) {
+                ProvisionMetadata<Method> provisionMetadata =
+                        provisionMetadataResolver.resolveMetadata(m, moduleMetadata, context.errors());
+                if (provisionMetadata.isProvider()) {
                     requestHandlers.add(
-                            requestHandler(componentMetadata, module, moduleRequestVisitor, moduleMetadata, context));
+                            requestHandler(provisionMetadata, module, moduleRequestVisitor, moduleMetadata, context));
                 }
             });
         }
@@ -340,13 +319,13 @@ class HandlerFactoryImpl implements HandlerFactory {
     }
 
     private <T> DependencyRequestHandler<T> requestHandler(
-            ComponentMetadata<Method> componentMetadata,
+            ProvisionMetadata<Method> provisionMetadata,
             Class<?> module,
             RequestVisitor moduleRequestVisitor,
             ModuleMetadata moduleMetadata,
             GraphContext context) {
 
-        Method method = componentMetadata.provider();
+        Method method = provisionMetadata.provider();
 
         int modifiers = method.getModifiers();
 
@@ -360,16 +339,16 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is returns void.");
         }
 
-        // if (componentMetadata.isModule()) {
+        // if (provisionMetadata.isModule()) {
             // TODO
         // }
 
         // TODO targeted return type check
         final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
-                Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType()));
+                Dependency.from(provisionMetadata.qualifier(), method.getGenericReturnType()));
 
         return requestHandler(
-                componentAdapterFactory.<T>withMethodProvider(componentMetadata, context),
+                provisionAdapterFactory.<T>withMethodProvider(provisionMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
                 decorateForModule(moduleMetadata, AccessFilter.create(method)),
@@ -388,21 +367,21 @@ class HandlerFactoryImpl implements HandlerFactory {
                     + method.getName() + "] in module [" + module.getName() + "] is returns void.");
         }
 
-        ComponentMetadata<Method> componentMetadata =
-                componentMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
+        ProvisionMetadata<Method> provisionMetadata =
+                provisionMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
 
-        Dependency<T> componentDependency =
-                Dependency.from(componentMetadata.qualifier(), method.getGenericReturnType());
+        Dependency<T> provisionDependency =
+                Dependency.from(provisionMetadata.qualifier(), method.getGenericReturnType());
 
         Dependency<?> moduleDependency =
                 Dependency.from(moduleMetadata.qualifier(), module);
 
         // TODO targeted return type check
         final List<Dependency<? super T>> dependencies =
-                Collections.<Dependency<? super T>>singletonList(componentDependency);
+                Collections.<Dependency<? super T>>singletonList(provisionDependency);
 
         return requestHandler(
-                componentAdapterFactory.<T>withStatefulMethodProvider(componentMetadata, moduleDependency, context),
+                provisionAdapterFactory.<T>withStatefulMethodProvider(provisionMetadata, moduleDependency, context),
                 dependencies,
                 moduleRequestVisitor,
                 decorateForModule(moduleMetadata, AccessFilter.create(method)),
@@ -413,10 +392,10 @@ class HandlerFactoryImpl implements HandlerFactory {
                                                                         ModuleMetadata moduleMetadata,
                                                                         GraphContext context) {
         Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
-        ComponentAdapter<T> componentAdapter = componentAdapterFactory.withClassProvider(
-                componentMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
+        ProvisionAdapter<T> provisionAdapter = provisionAdapterFactory.withClassProvider(
+                provisionMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
         return requestHandler(
-                componentAdapter,
+                provisionAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 (dependencyRequest, dependencyResponse) -> {
                     if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
@@ -431,15 +410,15 @@ class HandlerFactoryImpl implements HandlerFactory {
                                                                         ModuleMetadata moduleMetadata,
                                                                         GraphContext context) {
         Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
-        ComponentMetadata<Class<?>> componentMetadata =
-                componentMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors());
-        if (componentMetadata.scope() != Scopes.SINGLETON) {
-            context.errors().add(componentMetadata, "Provided modules must have a scope of singleton");
+        ProvisionMetadata<Class<?>> provisionMetadata =
+                provisionMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors());
+        if (provisionMetadata.scope() != Scopes.SINGLETON) {
+            context.errors().add(provisionMetadata, "Provided modules must have a scope of singleton");
         }
-        ComponentAdapter<T> componentAdapter = componentAdapterFactory.withProvidedModule(
-                componentMetadata, context);
+        ProvisionAdapter<T> provisionAdapter = provisionAdapterFactory.withProvidedModule(
+                provisionMetadata, context);
         return requestHandler(
-                componentAdapter,
+                provisionAdapter,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 (dependencyRequest, dependencyResponse) -> {
                     if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
@@ -451,14 +430,14 @@ class HandlerFactoryImpl implements HandlerFactory {
     }
 
     private <T> DependencyRequestHandler<T> requestHandler(
-                                                     final ComponentAdapter<T> componentAdapter,
+                                                     final ProvisionAdapter<T> provisionAdapter,
                                                      final List<Dependency<? super T>> targets,
                                                      final RequestVisitor moduleRequestVisitor,
                                                      final AccessFilter<Class<?>> classAccessFilter,
                                                      GraphContext context) {
 
         RequestVisitor scopeVisitor = (dependencyRequest, response) -> {
-            if (!componentAdapter.metadata().scope().canInject(dependencyRequest.sourceScope())) {
+            if (!provisionAdapter.metadata().scope().canInject(dependencyRequest.sourceScope())) {
                 response.addError("mis-scoped"); // TODO message
             }
         };
@@ -470,12 +449,12 @@ class HandlerFactoryImpl implements HandlerFactory {
             }
 
             @Override public List<Dependency<?>> dependencies() {
-                return componentAdapter.dependencies();
+                return provisionAdapter.dependencies();
             }
 
             @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
-                MutableDependencyResponse<T> response =
-                        new DependencyResponseImpl<>(dependencyRequest, componentAdapter.provisionStrategy(), context);
+                DependencyResponseImpl<T> response =
+                        new DependencyResponseImpl<>(dependencyRequest, provisionAdapter.provisionStrategy(), context);
                 moduleRequestVisitor.visit(dependencyRequest, response);
                 scopeVisitor.visit(dependencyRequest, response);
                 if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
@@ -484,20 +463,21 @@ class HandlerFactoryImpl implements HandlerFactory {
                             + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
                     );
                 }
+                response.validateResponse();
                 return response;
             }
 
             @Override public ProvisionStrategy<T> force() {
-                return componentAdapter.provisionStrategy();
+                return provisionAdapter.provisionStrategy();
             }
 
-            @Override public ComponentMetadata<?> componentMetadata() {
-                return componentAdapter.metadata();
+            @Override public ProvisionMetadata<?> provisionMetadata() {
+                return provisionAdapter.metadata();
             }
 
             @Override public DependencyRequestHandler<T> replicateWith(GraphContext context) {
                 return requestHandler(
-                        componentAdapter.replicateWith(context),
+                        provisionAdapter.replicateWith(context),
                         targets,
                         moduleRequestVisitor,
                         classAccessFilter,
@@ -529,6 +509,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         RequestVisitor NONE = (dependencyRequest, dependencyResponse) -> { };
 
         void visit(DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> dependencyResponse);
+
     }
 
     private static class DependencyResponseImpl<T> implements MutableDependencyResponse<T> {
@@ -553,22 +534,18 @@ class HandlerFactoryImpl implements HandlerFactory {
             errors.add(errorMessage);
         }
 
-        @Override public ValidatedDependencyResponse<T> validateResponse() {
+        @Override public ProvisionStrategy<? extends T> provisionStrategy() {
+            return provisionStrategy;
+        }
+
+        void validateResponse() {
             if (errors != null) {
                 for (String error : errors) {
                     context.errors().add(
-                            dependencyRequest.sourceComponent(),
+                            dependencyRequest.sourceProvision(),
                             "Denied request for " + dependencyRequest.dependency() + ".  Reason -> " + error);
                 }
             }
-            return new ValidatedDependencyResponse<T>() {
-                @Override public ProvisionStrategy<? extends T> getProvisionStrategy() {
-                    return provisionStrategy;
-                }
-                @Override public ValidatedDependencyResponse<T> validateResponse() {
-                    return this;
-                }
-            };
         }
     }
 

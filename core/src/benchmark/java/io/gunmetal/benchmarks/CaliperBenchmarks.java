@@ -29,8 +29,7 @@ import java.util.HashMap;
  */
 public class CaliperBenchmarks {
 
-    io.gunmetal.Provider<N> newGunmetalProvider;
-    ObjectGraph APPLICATION_CONTAINER;
+    Provider<N> newGunmetalProvider;
     @Inject public Provider<N> daggerProvider;
     dagger.ObjectGraph OBJECT_GRAPH;
     static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
@@ -44,12 +43,17 @@ public class CaliperBenchmarks {
     @BeforeExperiment() void setUp() {
         OBJECT_GRAPH = dagger.ObjectGraph.create(new DaggerBenchMarkModule());
         INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
-        APPLICATION_CONTAINER = io.gunmetal.ObjectGraph.builder().requireAcyclic().buildTemplate(NewGunmetalBenchMarkModule.class).newInstance();
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
-        class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> { }
-        newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
-        template = io.gunmetal.ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class);
+        class ProviderDep implements io.gunmetal.Dependency<Provider<N>> { }
+        newGunmetalProvider = ObjectGraph
+                .builder()
+                .requireAcyclic()
+                .withJsr330Metadata()
+                .buildTemplate(SlimGunmetalBenchMarkModule.class)
+                .newInstance()
+                .get(ProviderDep.class);
+        template = ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class);
 
         guiceProvider(100);
         newGunmetalProvider(100);
@@ -60,8 +64,7 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            io.gunmetal.ObjectGraph.builder()
-                    .requireAcyclic()
+            ObjectGraph.builder()
                     .buildTemplate(NewGunmetalBenchMarkModule.class)
                     .newInstance()
                     .inject(injectionTarget);
@@ -210,37 +213,33 @@ public class CaliperBenchmarks {
     }
 
     @Benchmark long newGunmetalProvider(int reps) {
-        io.gunmetal.Provider<N> provider = newGunmetalProvider;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= provider.get().hashCode();
+            dummy |= newGunmetalProvider.get().hashCode();
         }
         return dummy;
     }
 
     @Benchmark long gnewGunmetalProvider(int reps) {
-        io.gunmetal.Provider<N> provider = newGunmetalProvider;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= provider.get().hashCode();
+            dummy |= newGunmetalProvider.get().hashCode();
         }
         return dummy;
     }
 
     @Benchmark long daggerProvider(int reps) {
-        Provider<N> provider = daggerProvider;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= provider.get().hashCode();
+            dummy |= daggerProvider.get().hashCode();
         }
         return dummy;
     }
 
     @Benchmark long guiceProvider(int reps) {
-        Provider<N> provider = guiceProvider;
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= provider.get().hashCode();
+            dummy |= guiceProvider.get().hashCode();
         }
         return dummy;
     }

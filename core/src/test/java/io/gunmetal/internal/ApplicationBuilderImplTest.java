@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.AutoCollection;
+import io.gunmetal.MultiBind;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
@@ -27,7 +27,7 @@ import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
@@ -123,19 +123,19 @@ public class ApplicationBuilderImplTest {
             return new ApplicationBuilderImplTest();
         }
 
-        @Provides @Singleton @AutoCollection static String s1(@Stateful String name) {
+        @Provides @Singleton @MultiBind static String s1(@Stateful String name) {
             return name;
         }
 
-        @Provides @Singleton @AutoCollection static String s2() {
+        @Provides @Singleton @MultiBind static String s2() {
             return "2";
         }
 
-        @Provides @Singleton @AutoCollection static String s3() {
+        @Provides @Singleton @MultiBind static String s3() {
             return "3";
         }
 
-        @Provides @Singleton @Main static InputStream printStrings(@AutoCollection List<String> strings) {
+        @Provides @Singleton @Main static InputStream printStrings(@MultiBind List<String> strings) {
             for (String s : strings) {
                 System.out.println(s);
             }
@@ -144,7 +144,7 @@ public class ApplicationBuilderImplTest {
 
         @Provides @Singleton @Lazy static List<? extends ProvisionStrategyDecorator> decorators() {
             return Collections.singletonList(new ProvisionStrategyDecorator() {
-                @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
+                @Override public <T> ProvisionStrategy<T> decorate(ProvisionMetadata<?> provisionMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
                     return delegateStrategy;
                 }
             });
@@ -154,7 +154,7 @@ public class ApplicationBuilderImplTest {
             return Collections.singletonMap(
                     CustomScopes.TEST,
                     new ProvisionStrategyDecorator() {
-                        @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
+                        @Override public <T> ProvisionStrategy<T> decorate(ProvisionMetadata<?> provisionMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
                             return delegateStrategy;
                         }
                     });

@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.Errors;
 
 import java.util.HashMap;
@@ -13,22 +13,24 @@ import java.util.Map;
  */
 class GraphErrors implements Errors {
 
-    private volatile Map<ComponentMetadata<?>, List<String>> componentErrors;
+    private volatile Map<ProvisionMetadata<?>, List<String>> provisionErrors;
     private volatile List<String> generalErrors;
     private volatile boolean failFast = false;
 
-    @Override public synchronized Errors add(ComponentMetadata<?> componentMetadata, String errorMessage) {
+    GraphErrors() { }
+
+    @Override public synchronized Errors add(ProvisionMetadata<?> provisionMetadata, String errorMessage) {
         if (failFast) {
             throw new RuntimeException(
-                    "\n    Errors for " + componentMetadata + " -> " + errorMessage);
+                    "\n    Errors for " + provisionMetadata + " -> " + errorMessage);
         }
-        if (componentErrors == null) {
-            componentErrors = new HashMap<>();
+        if (provisionErrors == null) {
+            provisionErrors = new HashMap<>();
         }
-        List<String> errors = componentErrors.get(componentMetadata);
+        List<String> errors = provisionErrors.get(provisionMetadata);
         if (errors == null) {
             errors = new LinkedList<>();
-            componentErrors.put(componentMetadata, errors);
+            provisionErrors.put(provisionMetadata, errors);
         }
         errors.add(errorMessage);
         return this;
@@ -49,7 +51,7 @@ class GraphErrors implements Errors {
 
         failFast = true;
 
-        if (componentErrors == null && generalErrors == null) {
+        if (provisionErrors == null && generalErrors == null) {
             return;
         }
 
@@ -57,8 +59,8 @@ class GraphErrors implements Errors {
 
         final String tab = "    ";
 
-        if (componentErrors != null) {
-            for (Map.Entry<ComponentMetadata<?>, List<String>> entry : componentErrors.entrySet()) {
+        if (provisionErrors != null) {
+            for (Map.Entry<ProvisionMetadata<?>, List<String>> entry : provisionErrors.entrySet()) {
                 builder
                         .append("\n")
                         .append(tab)
@@ -69,7 +71,7 @@ class GraphErrors implements Errors {
                     builder.append("\n").append(tab).append(tab).append(errorMessage);
                 }
             }
-            componentErrors = null;
+            provisionErrors = null;
         }
 
         if (generalErrors != null) {

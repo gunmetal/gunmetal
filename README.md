@@ -17,6 +17,7 @@ Nice things about Gunmetal:
     - configurable enforcement and override options for programming to interfaces, acyclic graphs, etc
     - small, intuitive API for small learning curve and quickly ramping up teams for rapid development
     - highly flexible API for easily handling those pain-in-the-ass corner cases without hacks
+    - written in Java 8 with support for lambdas
 
 Traceability & Simplicity -- Modularity & Visibility -- Speed & Power
 

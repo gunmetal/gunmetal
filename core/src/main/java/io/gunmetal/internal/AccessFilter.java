@@ -135,15 +135,11 @@ interface AccessFilter<T> {
         }
 
         private static Class<?> getHighestEnclosingClass(Class<?> cls) {
-
             Class<?> enclosingClass = cls.getEnclosingClass();
-
             if (enclosingClass == null) {
                 return cls;
             }
-
             return getHighestEnclosingClass(enclosingClass);
-
         }
 
         private static ClassAccessFilter getClassAccessFilterForAccessLevel(
@@ -152,73 +148,48 @@ interface AccessFilter<T> {
             switch (accessLevel) {
 
                 case PRIVATE: {
-
                     final Class<?> resourceEnclosingClass =
                             getHighestEnclosingClass(classOfResourceBeingRequested);
-
                     return new BaseClassAccessFilter(classOfResourceBeingRequested, false) {
-
                         @Override public boolean isAccessibleTo(final Class<?> classOfResourceRequestingAccess) {
                             return classOfResourceBeingRequested == classOfResourceRequestingAccess
                                     || resourceEnclosingClass == getHighestEnclosingClass(classOfResourceRequestingAccess);
                         }
-
                     };
                 }
 
                 case PROTECTED: {
-
                     final Package packageOfResourceBeingRequested = classOfResourceBeingRequested.getPackage();
-
                     return new BaseClassAccessFilter(classOfResourceBeingRequested, false) {
-
                         @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return (packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage())
                                     || classOfResourceBeingRequested.isAssignableFrom(classOfResourceRequestingAccess);
                         }
-
                     };
-
                 }
 
                 case PACKAGE_PRIVATE: {
-
                     final Package packageOfResourceBeingRequested = classOfResourceBeingRequested.getPackage();
-
                     return new BaseClassAccessFilter(classOfResourceBeingRequested, false) {
-
                         @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return packageOfResourceBeingRequested == classOfResourceRequestingAccess.getPackage();
                         }
-
                     };
-
                 }
 
                 case PUBLIC: {
-
                     return new BaseClassAccessFilter(classOfResourceBeingRequested, true) {
-
                         @Override public boolean isAccessibleTo(Class<?> classOfResourceRequestingAccess) {
                             return true;
                         }
-
                     };
-
                 }
 
                 case UNDEFINED:
                 default: {
-
                     throw new UnsupportedOperationException("AccessLevel.UNDEFINED should be used only as a placeholder");
-
                 }
-
             }
         }
-
     }
-
-
-
 }

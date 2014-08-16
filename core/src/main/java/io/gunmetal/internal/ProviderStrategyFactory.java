@@ -19,7 +19,7 @@ class ProviderStrategyFactory implements ReferenceStrategyFactory {
     }
 
     public <T> ProvisionStrategy<T> create(
-            final ProvisionStrategy<?> componentStrategy,
+            final ProvisionStrategy<?> provisionStrategy,
             final InternalProvider internalProvider) {
 
         final Object provider = providerAdapter.provider(new Provider<Object>() {
@@ -31,14 +31,14 @@ class ProviderStrategyFactory implements ReferenceStrategyFactory {
                 ResolutionContext context = contextThreadLocal.get();
 
                 if (context != null) {
-                    return componentStrategy.get(
+                    return provisionStrategy.get(
                             internalProvider, context);
                 }
 
                 try {
                     context = ResolutionContext.create();
                     contextThreadLocal.set(context);
-                    return componentStrategy.get(
+                    return provisionStrategy.get(
                             internalProvider, context);
                 } finally {
                     contextThreadLocal.remove();

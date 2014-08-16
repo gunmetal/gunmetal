@@ -23,12 +23,6 @@ import io.gunmetal.spi.ProvisionStrategy;
  */
 interface DependencyResponse<T> {
 
-    ValidatedDependencyResponse<T> validateResponse();
-
-    interface ValidatedDependencyResponse<T> extends DependencyResponse<T> {
-
-        ProvisionStrategy<? extends T> getProvisionStrategy();
-
-    }
+   ProvisionStrategy<? extends T> provisionStrategy();
 
 }

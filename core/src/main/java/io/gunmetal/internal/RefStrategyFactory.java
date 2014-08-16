@@ -10,8 +10,9 @@ import io.gunmetal.util.Generics;
  */
 class RefStrategyFactory implements ReferenceStrategyFactory {
 
-    @Override public <T> ProvisionStrategy<T> create(ProvisionStrategy<?> componentStrategy, InternalProvider internalProvider) {
-        return Generics.as(createRefStrategy(componentStrategy));
+    @Override public <T> ProvisionStrategy<T> create(ProvisionStrategy<?> provisionStrategy,
+                                                     InternalProvider internalProvider) {
+        return Generics.as(createRefStrategy(provisionStrategy));
     }
 
     private static <T> ProvisionStrategy<Ref<T>> createRefStrategy(ProvisionStrategy<T> provisionStrategy) {

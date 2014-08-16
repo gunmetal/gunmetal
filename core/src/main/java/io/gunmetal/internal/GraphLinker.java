@@ -16,6 +16,8 @@ class GraphLinker implements Linkers {
     private final Queue<Linker> postWiringLinkers = new LinkedList<>();
     private final Queue<Linker> eagerLinkers = new LinkedList<>();
 
+    GraphLinker() { }
+
     @Override public synchronized void addWiringLinker(Linker linker) {
         postWiringLinkers.add(linker);
     }

@@ -16,23 +16,23 @@ import java.util.Queue;
 /**
 * @author rees.byars
 */
-class InternalProviderImpl implements InternalProvider {
+class GraphProvider implements InternalProvider {
 
     private final ProviderAdapter providerAdapter;
     private final HandlerFactory handlerFactory;
-    private final HandlerCache handlerCache;
+    private final GraphCache graphCache;
     private final GraphContext context;
     private final boolean requireInterfaces;
     private final Queue<Dependency<?>> dependencies = new LinkedList<>();
 
-    InternalProviderImpl(ProviderAdapter providerAdapter,
-                         HandlerFactory handlerFactory,
-                         HandlerCache handlerCache,
-                         GraphContext context,
-                         boolean requireInterfaces) {
+    GraphProvider(ProviderAdapter providerAdapter,
+                  HandlerFactory handlerFactory,
+                  GraphCache graphCache,
+                  GraphContext context,
+                  boolean requireInterfaces) {
         this.providerAdapter = providerAdapter;
         this.handlerFactory = handlerFactory;
-        this.handlerCache = handlerCache;
+        this.graphCache = graphCache;
         this.context = context;
         this.requireInterfaces = requireInterfaces;
     }
@@ -49,54 +49,50 @@ class InternalProviderImpl implements InternalProvider {
         dependencies.add(dependency);
         if (requireInterfaces &&
                 !(dependency.typeKey().raw().isInterface()
-                        || dependencyRequest.sourceComponent().overrides().allowNonInterface())) {
+                        || dependencyRequest.sourceProvision().overrides().allowNonInterface())) {
             context.errors().add(
-                    dependencyRequest.sourceComponent(),
+                    dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
-        DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
+        DependencyRequestHandler<? extends T> requestHandler = graphCache.get(dependency);
         if (requestHandler != null) {
             dependencies.remove();
             return requestHandler
                     .handle(dependencyRequest)
-                    .validateResponse()
-                    .getProvisionStrategy();
+                    .provisionStrategy();
         }
         if (providerAdapter.isProvider(dependency)) {
             requestHandler = createReferenceHandler(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
             if (requestHandler != null) {
                 dependencies.remove();
-                handlerCache.put(dependency, requestHandler, context.errors());
+                graphCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
-                        .validateResponse()
-                        .getProvisionStrategy();
+                        .provisionStrategy();
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
             requestHandler = createReferenceHandler(dependencyRequest, RefStrategyFactory::new);
             if (requestHandler != null) {
                 dependencies.remove();
-                handlerCache.put(dependency, requestHandler, context.errors());
+                graphCache.put(dependency, requestHandler, context.errors());
                 return requestHandler
                         .handle(dependencyRequest)
-                        .validateResponse()
-                        .getProvisionStrategy();
+                        .provisionStrategy();
             }
         }
 
         requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, context);
         if (requestHandler != null) {
             dependencies.remove();
-            handlerCache.put(dependency, requestHandler, context.errors());
+            graphCache.put(dependency, requestHandler, context.errors());
             return requestHandler
                     .handle(dependencyRequest)
-                    .validateResponse()
-                    .getProvisionStrategy();
+                    .provisionStrategy();
         }
 
         context.errors().add(
-                dependencyRequest.sourceComponent(),
+                dependencyRequest.sourceProvision(),
                 "There is no provider defined for a dependency -> " + dependency);
 
         // TODO shouldn't need to cast
@@ -107,19 +103,19 @@ class InternalProviderImpl implements InternalProvider {
             final DependencyRequest<T> refRequest, Provider<ReferenceStrategyFactory> factoryProvider) {
         Dependency<?> providerDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
-        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
-        if (componentHandler == null) {
+        final Dependency<C> provisionDependency = Dependency.from(providerDependency.qualifier(), providedType);
+        final DependencyRequestHandler<? extends C> provisionHandler = graphCache.get(provisionDependency);
+        if (provisionHandler == null) {
             return null;
         }
-        ProvisionStrategy<? extends C> componentStrategy = componentHandler.force();
-        final ProvisionStrategy<T> providerStrategy = factoryProvider.get().create(componentStrategy, this);
+        ProvisionStrategy<? extends C> provisionStrategy = provisionHandler.force();
+        final ProvisionStrategy<T> providerStrategy = factoryProvider.get().create(provisionStrategy, this);
         return new ReferenceRequestHandler<>(
                 refRequest,
                 providerStrategy,
                 factoryProvider.get(),
-                componentHandler,
-                componentDependency);
+                provisionHandler,
+                provisionDependency);
     }
 
 }

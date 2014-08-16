@@ -25,6 +25,6 @@ public interface QualifierResolver {
 
     Qualifier resolve(AnnotatedElement annotatedElement, Errors errors);
 
-    Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier, ComponentErrors errors);
+    Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier, ProvisionErrors errors);
 
 }

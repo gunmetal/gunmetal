@@ -21,7 +21,7 @@ import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.Provider;
 import io.gunmetal.TemplateGraph;
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InjectionResolver;
@@ -203,11 +203,11 @@ public final class GraphBuilder {
         }));
         ProvisionStrategyDecorator strategyDecorator = new ProvisionStrategyDecorator() {
             @Override public <T> ProvisionStrategy<T> decorate(
-                    ComponentMetadata<?> componentMetadata,
+                    ProvisionMetadata<?> provisionMetadata,
                     ProvisionStrategy<T> delegateStrategy,
                     Linkers linkers) {
                 for (ProvisionStrategyDecorator decorator : strategyDecorators) {
-                    delegateStrategy = decorator.decorate(componentMetadata, delegateStrategy, linkers);
+                    delegateStrategy = decorator.decorate(provisionMetadata, delegateStrategy, linkers);
                 }
                 return delegateStrategy;
             }
@@ -221,20 +221,20 @@ public final class GraphBuilder {
                         graphMetadata.isRestrictFieldInjection(),
                         graphMetadata.isRestrictSetterInjection()));
 
-        ComponentAdapterFactory componentAdapterFactory =
-                new ComponentAdapterFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
+        ProvisionAdapterFactory provisionAdapterFactory =
+                new ProvisionAdapterFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
 
         HandlerFactory handlerFactory = new HandlerFactoryImpl(
-                componentAdapterFactory,
+                provisionAdapterFactory,
                 configurableMetadataResolver,
                 configurableMetadataResolver,
                 graphMetadata.isRequireExplicitModuleDependencies());
 
-        HandlerCache handlerCache = new HandlerCache(parentGraph == null ? null : parentGraph.handlerCache);
+        GraphCache graphCache = new GraphCache(parentGraph == null ? null : parentGraph.graphCache);
 
         GraphLinker graphLinker = new GraphLinker();
         GraphErrors errors = new GraphErrors();
-        GraphContext graphContext = GraphContext.create(
+        GraphContext graphContext = new GraphContext(
                 ProvisionStrategyDecorator::none,
                 graphLinker,
                 errors,
@@ -248,14 +248,14 @@ public final class GraphBuilder {
         for (Class<?> module : modules) {
             List<DependencyRequestHandler<?>> moduleRequestHandlers =
                     handlerFactory.createHandlersForModule(module, graphContext, loadedModules);
-            handlerCache.putAll(moduleRequestHandlers, errors);
+            graphCache.putAll(moduleRequestHandlers, errors);
         }
 
         InternalProvider internalProvider =
-                new InternalProviderImpl(
+                new GraphProvider(
                         providerAdapter,
                         handlerFactory,
-                        handlerCache,
+                        graphCache,
                         graphContext,
                         graphMetadata.isRequireInterfaces());
 
@@ -266,7 +266,7 @@ public final class GraphBuilder {
                 injectorFactory,
                 strategyDecorator,
                 handlerFactory,
-                handlerCache,
+                graphCache,
                 loadedModules);
     }
 
@@ -275,20 +275,20 @@ public final class GraphBuilder {
         private final InjectorFactory injectorFactory;
         private final ProvisionStrategyDecorator strategyDecorator;
         private final HandlerFactory handlerFactory;
-        private final HandlerCache handlerCache;
+        private final GraphCache graphCache;
         private final Set<Class<?>> loadedModules;
-        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
-        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
+        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
+        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(0, .75f, 4);
 
         Template(InjectorFactory injectorFactory,
                  ProvisionStrategyDecorator strategyDecorator,
                  HandlerFactory handlerFactory,
-                 HandlerCache handlerCache,
+                 GraphCache graphCache,
                  Set<Class<?>> loadedModules) {
             this.injectorFactory = injectorFactory;
             this.strategyDecorator = strategyDecorator;
             this.handlerFactory = handlerFactory;
-            this.handlerCache = handlerCache;
+            this.graphCache = graphCache;
             this.loadedModules = loadedModules;
         }
 
@@ -303,14 +303,14 @@ public final class GraphBuilder {
 
             GraphLinker graphLinker = new GraphLinker();
             GraphErrors errors = new GraphErrors();
-            GraphContext graphContext = GraphContext.create(
+            GraphContext graphContext = new GraphContext(
                     strategyDecorator,
                     graphLinker,
                     errors,
                     statefulModulesMap
             );
 
-            HandlerCache newHandlerCache = handlerCache.replicateWith(graphContext);
+            GraphCache newGraphCache = graphCache.replicateWith(graphContext);
 
             Map<Class<?>, Injector<?>> injectorHashMap = new HashMap<>();
             for (Map.Entry<Class<?>, Injector<?>> entry : injectors.entrySet()) {
@@ -323,10 +323,10 @@ public final class GraphBuilder {
             }
 
             InternalProvider internalProvider =
-                    new InternalProviderImpl(
+                    new GraphProvider(
                             providerAdapter,
                             handlerFactory,
-                            newHandlerCache,
+                            newGraphCache,
                             graphContext,
                             graphMetadata.isRequireInterfaces());
 
@@ -337,7 +337,7 @@ public final class GraphBuilder {
                     this,
                     graphLinker,
                     internalProvider,
-                    newHandlerCache,
+                    newGraphCache,
                     graphContext);
 
             copy.injectors.putAll(injectorHashMap);
@@ -353,20 +353,20 @@ public final class GraphBuilder {
         private final Template template;
         private final GraphLinker graphLinker;
         private final InternalProvider internalProvider;
-        private final HandlerCache handlerCache;
-        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(16, .75f, 4);
-        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(16, .75f, 4);
+        private final GraphCache graphCache;
+        private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
+        private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(0, .75f, 4);
         private final GraphContext graphContext;
 
         Graph(Template template,
               GraphLinker graphLinker,
               InternalProvider internalProvider,
-              HandlerCache handlerCache,
+              GraphCache graphCache,
               GraphContext graphContext) {
             this.template = template;
             this.graphLinker = graphLinker;
             this.internalProvider = internalProvider;
-            this.handlerCache = handlerCache;
+            this.graphCache = graphCache;
             this.graphContext = graphContext;
         }
 
@@ -438,7 +438,7 @@ public final class GraphBuilder {
                     qualifier,
                     dependencyType);
 
-            DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
+            DependencyRequestHandler<? extends T> requestHandler = graphCache.get(dependency);
 
             if (requestHandler != null) {
 
@@ -447,14 +447,13 @@ public final class GraphBuilder {
             } else if (providerAdapter.isProvider(dependency)) {
 
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
-                final Dependency<?> componentDependency = Dependency.from(dependency.qualifier(), providedType);
-                final DependencyRequestHandler<?> componentHandler = handlerCache.get(componentDependency);
-                if (componentHandler == null) {
+                final Dependency<?> provisionDependency = Dependency.from(dependency.qualifier(), providedType);
+                final DependencyRequestHandler<?> provisionHandler = graphCache.get(provisionDependency);
+                if (provisionHandler == null) {
                     return null;
                 }
-                ProvisionStrategy<?> componentStrategy = componentHandler.force();
                 return new ProviderStrategyFactory(providerAdapter)
-                        .<T>create(componentStrategy, internalProvider)
+                        .<T>create(provisionHandler.force(), internalProvider)
                         .get(internalProvider, ResolutionContext.create());
 
             }
