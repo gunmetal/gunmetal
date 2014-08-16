@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ProvisionStrategy;
@@ -36,6 +36,6 @@ interface DependencyRequestHandler<T> extends Replicable<DependencyRequestHandle
 
     ProvisionStrategy<T> force();
 
-    ComponentMetadata<?> componentMetadata();
+    ProvisionMetadata<?> provisionMetadata();
 
 }

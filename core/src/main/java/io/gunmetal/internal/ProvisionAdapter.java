@@ -16,15 +16,15 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 
 /**
  * @author rees.byars
  */
-interface ComponentAdapter<T> extends Dependent, Replicable<ComponentAdapter<T>> {
+interface ProvisionAdapter<T> extends Dependent, Replicable<ProvisionAdapter<T>> {
 
-    ComponentMetadata<?> metadata();
+    ProvisionMetadata<?> metadata();
 
     ProvisionStrategy<T> provisionStrategy();
 

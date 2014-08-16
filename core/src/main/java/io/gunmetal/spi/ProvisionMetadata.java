@@ -23,7 +23,7 @@ import java.lang.reflect.AnnotatedElement;
 /**
  * @author rees.byars
  */
-public class ComponentMetadata<P extends AnnotatedElement> {
+public class ProvisionMetadata<P extends AnnotatedElement> {
 
     private final P provider;
     private final Class<?> providerClass;
@@ -38,17 +38,17 @@ public class ComponentMetadata<P extends AnnotatedElement> {
     private final boolean isProvider;
     private final int hashCode;
     
-    public ComponentMetadata(P provider,
-                      Class<?> providerClass,
-                      ModuleMetadata moduleMetadata,
-                      Qualifier qualifier,
-                      Scope scope,
-                      Overrides overrides,
-                      boolean eager,
-                      boolean isCollectionElement,
-                      boolean isModule,
-                      boolean isProvided,
-                      boolean isProvider) {
+    public ProvisionMetadata(P provider,
+                             Class<?> providerClass,
+                             ModuleMetadata moduleMetadata,
+                             Qualifier qualifier,
+                             Scope scope,
+                             Overrides overrides,
+                             boolean eager,
+                             boolean isCollectionElement,
+                             boolean isModule,
+                             boolean isProvided,
+                             boolean isProvider) {
         this.provider = provider;
         this.providerClass = providerClass;
         this.moduleMetadata = moduleMetadata;
@@ -115,16 +115,16 @@ public class ComponentMetadata<P extends AnnotatedElement> {
         if (target == this) {
             return true;
         }
-        if (!(target instanceof ComponentMetadata<?>)) {
+        if (!(target instanceof ProvisionMetadata<?>)) {
             return false;
         }
-        ComponentMetadata<?> componentMetadataTarget = (ComponentMetadata<?>) target;
-        return componentMetadataTarget.qualifier().equals(qualifier())
-                && componentMetadataTarget.provider().equals(provider());
+        ProvisionMetadata<?> provisionMetadataTarget = (ProvisionMetadata<?>) target;
+        return provisionMetadataTarget.qualifier().equals(qualifier())
+                && provisionMetadataTarget.provider().equals(provider());
     }
 
     @Override public final String toString() {
-        return "component[ " + qualifier() + ", provider[ " + provider() + "] ]";
+        return "provision[ " + qualifier() + ", provider[ " + provider() + "] ]";
     }
 
 }

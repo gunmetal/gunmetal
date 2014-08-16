@@ -8,9 +8,9 @@ import io.gunmetal.Overrides;
 import io.gunmetal.Provided;
 import io.gunmetal.Provides;
 import io.gunmetal.Singleton;
-import io.gunmetal.spi.ComponentErrors;
-import io.gunmetal.spi.ComponentMetadata;
-import io.gunmetal.spi.ComponentMetadataResolver;
+import io.gunmetal.spi.ProvisionErrors;
+import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ProvisionMetadataResolver;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * @author rees.byars
  */
-final class ConfigurableMetadataResolver implements ComponentMetadataResolver, QualifierResolver {
+final class ConfigurableMetadataResolver implements ProvisionMetadataResolver, QualifierResolver {
 
     private Class<? extends Annotation> qualifierType = io.gunmetal.Qualifier.class;
     private Class<? extends Annotation> eagerType = Lazy.class;
@@ -91,12 +91,12 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         return this;
     }
 
-    @Override public ComponentMetadata<Method> resolveMetadata(Method method,
+    @Override public ProvisionMetadata<Method> resolveMetadata(Method method,
                                                                ModuleMetadata moduleMetadata,
                                                                Errors errors) {
         final Resolver resolver = new Resolver(method, moduleMetadata);
-        ComponentMetadata<Method> componentMetadata =
-                new ComponentMetadata<>(
+        ProvisionMetadata<Method> provisionMetadata =
+                new ProvisionMetadata<>(
                         method,
                         method.getDeclaringClass(),
                         moduleMetadata,
@@ -108,16 +108,16 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                         resolver.isModule,
                         resolver.isProvided,
                         resolver.isProvider);
-        validate(componentMetadata, (error) -> errors.add(componentMetadata, error));
-        return componentMetadata;
+        validate(provisionMetadata, (error) -> errors.add(provisionMetadata, error));
+        return provisionMetadata;
     }
 
-    @Override public ComponentMetadata<Class<?>> resolveMetadata(Class<?> cls,
+    @Override public ProvisionMetadata<Class<?>> resolveMetadata(Class<?> cls,
                                                                  ModuleMetadata moduleMetadata,
                                                                  Errors errors) {
         final Resolver resolver = new Resolver(cls, moduleMetadata);
-        ComponentMetadata<Class<?>> componentMetadata =
-                new ComponentMetadata<Class<?>>(
+        ProvisionMetadata<Class<?>> provisionMetadata =
+                new ProvisionMetadata<Class<?>>(
                     cls,
                     cls,
                     moduleMetadata,
@@ -129,8 +129,8 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
                     resolver.isModule,
                     resolver.isProvided,
                     resolver.isProvider);
-        validate(componentMetadata, (error) -> errors.add(componentMetadata, error));
-        return componentMetadata;
+        validate(provisionMetadata, (error) -> errors.add(provisionMetadata, error));
+        return provisionMetadata;
     }
 
     @Override public Qualifier resolve(AnnotatedElement annotatedElement, Errors errors) {
@@ -139,7 +139,7 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
 
     @Override public Qualifier resolveDependencyQualifier(AnnotatedElement parameter,
                                                           Qualifier parentQualifier,
-                                                          ComponentErrors errors) {
+                                                          ProvisionErrors errors) {
         // TODO somewhat inefficient
         if (parameter.isAnnotationPresent(FromModule.class)) {
             return Qualifier.from(parameter, qualifierType).merge(parentQualifier);
@@ -147,17 +147,17 @@ final class ConfigurableMetadataResolver implements ComponentMetadataResolver, Q
         return Qualifier.from(parameter, qualifierType);
     }
 
-    private void validate(ComponentMetadata<?> componentMetadata, ComponentErrors errors) {
+    private void validate(ProvisionMetadata<?> provisionMetadata, ProvisionErrors errors) {
         if (restrictPluralQualifiers
-                && !componentMetadata.overrides().allowPluralQualifier()
-                && componentMetadata.qualifier().qualifiers().length > 1
-                && isPlural(componentMetadata.qualifier())) {
-            errors.add("Plural qualifiers restricted -> " + componentMetadata.qualifier());
+                && !provisionMetadata.overrides().allowPluralQualifier()
+                && provisionMetadata.qualifier().qualifiers().length > 1
+                && isPlural(provisionMetadata.qualifier())) {
+            errors.add("Plural qualifiers restricted -> " + provisionMetadata.qualifier());
         }
         if (requireQualifiers
-                && !componentMetadata.overrides().allowNoQualifier()
-                && componentMetadata.qualifier().qualifiers().length == 0) {
-            errors.add("Qualifier required -> " + componentMetadata.qualifier());
+                && !provisionMetadata.overrides().allowNoQualifier()
+                && provisionMetadata.qualifier().qualifiers().length == 0) {
+            errors.add("Qualifier required -> " + provisionMetadata.qualifier());
         }
     }
 

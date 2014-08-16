@@ -17,8 +17,8 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ClassWalker;
-import io.gunmetal.spi.ComponentErrors;
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionErrors;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.InjectionResolver;
 import mockit.Expectations;
 import mockit.Mocked;
@@ -53,8 +53,8 @@ public class ClassWalkerImplTest {
     @Test
     public void testWalk(@Mocked final InjectionResolver injectionResolver,
                          @Mocked final ClassWalker.InjectedMemberVisitor memberVisitor,
-                         @Mocked final ComponentErrors errors,
-                         @Mocked final ComponentMetadata<?> componentMetadata) {
+                         @Mocked final ProvisionErrors errors,
+                         @Mocked final ProvisionMetadata<?> provisionMetadata) {
 
         ClassWalker walker = new ClassWalkerImpl(injectionResolver, false, false);
 
@@ -66,7 +66,7 @@ public class ClassWalkerImplTest {
             }
         };
 
-        walker.walk(getClass(), memberVisitor, memberVisitor, componentMetadata, errors);
+        walker.walk(getClass(), memberVisitor, memberVisitor, provisionMetadata, errors);
 
         new Expectations() {
             {
@@ -78,7 +78,7 @@ public class ClassWalkerImplTest {
             }
         };
 
-        walker.walk(Inner.class, memberVisitor, memberVisitor, componentMetadata, errors);
+        walker.walk(Inner.class, memberVisitor, memberVisitor, provisionMetadata, errors);
 
     }
 }

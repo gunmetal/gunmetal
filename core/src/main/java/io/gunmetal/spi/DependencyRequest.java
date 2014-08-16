@@ -23,7 +23,7 @@ import java.lang.reflect.AnnotatedElement;
  */
 public interface DependencyRequest<T> {
 
-    // TODO cleanup duplication between methods here and those on the component metadata
+    // TODO cleanup duplication between methods here and those on the provision metadata
 
     AnnotatedElement source();
 
@@ -35,36 +35,36 @@ public interface DependencyRequest<T> {
 
     ModuleMetadata sourceModule();
 
-    ComponentMetadata<?> sourceComponent();
+    ProvisionMetadata<?> sourceProvision();
 
     Dependency<T> dependency();
 
-    static <T> DependencyRequest<T> create(final ComponentMetadata<?> requestingComponent, final Dependency<T> dependency) {
+    static <T> DependencyRequest<T> create(final ProvisionMetadata<?> requestingProvision, final Dependency<T> dependency) {
 
         return new DependencyRequest<T>() {
 
             @Override public AnnotatedElement source() {
-                return requestingComponent.provider();
+                return requestingProvision.provider();
             }
 
             @Override public Class<?> sourceOrigin() {
-                return requestingComponent.providerClass();
+                return requestingProvision.providerClass();
             }
 
             @Override public Qualifier sourceQualifier() {
-                return requestingComponent.qualifier();
+                return requestingProvision.qualifier();
             }
 
             @Override public Scope sourceScope() {
-                return requestingComponent.scope();
+                return requestingProvision.scope();
             }
 
             @Override public ModuleMetadata sourceModule() {
-                return requestingComponent.moduleMetadata();
+                return requestingProvision.moduleMetadata();
             }
 
-            @Override public ComponentMetadata<?> sourceComponent() {
-                return requestingComponent;
+            @Override public ProvisionMetadata<?> sourceProvision() {
+                return requestingProvision;
             }
 
             @Override public Dependency<T> dependency() {
@@ -100,8 +100,8 @@ public interface DependencyRequest<T> {
                 return dependencyRequest.sourceModule();
             }
 
-            @Override public ComponentMetadata<?> sourceComponent() {
-                return dependencyRequest.sourceComponent();
+            @Override public ProvisionMetadata<?> sourceProvision() {
+                return dependencyRequest.sourceProvision();
             }
 
             @Override public Dependency<T> dependency() {

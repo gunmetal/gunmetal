@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 
 import java.util.Stack;
@@ -27,15 +27,15 @@ import java.util.Stack;
 class CircularReferenceException extends RuntimeException {
 
     private static final long serialVersionUID = -7837281223529967792L;
-    private final ComponentMetadata<?> metadata;
+    private final ProvisionMetadata<?> metadata;
     private ProvisionStrategy<?> reverseStrategy;
-    private final Stack<ComponentMetadata<?>> componentMetadataStack = new Stack<>();
+    private final Stack<ProvisionMetadata<?>> provisionMetadataStack = new Stack<>();
 
-    CircularReferenceException(ComponentMetadata<?> metadata) {
+    CircularReferenceException(ProvisionMetadata<?> metadata) {
         this.metadata = metadata;
     }
 
-    public ComponentMetadata<?> metadata() {
+    public ProvisionMetadata<?> metadata() {
         return metadata;
     }
 
@@ -47,17 +47,17 @@ class CircularReferenceException extends RuntimeException {
         return reverseStrategy;
     }
 
-    public void push(ComponentMetadata<?> componentMetadata) {
-        componentMetadataStack.push(componentMetadata);
+    public void push(ProvisionMetadata<?> provisionMetadata) {
+        provisionMetadataStack.push(provisionMetadata);
     }
 
     @Override
     public String getMessage() {
         StringBuilder builder = new StringBuilder("Circular dependency detected -> \n");
         builder.append("    ").append(metadata);
-        while (!componentMetadataStack.empty()) {
+        while (!provisionMetadataStack.empty()) {
             builder.append("\n     was requested by ");
-            builder.append(componentMetadataStack.pop());
+            builder.append(provisionMetadataStack.pop());
         }
         return builder.toString();
     }

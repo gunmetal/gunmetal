@@ -49,9 +49,9 @@ class InternalProviderImpl implements InternalProvider {
         dependencies.add(dependency);
         if (requireInterfaces &&
                 !(dependency.typeKey().raw().isInterface()
-                        || dependencyRequest.sourceComponent().overrides().allowNonInterface())) {
+                        || dependencyRequest.sourceProvision().overrides().allowNonInterface())) {
             context.errors().add(
-                    dependencyRequest.sourceComponent(),
+                    dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
         DependencyRequestHandler<? extends T> requestHandler = handlerCache.get(dependency);
@@ -96,7 +96,7 @@ class InternalProviderImpl implements InternalProvider {
         }
 
         context.errors().add(
-                dependencyRequest.sourceComponent(),
+                dependencyRequest.sourceProvision(),
                 "There is no provider defined for a dependency -> " + dependency);
 
         // TODO shouldn't need to cast
@@ -107,19 +107,19 @@ class InternalProviderImpl implements InternalProvider {
             final DependencyRequest<T> refRequest, Provider<ReferenceStrategyFactory> factoryProvider) {
         Dependency<?> providerDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
-        final Dependency<C> componentDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        final DependencyRequestHandler<? extends C> componentHandler = handlerCache.get(componentDependency);
-        if (componentHandler == null) {
+        final Dependency<C> provisionDependency = Dependency.from(providerDependency.qualifier(), providedType);
+        final DependencyRequestHandler<? extends C> provisionHandler = handlerCache.get(provisionDependency);
+        if (provisionHandler == null) {
             return null;
         }
-        ProvisionStrategy<? extends C> componentStrategy = componentHandler.force();
-        final ProvisionStrategy<T> providerStrategy = factoryProvider.get().create(componentStrategy, this);
+        ProvisionStrategy<? extends C> provisionStrategy = provisionHandler.force();
+        final ProvisionStrategy<T> providerStrategy = factoryProvider.get().create(provisionStrategy, this);
         return new ReferenceRequestHandler<>(
                 refRequest,
                 providerStrategy,
                 factoryProvider.get(),
-                componentHandler,
-                componentDependency);
+                provisionHandler,
+                provisionDependency);
     }
 
 }

@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
@@ -19,19 +19,19 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
     private final DependencyRequest<T> referenceRequest;
     private final ProvisionStrategy<T> referenceStrategy;
     private final ReferenceStrategyFactory referenceStrategyFactory;
-    private final DependencyRequestHandler<? extends C> componentHandler;
-    private final Dependency<C> componentDependency;
+    private final DependencyRequestHandler<? extends C> provisionHandler;
+    private final Dependency<C> provisionDependency;
 
     ReferenceRequestHandler(DependencyRequest<T> referenceRequest,
                             ProvisionStrategy<T> referenceStrategy,
                             ReferenceStrategyFactory referenceStrategyFactory,
-                            DependencyRequestHandler<? extends C> componentHandler,
-                            Dependency<C> componentDependency) {
+                            DependencyRequestHandler<? extends C> provisionHandler,
+                            Dependency<C> provisionDependency) {
         this.referenceRequest = referenceRequest;
         this.referenceStrategy = referenceStrategy;
         this.referenceStrategyFactory = referenceStrategyFactory;
-        this.componentHandler = componentHandler;
-        this.componentDependency = componentDependency;
+        this.provisionHandler = provisionHandler;
+        this.provisionDependency = provisionDependency;
     }
 
     @Override public List<Dependency<? super T>> targets() {
@@ -39,15 +39,15 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
     }
 
     @Override public List<Dependency<?>> dependencies() {
-        return componentHandler.dependencies();
+        return provisionHandler.dependencies();
     }
 
     @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
-        final DependencyResponse<?> componentResponse =
-                componentHandler.handle(DependencyRequest.create(referenceRequest, componentDependency));
+        final DependencyResponse<?> provisionResponse =
+                provisionHandler.handle(DependencyRequest.create(referenceRequest, provisionDependency));
         return new DependencyResponse<T>() {
             @Override public ValidatedDependencyResponse<T> validateResponse() {
-                componentResponse.validateResponse();
+                provisionResponse.validateResponse();
                 return new ValidatedDependencyResponse<T>() {
                     @Override public ProvisionStrategy<T> getProvisionStrategy() {
                         return referenceStrategy;
@@ -65,8 +65,8 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
         return referenceStrategy;
     }
 
-    @Override public ComponentMetadata<?> componentMetadata() {
-        return componentHandler.componentMetadata();
+    @Override public ProvisionMetadata<?> provisionMetadata() {
+        return provisionHandler.provisionMetadata();
     }
 
     @Override public DependencyRequestHandler<T> replicateWith(GraphContext context) {
@@ -74,8 +74,8 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
                 referenceRequest,
                 new DelegatingProvisionStrategy<T>(context.linkers()),
                 referenceStrategyFactory,
-                componentHandler,
-                componentDependency);
+                provisionHandler,
+                provisionDependency);
     }
 
     private class DelegatingProvisionStrategy<T> implements ProvisionStrategy<T> {
@@ -84,9 +84,9 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
 
         DelegatingProvisionStrategy(Linkers linkers) {
             linkers.addWiringLinker((reference, context) -> {
-                ProvisionStrategy<? extends C> componentStrategy =
-                        reference.getProvisionStrategy(DependencyRequest.create(referenceRequest, componentDependency));
-                delegateStrategy = referenceStrategyFactory.create(componentStrategy, reference);
+                ProvisionStrategy<? extends C> provisionStrategy =
+                        reference.getProvisionStrategy(DependencyRequest.create(referenceRequest, provisionDependency));
+                delegateStrategy = referenceStrategyFactory.create(provisionStrategy, reference);
             });
         }
 

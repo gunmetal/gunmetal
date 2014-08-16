@@ -21,7 +21,7 @@ import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.Provider;
 import io.gunmetal.TemplateGraph;
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InjectionResolver;
@@ -203,11 +203,11 @@ public final class GraphBuilder {
         }));
         ProvisionStrategyDecorator strategyDecorator = new ProvisionStrategyDecorator() {
             @Override public <T> ProvisionStrategy<T> decorate(
-                    ComponentMetadata<?> componentMetadata,
+                    ProvisionMetadata<?> provisionMetadata,
                     ProvisionStrategy<T> delegateStrategy,
                     Linkers linkers) {
                 for (ProvisionStrategyDecorator decorator : strategyDecorators) {
-                    delegateStrategy = decorator.decorate(componentMetadata, delegateStrategy, linkers);
+                    delegateStrategy = decorator.decorate(provisionMetadata, delegateStrategy, linkers);
                 }
                 return delegateStrategy;
             }
@@ -221,11 +221,11 @@ public final class GraphBuilder {
                         graphMetadata.isRestrictFieldInjection(),
                         graphMetadata.isRestrictSetterInjection()));
 
-        ComponentAdapterFactory componentAdapterFactory =
-                new ComponentAdapterFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
+        ProvisionAdapterFactory provisionAdapterFactory =
+                new ProvisionAdapterFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
 
         HandlerFactory handlerFactory = new HandlerFactoryImpl(
-                componentAdapterFactory,
+                provisionAdapterFactory,
                 configurableMetadataResolver,
                 configurableMetadataResolver,
                 graphMetadata.isRequireExplicitModuleDependencies());
@@ -447,13 +447,13 @@ public final class GraphBuilder {
             } else if (providerAdapter.isProvider(dependency)) {
 
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
-                final Dependency<?> componentDependency = Dependency.from(dependency.qualifier(), providedType);
-                final DependencyRequestHandler<?> componentHandler = handlerCache.get(componentDependency);
-                if (componentHandler == null) {
+                final Dependency<?> provisionDependency = Dependency.from(dependency.qualifier(), providedType);
+                final DependencyRequestHandler<?> provisionHandler = handlerCache.get(provisionDependency);
+                if (provisionHandler == null) {
                     return null;
                 }
                 return new ProviderStrategyFactory(providerAdapter)
-                        .<T>create(componentHandler.force(), internalProvider)
+                        .<T>create(provisionHandler.force(), internalProvider)
                         .get(internalProvider, ResolutionContext.create());
 
             }

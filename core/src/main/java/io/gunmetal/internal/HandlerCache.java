@@ -2,7 +2,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Module;
 import io.gunmetal.Overrides;
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Errors;
@@ -53,29 +53,29 @@ class HandlerCache implements Replicable<HandlerCache> {
     }
 
     <T> void put(final Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler, Errors errors) {
-        ComponentMetadata<?> currentComponent = requestHandler.componentMetadata();
-        if (currentComponent.isCollectionElement()) {
+        ProvisionMetadata<?> currentProvision = requestHandler.provisionMetadata();
+        if (currentProvision.isCollectionElement()) {
             putCollectionElement(dependency, requestHandler);
         } else {
             DependencyRequestHandler<?> previous = requestHandlers.put(dependency, requestHandler);
             if (previous != null) {
-                ComponentMetadata<?> previousComponent = previous.componentMetadata();
-                // TODO better messages, include components, keep list?
-                if (previousComponent.overrides().allowMappingOverride()
-                        && currentComponent.overrides().allowMappingOverride()) {
+                ProvisionMetadata<?> previousProvision = previous.provisionMetadata();
+                // TODO better messages, include provisions, keep list?
+                if (previousProvision.overrides().allowMappingOverride()
+                        && currentProvision.overrides().allowMappingOverride()) {
                     errors.add("more than one of type with override enabled");
                     requestHandlers.put(dependency, previous);
                 } else if (
                         (overriddenDependencies.contains(dependency)
-                                && !currentComponent.overrides().allowMappingOverride())
-                        || (!previousComponent.overrides().allowMappingOverride()
-                                && !currentComponent.overrides().allowMappingOverride())) {
+                                && !currentProvision.overrides().allowMappingOverride())
+                        || (!previousProvision.overrides().allowMappingOverride()
+                                && !currentProvision.overrides().allowMappingOverride())) {
                     errors.add("more than one of type without override enabled");
                     requestHandlers.put(dependency, previous);
-                } else if (currentComponent.overrides().allowMappingOverride()) {
+                } else if (currentProvision.overrides().allowMappingOverride()) {
                     myHandlers.add(requestHandler);
                     overriddenDependencies.add(dependency);
-                } else if (previousComponent.overrides().allowMappingOverride()) {
+                } else if (previousProvision.overrides().allowMappingOverride()) {
                     requestHandlers.put(dependency, previous);
                     overriddenDependencies.add(dependency);
                 }
@@ -193,8 +193,8 @@ class HandlerCache implements Replicable<HandlerCache> {
             };
         }
 
-        @Override public ComponentMetadata<?> componentMetadata() {
-            return new ComponentMetadata<Class<?>>(
+        @Override public ProvisionMetadata<?> provisionMetadata() {
+            return new ProvisionMetadata<Class<?>>(
                     CollectionRequestHandler.class,
                     CollectionRequestHandler.class,
                     new ModuleMetadata(CollectionRequestHandler.class, dependency.qualifier(), Module.NONE),

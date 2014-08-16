@@ -27,7 +27,7 @@ import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
-import io.gunmetal.spi.ComponentMetadata;
+import io.gunmetal.spi.ProvisionMetadata;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
@@ -144,7 +144,7 @@ public class ApplicationBuilderImplTest {
 
         @Provides @Singleton @Lazy static List<? extends ProvisionStrategyDecorator> decorators() {
             return Collections.singletonList(new ProvisionStrategyDecorator() {
-                @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
+                @Override public <T> ProvisionStrategy<T> decorate(ProvisionMetadata<?> provisionMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
                     return delegateStrategy;
                 }
             });
@@ -154,7 +154,7 @@ public class ApplicationBuilderImplTest {
             return Collections.singletonMap(
                     CustomScopes.TEST,
                     new ProvisionStrategyDecorator() {
-                        @Override public <T> ProvisionStrategy<T> decorate(ComponentMetadata<?> componentMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
+                        @Override public <T> ProvisionStrategy<T> decorate(ProvisionMetadata<?> provisionMetadata, ProvisionStrategy<T> delegateStrategy, Linkers linkers) {
                             return delegateStrategy;
                         }
                     });

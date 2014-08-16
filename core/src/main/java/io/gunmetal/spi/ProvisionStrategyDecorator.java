@@ -24,12 +24,12 @@ import java.util.List;
 public interface ProvisionStrategyDecorator {
 
     <T> ProvisionStrategy<T> decorate(
-            ComponentMetadata<?> componentMetadata,
+            ProvisionMetadata<?> provisionMetadata,
             ProvisionStrategy<T> delegateStrategy,
             Linkers linkers);
 
     static <T> ProvisionStrategy<T> none(
-            ComponentMetadata<?> componentMetadata,
+            ProvisionMetadata<?> provisionMetadata,
             ProvisionStrategy<T> delegateStrategy,
             Linkers linkers) {
         return delegateStrategy;
