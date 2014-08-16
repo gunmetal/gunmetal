@@ -1,5 +1,6 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Module;
 import io.gunmetal.Overrides;
 import io.gunmetal.spi.ComponentMetadata;
 import io.gunmetal.spi.Dependency;
@@ -194,9 +195,9 @@ class HandlerCache implements Replicable<HandlerCache> {
 
         @Override public ComponentMetadata<?> componentMetadata() {
             return new ComponentMetadata<Class<?>>(
-                    null,
-                    null,
-                    null,
+                    CollectionRequestHandler.class,
+                    CollectionRequestHandler.class,
+                    new ModuleMetadata(CollectionRequestHandler.class, dependency.qualifier(), Module.NONE),
                     dependency.qualifier(),
                     Scopes.PROTOTYPE,
                     Overrides.NONE,
@@ -204,17 +205,7 @@ class HandlerCache implements Replicable<HandlerCache> {
                     false,
                     false,
                     false,
-                    true) {
-                @Override public Class<?> provider() {
-                    throw new UnsupportedOperationException(); // TODO
-                }
-                @Override public Class<?> providerClass() {
-                    throw new UnsupportedOperationException(); // TODO
-                }
-                @Override public ModuleMetadata moduleMetadata() {
-                    throw new UnsupportedOperationException(); // TODO
-                }
-            };
+                    true);
         }
 
         @Override public DependencyRequestHandler<List<T>> replicateWith(GraphContext context) {
