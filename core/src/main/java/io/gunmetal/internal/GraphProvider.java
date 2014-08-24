@@ -14,6 +14,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
+ *
+ * Instances of the provider should not be accessed concurrently.
+ *
 * @author rees.byars
 */
 class GraphProvider implements InternalProvider {
@@ -23,7 +26,7 @@ class GraphProvider implements InternalProvider {
     private final GraphCache graphCache;
     private final GraphContext context;
     private final boolean requireInterfaces;
-    private final Queue<Dependency<?>> dependencies = new LinkedList<>();
+    private final ThreadLocal<Queue<Dependency<?>>> queueThreadLocal = new ThreadLocal<>();
 
     GraphProvider(ProviderAdapter providerAdapter,
                   ResourceProxyFactory resourceProxyFactory,
@@ -40,13 +43,30 @@ class GraphProvider implements InternalProvider {
     @Override public <T> ProvisionStrategy<? extends T> getProvisionStrategy(final DependencyRequest<T> dependencyRequest) {
 
         final Dependency<T> dependency = dependencyRequest.dependency();
-
-        if (dependencies.contains(dependency)) {
+        Queue<Dependency<?>> dependencyQueue = queueThreadLocal.get();
+        
+        if (dependencyQueue == null) {
+            dependencyQueue = new LinkedList<>();
+            queueThreadLocal.set(dependencyQueue);
+        } else if (dependencyQueue.contains(dependency)) {
             // circular dependency request, make "lazy"
             return (p, c) -> getProvisionStrategy(dependencyRequest).get(p, c);
         }
+        
+        try {
+            return doGetStrategy(dependencyRequest, dependency, dependencyQueue);
+        } finally {
+            if (dependencyQueue.isEmpty()) {
+                queueThreadLocal.remove();
+            }
+        }
+    }
 
-        dependencies.add(dependency);
+    private <T> ProvisionStrategy<? extends T> doGetStrategy(DependencyRequest<T> dependencyRequest,
+                                                   Dependency<T> dependency,
+                                                   Queue<Dependency<?>> dependencyQueue) {
+
+        dependencyQueue.add(dependency);
         if (requireInterfaces &&
                 !(dependency.typeKey().raw().isInterface()
                         || dependencyRequest.sourceProvision().overrides().allowNonInterface())) {
@@ -56,7 +76,7 @@ class GraphProvider implements InternalProvider {
         }
         ResourceProxy<? extends T> resourceProxy = graphCache.get(dependency);
         if (resourceProxy != null) {
-            dependencies.remove();
+            dependencyQueue.remove();
             return resourceProxy
                     .service(dependencyRequest)
                     .provisionStrategy();
@@ -64,7 +84,7 @@ class GraphProvider implements InternalProvider {
         if (providerAdapter.isProvider(dependency)) {
             resourceProxy = createReferenceProxy(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
             if (resourceProxy != null) {
-                dependencies.remove();
+                dependencyQueue.remove();
                 graphCache.put(dependency, resourceProxy, context.errors());
                 return resourceProxy
                         .service(dependencyRequest)
@@ -74,7 +94,7 @@ class GraphProvider implements InternalProvider {
         if (dependency.typeKey().raw() == Ref.class) {
             resourceProxy = createReferenceProxy(dependencyRequest, RefStrategyFactory::new);
             if (resourceProxy != null) {
-                dependencies.remove();
+                dependencyQueue.remove();
                 graphCache.put(dependency, resourceProxy, context.errors());
                 return resourceProxy
                         .service(dependencyRequest)
@@ -84,7 +104,7 @@ class GraphProvider implements InternalProvider {
 
         resourceProxy = resourceProxyFactory.createJitProxyForRequest(dependencyRequest, context);
         if (resourceProxy != null) {
-            dependencies.remove();
+            dependencyQueue.remove();
             graphCache.put(dependency, resourceProxy, context.errors());
             return resourceProxy
                     .service(dependencyRequest)
@@ -97,6 +117,7 @@ class GraphProvider implements InternalProvider {
 
         // TODO shouldn't need to cast
         return (p, c) -> { ((GraphErrors) context.errors()).throwIfNotEmpty(); return null; };
+
     }
 
     private <T, C> ResourceProxy<T> createReferenceProxy(
