@@ -380,6 +380,15 @@ class HandlerFactoryImpl implements HandlerFactory {
         final List<Dependency<? super T>> dependencies =
                 Collections.<Dependency<? super T>>singletonList(provisionDependency);
 
+        if (Modifier.isStatic(provisionMetadata.provider().getModifiers())) {
+            return requestHandler(
+                    provisionAdapterFactory.<T>withMethodProvider(provisionMetadata, context),
+                    dependencies,
+                    moduleRequestVisitor,
+                    decorateForModule(moduleMetadata, AccessFilter.create(method)),
+                    context);
+        }
+
         return requestHandler(
                 provisionAdapterFactory.<T>withStatefulMethodProvider(provisionMetadata, moduleDependency, context),
                 dependencies,
@@ -413,7 +422,7 @@ class HandlerFactoryImpl implements HandlerFactory {
         ProvisionMetadata<Class<?>> provisionMetadata =
                 provisionMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors());
         if (provisionMetadata.scope() != Scopes.SINGLETON) {
-            context.errors().add(provisionMetadata, "Provided modules must have a scope of singleton");
+            // TODO context.errors().add(provisionMetadata, "Provided modules must have a scope of singleton");
         }
         ProvisionAdapter<T> provisionAdapter = provisionAdapterFactory.withProvidedModule(
                 provisionMetadata, context);

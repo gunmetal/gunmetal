@@ -56,16 +56,18 @@ class GraphCache implements Replicable<GraphCache> {
             if (previous != null) {
                 ProvisionMetadata<?> previousProvision = previous.provisionMetadata();
                 // TODO better messages, include provisions, keep list?
-                if (previousProvision.overrides().allowMappingOverride()
+                if (previousProvision.isModule()) { // TODO this is a hack that depends on the order from the handler factory
+                    myHandlers.add(requestHandler);
+                } else if (previousProvision.overrides().allowMappingOverride()
                         && currentProvision.overrides().allowMappingOverride()) {
-                    errors.add("more than one of type with override enabled");
+                    errors.add("more than one of type with override enabled -> " + dependency);
                     requestHandlers.put(dependency, previous);
                 } else if (
                         (overriddenDependencies.contains(dependency)
                                 && !currentProvision.overrides().allowMappingOverride())
                         || (!previousProvision.overrides().allowMappingOverride()
                                 && !currentProvision.overrides().allowMappingOverride())) {
-                    errors.add("more than one of type without override enabled");
+                    errors.add("more than one of type without override enabled -> " + dependency);
                     requestHandlers.put(dependency, previous);
                 } else if (currentProvision.overrides().allowMappingOverride()) {
                     myHandlers.add(requestHandler);

@@ -83,7 +83,7 @@ class ProvisionAdapterFactoryImpl implements ProvisionAdapterFactory {
             final Injector<T> injector) {
         ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
                 metadata,
-                baseProvisionStrategy(metadata, instantiator, injector, context),
+                baseProvisionStrategy(metadata, instantiator, injector),
                 context.linkers());
         return new ProvisionAdapter<T>() {
             @Override public ProvisionMetadata<?> metadata() {
@@ -110,12 +110,11 @@ class ProvisionAdapterFactoryImpl implements ProvisionAdapterFactory {
 
     private <T> ProvisionStrategy<T> baseProvisionStrategy(final ProvisionMetadata<?> provisionMetadata,
                                                            final Instantiator<T> instantiator,
-                                                           final Injector<T> injector,
-                                                           GraphContext context) {
+                                                           final Injector<T> injector) {
 
         // TODO support needs to be added to allow the override to work
         if (!requireAcyclic || provisionMetadata.overrides().allowCycle()) {
-            return cyclicResolutionProvisionStrategy(provisionMetadata, instantiator, injector, context);
+            return cyclicResolutionProvisionStrategy(provisionMetadata, instantiator, injector);
         }
 
         return (internalProvider, resolutionContext) -> {
@@ -136,8 +135,7 @@ class ProvisionAdapterFactoryImpl implements ProvisionAdapterFactory {
 
     private <T> ProvisionStrategy<T> cyclicResolutionProvisionStrategy(final ProvisionMetadata<?> provisionMetadata,
                                                            final Instantiator<T> instantiator,
-                                                           final Injector<T> injector,
-                                                           final GraphContext context) {
+                                                           final Injector<T> injector) {
         return new ProvisionStrategy<T>() {
             @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                 ResolutionContext.ProvisionContext<T> strategyContext =
@@ -160,7 +158,7 @@ class ProvisionAdapterFactoryImpl implements ProvisionAdapterFactory {
                     if (e.metadata().equals(provisionMetadata)) {
                         ProvisionStrategy<?> reverseStrategy = e.getReverseStrategy();
                         if (reverseStrategy == null) {
-                            context.errors().add(
+                            throw new RuntimeException(
                                     "The provision [" + provisionMetadata.toString() + "] depends on itself");
                         }
                         e.getReverseStrategy().get(internalProvider, resolutionContext);
