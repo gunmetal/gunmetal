@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
@@ -14,23 +14,23 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
+class ReferenceResourceProxy<T, C> implements ResourceProxy<T> {
 
     private final DependencyRequest<T> referenceRequest;
     private final ProvisionStrategy<T> referenceStrategy;
     private final ReferenceStrategyFactory referenceStrategyFactory;
-    private final DependencyRequestHandler<? extends C> provisionHandler;
+    private final ResourceProxy<? extends C> provisionProxy;
     private final Dependency<C> provisionDependency;
 
-    ReferenceRequestHandler(DependencyRequest<T> referenceRequest,
-                            ProvisionStrategy<T> referenceStrategy,
-                            ReferenceStrategyFactory referenceStrategyFactory,
-                            DependencyRequestHandler<? extends C> provisionHandler,
-                            Dependency<C> provisionDependency) {
+    ReferenceResourceProxy(DependencyRequest<T> referenceRequest,
+                           ProvisionStrategy<T> referenceStrategy,
+                           ReferenceStrategyFactory referenceStrategyFactory,
+                           ResourceProxy<? extends C> provisionProxy,
+                           Dependency<C> provisionDependency) {
         this.referenceRequest = referenceRequest;
         this.referenceStrategy = referenceStrategy;
         this.referenceStrategyFactory = referenceStrategyFactory;
-        this.provisionHandler = provisionHandler;
+        this.provisionProxy = provisionProxy;
         this.provisionDependency = provisionDependency;
     }
 
@@ -39,11 +39,11 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
     }
 
     @Override public List<Dependency<?>> dependencies() {
-        return provisionHandler.dependencies();
+        return provisionProxy.dependencies();
     }
 
-    @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
-        provisionHandler.handle(DependencyRequest.create(referenceRequest, provisionDependency));
+    @Override public DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest) {
+        provisionProxy.service(DependencyRequest.create(referenceRequest, provisionDependency));
         return () -> referenceStrategy;
     }
 
@@ -51,16 +51,16 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
         return referenceStrategy;
     }
 
-    @Override public ProvisionMetadata<?> provisionMetadata() {
-        return provisionHandler.provisionMetadata();
+    @Override public ResourceMetadata<?> resourceMetadata() {
+        return provisionProxy.resourceMetadata();
     }
 
-    @Override public DependencyRequestHandler<T> replicateWith(GraphContext context) {
-        return new ReferenceRequestHandler<>(
+    @Override public ResourceProxy<T> replicateWith(GraphContext context) {
+        return new ReferenceResourceProxy<>(
                 referenceRequest,
                 new DelegatingProvisionStrategy<T>(context.linkers()),
                 referenceStrategyFactory,
-                provisionHandler,
+                provisionProxy,
                 provisionDependency);
     }
 

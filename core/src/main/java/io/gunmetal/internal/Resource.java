@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014.
+ * Copyright (c) 2013.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,16 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ProvisionMetadata;
-import io.gunmetal.spi.Dependency;
-import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
-
-import java.util.List;
 
 /**
  * @author rees.byars
  */
-interface DependencyRequestHandler<T> extends Replicable<DependencyRequestHandler<T>> {
+interface Resource<T> extends Dependent, Replicable<Resource<T>> {
 
-    List<Dependency<? super T>> targets();
+    ResourceMetadata<?> metadata();
 
-    List<Dependency<?>> dependencies();
-
-    DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest);
-
-    ProvisionStrategy<T> force();
-
-    ProvisionMetadata<?> provisionMetadata();
+    ProvisionStrategy<T> provisionStrategy();
 
 }

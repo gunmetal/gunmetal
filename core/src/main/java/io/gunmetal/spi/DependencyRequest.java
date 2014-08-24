@@ -35,11 +35,11 @@ public interface DependencyRequest<T> {
 
     ModuleMetadata sourceModule();
 
-    ProvisionMetadata<?> sourceProvision();
+    ResourceMetadata<?> sourceProvision();
 
     Dependency<T> dependency();
 
-    static <T> DependencyRequest<T> create(final ProvisionMetadata<?> requestingProvision, final Dependency<T> dependency) {
+    static <T> DependencyRequest<T> create(final ResourceMetadata<?> requestingProvision, final Dependency<T> dependency) {
 
         return new DependencyRequest<T>() {
 
@@ -63,7 +63,7 @@ public interface DependencyRequest<T> {
                 return requestingProvision.moduleMetadata();
             }
 
-            @Override public ProvisionMetadata<?> sourceProvision() {
+            @Override public ResourceMetadata<?> sourceProvision() {
                 return requestingProvision;
             }
 
@@ -100,7 +100,7 @@ public interface DependencyRequest<T> {
                 return dependencyRequest.sourceModule();
             }
 
-            @Override public ProvisionMetadata<?> sourceProvision() {
+            @Override public ResourceMetadata<?> sourceProvision() {
                 return dependencyRequest.sourceProvision();
             }
 

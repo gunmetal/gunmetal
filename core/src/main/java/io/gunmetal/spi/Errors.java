@@ -5,7 +5,7 @@ package io.gunmetal.spi;
  */
 public interface Errors {
 
-    Errors add(ProvisionMetadata<?> provisionMetadata, String errorMessage);
+    Errors add(ResourceMetadata<?> resourceMetadata, String errorMessage);
 
     Errors add(String errorMessage);
 

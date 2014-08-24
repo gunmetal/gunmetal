@@ -19,7 +19,7 @@ package io.gunmetal.internal;
 import io.gunmetal.Overrides;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ProvisionErrors;
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.InjectionResolver;
 
 import java.lang.reflect.Field;
@@ -45,12 +45,12 @@ class ClassWalkerImpl implements ClassWalker {
     @Override public void walk(Class<?> classToWalk,
                                InjectedMemberVisitor<Field> fieldVisitor,
                                InjectedMemberVisitor<Method> methodVisitor,
-                               ProvisionMetadata<?> provisionMetadata,
+                               ResourceMetadata<?> resourceMetadata,
                                ProvisionErrors errors) {
         for (Class<?> cls = classToWalk; cls != Object.class; cls = cls.getSuperclass()) {
             for (Field field : cls.getDeclaredFields()) {
                 if (injectionResolver.shouldInject(field)) {
-                    if (restrictFieldInjection && !provisionMetadata.overrides().allowFieldInjection()) {
+                    if (restrictFieldInjection && !resourceMetadata.overrides().allowFieldInjection()) {
                         Overrides overrides = field.getAnnotation(Overrides.class);
                         if (overrides == null || !overrides.allowFieldInjection()) {
                             errors.add("Field injection restricted [" + field + "]");
@@ -61,7 +61,7 @@ class ClassWalkerImpl implements ClassWalker {
             }
             for (Method method : cls.getDeclaredMethods()) {
                 if (injectionResolver.shouldInject(method)) {
-                    if (restrictSetterInjection && !provisionMetadata.overrides().allowSetterInjection()) {
+                    if (restrictSetterInjection && !resourceMetadata.overrides().allowSetterInjection()) {
                         Overrides overrides = method.getAnnotation(Overrides.class);
                         if (overrides == null || !overrides.allowSetterInjection()) {
                             errors.add("Method injection restricted [" + method + "]");

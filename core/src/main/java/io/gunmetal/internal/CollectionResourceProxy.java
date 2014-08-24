@@ -6,7 +6,7 @@ import io.gunmetal.Provider;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ModuleMetadata;
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.Scopes;
@@ -20,16 +20,16 @@ import java.util.List;
 /**
 * @author rees.byars
 */
-class CollectionRequestHandler<T> implements DependencyRequestHandler<Collection<T>> {
+class CollectionResourceProxy<T> implements ResourceProxy<Collection<T>> {
 
-    private final List<DependencyRequestHandler<? extends T>> requestHandlers = new ArrayList<>();
+    private final List<ResourceProxy<? extends T>> resourceProxies = new ArrayList<>();
     private final Dependency<Collection<T>> dependency;
     private final Dependency<T> subDependency;
     private final Provider<Collection<T>> collectionProvider;
 
-    CollectionRequestHandler(Dependency<Collection<T>> dependency,
-                             Dependency<T> subDependency,
-                             Provider<Collection<T>> collectionProvider) {
+    CollectionResourceProxy(Dependency<Collection<T>> dependency,
+                            Dependency<T> subDependency,
+                            Provider<Collection<T>> collectionProvider) {
         this.dependency = dependency;
         this.subDependency = subDependency;
         this.collectionProvider = collectionProvider;
@@ -41,17 +41,17 @@ class CollectionRequestHandler<T> implements DependencyRequestHandler<Collection
 
     @Override public List<Dependency<?>> dependencies() {
         List<Dependency<?>> dependencies = new LinkedList<>();
-        requestHandlers.stream().forEach(handler -> dependencies.addAll(handler.dependencies()));
+        resourceProxies.stream().forEach(resourceProxy -> dependencies.addAll(resourceProxy.dependencies()));
         return dependencies;
     }
 
-    @Override public DependencyResponse<Collection<T>> handle(
+    @Override public DependencyResponse<Collection<T>> service(
             final DependencyRequest<? super Collection<T>> dependencyRequest) {
         return () -> {
             DependencyRequest<T> subRequest =
                     DependencyRequest.create(dependencyRequest, subDependency);
-            for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                requestHandler.handle(subRequest);
+            for (ResourceProxy<? extends T> resourceProxy : resourceProxies) {
+                resourceProxy.service(subRequest);
             }
             return force();
         };
@@ -60,19 +60,19 @@ class CollectionRequestHandler<T> implements DependencyRequestHandler<Collection
     @Override public ProvisionStrategy<Collection<T>> force() {
         return (internalProvider, resolutionContext) -> {
             Collection<T> collection = collectionProvider.get();
-            for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-                ProvisionStrategy<? extends T> provisionStrategy = requestHandler.force();
+            for (ResourceProxy<? extends T> resourceProxy : resourceProxies) {
+                ProvisionStrategy<? extends T> provisionStrategy = resourceProxy.force();
                 collection.add(provisionStrategy.get(internalProvider, resolutionContext));
             }
             return collection;
         };
     }
 
-    @Override public ProvisionMetadata<?> provisionMetadata() {
-        return new ProvisionMetadata<Class<?>>(
-                CollectionRequestHandler.class,
-                CollectionRequestHandler.class,
-                new ModuleMetadata(CollectionRequestHandler.class, Qualifier.NONE, Module.NONE),
+    @Override public ResourceMetadata<?> resourceMetadata() {
+        return new ResourceMetadata<Class<?>>(
+                CollectionResourceProxy.class,
+                CollectionResourceProxy.class,
+                new ModuleMetadata(CollectionResourceProxy.class, Qualifier.NONE, Module.NONE),
                 dependency.qualifier(),
                 Scopes.PROTOTYPE,
                 Overrides.NONE,
@@ -83,17 +83,17 @@ class CollectionRequestHandler<T> implements DependencyRequestHandler<Collection
                 true);
     }
 
-    @Override public DependencyRequestHandler<Collection<T>> replicateWith(GraphContext context) {
-        CollectionRequestHandler<T> newHandler =
-                new CollectionRequestHandler<>(dependency, subDependency, collectionProvider);
-        for (DependencyRequestHandler<? extends T> requestHandler : requestHandlers) {
-            newHandler.requestHandlers.add(requestHandler.replicateWith(context));
+    @Override public ResourceProxy<Collection<T>> replicateWith(GraphContext context) {
+        CollectionResourceProxy<T> newProxy =
+                new CollectionResourceProxy<>(dependency, subDependency, collectionProvider);
+        for (ResourceProxy<? extends T> resourceProxy : resourceProxies) {
+            newProxy.resourceProxies.add(resourceProxy.replicateWith(context));
         }
-        return newHandler;
+        return newProxy;
     }
 
-    void add(DependencyRequestHandler<? extends T> subHandler) {
-        requestHandlers.add(subHandler);
+    void add(ResourceProxy<? extends T> subProxy) {
+        resourceProxies.add(subProxy);
     }
 
 }

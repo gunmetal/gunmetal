@@ -9,8 +9,8 @@ import io.gunmetal.Provided;
 import io.gunmetal.Provides;
 import io.gunmetal.Singleton;
 import io.gunmetal.spi.ProvisionErrors;
-import io.gunmetal.spi.ProvisionMetadata;
-import io.gunmetal.spi.ProvisionMetadataResolver;
+import io.gunmetal.spi.ResourceMetadata;
+import io.gunmetal.spi.ResourceMetadataResolver;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * @author rees.byars
  */
-final class ConfigurableMetadataResolver implements ProvisionMetadataResolver, QualifierResolver {
+final class ConfigurableMetadataResolver implements ResourceMetadataResolver, QualifierResolver {
 
     private Class<? extends Annotation> qualifierType = io.gunmetal.Qualifier.class;
     private Class<? extends Annotation> eagerType = Lazy.class;
@@ -91,12 +91,12 @@ final class ConfigurableMetadataResolver implements ProvisionMetadataResolver, Q
         return this;
     }
 
-    @Override public ProvisionMetadata<Method> resolveMetadata(Method method,
+    @Override public ResourceMetadata<Method> resolveMetadata(Method method,
                                                                ModuleMetadata moduleMetadata,
                                                                Errors errors) {
         final Resolver resolver = new Resolver(method, moduleMetadata);
-        ProvisionMetadata<Method> provisionMetadata =
-                new ProvisionMetadata<>(
+        ResourceMetadata<Method> resourceMetadata =
+                new ResourceMetadata<>(
                         method,
                         method.getDeclaringClass(),
                         moduleMetadata,
@@ -108,16 +108,16 @@ final class ConfigurableMetadataResolver implements ProvisionMetadataResolver, Q
                         resolver.isModule,
                         resolver.isProvided,
                         resolver.isProvider);
-        validate(provisionMetadata, (error) -> errors.add(provisionMetadata, error));
-        return provisionMetadata;
+        validate(resourceMetadata, (error) -> errors.add(resourceMetadata, error));
+        return resourceMetadata;
     }
 
-    @Override public ProvisionMetadata<Class<?>> resolveMetadata(Class<?> cls,
+    @Override public ResourceMetadata<Class<?>> resolveMetadata(Class<?> cls,
                                                                  ModuleMetadata moduleMetadata,
                                                                  Errors errors) {
         final Resolver resolver = new Resolver(cls, moduleMetadata);
-        ProvisionMetadata<Class<?>> provisionMetadata =
-                new ProvisionMetadata<Class<?>>(
+        ResourceMetadata<Class<?>> resourceMetadata =
+                new ResourceMetadata<Class<?>>(
                     cls,
                     cls,
                     moduleMetadata,
@@ -129,8 +129,8 @@ final class ConfigurableMetadataResolver implements ProvisionMetadataResolver, Q
                     resolver.isModule,
                     resolver.isProvided,
                     resolver.isProvider);
-        validate(provisionMetadata, (error) -> errors.add(provisionMetadata, error));
-        return provisionMetadata;
+        validate(resourceMetadata, (error) -> errors.add(resourceMetadata, error));
+        return resourceMetadata;
     }
 
     @Override public Qualifier resolve(AnnotatedElement annotatedElement, Errors errors) {
@@ -147,17 +147,17 @@ final class ConfigurableMetadataResolver implements ProvisionMetadataResolver, Q
         return Qualifier.from(parameter, qualifierType);
     }
 
-    private void validate(ProvisionMetadata<?> provisionMetadata, ProvisionErrors errors) {
+    private void validate(ResourceMetadata<?> resourceMetadata, ProvisionErrors errors) {
         if (restrictPluralQualifiers
-                && !provisionMetadata.overrides().allowPluralQualifier()
-                && provisionMetadata.qualifier().qualifiers().length > 1
-                && isPlural(provisionMetadata.qualifier())) {
-            errors.add("Plural qualifiers restricted -> " + provisionMetadata.qualifier());
+                && !resourceMetadata.overrides().allowPluralQualifier()
+                && resourceMetadata.qualifier().qualifiers().length > 1
+                && isPlural(resourceMetadata.qualifier())) {
+            errors.add("Plural qualifiers restricted -> " + resourceMetadata.qualifier());
         }
         if (requireQualifiers
-                && !provisionMetadata.overrides().allowNoQualifier()
-                && provisionMetadata.qualifier().qualifiers().length == 0) {
-            errors.add("Qualifier required -> " + provisionMetadata.qualifier());
+                && !resourceMetadata.overrides().allowNoQualifier()
+                && resourceMetadata.qualifier().qualifiers().length == 0) {
+            errors.add("Qualifier required -> " + resourceMetadata.qualifier());
         }
     }
 

@@ -19,19 +19,19 @@ import java.util.Queue;
 class GraphProvider implements InternalProvider {
 
     private final ProviderAdapter providerAdapter;
-    private final HandlerFactory handlerFactory;
+    private final ResourceProxyFactory resourceProxyFactory;
     private final GraphCache graphCache;
     private final GraphContext context;
     private final boolean requireInterfaces;
     private final Queue<Dependency<?>> dependencies = new LinkedList<>();
 
     GraphProvider(ProviderAdapter providerAdapter,
-                  HandlerFactory handlerFactory,
+                  ResourceProxyFactory resourceProxyFactory,
                   GraphCache graphCache,
                   GraphContext context,
                   boolean requireInterfaces) {
         this.providerAdapter = providerAdapter;
-        this.handlerFactory = handlerFactory;
+        this.resourceProxyFactory = resourceProxyFactory;
         this.graphCache = graphCache;
         this.context = context;
         this.requireInterfaces = requireInterfaces;
@@ -54,40 +54,40 @@ class GraphProvider implements InternalProvider {
                     dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
-        DependencyRequestHandler<? extends T> requestHandler = graphCache.get(dependency);
-        if (requestHandler != null) {
+        ResourceProxy<? extends T> resourceProxy = graphCache.get(dependency);
+        if (resourceProxy != null) {
             dependencies.remove();
-            return requestHandler
-                    .handle(dependencyRequest)
+            return resourceProxy
+                    .service(dependencyRequest)
                     .provisionStrategy();
         }
         if (providerAdapter.isProvider(dependency)) {
-            requestHandler = createReferenceHandler(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
-            if (requestHandler != null) {
+            resourceProxy = createReferenceProxy(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
+            if (resourceProxy != null) {
                 dependencies.remove();
-                graphCache.put(dependency, requestHandler, context.errors());
-                return requestHandler
-                        .handle(dependencyRequest)
+                graphCache.put(dependency, resourceProxy, context.errors());
+                return resourceProxy
+                        .service(dependencyRequest)
                         .provisionStrategy();
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
-            requestHandler = createReferenceHandler(dependencyRequest, RefStrategyFactory::new);
-            if (requestHandler != null) {
+            resourceProxy = createReferenceProxy(dependencyRequest, RefStrategyFactory::new);
+            if (resourceProxy != null) {
                 dependencies.remove();
-                graphCache.put(dependency, requestHandler, context.errors());
-                return requestHandler
-                        .handle(dependencyRequest)
+                graphCache.put(dependency, resourceProxy, context.errors());
+                return resourceProxy
+                        .service(dependencyRequest)
                         .provisionStrategy();
             }
         }
 
-        requestHandler = handlerFactory.attemptToCreateHandlerFor(dependencyRequest, context);
-        if (requestHandler != null) {
+        resourceProxy = resourceProxyFactory.createJitProxyForRequest(dependencyRequest, context);
+        if (resourceProxy != null) {
             dependencies.remove();
-            graphCache.put(dependency, requestHandler, context.errors());
-            return requestHandler
-                    .handle(dependencyRequest)
+            graphCache.put(dependency, resourceProxy, context.errors());
+            return resourceProxy
+                    .service(dependencyRequest)
                     .provisionStrategy();
         }
 
@@ -99,22 +99,22 @@ class GraphProvider implements InternalProvider {
         return (p, c) -> { ((GraphErrors) context.errors()).throwIfNotEmpty(); return null; };
     }
 
-    private <T, C> DependencyRequestHandler<T> createReferenceHandler(
+    private <T, C> ResourceProxy<T> createReferenceProxy(
             final DependencyRequest<T> refRequest, Provider<ReferenceStrategyFactory> factoryProvider) {
         Dependency<?> providerDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency<C> provisionDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        final DependencyRequestHandler<? extends C> provisionHandler = graphCache.get(provisionDependency);
-        if (provisionHandler == null) {
+        final ResourceProxy<? extends C> provisionProxy = graphCache.get(provisionDependency);
+        if (provisionProxy == null) {
             return null;
         }
-        ProvisionStrategy<? extends C> provisionStrategy = provisionHandler.force();
+        ProvisionStrategy<? extends C> provisionStrategy = provisionProxy.force();
         final ProvisionStrategy<T> providerStrategy = factoryProvider.get().create(provisionStrategy, this);
-        return new ReferenceRequestHandler<>(
+        return new ReferenceResourceProxy<>(
                 refRequest,
                 providerStrategy,
                 factoryProvider.get(),
-                provisionHandler,
+                provisionProxy,
                 provisionDependency);
     }
 

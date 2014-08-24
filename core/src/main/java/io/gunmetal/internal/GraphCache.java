@@ -2,7 +2,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.Errors;
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
@@ -24,70 +24,70 @@ import java.util.concurrent.ConcurrentHashMap;
 class GraphCache implements Replicable<GraphCache> {
 
     private final GraphCache parentCache;
-    private final Map<Dependency<?>, DependencyRequestHandler<?>> requestHandlers = new ConcurrentHashMap<>(64, .75f, 2);
+    private final Map<Dependency<?>, ResourceProxy<?>> resourceProxies = new ConcurrentHashMap<>(64, .75f, 2);
     private final Set<Dependency<?>> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
-    private final Queue<DependencyRequestHandler<?>> myHandlers = new LinkedList<>();
+    private final Queue<ResourceProxy<?>> myProxies = new LinkedList<>();
 
     GraphCache(GraphCache parentCache) {
         this.parentCache = parentCache;
         if (parentCache != null) {
-            requestHandlers.putAll(parentCache.requestHandlers);
+            resourceProxies.putAll(parentCache.resourceProxies);
         }
     }
 
-    void putAll(List<DependencyRequestHandler<?>> requestHandlers, Errors errors) {
-        for (DependencyRequestHandler<?> requestHandler : requestHandlers) {
-            putAll(requestHandler, errors);
+    void putAll(List<ResourceProxy<?>> resourceProxies, Errors errors) {
+        for (ResourceProxy<?> resourceProxy : resourceProxies) {
+            putAll(resourceProxy, errors);
         }
     }
 
-    <T> void putAll(DependencyRequestHandler<T> requestHandler, Errors errors) {
-        for (Dependency<? super T> dependency : requestHandler.targets()) {
-            put(dependency, requestHandler, errors);
+    <T> void putAll(ResourceProxy<T> resourceProxy, Errors errors) {
+        for (Dependency<? super T> dependency : resourceProxy.targets()) {
+            put(dependency, resourceProxy, errors);
         }
     }
 
-    <T> void put(final Dependency<? super T> dependency, DependencyRequestHandler<T> requestHandler, Errors errors) {
-        ProvisionMetadata<?> currentProvision = requestHandler.provisionMetadata();
+    <T> void put(final Dependency<? super T> dependency, ResourceProxy<T> resourceProxy, Errors errors) {
+        ResourceMetadata<?> currentProvision = resourceProxy.resourceMetadata();
         if (currentProvision.isCollectionElement()) {
-            putCollectionElement(dependency, requestHandler);
+            putCollectionElement(dependency, resourceProxy);
         } else {
-            DependencyRequestHandler<?> previous = requestHandlers.put(dependency, requestHandler);
+            ResourceProxy<?> previous = resourceProxies.put(dependency, resourceProxy);
             if (previous != null) {
-                ProvisionMetadata<?> previousProvision = previous.provisionMetadata();
+                ResourceMetadata<?> previousProvision = previous.resourceMetadata();
                 // TODO better messages, include provisions, keep list?
-                if (previousProvision.isModule()) { // TODO this is a hack that depends on the order from the handler factory
-                    myHandlers.add(requestHandler);
+                if (previousProvision.isModule()) { // TODO this is a hack that depends on the order from the proxy factory
+                    myProxies.add(resourceProxy);
                 } else if (previousProvision.overrides().allowMappingOverride()
                         && currentProvision.overrides().allowMappingOverride()) {
                     errors.add("more than one of type with override enabled -> " + dependency);
-                    requestHandlers.put(dependency, previous);
+                    resourceProxies.put(dependency, previous);
                 } else if (
                         (overriddenDependencies.contains(dependency)
                                 && !currentProvision.overrides().allowMappingOverride())
                         || (!previousProvision.overrides().allowMappingOverride()
                                 && !currentProvision.overrides().allowMappingOverride())) {
                     errors.add("more than one of type without override enabled -> " + dependency);
-                    requestHandlers.put(dependency, previous);
+                    resourceProxies.put(dependency, previous);
                 } else if (currentProvision.overrides().allowMappingOverride()) {
-                    myHandlers.add(requestHandler);
+                    myProxies.add(resourceProxy);
                     overriddenDependencies.add(dependency);
                 } else if (previousProvision.overrides().allowMappingOverride()) {
-                    requestHandlers.put(dependency, previous);
+                    resourceProxies.put(dependency, previous);
                     overriddenDependencies.add(dependency);
                 }
             } else {
-                myHandlers.add(requestHandler);
+                myProxies.add(resourceProxy);
             }
         }
     }
 
-    <T> DependencyRequestHandler<? extends T> get(Dependency<T> dependency) {
-        return Generics.as(requestHandlers.get(dependency));
+    <T> ResourceProxy<? extends T> get(Dependency<T> dependency) {
+        return Generics.as(resourceProxies.get(dependency));
     }
 
     private <T> void putCollectionElement(final Dependency<T> dependency,
-                                  DependencyRequestHandler<? extends T> requestHandler) {
+                                  ResourceProxy<? extends T> resourceProxy) {
         Dependency<Collection<T>> collectionDependency =
                 Dependency.from(dependency.qualifier(), new ParameterizedType() {
                     @Override public Type[] getActualTypeArguments() {
@@ -119,20 +119,20 @@ class GraphCache implements Replicable<GraphCache> {
                     }
 
                 });
-        CollectionRequestHandler<T> collectionRequestHandler
-                = Generics.as(requestHandlers.get(collectionDependency));
-        if (collectionRequestHandler == null) {
-            collectionRequestHandler = new CollectionRequestHandler<>(collectionDependency, dependency, ArrayList::new);
-            requestHandlers.put(collectionDependency, collectionRequestHandler);
-            myHandlers.add(collectionRequestHandler);
+        CollectionResourceProxy<T> collectionResourceProxy
+                = Generics.as(resourceProxies.get(collectionDependency));
+        if (collectionResourceProxy == null) {
+            collectionResourceProxy = new CollectionResourceProxy<>(collectionDependency, dependency, ArrayList::new);
+            resourceProxies.put(collectionDependency, collectionResourceProxy);
+            myProxies.add(collectionResourceProxy);
         }
-        collectionRequestHandler.add(requestHandler);
+        collectionResourceProxy.add(resourceProxy);
     }
 
     @Override public GraphCache replicateWith(GraphContext context) {
         GraphCache newCache = new GraphCache(parentCache);
-        for (DependencyRequestHandler<?> handler : myHandlers) {
-            newCache.putAll(handler.replicateWith(context), context.errors());
+        for (ResourceProxy<?> proxy : myProxies) {
+            newCache.putAll(proxy.replicateWith(context), context.errors());
         }
         return newCache;
     }

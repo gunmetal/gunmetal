@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013.
+ * Copyright (c) 2014.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,26 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.ResourceMetadata;
+import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.ProvisionStrategy;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author rees.byars
  */
-interface HandlerFactory {
+interface ResourceProxy<T> extends Replicable<ResourceProxy<T>> {
 
-    List<DependencyRequestHandler<?>> createHandlersForModule(Class<?> module,
-                                                              GraphContext context,
-                                                              Set<Class<?>> loadedModules);
+    List<Dependency<? super T>> targets();
 
-    <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(DependencyRequest<T> dependencyRequest,
-                                                              GraphContext context);
+    List<Dependency<?>> dependencies();
+
+    DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest);
+
+    ProvisionStrategy<T> force();
+
+    ResourceMetadata<?> resourceMetadata();
 
 }
