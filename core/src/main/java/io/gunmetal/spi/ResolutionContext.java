@@ -39,6 +39,7 @@ public interface ResolutionContext {
     final class ProvisionContext<T> {
         public byte state = States.NEW;
         public T provision;
+        public boolean attemptedCircularResolution = false;
     }
 
     final class Internal {

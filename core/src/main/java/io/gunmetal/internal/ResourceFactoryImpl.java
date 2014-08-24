@@ -161,8 +161,11 @@ class ResourceFactoryImpl implements ResourceFactory {
                             throw new RuntimeException(
                                     "The provision [" + resourceMetadata.toString() + "] depends on itself");
                         }
-                        e.getReverseStrategy().get(internalProvider, resolutionContext);
-                        return strategyContext.provision;
+                        if (!strategyContext.attemptedCircularResolution) {
+                            strategyContext.attemptedCircularResolution = true;
+                            e.getReverseStrategy().get(internalProvider, resolutionContext);
+                            return strategyContext.provision;
+                        }
                     } else if (e.getReverseStrategy() == null) {
                         e.setReverseStrategy(this);
                     }
