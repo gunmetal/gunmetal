@@ -16,16 +16,21 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ProvisionMetadata;
-import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.DependencyRequest;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author rees.byars
  */
-interface ProvisionAdapter<T> extends Dependent, Replicable<ProvisionAdapter<T>> {
+interface BindingFactory {
 
-    ProvisionMetadata<?> metadata();
+    List<Binding<?>> createBindingsForModule(Class<?> module,
+                                             GraphContext context,
+                                             Set<Class<?>> loadedModules);
 
-    ProvisionStrategy<T> provisionStrategy();
+    <T> Binding<T> createJitBindingForRequest(DependencyRequest<T> dependencyRequest,
+                                              GraphContext context);
 
 }

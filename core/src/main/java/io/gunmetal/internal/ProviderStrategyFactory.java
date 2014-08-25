@@ -1,6 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.Provider;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategy;
@@ -12,6 +11,7 @@ import io.gunmetal.util.Generics;
  */
 class ProviderStrategyFactory implements ReferenceStrategyFactory {
 
+    private static final ThreadLocal<ResolutionContext> contextThreadLocal = new ThreadLocal<>();
     private final ProviderAdapter providerAdapter;
 
     ProviderStrategyFactory(ProviderAdapter providerAdapter) {
@@ -22,33 +22,24 @@ class ProviderStrategyFactory implements ReferenceStrategyFactory {
             final ProvisionStrategy<?> provisionStrategy,
             final InternalProvider internalProvider) {
 
-        final Object provider = providerAdapter.provider(new Provider<Object>() {
+        return (p, c) -> Generics.as(providerAdapter.provider(() -> {
 
-            final ThreadLocal<ResolutionContext> contextThreadLocal = new ThreadLocal<>();
+            ResolutionContext context = contextThreadLocal.get();
 
-            @Override public Object get() {
-
-                ResolutionContext context = contextThreadLocal.get();
-
-                if (context != null) {
-                    return provisionStrategy.get(
-                            internalProvider, context);
-                }
-
-                try {
-                    context = ResolutionContext.create();
-                    contextThreadLocal.set(context);
-                    return provisionStrategy.get(
-                            internalProvider, context);
-                } finally {
-                    contextThreadLocal.remove();
-                }
-
+            if (context != null) {
+                return provisionStrategy.get(
+                        internalProvider, context);
             }
 
-        });
+            try {
+                contextThreadLocal.set(ResolutionContext.create());
+                return provisionStrategy.get(
+                        internalProvider, contextThreadLocal.get());
+            } finally {
+                contextThreadLocal.remove();
+            }
 
-        return (p, c) -> Generics.as(provider);
+        }));
 
     }
 

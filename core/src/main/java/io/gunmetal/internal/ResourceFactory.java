@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Dependency;
 
 import java.lang.reflect.Method;
@@ -24,18 +24,18 @@ import java.lang.reflect.Method;
 /**
  * @author rees.byars
  */
-interface ProvisionAdapterFactory {
+interface ResourceFactory {
 
-    <T> ProvisionAdapter<T> withClassProvider(ProvisionMetadata<Class<?>> provisionMetadata,
+    <T> Resource<T> withClassProvider(ResourceMetadata<Class<?>> resourceMetadata,
                                               GraphContext context);
 
-    <T> ProvisionAdapter<T> withMethodProvider(ProvisionMetadata<Method> provisionMetadata,
+    <T> Resource<T> withMethodProvider(ResourceMetadata<Method> resourceMetadata,
                                                GraphContext context);
 
-    <T> ProvisionAdapter<T> withStatefulMethodProvider(ProvisionMetadata<Method> provisionMetadata,
+    <T> Resource<T> withStatefulMethodProvider(ResourceMetadata<Method> resourceMetadata,
                                                        Dependency<?> moduleDependency,
                                                        GraphContext context);
 
-    <T> ProvisionAdapter<T> withProvidedModule(ProvisionMetadata<Class<?>> provisionMetadata,
+    <T> Resource<T> withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata,
                                                GraphContext context);
 }

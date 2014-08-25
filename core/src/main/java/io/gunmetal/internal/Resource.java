@@ -16,21 +16,16 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.DependencyRequest;
-
-import java.util.List;
-import java.util.Set;
+import io.gunmetal.spi.ResourceMetadata;
+import io.gunmetal.spi.ProvisionStrategy;
 
 /**
  * @author rees.byars
  */
-interface HandlerFactory {
+interface Resource<T> extends Dependent, Replicable<Resource<T>> {
 
-    List<DependencyRequestHandler<?>> createHandlersForModule(Class<?> module,
-                                                              GraphContext context,
-                                                              Set<Class<?>> loadedModules);
+    ResourceMetadata<?> metadata();
 
-    <T> DependencyRequestHandler<T> attemptToCreateHandlerFor(DependencyRequest<T> dependencyRequest,
-                                                              GraphContext context);
+    ProvisionStrategy<T> provisionStrategy();
 
 }

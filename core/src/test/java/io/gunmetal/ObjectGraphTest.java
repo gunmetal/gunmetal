@@ -2,7 +2,7 @@ package io.gunmetal;
 
 import com.google.common.eventbus.EventBus;
 import io.gunmetal.spi.Linkers;
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.testmocks.dongle.bl.Dongler;
@@ -42,7 +42,7 @@ public class ObjectGraphTest {
                         Scopes.THREAD,
                         new ProvisionStrategyDecorator() {
                             @Override public <T> ProvisionStrategy<T> decorate(
-                                    ProvisionMetadata<?> componentMetadata,
+                                    ResourceMetadata<?> componentMetadata,
                                     final ProvisionStrategy<T> delegateStrategy,
                                     Linkers linkers) {
                                 final ThreadLocal<T> threadLocal = new ThreadLocal<>();

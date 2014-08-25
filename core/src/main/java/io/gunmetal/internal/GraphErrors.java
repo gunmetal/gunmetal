@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Errors;
 
 import java.util.HashMap;
@@ -13,24 +13,24 @@ import java.util.Map;
  */
 class GraphErrors implements Errors {
 
-    private volatile Map<ProvisionMetadata<?>, List<String>> provisionErrors;
+    private volatile Map<ResourceMetadata<?>, List<String>> provisionErrors;
     private volatile List<String> generalErrors;
     private volatile boolean failFast = false;
 
     GraphErrors() { }
 
-    @Override public synchronized Errors add(ProvisionMetadata<?> provisionMetadata, String errorMessage) {
+    @Override public synchronized Errors add(ResourceMetadata<?> resourceMetadata, String errorMessage) {
         if (failFast) {
             throw new RuntimeException(
-                    "\n    Errors for " + provisionMetadata + " -> " + errorMessage);
+                    "\n    Errors for " + resourceMetadata + " -> " + errorMessage);
         }
         if (provisionErrors == null) {
             provisionErrors = new HashMap<>();
         }
-        List<String> errors = provisionErrors.get(provisionMetadata);
+        List<String> errors = provisionErrors.get(resourceMetadata);
         if (errors == null) {
             errors = new LinkedList<>();
-            provisionErrors.put(provisionMetadata, errors);
+            provisionErrors.put(resourceMetadata, errors);
         }
         errors.add(errorMessage);
         return this;
@@ -60,7 +60,7 @@ class GraphErrors implements Errors {
         final String tab = "    ";
 
         if (provisionErrors != null) {
-            for (Map.Entry<ProvisionMetadata<?>, List<String>> entry : provisionErrors.entrySet()) {
+            for (Map.Entry<ResourceMetadata<?>, List<String>> entry : provisionErrors.entrySet()) {
                 builder
                         .append("\n")
                         .append(tab)

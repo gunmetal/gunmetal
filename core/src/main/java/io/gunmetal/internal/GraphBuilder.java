@@ -21,7 +21,7 @@ import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.Provider;
 import io.gunmetal.TemplateGraph;
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InjectionResolver;
@@ -203,11 +203,11 @@ public final class GraphBuilder {
         }));
         ProvisionStrategyDecorator strategyDecorator = new ProvisionStrategyDecorator() {
             @Override public <T> ProvisionStrategy<T> decorate(
-                    ProvisionMetadata<?> provisionMetadata,
+                    ResourceMetadata<?> resourceMetadata,
                     ProvisionStrategy<T> delegateStrategy,
                     Linkers linkers) {
                 for (ProvisionStrategyDecorator decorator : strategyDecorators) {
-                    delegateStrategy = decorator.decorate(provisionMetadata, delegateStrategy, linkers);
+                    delegateStrategy = decorator.decorate(resourceMetadata, delegateStrategy, linkers);
                 }
                 return delegateStrategy;
             }
@@ -221,11 +221,11 @@ public final class GraphBuilder {
                         graphMetadata.isRestrictFieldInjection(),
                         graphMetadata.isRestrictSetterInjection()));
 
-        ProvisionAdapterFactory provisionAdapterFactory =
-                new ProvisionAdapterFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
+        ResourceFactory resourceFactory =
+                new ResourceFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
 
-        HandlerFactory handlerFactory = new HandlerFactoryImpl(
-                provisionAdapterFactory,
+        BindingFactory bindingFactory = new BindingFactoryImpl(
+                resourceFactory,
                 configurableMetadataResolver,
                 configurableMetadataResolver,
                 graphMetadata.isRequireExplicitModuleDependencies());
@@ -246,15 +246,15 @@ public final class GraphBuilder {
         }
 
         for (Class<?> module : modules) {
-            List<DependencyRequestHandler<?>> moduleRequestHandlers =
-                    handlerFactory.createHandlersForModule(module, graphContext, loadedModules);
-            graphCache.putAll(moduleRequestHandlers, errors);
+            List<Binding<?>> moduleBindings =
+                    bindingFactory.createBindingsForModule(module, graphContext, loadedModules);
+            graphCache.putAll(moduleBindings, errors);
         }
 
         InternalProvider internalProvider =
                 new GraphProvider(
                         providerAdapter,
-                        handlerFactory,
+                        bindingFactory,
                         graphCache,
                         graphContext,
                         graphMetadata.isRequireInterfaces());
@@ -265,7 +265,7 @@ public final class GraphBuilder {
         return new Template(
                 injectorFactory,
                 strategyDecorator,
-                handlerFactory,
+                bindingFactory,
                 graphCache,
                 loadedModules);
     }
@@ -274,7 +274,7 @@ public final class GraphBuilder {
 
         private final InjectorFactory injectorFactory;
         private final ProvisionStrategyDecorator strategyDecorator;
-        private final HandlerFactory handlerFactory;
+        private final BindingFactory bindingFactory;
         private final GraphCache graphCache;
         private final Set<Class<?>> loadedModules;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
@@ -282,12 +282,12 @@ public final class GraphBuilder {
 
         Template(InjectorFactory injectorFactory,
                  ProvisionStrategyDecorator strategyDecorator,
-                 HandlerFactory handlerFactory,
+                 BindingFactory bindingFactory,
                  GraphCache graphCache,
                  Set<Class<?>> loadedModules) {
             this.injectorFactory = injectorFactory;
             this.strategyDecorator = strategyDecorator;
-            this.handlerFactory = handlerFactory;
+            this.bindingFactory = bindingFactory;
             this.graphCache = graphCache;
             this.loadedModules = loadedModules;
         }
@@ -325,7 +325,7 @@ public final class GraphBuilder {
             InternalProvider internalProvider =
                     new GraphProvider(
                             providerAdapter,
-                            handlerFactory,
+                            bindingFactory,
                             newGraphCache,
                             graphContext,
                             graphMetadata.isRequireInterfaces());
@@ -438,22 +438,22 @@ public final class GraphBuilder {
                     qualifier,
                     dependencyType);
 
-            DependencyRequestHandler<? extends T> requestHandler = graphCache.get(dependency);
+            Binding<? extends T> binding = graphCache.get(dependency);
 
-            if (requestHandler != null) {
+            if (binding != null) {
 
-                return requestHandler.force().get(internalProvider, ResolutionContext.create());
+                return binding.force().get(internalProvider, ResolutionContext.create());
 
             } else if (providerAdapter.isProvider(dependency)) {
 
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
                 final Dependency<?> provisionDependency = Dependency.from(dependency.qualifier(), providedType);
-                final DependencyRequestHandler<?> provisionHandler = graphCache.get(provisionDependency);
-                if (provisionHandler == null) {
+                final Binding<?> provisionBinding = graphCache.get(provisionDependency);
+                if (provisionBinding == null) {
                     return null;
                 }
                 return new ProviderStrategyFactory(providerAdapter)
-                        .<T>create(provisionHandler.force(), internalProvider)
+                        .<T>create(provisionBinding.force(), internalProvider)
                         .get(internalProvider, ResolutionContext.create());
 
             }

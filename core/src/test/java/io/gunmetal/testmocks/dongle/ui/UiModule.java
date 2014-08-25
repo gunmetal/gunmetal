@@ -6,8 +6,8 @@ import io.gunmetal.Provides;
 import io.gunmetal.testmocks.dongle.auth.AuthAdapter;
 import io.gunmetal.testmocks.dongle.auth.AuthLib;
 import io.gunmetal.testmocks.dongle.auth.AuthService;
-import io.gunmetal.testmocks.dongle.bl.BlModule;
 import io.gunmetal.testmocks.dongle.bl.DongleService;
+import io.gunmetal.testmocks.dongle.bl.IBlModule;
 import io.gunmetal.testmocks.dongle.layers.Bl;
 import io.gunmetal.testmocks.dongle.layers.Ui;
 import io.gunmetal.testmocks.dongle.scope.Thread;
@@ -20,7 +20,7 @@ import java.util.Map;
  */
 @Ui @Module(
         subsumes = AuthLib.class,
-        dependsOn = {BlModule.class, UserModule.class},
+        dependsOn = {IBlModule.class, UserModule.class},
         onlyAccessibleFrom = UiModule.WhiteList.class)
 public class UiModule {
 

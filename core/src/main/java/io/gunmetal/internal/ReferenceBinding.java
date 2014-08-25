@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
@@ -14,23 +14,23 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
+class ReferenceBinding<T, C> implements Binding<T> {
 
     private final DependencyRequest<T> referenceRequest;
     private final ProvisionStrategy<T> referenceStrategy;
     private final ReferenceStrategyFactory referenceStrategyFactory;
-    private final DependencyRequestHandler<? extends C> provisionHandler;
+    private final Binding<? extends C> provisionBinding;
     private final Dependency<C> provisionDependency;
 
-    ReferenceRequestHandler(DependencyRequest<T> referenceRequest,
-                            ProvisionStrategy<T> referenceStrategy,
-                            ReferenceStrategyFactory referenceStrategyFactory,
-                            DependencyRequestHandler<? extends C> provisionHandler,
-                            Dependency<C> provisionDependency) {
+    ReferenceBinding(DependencyRequest<T> referenceRequest,
+                     ProvisionStrategy<T> referenceStrategy,
+                     ReferenceStrategyFactory referenceStrategyFactory,
+                     Binding<? extends C> provisionBinding,
+                     Dependency<C> provisionDependency) {
         this.referenceRequest = referenceRequest;
         this.referenceStrategy = referenceStrategy;
         this.referenceStrategyFactory = referenceStrategyFactory;
-        this.provisionHandler = provisionHandler;
+        this.provisionBinding = provisionBinding;
         this.provisionDependency = provisionDependency;
     }
 
@@ -39,11 +39,11 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
     }
 
     @Override public List<Dependency<?>> dependencies() {
-        return provisionHandler.dependencies();
+        return provisionBinding.dependencies();
     }
 
-    @Override public DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest) {
-        provisionHandler.handle(DependencyRequest.create(referenceRequest, provisionDependency));
+    @Override public DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest) {
+        provisionBinding.service(DependencyRequest.create(referenceRequest, provisionDependency));
         return () -> referenceStrategy;
     }
 
@@ -51,16 +51,16 @@ class ReferenceRequestHandler<T, C> implements DependencyRequestHandler<T> {
         return referenceStrategy;
     }
 
-    @Override public ProvisionMetadata<?> provisionMetadata() {
-        return provisionHandler.provisionMetadata();
+    @Override public ResourceMetadata<?> resourceMetadata() {
+        return provisionBinding.resourceMetadata();
     }
 
-    @Override public DependencyRequestHandler<T> replicateWith(GraphContext context) {
-        return new ReferenceRequestHandler<>(
+    @Override public Binding<T> replicateWith(GraphContext context) {
+        return new ReferenceBinding<>(
                 referenceRequest,
                 new DelegatingProvisionStrategy<T>(context.linkers()),
                 referenceStrategyFactory,
-                provisionHandler,
+                provisionBinding,
                 provisionDependency);
     }
 

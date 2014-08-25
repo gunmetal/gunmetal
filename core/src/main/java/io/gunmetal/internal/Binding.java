@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ProvisionMetadata;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ProvisionStrategy;
@@ -26,16 +26,16 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-interface DependencyRequestHandler<T> extends Replicable<DependencyRequestHandler<T>> {
+interface Binding<T> extends Replicable<Binding<T>> {
 
     List<Dependency<? super T>> targets();
 
     List<Dependency<?>> dependencies();
 
-    DependencyResponse<T> handle(DependencyRequest<? super T> dependencyRequest);
+    DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest);
 
     ProvisionStrategy<T> force();
 
-    ProvisionMetadata<?> provisionMetadata();
+    ResourceMetadata<?> resourceMetadata();
 
 }

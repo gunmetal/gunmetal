@@ -7,8 +7,8 @@ import io.gunmetal.Provides;
 import io.gunmetal.testmocks.dongle.auth.AuthAdapter;
 import io.gunmetal.testmocks.dongle.auth.AuthLib;
 import io.gunmetal.testmocks.dongle.auth.AuthService;
-import io.gunmetal.testmocks.dongle.bl.BlModule;
 import io.gunmetal.testmocks.dongle.bl.DongleService;
+import io.gunmetal.testmocks.dongle.bl.IBlModule;
 import io.gunmetal.testmocks.dongle.layers.Bl;
 import io.gunmetal.testmocks.dongle.layers.Ws;
 
@@ -18,7 +18,7 @@ import io.gunmetal.testmocks.dongle.layers.Ws;
 @Ws
 @Module(
     subsumes = AuthLib.class,
-    dependsOn = BlModule.class,
+    dependsOn = IBlModule.class,
     onlyAccessibleFrom = WsModule.WhiteList.class,
     access = AccessLevel.PRIVATE)
 public class WsModule {
