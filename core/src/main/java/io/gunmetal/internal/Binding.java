@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-interface ResourceProxy<T> extends Replicable<ResourceProxy<T>> {
+interface Binding<T> extends Replicable<Binding<T>> {
 
     List<Dependency<? super T>> targets();
 

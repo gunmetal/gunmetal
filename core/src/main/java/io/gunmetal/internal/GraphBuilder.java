@@ -224,7 +224,7 @@ public final class GraphBuilder {
         ResourceFactory resourceFactory =
                 new ResourceFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
 
-        ResourceProxyFactory resourceProxyFactory = new ResourceProxyFactoryImpl(
+        BindingFactory bindingFactory = new BindingFactoryImpl(
                 resourceFactory,
                 configurableMetadataResolver,
                 configurableMetadataResolver,
@@ -246,15 +246,15 @@ public final class GraphBuilder {
         }
 
         for (Class<?> module : modules) {
-            List<ResourceProxy<?>> moduleResourceProxies =
-                    resourceProxyFactory.createProxiesForModule(module, graphContext, loadedModules);
-            graphCache.putAll(moduleResourceProxies, errors);
+            List<Binding<?>> moduleBindings =
+                    bindingFactory.createBindingsForModule(module, graphContext, loadedModules);
+            graphCache.putAll(moduleBindings, errors);
         }
 
         InternalProvider internalProvider =
                 new GraphProvider(
                         providerAdapter,
-                        resourceProxyFactory,
+                        bindingFactory,
                         graphCache,
                         graphContext,
                         graphMetadata.isRequireInterfaces());
@@ -265,7 +265,7 @@ public final class GraphBuilder {
         return new Template(
                 injectorFactory,
                 strategyDecorator,
-                resourceProxyFactory,
+                bindingFactory,
                 graphCache,
                 loadedModules);
     }
@@ -274,7 +274,7 @@ public final class GraphBuilder {
 
         private final InjectorFactory injectorFactory;
         private final ProvisionStrategyDecorator strategyDecorator;
-        private final ResourceProxyFactory resourceProxyFactory;
+        private final BindingFactory bindingFactory;
         private final GraphCache graphCache;
         private final Set<Class<?>> loadedModules;
         private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
@@ -282,12 +282,12 @@ public final class GraphBuilder {
 
         Template(InjectorFactory injectorFactory,
                  ProvisionStrategyDecorator strategyDecorator,
-                 ResourceProxyFactory resourceProxyFactory,
+                 BindingFactory bindingFactory,
                  GraphCache graphCache,
                  Set<Class<?>> loadedModules) {
             this.injectorFactory = injectorFactory;
             this.strategyDecorator = strategyDecorator;
-            this.resourceProxyFactory = resourceProxyFactory;
+            this.bindingFactory = bindingFactory;
             this.graphCache = graphCache;
             this.loadedModules = loadedModules;
         }
@@ -325,7 +325,7 @@ public final class GraphBuilder {
             InternalProvider internalProvider =
                     new GraphProvider(
                             providerAdapter,
-                            resourceProxyFactory,
+                            bindingFactory,
                             newGraphCache,
                             graphContext,
                             graphMetadata.isRequireInterfaces());
@@ -438,22 +438,22 @@ public final class GraphBuilder {
                     qualifier,
                     dependencyType);
 
-            ResourceProxy<? extends T> resourceProxy = graphCache.get(dependency);
+            Binding<? extends T> binding = graphCache.get(dependency);
 
-            if (resourceProxy != null) {
+            if (binding != null) {
 
-                return resourceProxy.force().get(internalProvider, ResolutionContext.create());
+                return binding.force().get(internalProvider, ResolutionContext.create());
 
             } else if (providerAdapter.isProvider(dependency)) {
 
                 Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
                 final Dependency<?> provisionDependency = Dependency.from(dependency.qualifier(), providedType);
-                final ResourceProxy<?> provisionProxy = graphCache.get(provisionDependency);
-                if (provisionProxy == null) {
+                final Binding<?> provisionBinding = graphCache.get(provisionDependency);
+                if (provisionBinding == null) {
                     return null;
                 }
                 return new ProviderStrategyFactory(providerAdapter)
-                        .<T>create(provisionProxy.force(), internalProvider)
+                        .<T>create(provisionBinding.force(), internalProvider)
                         .get(internalProvider, ResolutionContext.create());
 
             }

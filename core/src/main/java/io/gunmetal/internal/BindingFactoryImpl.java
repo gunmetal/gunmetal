@@ -43,26 +43,26 @@ import java.util.Set;
 /**
  * @author rees.byars
  */
-class ResourceProxyFactoryImpl implements ResourceProxyFactory {
+class BindingFactoryImpl implements BindingFactory {
 
     private final ResourceFactory resourceFactory;
     private final QualifierResolver qualifierResolver;
     private final ResourceMetadataResolver resourceMetadataResolver;
     private final boolean requireExplicitModuleDependencies;
 
-    ResourceProxyFactoryImpl(ResourceFactory resourceFactory,
-                             QualifierResolver qualifierResolver,
-                             ResourceMetadataResolver resourceMetadataResolver,
-                             boolean requireExplicitModuleDependencies) {
+    BindingFactoryImpl(ResourceFactory resourceFactory,
+                       QualifierResolver qualifierResolver,
+                       ResourceMetadataResolver resourceMetadataResolver,
+                       boolean requireExplicitModuleDependencies) {
         this.resourceFactory = resourceFactory;
         this.qualifierResolver = qualifierResolver;
         this.resourceMetadataResolver = resourceMetadataResolver;
         this.requireExplicitModuleDependencies = requireExplicitModuleDependencies;
     }
 
-    @Override public List<ResourceProxy<?>> createProxiesForModule(final Class<?> module,
-                                                                   GraphContext context,
-                                                                   Set<Class<?>> loadedModules) {
+    @Override public List<Binding<?>> createBindingsForModule(final Class<?> module,
+                                                              GraphContext context,
+                                                              Set<Class<?>> loadedModules) {
         if (loadedModules.contains(module)) {
             return Collections.emptyList();
         }
@@ -76,20 +76,20 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
         }
         final RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation, context);
         final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation, context);
-        final List<ResourceProxy<?>> resourceProxies = new ArrayList<>();
-        addResourceProxies(
+        final List<Binding<?>> resourceBindings = new ArrayList<>();
+        addResourceBindings(
                 moduleAnnotation,
                 module,
-                resourceProxies,
+                resourceBindings,
                 moduleMetadata,
                 moduleRequestVisitor,
                 context,
                 loadedModules);
-        return resourceProxies;
+        return resourceBindings;
 
     }
 
-    @Override public <T> ResourceProxy<T> createJitProxyForRequest(
+    @Override public <T> Binding<T> createJitBindingForRequest(
             DependencyRequest<T> dependencyRequest, GraphContext context) {
         Dependency<T> dependency = dependencyRequest.dependency();
         TypeKey<T> typeKey = dependency.typeKey();
@@ -103,7 +103,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
         if (!resource.metadata().qualifier().equals(dependency.qualifier())) {
             return null;
         }
-        return resourceProxy(
+        return resourceBinding(
                 resource,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 moduleMetadata.moduleAnnotation() == Module.NONE ?
@@ -251,9 +251,9 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
 
     }
 
-    private void addResourceProxies(Module moduleAnnotation,
+    private void addResourceBindings(Module moduleAnnotation,
                                     Class<?> module,
-                                    List<ResourceProxy<?>> resourceProxies,
+                                    List<Binding<?>> resourceBindings,
                                     ModuleMetadata moduleMetadata,
                                     RequestVisitor moduleRequestVisitor,
                                     GraphContext context,
@@ -263,20 +263,20 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
         }
         if (moduleAnnotation.stateful()) {
             if (!moduleAnnotation.provided()) {
-                resourceProxies.add(managedModuleResourceProxy(module, moduleMetadata, context));
+                resourceBindings.add(managedModuleResourceBinding(module, moduleMetadata, context));
             } else {
-                resourceProxies.add(providedModuleResourceProxy(module, moduleMetadata, context));
+                resourceBindings.add(providedModuleResourceBinding(module, moduleMetadata, context));
             }
             Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
-                resourceProxies.add(statefulResourceProxy(m, module, moduleRequestVisitor, moduleMetadata, context));
+                resourceBindings.add(statefulResourceBinding(m, module, moduleRequestVisitor, moduleMetadata, context));
             });
         } else {
             Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
                 ResourceMetadata<Method> resourceMetadata =
                         resourceMetadataResolver.resolveMetadata(m, moduleMetadata, context.errors());
                 if (resourceMetadata.isProvider()) {
-                    resourceProxies.add(
-                            resourceProxy(resourceMetadata, module, moduleRequestVisitor, moduleMetadata, context));
+                    resourceBindings.add(
+                            resourceBinding(resourceMetadata, module, moduleRequestVisitor, moduleMetadata, context));
                 }
             });
         }
@@ -291,17 +291,17 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
             } else if (libQualifier != Qualifier.NONE) {
                 context.errors().add("Library " + library.getName() + " should not have a qualifier -> " + libQualifier);
             }
-            addResourceProxies(
+            addResourceBindings(
                     libModule,
                     library,
-                    resourceProxies,
+                    resourceBindings,
                     moduleMetadata,
                     moduleRequestVisitor,
                     context,
                     loadedModules);
         }
         for (Class<?> m : moduleAnnotation.dependsOn()) {
-            resourceProxies.addAll(createProxiesForModule(m, context, loadedModules));
+            resourceBindings.addAll(createBindingsForModule(m, context, loadedModules));
         }
     }
 
@@ -318,7 +318,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
         };
     }
 
-    private <T> ResourceProxy<T> resourceProxy(
+    private <T> Binding<T> resourceBinding(
             ResourceMetadata<Method> resourceMetadata,
             Class<?> module,
             RequestVisitor moduleRequestVisitor,
@@ -347,7 +347,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
         final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
                 Dependency.from(resourceMetadata.qualifier(), method.getGenericReturnType()));
 
-        return resourceProxy(
+        return resourceBinding(
                 resourceFactory.<T>withMethodProvider(resourceMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
@@ -355,7 +355,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
                 context);
     }
 
-    private <T> ResourceProxy<T> statefulResourceProxy(
+    private <T> Binding<T> statefulResourceBinding(
             final Method method,
             Class<?> module,
             final RequestVisitor moduleRequestVisitor,
@@ -381,7 +381,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
                 Collections.<Dependency<? super T>>singletonList(provisionDependency);
 
         if (Modifier.isStatic(resourceMetadata.provider().getModifiers())) {
-            return resourceProxy(
+            return resourceBinding(
                     resourceFactory.<T>withMethodProvider(resourceMetadata, context),
                     dependencies,
                     moduleRequestVisitor,
@@ -389,7 +389,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
                     context);
         }
 
-        return resourceProxy(
+        return resourceBinding(
                 resourceFactory.<T>withStatefulMethodProvider(resourceMetadata, moduleDependency, context),
                 dependencies,
                 moduleRequestVisitor,
@@ -397,13 +397,13 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
                 context);
     }
 
-    private <T> ResourceProxy<T> managedModuleResourceProxy(Class<T> module,
+    private <T> Binding<T> managedModuleResourceBinding(Class<T> module,
                                                                         ModuleMetadata moduleMetadata,
                                                                         GraphContext context) {
         Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
         Resource<T> resource = resourceFactory.withClassProvider(
                 resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
-        return resourceProxy(
+        return resourceBinding(
                 resource,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 (dependencyRequest, dependencyResponse) -> {
@@ -415,7 +415,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
                 context);
     }
 
-    private <T> ResourceProxy<T> providedModuleResourceProxy(Class<T> module,
+    private <T> Binding<T> providedModuleResourceBinding(Class<T> module,
                                                                         ModuleMetadata moduleMetadata,
                                                                         GraphContext context) {
         Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
@@ -426,7 +426,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
         }
         Resource<T> resource = resourceFactory.withProvidedModule(
                 resourceMetadata, context);
-        return resourceProxy(
+        return resourceBinding(
                 resource,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 (dependencyRequest, dependencyResponse) -> {
@@ -438,7 +438,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
                 context);
     }
 
-    private <T> ResourceProxy<T> resourceProxy(
+    private <T> Binding<T> resourceBinding(
                                                      final Resource<T> resource,
                                                      final List<Dependency<? super T>> targets,
                                                      final RequestVisitor moduleRequestVisitor,
@@ -451,7 +451,7 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
             }
         };
 
-        return new ResourceProxy<T>() {
+        return new Binding<T>() {
 
             @Override public List<Dependency<? super T>> targets() {
                 return targets;
@@ -484,8 +484,8 @@ class ResourceProxyFactoryImpl implements ResourceProxyFactory {
                 return resource.metadata();
             }
 
-            @Override public ResourceProxy<T> replicateWith(GraphContext context) {
-                return resourceProxy(
+            @Override public Binding<T> replicateWith(GraphContext context) {
+                return resourceBinding(
                         resource.replicateWith(context),
                         targets,
                         moduleRequestVisitor,

@@ -20,16 +20,16 @@ import java.util.List;
 /**
 * @author rees.byars
 */
-class CollectionResourceProxy<T> implements ResourceProxy<Collection<T>> {
+class CollectionBinding<T> implements Binding<Collection<T>> {
 
-    private final List<ResourceProxy<? extends T>> resourceProxies = new ArrayList<>();
+    private final List<Binding<? extends T>> bindings = new ArrayList<>();
     private final Dependency<Collection<T>> dependency;
     private final Dependency<T> subDependency;
     private final Provider<Collection<T>> collectionProvider;
 
-    CollectionResourceProxy(Dependency<Collection<T>> dependency,
-                            Dependency<T> subDependency,
-                            Provider<Collection<T>> collectionProvider) {
+    CollectionBinding(Dependency<Collection<T>> dependency,
+                      Dependency<T> subDependency,
+                      Provider<Collection<T>> collectionProvider) {
         this.dependency = dependency;
         this.subDependency = subDependency;
         this.collectionProvider = collectionProvider;
@@ -41,7 +41,7 @@ class CollectionResourceProxy<T> implements ResourceProxy<Collection<T>> {
 
     @Override public List<Dependency<?>> dependencies() {
         List<Dependency<?>> dependencies = new LinkedList<>();
-        resourceProxies.stream().forEach(resourceProxy -> dependencies.addAll(resourceProxy.dependencies()));
+        bindings.stream().forEach(binding -> dependencies.addAll(binding.dependencies()));
         return dependencies;
     }
 
@@ -50,8 +50,8 @@ class CollectionResourceProxy<T> implements ResourceProxy<Collection<T>> {
         return () -> {
             DependencyRequest<T> subRequest =
                     DependencyRequest.create(dependencyRequest, subDependency);
-            for (ResourceProxy<? extends T> resourceProxy : resourceProxies) {
-                resourceProxy.service(subRequest);
+            for (Binding<? extends T> binding : bindings) {
+                binding.service(subRequest);
             }
             return force();
         };
@@ -60,8 +60,8 @@ class CollectionResourceProxy<T> implements ResourceProxy<Collection<T>> {
     @Override public ProvisionStrategy<Collection<T>> force() {
         return (internalProvider, resolutionContext) -> {
             Collection<T> collection = collectionProvider.get();
-            for (ResourceProxy<? extends T> resourceProxy : resourceProxies) {
-                ProvisionStrategy<? extends T> provisionStrategy = resourceProxy.force();
+            for (Binding<? extends T> binding : bindings) {
+                ProvisionStrategy<? extends T> provisionStrategy = binding.force();
                 collection.add(provisionStrategy.get(internalProvider, resolutionContext));
             }
             return collection;
@@ -70,9 +70,9 @@ class CollectionResourceProxy<T> implements ResourceProxy<Collection<T>> {
 
     @Override public ResourceMetadata<?> resourceMetadata() {
         return new ResourceMetadata<Class<?>>(
-                CollectionResourceProxy.class,
-                CollectionResourceProxy.class,
-                new ModuleMetadata(CollectionResourceProxy.class, Qualifier.NONE, Module.NONE),
+                CollectionBinding.class,
+                CollectionBinding.class,
+                new ModuleMetadata(CollectionBinding.class, Qualifier.NONE, Module.NONE),
                 dependency.qualifier(),
                 Scopes.PROTOTYPE,
                 Overrides.NONE,
@@ -83,17 +83,17 @@ class CollectionResourceProxy<T> implements ResourceProxy<Collection<T>> {
                 true);
     }
 
-    @Override public ResourceProxy<Collection<T>> replicateWith(GraphContext context) {
-        CollectionResourceProxy<T> newProxy =
-                new CollectionResourceProxy<>(dependency, subDependency, collectionProvider);
-        for (ResourceProxy<? extends T> resourceProxy : resourceProxies) {
-            newProxy.resourceProxies.add(resourceProxy.replicateWith(context));
+    @Override public Binding<Collection<T>> replicateWith(GraphContext context) {
+        CollectionBinding<T> newBinding =
+                new CollectionBinding<>(dependency, subDependency, collectionProvider);
+        for (Binding<? extends T> binding : bindings) {
+            newBinding.bindings.add(binding.replicateWith(context));
         }
-        return newProxy;
+        return newBinding;
     }
 
-    void add(ResourceProxy<? extends T> subProxy) {
-        resourceProxies.add(subProxy);
+    void add(Binding<? extends T> subBinding) {
+        bindings.add(subBinding);
     }
 
 }

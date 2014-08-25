@@ -24,13 +24,13 @@ import java.util.Set;
 /**
  * @author rees.byars
  */
-interface ResourceProxyFactory {
+interface BindingFactory {
 
-    List<ResourceProxy<?>> createProxiesForModule(Class<?> module,
-                                                  GraphContext context,
-                                                  Set<Class<?>> loadedModules);
+    List<Binding<?>> createBindingsForModule(Class<?> module,
+                                             GraphContext context,
+                                             Set<Class<?>> loadedModules);
 
-    <T> ResourceProxy<T> createJitProxyForRequest(DependencyRequest<T> dependencyRequest,
-                                                  GraphContext context);
+    <T> Binding<T> createJitBindingForRequest(DependencyRequest<T> dependencyRequest,
+                                              GraphContext context);
 
 }

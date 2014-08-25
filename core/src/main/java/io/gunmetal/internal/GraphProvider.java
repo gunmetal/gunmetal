@@ -20,18 +20,18 @@ import java.lang.reflect.Type;
 class GraphProvider implements InternalProvider {
 
     private final ProviderAdapter providerAdapter;
-    private final ResourceProxyFactory resourceProxyFactory;
+    private final BindingFactory bindingFactory;
     private final GraphCache graphCache;
     private final GraphContext context;
     private final boolean requireInterfaces;
 
     GraphProvider(ProviderAdapter providerAdapter,
-                  ResourceProxyFactory resourceProxyFactory,
+                  BindingFactory bindingFactory,
                   GraphCache graphCache,
                   GraphContext context,
                   boolean requireInterfaces) {
         this.providerAdapter = providerAdapter;
-        this.resourceProxyFactory = resourceProxyFactory;
+        this.bindingFactory = bindingFactory;
         this.graphCache = graphCache;
         this.context = context;
         this.requireInterfaces = requireInterfaces;
@@ -49,35 +49,35 @@ class GraphProvider implements InternalProvider {
                     dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
-        ResourceProxy<? extends T> resourceProxy = graphCache.get(dependency);
-        if (resourceProxy != null) {
-            return resourceProxy
+        Binding<? extends T> binding = graphCache.get(dependency);
+        if (binding != null) {
+            return binding
                     .service(dependencyRequest)
                     .provisionStrategy();
         }
         if (providerAdapter.isProvider(dependency)) {
-            resourceProxy = createReferenceProxy(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
-            if (resourceProxy != null) {
-                graphCache.put(dependency, resourceProxy, context.errors());
-                return resourceProxy
+            binding = createReferenceBinding(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
+            if (binding != null) {
+                graphCache.put(dependency, binding, context.errors());
+                return binding
                         .service(dependencyRequest)
                         .provisionStrategy();
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
-            resourceProxy = createReferenceProxy(dependencyRequest, RefStrategyFactory::new);
-            if (resourceProxy != null) {
-                graphCache.put(dependency, resourceProxy, context.errors());
-                return resourceProxy
+            binding = createReferenceBinding(dependencyRequest, RefStrategyFactory::new);
+            if (binding != null) {
+                graphCache.put(dependency, binding, context.errors());
+                return binding
                         .service(dependencyRequest)
                         .provisionStrategy();
             }
         }
 
-        resourceProxy = resourceProxyFactory.createJitProxyForRequest(dependencyRequest, context);
-        if (resourceProxy != null) {
-            graphCache.put(dependency, resourceProxy, context.errors());
-            return resourceProxy
+        binding = bindingFactory.createJitBindingForRequest(dependencyRequest, context);
+        if (binding != null) {
+            graphCache.put(dependency, binding, context.errors());
+            return binding
                     .service(dependencyRequest)
                     .provisionStrategy();
         }
@@ -92,22 +92,22 @@ class GraphProvider implements InternalProvider {
 
     }
 
-    private <T, C> ResourceProxy<T> createReferenceProxy(
+    private <T, C> Binding<T> createReferenceBinding(
             final DependencyRequest<T> refRequest, Provider<ReferenceStrategyFactory> factoryProvider) {
         Dependency<?> providerDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency<C> provisionDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        final ResourceProxy<? extends C> provisionProxy = graphCache.get(provisionDependency);
-        if (provisionProxy == null) {
+        final Binding<? extends C> provisionBinding = graphCache.get(provisionDependency);
+        if (provisionBinding == null) {
             return null;
         }
-        ProvisionStrategy<? extends C> provisionStrategy = provisionProxy.force();
+        ProvisionStrategy<? extends C> provisionStrategy = provisionBinding.force();
         final ProvisionStrategy<T> providerStrategy = factoryProvider.get().create(provisionStrategy, this);
-        return new ReferenceResourceProxy<>(
+        return new ReferenceBinding<>(
                 refRequest,
                 providerStrategy,
                 factoryProvider.get(),
-                provisionProxy,
+                provisionBinding,
                 provisionDependency);
     }
 

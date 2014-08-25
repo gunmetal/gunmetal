@@ -14,23 +14,23 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class ReferenceResourceProxy<T, C> implements ResourceProxy<T> {
+class ReferenceBinding<T, C> implements Binding<T> {
 
     private final DependencyRequest<T> referenceRequest;
     private final ProvisionStrategy<T> referenceStrategy;
     private final ReferenceStrategyFactory referenceStrategyFactory;
-    private final ResourceProxy<? extends C> provisionProxy;
+    private final Binding<? extends C> provisionBinding;
     private final Dependency<C> provisionDependency;
 
-    ReferenceResourceProxy(DependencyRequest<T> referenceRequest,
-                           ProvisionStrategy<T> referenceStrategy,
-                           ReferenceStrategyFactory referenceStrategyFactory,
-                           ResourceProxy<? extends C> provisionProxy,
-                           Dependency<C> provisionDependency) {
+    ReferenceBinding(DependencyRequest<T> referenceRequest,
+                     ProvisionStrategy<T> referenceStrategy,
+                     ReferenceStrategyFactory referenceStrategyFactory,
+                     Binding<? extends C> provisionBinding,
+                     Dependency<C> provisionDependency) {
         this.referenceRequest = referenceRequest;
         this.referenceStrategy = referenceStrategy;
         this.referenceStrategyFactory = referenceStrategyFactory;
-        this.provisionProxy = provisionProxy;
+        this.provisionBinding = provisionBinding;
         this.provisionDependency = provisionDependency;
     }
 
@@ -39,11 +39,11 @@ class ReferenceResourceProxy<T, C> implements ResourceProxy<T> {
     }
 
     @Override public List<Dependency<?>> dependencies() {
-        return provisionProxy.dependencies();
+        return provisionBinding.dependencies();
     }
 
     @Override public DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest) {
-        provisionProxy.service(DependencyRequest.create(referenceRequest, provisionDependency));
+        provisionBinding.service(DependencyRequest.create(referenceRequest, provisionDependency));
         return () -> referenceStrategy;
     }
 
@@ -52,15 +52,15 @@ class ReferenceResourceProxy<T, C> implements ResourceProxy<T> {
     }
 
     @Override public ResourceMetadata<?> resourceMetadata() {
-        return provisionProxy.resourceMetadata();
+        return provisionBinding.resourceMetadata();
     }
 
-    @Override public ResourceProxy<T> replicateWith(GraphContext context) {
-        return new ReferenceResourceProxy<>(
+    @Override public Binding<T> replicateWith(GraphContext context) {
+        return new ReferenceBinding<>(
                 referenceRequest,
                 new DelegatingProvisionStrategy<T>(context.linkers()),
                 referenceStrategyFactory,
-                provisionProxy,
+                provisionBinding,
                 provisionDependency);
     }
 

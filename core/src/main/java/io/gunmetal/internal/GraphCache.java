@@ -24,70 +24,70 @@ import java.util.concurrent.ConcurrentHashMap;
 class GraphCache implements Replicable<GraphCache> {
 
     private final GraphCache parentCache;
-    private final Map<Dependency<?>, ResourceProxy<?>> resourceProxies = new ConcurrentHashMap<>(64, .75f, 2);
+    private final Map<Dependency<?>, Binding<?>> bindings = new ConcurrentHashMap<>(64, .75f, 2);
     private final Set<Dependency<?>> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
-    private final Queue<ResourceProxy<?>> myProxies = new LinkedList<>();
+    private final Queue<Binding<?>> myBindings = new LinkedList<>();
 
     GraphCache(GraphCache parentCache) {
         this.parentCache = parentCache;
         if (parentCache != null) {
-            resourceProxies.putAll(parentCache.resourceProxies);
+            bindings.putAll(parentCache.bindings);
         }
     }
 
-    void putAll(List<ResourceProxy<?>> resourceProxies, Errors errors) {
-        for (ResourceProxy<?> resourceProxy : resourceProxies) {
-            putAll(resourceProxy, errors);
+    void putAll(List<Binding<?>> bindings, Errors errors) {
+        for (Binding<?> binding : bindings) {
+            putAll(binding, errors);
         }
     }
 
-    <T> void putAll(ResourceProxy<T> resourceProxy, Errors errors) {
-        for (Dependency<? super T> dependency : resourceProxy.targets()) {
-            put(dependency, resourceProxy, errors);
+    <T> void putAll(Binding<T> binding, Errors errors) {
+        for (Dependency<? super T> dependency : binding.targets()) {
+            put(dependency, binding, errors);
         }
     }
 
-    <T> void put(final Dependency<? super T> dependency, ResourceProxy<T> resourceProxy, Errors errors) {
-        ResourceMetadata<?> currentProvision = resourceProxy.resourceMetadata();
+    <T> void put(final Dependency<? super T> dependency, Binding<T> binding, Errors errors) {
+        ResourceMetadata<?> currentProvision = binding.resourceMetadata();
         if (currentProvision.isCollectionElement()) {
-            putCollectionElement(dependency, resourceProxy);
+            putCollectionElement(dependency, binding);
         } else {
-            ResourceProxy<?> previous = resourceProxies.put(dependency, resourceProxy);
+            Binding<?> previous = bindings.put(dependency, binding);
             if (previous != null) {
                 ResourceMetadata<?> previousProvision = previous.resourceMetadata();
                 // TODO better messages, include provisions, keep list?
-                if (previousProvision.isModule()) { // TODO this is a hack that depends on the order from the proxy factory
-                    myProxies.add(resourceProxy);
+                if (previousProvision.isModule()) { // TODO this is a hack that depends on the order from the binding factory
+                    myBindings.add(binding);
                 } else if (previousProvision.overrides().allowMappingOverride()
                         && currentProvision.overrides().allowMappingOverride()) {
                     errors.add("more than one of type with override enabled -> " + dependency);
-                    resourceProxies.put(dependency, previous);
+                    bindings.put(dependency, previous);
                 } else if (
                         (overriddenDependencies.contains(dependency)
                                 && !currentProvision.overrides().allowMappingOverride())
                         || (!previousProvision.overrides().allowMappingOverride()
                                 && !currentProvision.overrides().allowMappingOverride())) {
                     errors.add("more than one of type without override enabled -> " + dependency);
-                    resourceProxies.put(dependency, previous);
+                    bindings.put(dependency, previous);
                 } else if (currentProvision.overrides().allowMappingOverride()) {
-                    myProxies.add(resourceProxy);
+                    myBindings.add(binding);
                     overriddenDependencies.add(dependency);
                 } else if (previousProvision.overrides().allowMappingOverride()) {
-                    resourceProxies.put(dependency, previous);
+                    bindings.put(dependency, previous);
                     overriddenDependencies.add(dependency);
                 }
             } else {
-                myProxies.add(resourceProxy);
+                myBindings.add(binding);
             }
         }
     }
 
-    <T> ResourceProxy<? extends T> get(Dependency<T> dependency) {
-        return Generics.as(resourceProxies.get(dependency));
+    <T> Binding<? extends T> get(Dependency<T> dependency) {
+        return Generics.as(bindings.get(dependency));
     }
 
     private <T> void putCollectionElement(final Dependency<T> dependency,
-                                  ResourceProxy<? extends T> resourceProxy) {
+                                  Binding<? extends T> binding) {
         Dependency<Collection<T>> collectionDependency =
                 Dependency.from(dependency.qualifier(), new ParameterizedType() {
                     @Override public Type[] getActualTypeArguments() {
@@ -119,20 +119,20 @@ class GraphCache implements Replicable<GraphCache> {
                     }
 
                 });
-        CollectionResourceProxy<T> collectionResourceProxy
-                = Generics.as(resourceProxies.get(collectionDependency));
-        if (collectionResourceProxy == null) {
-            collectionResourceProxy = new CollectionResourceProxy<>(collectionDependency, dependency, ArrayList::new);
-            resourceProxies.put(collectionDependency, collectionResourceProxy);
-            myProxies.add(collectionResourceProxy);
+        CollectionBinding<T> collectionBinding
+                = Generics.as(bindings.get(collectionDependency));
+        if (collectionBinding == null) {
+            collectionBinding = new CollectionBinding<>(collectionDependency, dependency, ArrayList::new);
+            bindings.put(collectionDependency, collectionBinding);
+            myBindings.add(collectionBinding);
         }
-        collectionResourceProxy.add(resourceProxy);
+        collectionBinding.add(binding);
     }
 
     @Override public GraphCache replicateWith(GraphContext context) {
         GraphCache newCache = new GraphCache(parentCache);
-        for (ResourceProxy<?> proxy : myProxies) {
-            newCache.putAll(proxy.replicateWith(context), context.errors());
+        for (Binding<?> binding : myBindings) {
+            newCache.putAll(binding.replicateWith(context), context.errors());
         }
         return newCache;
     }
