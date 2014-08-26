@@ -1,16 +1,10 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.Module;
-import io.gunmetal.Overrides;
 import io.gunmetal.Provider;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Errors;
-import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.spi.Qualifier;
-import io.gunmetal.spi.ResourceMetadata;
-import io.gunmetal.spi.Scopes;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,19 +63,16 @@ class CollectionBinding<T> implements Binding<Collection<T>> {
         };
     }
 
-    @Override public ResourceMetadata<?> resourceMetadata() {
-        return new ResourceMetadata<Class<?>>(
-                CollectionBinding.class,
-                CollectionBinding.class,
-                new ModuleMetadata(CollectionBinding.class, Qualifier.NONE, Module.NONE),
-                dependency.qualifier(),
-                Scopes.PROTOTYPE,
-                Overrides.NONE,
-                false,
-                false,
-                false,
-                false,
-                true);
+    @Override public boolean isModule() {
+        return false;
+    }
+
+    @Override public boolean isCollectionElement() {
+        return false;
+    }
+
+    @Override public boolean allowBindingOverride() {
+        return false;
     }
 
     @Override public Binding<Collection<T>> replicateWith(GraphContext context) {

@@ -20,7 +20,6 @@ import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.spi.ResourceMetadata;
 
 import java.util.List;
 
@@ -37,6 +36,10 @@ interface Binding<T> extends Replicable<Binding<T>> {
 
     ProvisionStrategy<T> force();
 
-    ResourceMetadata<?> resourceMetadata();
+    boolean isModule();
+
+    boolean isCollectionElement();
+
+    boolean allowBindingOverride();
 
 }

@@ -6,7 +6,6 @@ import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ProvisionErrors;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.RequestVisitor;
-import io.gunmetal.spi.ResourceMetadata;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -65,8 +64,16 @@ class BindingImpl<T> implements Binding<T> {
         return resource.provisionStrategy();
     }
 
-    @Override public ResourceMetadata<?> resourceMetadata() {
-        return resource.metadata();
+    @Override public boolean isModule() {
+        return resource.metadata().isModule();
+    }
+
+    @Override public boolean isCollectionElement() {
+        return resource.metadata().isCollectionElement();
+    }
+
+    @Override public boolean allowBindingOverride() {
+        return resource.metadata().overrides().allowMappingOverride();
     }
 
     @Override public Binding<T> replicateWith(GraphContext context) {
