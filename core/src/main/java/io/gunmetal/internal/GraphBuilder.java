@@ -224,11 +224,16 @@ public final class GraphBuilder {
         ResourceFactory resourceFactory =
                 new ResourceFactoryImpl(injectorFactory, graphMetadata.isRequireAcyclic());
 
+        RequestVisitorFactory requestVisitorFactory =
+                new RequestVisitorFactoryImpl(
+                        configurableMetadataResolver,
+                        graphMetadata.isRequireExplicitModuleDependencies());
+
         BindingFactory bindingFactory = new BindingFactoryImpl(
                 resourceFactory,
                 configurableMetadataResolver,
                 configurableMetadataResolver,
-                graphMetadata.isRequireExplicitModuleDependencies());
+                requestVisitorFactory);
 
         GraphCache graphCache = new GraphCache(parentGraph == null ? null : parentGraph.graphCache);
 
