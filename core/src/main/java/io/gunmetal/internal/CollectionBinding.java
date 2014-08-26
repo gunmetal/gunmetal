@@ -5,10 +5,11 @@ import io.gunmetal.Overrides;
 import io.gunmetal.Provider;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Scopes;
 
 import java.util.ArrayList;
@@ -46,12 +47,12 @@ class CollectionBinding<T> implements Binding<Collection<T>> {
     }
 
     @Override public DependencyResponse<Collection<T>> service(
-            final DependencyRequest<? super Collection<T>> dependencyRequest) {
+            final DependencyRequest<? super Collection<T>> dependencyRequest, Errors errors) {
         return () -> {
             DependencyRequest<T> subRequest =
                     DependencyRequest.create(dependencyRequest, subDependency);
             for (Binding<? extends T> binding : bindings) {
-                binding.service(subRequest);
+                binding.service(subRequest, errors);
             }
             return force();
         };

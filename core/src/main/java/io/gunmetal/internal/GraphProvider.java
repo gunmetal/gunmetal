@@ -52,7 +52,7 @@ class GraphProvider implements InternalProvider {
         Binding<? extends T> binding = graphCache.get(dependency);
         if (binding != null) {
             return binding
-                    .service(dependencyRequest)
+                    .service(dependencyRequest, context.errors())
                     .provisionStrategy();
         }
         if (providerAdapter.isProvider(dependency)) {
@@ -60,7 +60,7 @@ class GraphProvider implements InternalProvider {
             if (binding != null) {
                 graphCache.put(dependency, binding, context.errors());
                 return binding
-                        .service(dependencyRequest)
+                        .service(dependencyRequest, context.errors())
                         .provisionStrategy();
             }
         }
@@ -69,7 +69,7 @@ class GraphProvider implements InternalProvider {
             if (binding != null) {
                 graphCache.put(dependency, binding, context.errors());
                 return binding
-                        .service(dependencyRequest)
+                        .service(dependencyRequest, context.errors())
                         .provisionStrategy();
             }
         }
@@ -78,7 +78,7 @@ class GraphProvider implements InternalProvider {
         if (binding != null) {
             graphCache.put(dependency, binding, context.errors());
             return binding
-                    .service(dependencyRequest)
+                    .service(dependencyRequest, context.errors())
                     .provisionStrategy();
         }
 
