@@ -21,7 +21,7 @@ import io.gunmetal.internal.GraphBuilder;
 /**
  * @author rees.byars
  */
-public interface ObjectGraph extends TemplateGraph {
+public interface ObjectGraph {
 
     <T> ObjectGraph inject(T injectionTarget);
 
