@@ -16,9 +16,9 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ProvisionStrategy;
 
 import java.util.List;
@@ -32,10 +32,14 @@ interface Binding<T> extends Replicable<Binding<T>> {
 
     List<Dependency<?>> dependencies();
 
-    DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest);
+    DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest, Errors errors);
 
     ProvisionStrategy<T> force();
 
-    ResourceMetadata<?> resourceMetadata();
+    boolean isModule();
+
+    boolean isCollectionElement();
+
+    boolean allowBindingOverride();
 
 }

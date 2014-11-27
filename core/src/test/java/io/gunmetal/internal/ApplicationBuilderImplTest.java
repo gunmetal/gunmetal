@@ -27,6 +27,7 @@ import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
+import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
@@ -201,12 +202,12 @@ public class ApplicationBuilderImplTest {
     @Test
     public void testBuild() {
 
-        ObjectGraph app = ObjectGraph.builder()
+        TemplateGraph templateGraph =  ObjectGraph.builder()
                 .requireAcyclic()
-                .buildTemplate(TestModule.class)
-                .newInstance(new StatefulModule("rees"));
+                .buildTemplate(TestModule.class);
+        templateGraph.newInstance(new StatefulModule("rees"));
 
-        app = app.newInstance(new StatefulModule("rees"));
+        ObjectGraph app = templateGraph.newInstance(new StatefulModule("rees"));
 
         @Main class Dep implements io.gunmetal.Dependency<ApplicationBuilderImplTest> { }
 
@@ -309,7 +310,8 @@ public class ApplicationBuilderImplTest {
                 .buildTemplate(TestModule.class)
                 .newInstance(new StatefulModule("plus"));
 
-        ObjectGraph child = parent.plus().buildTemplate(PlusModule.class).newInstance();
+        TemplateGraph childTemplate = parent.plus().buildTemplate(PlusModule.class);
+        ObjectGraph child = childTemplate.newInstance();
 
         PlusModule p = child.get(Dep.class);
 
@@ -335,7 +337,7 @@ public class ApplicationBuilderImplTest {
 
         assert injectTest.f != null;
 
-        ObjectGraph childCopy = child.newInstance();
+        ObjectGraph childCopy = childTemplate.newInstance();
 
         assert child.get(Dep.class) != childCopy.get(Dep.class);
 

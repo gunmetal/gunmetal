@@ -33,4 +33,7 @@ interface BindingFactory {
     <T> Binding<T> createJitBindingForRequest(DependencyRequest<T> dependencyRequest,
                                               GraphContext context);
 
+    List<Binding<?>> createJitFactoryBindingsForRequest(DependencyRequest<?> dependencyRequest,
+                                                        GraphContext context);
+
 }

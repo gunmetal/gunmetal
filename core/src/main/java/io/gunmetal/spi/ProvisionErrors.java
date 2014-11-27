@@ -5,6 +5,6 @@ package io.gunmetal.spi;
  */
 public interface ProvisionErrors {
 
-    Errors add(String errorMessage);
+    void add(String errorMessage);
 
 }

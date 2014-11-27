@@ -16,17 +16,15 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.BlackList;
 import io.gunmetal.Module;
-import io.gunmetal.WhiteList;
-import io.gunmetal.spi.ResourceMetadata;
-import io.gunmetal.spi.ResourceMetadataResolver;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ModuleMetadata;
-import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
+import io.gunmetal.spi.RequestVisitor;
+import io.gunmetal.spi.ResourceMetadata;
+import io.gunmetal.spi.ResourceMetadataResolver;
 import io.gunmetal.spi.Scopes;
 import io.gunmetal.spi.TypeKey;
 
@@ -36,7 +34,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -48,16 +45,16 @@ class BindingFactoryImpl implements BindingFactory {
     private final ResourceFactory resourceFactory;
     private final QualifierResolver qualifierResolver;
     private final ResourceMetadataResolver resourceMetadataResolver;
-    private final boolean requireExplicitModuleDependencies;
+    private final RequestVisitorFactory requestVisitorFactory;
 
     BindingFactoryImpl(ResourceFactory resourceFactory,
                        QualifierResolver qualifierResolver,
                        ResourceMetadataResolver resourceMetadataResolver,
-                       boolean requireExplicitModuleDependencies) {
+                       RequestVisitorFactory requestVisitorFactory) {
         this.resourceFactory = resourceFactory;
         this.qualifierResolver = qualifierResolver;
         this.resourceMetadataResolver = resourceMetadataResolver;
-        this.requireExplicitModuleDependencies = requireExplicitModuleDependencies;
+        this.requestVisitorFactory = requestVisitorFactory;
     }
 
     @Override public List<Binding<?>> createBindingsForModule(final Class<?> module,
@@ -74,7 +71,8 @@ class BindingFactoryImpl implements BindingFactory {
                     + "] must be annotated with @Module()");
             return Collections.emptyList();
         }
-        final RequestVisitor moduleRequestVisitor = moduleRequestVisitor(module, moduleAnnotation, context);
+        final RequestVisitor moduleRequestVisitor =
+                requestVisitorFactory.moduleRequestVisitor(module, moduleAnnotation, context);
         final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation, context);
         final List<Binding<?>> resourceBindings = new ArrayList<>();
         addResourceBindings(
@@ -103,152 +101,43 @@ class BindingFactoryImpl implements BindingFactory {
         if (!resource.metadata().qualifier().equals(dependency.qualifier())) {
             return null;
         }
-        return resourceBinding(
+        return new BindingImpl<>(
                 resource,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 moduleMetadata.moduleAnnotation() == Module.NONE ?
                         RequestVisitor.NONE :
-                        moduleRequestVisitor(moduleMetadata.moduleClass(), moduleMetadata.moduleAnnotation(), context),
-                decorateForModule(moduleMetadata, AccessFilter.create(cls)),
-                context);
+                        requestVisitorFactory
+                                .moduleRequestVisitor(
+                                        moduleMetadata.moduleClass(),
+                                        moduleMetadata.moduleAnnotation(),
+                                        context),
+                decorateForModule(moduleMetadata, AccessFilter.create(cls)));
     }
 
-    private RequestVisitor moduleRequestVisitor(final Class<?> module,
-                                                final Module moduleAnnotation,
-                                                GraphContext context) {
-        final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation, context);
-        final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation, context);
-        final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
-        final AccessFilter<Class<?>> classAccessFilter = AccessFilter.create(moduleAnnotation.access(), module);
-        final RequestVisitor moduleClassVisitor = (dependencyRequest, response) -> {
-            if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
-                response.addError(
-                        "The module [" + dependencyRequest.sourceModule().moduleClass().getName()
-                                + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
-                );
-            }
-        };
-        return (dependencyRequest, response) -> {
-            moduleClassVisitor.visit(dependencyRequest, response);
-            dependsOnVisitor.visit(dependencyRequest, response);
-            blackListVisitor.visit(dependencyRequest, response);
-            whiteListVisitor.visit(dependencyRequest, response);
-        };
+    @Override public List<Binding<?>> createJitFactoryBindingsForRequest(
+            DependencyRequest<?> dependencyRequest, GraphContext context) {
+        ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // TODO
+        final RequestVisitor moduleRequestVisitor =
+                requestVisitorFactory
+                        .moduleRequestVisitor(
+                                moduleMetadata.moduleClass(),
+                                moduleMetadata.moduleAnnotation(),
+                                context);
+        final List<Binding<?>> resourceBindings = new ArrayList<>();
+        addResourceBindings(
+                Module.NONE,  // TODO hmmm
+                dependencyRequest.dependency().typeKey().raw(), // TODO hmmmm
+                resourceBindings,
+                moduleMetadata,
+                moduleRequestVisitor,
+                context,
+                Collections.emptySet()); // TODO is this okay?
+        return resourceBindings;
     }
 
     private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation, GraphContext context) {
         final Qualifier qualifier = qualifierResolver.resolve(module, context.errors());
         return new ModuleMetadata(module, qualifier, moduleAnnotation);
-    }
-
-    private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {
-
-        Class<? extends BlackList> blackListConfigClass =
-                moduleAnnotation.notAccessibleFrom();
-
-        if (blackListConfigClass == BlackList.class) {
-            return RequestVisitor.NONE;
-        }
-
-        final Class<?>[] blackListClasses;
-
-        BlackList.Modules blackListModules =
-                blackListConfigClass.getAnnotation(BlackList.Modules.class);
-
-        if (blackListModules != null) {
-            blackListClasses = blackListModules.value();
-        } else {
-            blackListClasses = new Class<?>[]{};
-        }
-
-        final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass, context.errors());
-
-        return (dependencyRequest, response) -> {
-
-            Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-            for (Class<?> blackListClass : blackListClasses) {
-                if (blackListClass == requestingSourceModuleClass) {
-                    response.addError("The module [" + requestingSourceModuleClass.getName()
-                            + "] does not have access to the module [" + module.getName() + "].");
-                }
-            }
-
-            boolean qualifierMatch =
-                    blackListQualifier.qualifiers().length > 0
-                    && dependencyRequest.sourceQualifier().qualifiers().length > 0
-                    && dependencyRequest.sourceQualifier().intersects(blackListQualifier);
-
-            if (qualifierMatch) {
-                response.addError("The module [" + requestingSourceModuleClass.getName()
-                        + "] does not have access to the module [" + module.getName() + "].");
-            }
-        };
-    }
-
-    private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {
-
-        Class<? extends WhiteList> whiteListConfigClass =
-                moduleAnnotation.onlyAccessibleFrom();
-
-        if (whiteListConfigClass == WhiteList.class) {
-            return RequestVisitor.NONE;
-        }
-
-        final Class<?>[] whiteListClasses;
-
-        WhiteList.Modules whiteListModules =
-                whiteListConfigClass.getAnnotation(WhiteList.Modules.class);
-
-        if (whiteListModules != null) {
-            whiteListClasses = whiteListModules.value();
-        } else {
-            whiteListClasses = new Class<?>[]{};
-        }
-
-        final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass, context.errors());
-
-        return (dependencyRequest, response) -> {
-
-            Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-            for (Class<?> whiteListClass : whiteListClasses) {
-                if (whiteListClass == requestingSourceModuleClass) {
-                    return;
-                }
-            }
-
-            boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(whiteListQualifier);
-            if (!qualifierMatch) {
-                response.addError("The module [" + requestingSourceModuleClass.getName()
-                        + "] does not have access to the module [" + module.getName() + "].");
-            }
-        };
-    }
-
-    private RequestVisitor dependsOnVisitor(final Class<?> module) {
-
-        return (dependencyRequest, response) -> {
-
-            ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
-
-            if (module == requestSourceModule.moduleClass()) {
-                return;
-            }
-
-            if (requestSourceModule.referencedModules().length == 0 && !requireExplicitModuleDependencies) {
-                return;
-            }
-
-            for (Class<?> dependency : requestSourceModule.referencedModules()) {
-                if (module == dependency) {
-                    return;
-                }
-            }
-
-            response.addError("The module [" + requestSourceModule.moduleClass().getName()
-                    + "] does not have access to the module [" + module.getName() + "].");
-
-        };
-
     }
 
     private void addResourceBindings(Module moduleAnnotation,
@@ -347,12 +236,11 @@ class BindingFactoryImpl implements BindingFactory {
         final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
                 Dependency.from(resourceMetadata.qualifier(), method.getGenericReturnType()));
 
-        return resourceBinding(
+        return new BindingImpl<>(
                 resourceFactory.<T>withMethodProvider(resourceMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
-                decorateForModule(moduleMetadata, AccessFilter.create(method)),
-                context);
+                decorateForModule(moduleMetadata, AccessFilter.create(method)));
     }
 
     private <T> Binding<T> statefulResourceBinding(
@@ -376,25 +264,24 @@ class BindingFactoryImpl implements BindingFactory {
         Dependency<?> moduleDependency =
                 Dependency.from(moduleMetadata.qualifier(), module);
 
+
         // TODO targeted return type check
         final List<Dependency<? super T>> dependencies =
                 Collections.<Dependency<? super T>>singletonList(provisionDependency);
 
         if (Modifier.isStatic(resourceMetadata.provider().getModifiers())) {
-            return resourceBinding(
+            return new BindingImpl<>(
                     resourceFactory.<T>withMethodProvider(resourceMetadata, context),
                     dependencies,
                     moduleRequestVisitor,
-                    decorateForModule(moduleMetadata, AccessFilter.create(method)),
-                    context);
+                    decorateForModule(moduleMetadata, AccessFilter.create(method)));
         }
 
-        return resourceBinding(
+        return new BindingImpl<>(
                 resourceFactory.<T>withStatefulMethodProvider(resourceMetadata, moduleDependency, context),
                 dependencies,
                 moduleRequestVisitor,
-                decorateForModule(moduleMetadata, AccessFilter.create(method)),
-                context);
+                decorateForModule(moduleMetadata, AccessFilter.create(method)));
     }
 
     private <T> Binding<T> managedModuleResourceBinding(Class<T> module,
@@ -403,16 +290,15 @@ class BindingFactoryImpl implements BindingFactory {
         Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
         Resource<T> resource = resourceFactory.withClassProvider(
                 resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
-        return resourceBinding(
+        return new BindingImpl<>(
                 resource,
                 Collections.<Dependency<? super T>>singletonList(dependency),
-                (dependencyRequest, dependencyResponse) -> {
+                (dependencyRequest, errors) -> {
                     if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
-                        dependencyResponse.addError("Module can only be requested by its providers"); // TODO
+                        errors.add("Module can only be requested by its providers"); // TODO
                     }
                 },
-                decorateForModule(moduleMetadata, AccessFilter.create(module)),
-                context);
+                decorateForModule(moduleMetadata, AccessFilter.create(module)));
     }
 
     private <T> Binding<T> providedModuleResourceBinding(Class<T> module,
@@ -426,74 +312,15 @@ class BindingFactoryImpl implements BindingFactory {
         }
         Resource<T> resource = resourceFactory.withProvidedModule(
                 resourceMetadata, context);
-        return resourceBinding(
+        return new BindingImpl<>(
                 resource,
                 Collections.<Dependency<? super T>>singletonList(dependency),
                 (dependencyRequest, dependencyResponse) -> {
                     if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
-                        dependencyResponse.addError("Module can only be requested by its providers"); // TODO
+                        dependencyResponse.add("Module can only be requested by its providers"); // TODO
                     }
                 },
-                decorateForModule(moduleMetadata, AccessFilter.create(module)),
-                context);
-    }
-
-    private <T> Binding<T> resourceBinding(
-                                                     final Resource<T> resource,
-                                                     final List<Dependency<? super T>> targets,
-                                                     final RequestVisitor moduleRequestVisitor,
-                                                     final AccessFilter<Class<?>> classAccessFilter,
-                                                     GraphContext context) {
-
-        RequestVisitor scopeVisitor = (dependencyRequest, response) -> {
-            if (!resource.metadata().scope().canInject(dependencyRequest.sourceScope())) {
-                response.addError("mis-scoped"); // TODO message
-            }
-        };
-
-        return new Binding<T>() {
-
-            @Override public List<Dependency<? super T>> targets() {
-                return targets;
-            }
-
-            @Override public List<Dependency<?>> dependencies() {
-                return resource.dependencies();
-            }
-
-            @Override public DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest) {
-                DependencyResponseImpl<T> response =
-                        new DependencyResponseImpl<>(dependencyRequest, resource.provisionStrategy(), context);
-                moduleRequestVisitor.visit(dependencyRequest, response);
-                scopeVisitor.visit(dependencyRequest, response);
-                if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
-                    response.addError(
-                            "The class [" + dependencyRequest.sourceOrigin().getName()
-                            + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
-                    );
-                }
-                response.validateResponse();
-                return response;
-            }
-
-            @Override public ProvisionStrategy<T> force() {
-                return resource.provisionStrategy();
-            }
-
-            @Override public ResourceMetadata<?> resourceMetadata() {
-                return resource.metadata();
-            }
-
-            @Override public Binding<T> replicateWith(GraphContext context) {
-                return resourceBinding(
-                        resource.replicateWith(context),
-                        targets,
-                        moduleRequestVisitor,
-                        classAccessFilter,
-                        context);
-            }
-
-        };
+                decorateForModule(moduleMetadata, AccessFilter.create(module)));
     }
 
     private boolean isInstantiable(Class<?> cls) {
@@ -507,55 +334,6 @@ class BindingFactoryImpl implements BindingFactory {
         }
         int modifiers = cls.getModifiers();
         return !Modifier.isAbstract(modifiers);
-    }
-
-    private interface MutableDependencyResponse<T> extends DependencyResponse<T> {
-        void addError(String errorMessage);
-    }
-
-    private interface RequestVisitor {
-
-        RequestVisitor NONE = (dependencyRequest, dependencyResponse) -> { };
-
-        void visit(DependencyRequest<?> dependencyRequest, MutableDependencyResponse<?> dependencyResponse);
-
-    }
-
-    private static class DependencyResponseImpl<T> implements MutableDependencyResponse<T> {
-
-        List<String> errors;
-        final DependencyRequest<? super T> dependencyRequest;
-        final ProvisionStrategy<? extends T> provisionStrategy;
-        final GraphContext context;
-
-        DependencyResponseImpl(DependencyRequest<? super T> dependencyRequest,
-                               ProvisionStrategy<T> provisionStrategy,
-                               GraphContext context) {
-            this.dependencyRequest = dependencyRequest;
-            this.provisionStrategy = provisionStrategy;
-            this.context = context;
-        }
-
-        @Override public void addError(String errorMessage) {
-            if (errors == null) {
-                errors = new LinkedList<>();
-            }
-            errors.add(errorMessage);
-        }
-
-        @Override public ProvisionStrategy<? extends T> provisionStrategy() {
-            return provisionStrategy;
-        }
-
-        void validateResponse() {
-            if (errors != null) {
-                for (String error : errors) {
-                    context.errors().add(
-                            dependencyRequest.sourceProvision(),
-                            "Denied request for " + dependencyRequest.dependency() + ".  Reason -> " + error);
-                }
-            }
-        }
     }
 
 }

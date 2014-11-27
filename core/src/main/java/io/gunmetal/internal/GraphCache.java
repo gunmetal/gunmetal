@@ -2,7 +2,6 @@ package io.gunmetal.internal;
 
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.Errors;
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
@@ -48,31 +47,29 @@ class GraphCache implements Replicable<GraphCache> {
     }
 
     <T> void put(final Dependency<? super T> dependency, Binding<T> binding, Errors errors) {
-        ResourceMetadata<?> currentProvision = binding.resourceMetadata();
-        if (currentProvision.isCollectionElement()) {
+        if (binding.isCollectionElement()) {
             putCollectionElement(dependency, binding);
         } else {
             Binding<?> previous = bindings.put(dependency, binding);
             if (previous != null) {
-                ResourceMetadata<?> previousProvision = previous.resourceMetadata();
                 // TODO better messages, include provisions, keep list?
-                if (previousProvision.isModule()) { // TODO this is a hack that depends on the order from the binding factory
+                if (previous.isModule()) { // TODO this is a hack that depends on the order from the binding factory
                     myBindings.add(binding);
-                } else if (previousProvision.overrides().allowMappingOverride()
-                        && currentProvision.overrides().allowMappingOverride()) {
+                } else if (previous.allowBindingOverride()
+                        && binding.allowBindingOverride()) {
                     errors.add("more than one of type with override enabled -> " + dependency);
                     bindings.put(dependency, previous);
                 } else if (
                         (overriddenDependencies.contains(dependency)
-                                && !currentProvision.overrides().allowMappingOverride())
-                        || (!previousProvision.overrides().allowMappingOverride()
-                                && !currentProvision.overrides().allowMappingOverride())) {
+                                && !binding.allowBindingOverride())
+                        || (!previous.allowBindingOverride()
+                                && !binding.allowBindingOverride())) {
                     errors.add("more than one of type without override enabled -> " + dependency);
                     bindings.put(dependency, previous);
-                } else if (currentProvision.overrides().allowMappingOverride()) {
+                } else if (binding.allowBindingOverride()) {
                     myBindings.add(binding);
                     overriddenDependencies.add(dependency);
-                } else if (previousProvision.overrides().allowMappingOverride()) {
+                } else if (previous.allowBindingOverride()) {
                     bindings.put(dependency, previous);
                     overriddenDependencies.add(dependency);
                 }

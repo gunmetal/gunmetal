@@ -10,6 +10,7 @@ import io.gunmetal.spi.ProvisionStrategy;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.List;
 
 /**
  *
@@ -40,6 +41,40 @@ class GraphProvider implements InternalProvider {
     @Override public synchronized <T> ProvisionStrategy<? extends T> getProvisionStrategy(
             final DependencyRequest<T> dependencyRequest) {
 
+        ProvisionStrategy<? extends T> strategy = getCachedProvisionStrategy(dependencyRequest);
+        if (strategy != null) {
+            return strategy;
+        }
+
+        Binding<? extends T> binding = bindingFactory.createJitBindingForRequest(dependencyRequest, context);
+        if (binding != null) {
+            graphCache.put(dependencyRequest.dependency(), binding, context.errors());
+            return binding
+                    .service(dependencyRequest, context.errors())
+                    .provisionStrategy();
+        }
+
+        List<Binding<?>> factoryBindingsForRequest =
+                bindingFactory.createJitFactoryBindingsForRequest(dependencyRequest, context);
+        graphCache.putAll(factoryBindingsForRequest, context.errors());
+
+        strategy = getCachedProvisionStrategy(dependencyRequest);
+        if (strategy != null) {
+            return strategy;
+        }
+
+        context.errors().add(
+                dependencyRequest.sourceProvision(),
+                "There is no provider defined for a dependency -> " + dependencyRequest.dependency());
+
+        // TODO shouldn't need to cast
+        return (p, c) -> { ((GraphErrors) context.errors()).throwIfNotEmpty(); return null; };
+
+    }
+
+    public synchronized <T> ProvisionStrategy<? extends T> getCachedProvisionStrategy(
+            final DependencyRequest<T> dependencyRequest) {
+
         final Dependency<T> dependency = dependencyRequest.dependency();
 
         if (requireInterfaces &&
@@ -52,7 +87,7 @@ class GraphProvider implements InternalProvider {
         Binding<? extends T> binding = graphCache.get(dependency);
         if (binding != null) {
             return binding
-                    .service(dependencyRequest)
+                    .service(dependencyRequest, context.errors())
                     .provisionStrategy();
         }
         if (providerAdapter.isProvider(dependency)) {
@@ -60,7 +95,7 @@ class GraphProvider implements InternalProvider {
             if (binding != null) {
                 graphCache.put(dependency, binding, context.errors());
                 return binding
-                        .service(dependencyRequest)
+                        .service(dependencyRequest, context.errors())
                         .provisionStrategy();
             }
         }
@@ -69,27 +104,11 @@ class GraphProvider implements InternalProvider {
             if (binding != null) {
                 graphCache.put(dependency, binding, context.errors());
                 return binding
-                        .service(dependencyRequest)
+                        .service(dependencyRequest, context.errors())
                         .provisionStrategy();
             }
         }
-
-        binding = bindingFactory.createJitBindingForRequest(dependencyRequest, context);
-        if (binding != null) {
-            graphCache.put(dependency, binding, context.errors());
-            return binding
-                    .service(dependencyRequest)
-                    .provisionStrategy();
-        }
-
-        //dependencyStack.pop();
-        context.errors().add(
-                dependencyRequest.sourceProvision(),
-                "There is no provider defined for a dependency -> " + dependency);
-
-        // TODO shouldn't need to cast
-        return (p, c) -> { ((GraphErrors) context.errors()).throwIfNotEmpty(); return null; };
-
+        return null;
     }
 
     private <T, C> Binding<T> createReferenceBinding(

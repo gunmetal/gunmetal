@@ -1,8 +1,8 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
@@ -42,8 +42,9 @@ class ReferenceBinding<T, C> implements Binding<T> {
         return provisionBinding.dependencies();
     }
 
-    @Override public DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest) {
-        provisionBinding.service(DependencyRequest.create(referenceRequest, provisionDependency));
+    @Override public DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest,
+                                                   Errors errors) {
+        provisionBinding.service(DependencyRequest.create(referenceRequest, provisionDependency), errors);
         return () -> referenceStrategy;
     }
 
@@ -51,8 +52,16 @@ class ReferenceBinding<T, C> implements Binding<T> {
         return referenceStrategy;
     }
 
-    @Override public ResourceMetadata<?> resourceMetadata() {
-        return provisionBinding.resourceMetadata();
+    @Override public boolean isModule() {
+        return false;
+    }
+
+    @Override public boolean isCollectionElement() {
+        return false;
+    }
+
+    @Override public boolean allowBindingOverride() {
+        return false;
     }
 
     @Override public Binding<T> replicateWith(GraphContext context) {
