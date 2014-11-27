@@ -114,6 +114,27 @@ class BindingFactoryImpl implements BindingFactory {
                 decorateForModule(moduleMetadata, AccessFilter.create(cls)));
     }
 
+    @Override public List<Binding<?>> createJitFactoryBindingsForRequest(
+            DependencyRequest<?> dependencyRequest, GraphContext context) {
+        ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // TODO
+        final RequestVisitor moduleRequestVisitor =
+                requestVisitorFactory
+                        .moduleRequestVisitor(
+                                moduleMetadata.moduleClass(),
+                                moduleMetadata.moduleAnnotation(),
+                                context);
+        final List<Binding<?>> resourceBindings = new ArrayList<>();
+        addResourceBindings(
+                Module.NONE,  // TODO hmmm
+                dependencyRequest.dependency().typeKey().raw(), // TODO hmmmm
+                resourceBindings,
+                moduleMetadata,
+                moduleRequestVisitor,
+                context,
+                Collections.emptySet()); // TODO is this okay?
+        return resourceBindings;
+    }
+
     private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation, GraphContext context) {
         final Qualifier qualifier = qualifierResolver.resolve(module, context.errors());
         return new ModuleMetadata(module, qualifier, moduleAnnotation);

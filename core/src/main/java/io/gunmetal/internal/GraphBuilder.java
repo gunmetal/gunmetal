@@ -56,7 +56,7 @@ public final class GraphBuilder {
 
     GraphBuilder(Graph parentGraph, GraphConfig graphConfig) {
         this.parentGraph = parentGraph;
-        this.graphConfig = graphConfig;
+        this.graphConfig = new GraphConfig(graphConfig);
     }
 
     public GraphBuilder requireQualifiers() {

@@ -12,12 +12,17 @@ public class AuthLib {
 
     @Provides private AuthService authService(@FromModule AuthAdapter authAdapter,
                                               @FromModule Author author,
-                                              @FromModule Authorizer authorizer) {
+                                              @FromModule Authorizer authorizer,
+                                              @FromModule Auteur auteur) {
         return new AuthService();
     }
 
     @Provides Authorizer authorizer(@FromModule AuthAdapter authAdapter) {
         return () -> false;
+    }
+
+    @Provides Auteur authorizer(@FromModule Author author) {
+        return author;
     }
 
 }

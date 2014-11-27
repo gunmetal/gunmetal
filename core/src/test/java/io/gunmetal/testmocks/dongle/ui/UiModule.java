@@ -37,7 +37,7 @@ public class UiModule {
         return new HashMap<>();
     }
 
-    @Provides private static AuthAdapter authAdapter() {
+    @Provides private static AuthAdapter authAdapter(@FromModule FactoryTest factoryTest) {
         return new AuthAdapter() { };
     }
 
