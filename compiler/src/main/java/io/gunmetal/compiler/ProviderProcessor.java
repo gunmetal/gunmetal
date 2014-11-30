@@ -43,6 +43,7 @@ public class ProviderProcessor extends AbstractProcessor {
         for (Element providerElement : providesElements) {
             Binding binding = bindingFactory.create(providerElement);
             bindings.put(binding.fulfilledDependency(), binding);
+            // TODO, go ahead and add bindings for Ref and Provider? RefBindFactory and ProviderBindingFactory
         }
 
         // Validate graph

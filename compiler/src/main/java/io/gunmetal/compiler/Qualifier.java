@@ -55,11 +55,6 @@ final class Qualifier {
         return intersects(qualifier.qualifiers());
     }
 
-    String prettyName() {
-        String prettyName = Arrays.toString(qualifiers());
-        return prettyName.replaceAll("[^A-Za-z0-9]", "");
-    }
-
     @Override public boolean equals(Object o) {
         return o instanceof Qualifier
                 && (this == o || Arrays.equals(((Qualifier) o).qualifiers(), qualifiers));
