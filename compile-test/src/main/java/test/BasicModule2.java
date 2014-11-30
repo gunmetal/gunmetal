@@ -1,3 +1,5 @@
+package test;
+
 import io.gunmetal.Module;
 import io.gunmetal.Provides;
 import io.gunmetal.Singleton;
@@ -9,12 +11,12 @@ import java.lang.annotation.RetentionPolicy;
  * @author rees.byars
  */
 @Module
-@BasicModule.Main("module")
-public class BasicModule {
+@test.BasicModule2.Main("module")
+public class BasicModule2 {
 
-    @Provides BasicModule() { }
+    @Provides BasicModule2() { }
 
-    @Provides @Main("notModule") BasicModule module(@Main("module") String name, @Main("module") Object object) {
+    @Provides @Main("notModule") test.BasicModule2 module(@Main("module") String name, @Main("module") Object object) {
         return this;
     }
 

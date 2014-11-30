@@ -2,12 +2,10 @@ package io.gunmetal.compiler;
 
 import io.gunmetal.Module;
 
-import javax.lang.model.element.Element;
-
 /**
  * @author rees.byars
  */
-class ProviderLocation implements GraphMember {
+final class ProviderLocation {
 
     private final MemberMetadata memberMetadata;
     private final Module moduleAnnotation;
@@ -19,17 +17,7 @@ class ProviderLocation implements GraphMember {
         this.moduleAnnotation = moduleAnnotation;
     }
 
-    static ProviderLocation fromElement(Element providerElement) {
-
-        Element classElement = providerElement.getEnclosingElement();
-
-        return new ProviderLocation(
-                MemberMetadata.fromElement(classElement),
-                classElement.getAnnotation(Module.class));
-
-    }
-
-    @Override public MemberMetadata metadata() {
+    MemberMetadata metadata() {
         return memberMetadata;
     }
 

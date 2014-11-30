@@ -3,8 +3,8 @@ package io.gunmetal.compiler;
 /**
  * @author rees.byars
  */
-interface GraphMember {
+interface Builder<R> extends AnnotationVisitor {
 
-    MemberMetadata metadata();
+    R build();
 
 }

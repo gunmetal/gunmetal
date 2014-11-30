@@ -14,7 +14,7 @@ public class ProviderProcessorTest {
     @Test public void testSandbox() {
 
         Truth.ASSERT.about(JavaSourceSubjectFactory.javaSource())
-                .that(JavaFileObjects.forResource(Resources.getResource("BasicModule.java")))
+                .that(JavaFileObjects.forResource(Resources.getResource("test/BasicModule.java")))
                 .processedWith(new ProviderProcessor())
                 .compilesWithoutError();
 

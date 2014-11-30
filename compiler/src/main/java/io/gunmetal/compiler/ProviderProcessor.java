@@ -1,5 +1,6 @@
 package io.gunmetal.compiler;
 
+import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -8,6 +9,7 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -25,28 +27,46 @@ public class ProviderProcessor extends AbstractProcessor {
 
     @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
+        // Setup
+        Provider<Builder<Qualifier>> qualifierBuilderProvider = QualifierBuilder::new;
+        Provider<Builder<Scope>> scopeBuilderProvider = ScopeBuilder::new;
+        Factory<MemberMetadata> memberMetadataFactory =
+                new MemberMetadataFactory(qualifierBuilderProvider, scopeBuilderProvider);
+        Factory<ProviderLocation> providerLocationFactory =
+                new ProviderLocationFactory(memberMetadataFactory);
+        Factory<Binding> bindingFactory =
+                new BindingFactory(memberMetadataFactory, providerLocationFactory, qualifierBuilderProvider);
+
+        // Parse bindings
         Set<? extends Element> providesElements = roundEnv.getElementsAnnotatedWith(Provides.class);
-
-        Map<Dependency, Provider> providers = new HashMap<>();
-
+        Map<Dependency, Binding> bindings = new HashMap<>();
         for (Element providerElement : providesElements) {
-
-            Provider provider = Provider.fromElement(providerElement);
-            providers.put(provider.fulfilledDependency(), provider);
-
-
+            Binding binding = bindingFactory.create(providerElement);
+            bindings.put(binding.fulfilledDependency(), binding);
         }
 
-        for (Provider provider : providers.values()) {
-            for (Dependency dependency : provider.requiredDependencies()) {
-                Provider dependencyProvider = providers.get(dependency);
-                if (dependencyProvider == null) {
-                    throw new RuntimeException();
+        // Validate graph
+        for (Binding binding : bindings.values()) {
+            for (Dependency dependency : binding.requiredDependencies()) {
+                Binding dependencyBinding = bindings.get(dependency);
+                if (dependencyBinding == null) {
+                    throw new RuntimeException(dependency.toString()); // TODO
                 }
             }
         }
 
+        // Generate code
+        ProviderWriter writer = new ProviderWriter(processingEnv.getFiler());
+        for (Binding binding : bindings.values()) {
+            try {
+                writer.writeProviderFor(binding);
+            } catch (IOException e) {
+                throw new RuntimeException(e); // TODO
+            }
+        }
+
         return false;
+
     }
 
 }

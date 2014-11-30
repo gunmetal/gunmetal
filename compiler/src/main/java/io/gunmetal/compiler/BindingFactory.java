@@ -1,5 +1,7 @@
 package io.gunmetal.compiler;
 
+import io.gunmetal.Provider;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
@@ -11,70 +13,45 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class Provider implements GraphMember {
+class BindingFactory implements Factory<Binding> {
 
-    private final MemberMetadata memberMetadata;
-    private final ProviderKind kind;
-    private final ProviderLocation location;
-    private final Dependency fulfilledDependency;
-    private final List<Dependency> requiredDependencies;
+    private final Factory<MemberMetadata> memberMetadataFactory;
+    private final Factory<ProviderLocation> providerLocationFactory;
+    private final Provider<Builder<Qualifier>> qualifierBuilderProvider;
 
-    Provider(
-            MemberMetadata memberMetadata,
-            ProviderKind kind,
-            ProviderLocation location,
-            Dependency fulfilledDependency, List<Dependency> requiredDependencies) {
-        this.memberMetadata = memberMetadata;
-        this.kind = kind;
-        this.location = location;
-        this.fulfilledDependency = fulfilledDependency;
-        this.requiredDependencies = requiredDependencies;
+    BindingFactory(
+            Factory<MemberMetadata> memberMetadataFactory,
+            Factory<ProviderLocation> providerLocationFactory,
+            Provider<Builder<Qualifier>> qualifierBuilderProvider) {
+        this.memberMetadataFactory = memberMetadataFactory;
+        this.providerLocationFactory = providerLocationFactory;
+        this.qualifierBuilderProvider = qualifierBuilderProvider;
     }
 
-    static Provider fromElement(Element providerElement) {
+    @Override public Binding create(Element providerElement) {
 
         ExecutableReport report = new ExecutableReport(providerElement);
 
-        ProviderLocation location = ProviderLocation.fromElement(providerElement);
-        MemberMetadata providerMetadata = MemberMetadata.fromElement(providerElement);
+        ProviderLocation location = providerLocationFactory.create(providerElement);
+        MemberMetadata providerMetadata = memberMetadataFactory.create(providerElement);
         Qualifier mergedQualifier = location.metadata().qualifier().merge(providerMetadata.qualifier());
-        providerMetadata = new MemberMetadata(mergedQualifier, providerMetadata.scope());
+        // TODO should this be handled in the memberMetadataFactory?
+        providerMetadata = new MemberMetadata(mergedQualifier, providerMetadata.scope(), providerElement);
 
         Dependency fulfilledDependency = new Dependency(report.producedType, providerMetadata.qualifier());
 
         List<Dependency> requiredDependencies = new ArrayList<>();
         for (VariableElement parameterElement : report.parameterElements) {
-            // TODO only need qualifier, dis is bad :)
-            MemberMetadata metadata = MemberMetadata.fromElement(parameterElement);
-            requiredDependencies.add(new Dependency(parameterElement.asType(), metadata.qualifier()));
+            Builder<Qualifier> qualifierBuilder = qualifierBuilderProvider.get();
+            new AnnotatedElement(parameterElement).accept(qualifierBuilder);
+            requiredDependencies.add(new Dependency(parameterElement.asType(), qualifierBuilder.build()));
         }
 
-        return new Provider(
+        return new Binding(
                 providerMetadata,
                 ProviderKind.fromElement(providerElement),
                 location,
                 fulfilledDependency, requiredDependencies);
-
-    }
-
-    @Override public MemberMetadata metadata() {
-        return memberMetadata;
-    }
-
-    ProviderKind kind() {
-        return kind;
-    }
-
-    ProviderLocation location() {
-        return location;
-    }
-
-    Dependency fulfilledDependency() {
-        return fulfilledDependency;
-    }
-
-    List<Dependency> requiredDependencies() {
-        return requiredDependencies;
     }
 
     private static class ExecutableReport {
