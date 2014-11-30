@@ -1,4 +1,6 @@
-package io.gunmetal;
+package io.gunmetal.compiler;
+
+import io.gunmetal.Provides;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -6,7 +8,8 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -24,14 +27,23 @@ public class ProviderProcessor extends AbstractProcessor {
 
         Set<? extends Element> providesElements = roundEnv.getElementsAnnotatedWith(Provides.class);
 
-        Set<Provider> providers = new HashSet<>();
+        Map<Dependency, Provider> providers = new HashMap<>();
 
         for (Element providerElement : providesElements) {
 
             Provider provider = Provider.fromElement(providerElement);
-            providers.add(provider);
+            providers.put(provider.fulfilledDependency(), provider);
 
 
+        }
+
+        for (Provider provider : providers.values()) {
+            for (Dependency dependency : provider.requiredDependencies()) {
+                Provider dependencyProvider = providers.get(dependency);
+                if (dependencyProvider == null) {
+                    throw new RuntimeException();
+                }
+            }
         }
 
         return false;

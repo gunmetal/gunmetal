@@ -1,4 +1,4 @@
-package io.gunmetal;
+package io.gunmetal.compiler;
 
 import com.google.common.io.Resources;
 import com.google.testing.compile.JavaFileObjects;
@@ -14,7 +14,7 @@ public class ProviderProcessorTest {
     @Test public void testSandbox() {
 
         Truth.ASSERT.about(JavaSourceSubjectFactory.javaSource())
-                .that(JavaFileObjects.forResource(Resources.getResource("BasicStatelessModule.java")))
+                .that(JavaFileObjects.forResource(Resources.getResource("BasicModule.java")))
                 .processedWith(new ProviderProcessor())
                 .compilesWithoutError();
 

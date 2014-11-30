@@ -1,4 +1,4 @@
-package io.gunmetal;
+package io.gunmetal.compiler;
 
 import javax.lang.model.element.Element;
 import java.lang.annotation.Annotation;

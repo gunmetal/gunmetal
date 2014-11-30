@@ -1,4 +1,4 @@
-package io.gunmetal;
+package io.gunmetal.compiler;
 
 /**
  * @author rees.byars

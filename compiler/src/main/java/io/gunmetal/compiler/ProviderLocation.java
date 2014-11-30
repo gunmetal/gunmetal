@@ -1,4 +1,6 @@
-package io.gunmetal;
+package io.gunmetal.compiler;
+
+import io.gunmetal.Module;
 
 import javax.lang.model.element.Element;
 
