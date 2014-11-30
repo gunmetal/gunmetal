@@ -3,12 +3,11 @@ package io.gunmetal.compiler;
 import com.squareup.javawriter.JavaWriter;
 
 import javax.annotation.processing.Filer;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
@@ -29,9 +28,7 @@ class ProviderWriter {
 
     void writeProviderFor(Binding binding) throws IOException {
 
-        TypeMirror typeMirror = binding.fulfilledDependency().typeMirror();
-
-        String typeName = nameResolver.getName(typeMirror);
+        String typeName = nameResolver.getProviderNameFor(binding.fulfilledDependency());
 
         JavaFileObject javaFileObject = filer.createSourceFile(typeName);
         JavaWriter javaWriter = new JavaWriter(javaFileObject.openWriter());
@@ -53,23 +50,27 @@ class ProviderWriter {
 
     private static class ProviderNameResolver {
 
-        private final Set<String> fileNames = new HashSet<>();
+        private final Map<Dependency, String> providerNames = new HashMap<>();
 
-        private String getName(TypeMirror typeMirror) {
-            return getName(typeMirror, 0);
+        private String getProviderNameFor(Dependency dependency) {
+            String name = providerNames.get(dependency);
+            if (name != null) {
+                return name;
+            }
+            return getProviderNameFor(dependency, 0);
         }
 
-        private String getName(TypeMirror typeMirror, int index) {
+        private String getProviderNameFor(Dependency dependency, int index) {
             // TODO generics will screw this up
-            String typeName = typeMirror.toString() + "_$Provider";
+            String providerName = dependency.typeMirror().toString() + "_$Provider";
             if (index != 0) {
-                typeName += index;
+                providerName += index;
             }
-            if (fileNames.contains(typeName)) {
-                return getName(typeMirror, index + 1);
+            if (providerNames.values().contains(providerName)) {
+                return getProviderNameFor(dependency, index + 1);
             }
-            fileNames.add(typeName);
-            return typeName;
+            providerNames.put(dependency, providerName);
+            return providerName;
         }
 
     }
