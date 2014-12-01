@@ -1,12 +1,17 @@
 package io.gunmetal.compiler;
 
 import com.squareup.javawriter.JavaWriter;
+import io.gunmetal.Provider;
 
 import javax.annotation.processing.Filer;
 import javax.tools.JavaFileObject;
+import java.beans.Introspector;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static javax.lang.model.element.Modifier.FINAL;
@@ -38,14 +43,77 @@ class ProviderWriter {
             javaWriter.emitPackage(typeName.substring(0, nameIndex));
         }
 
+        List<Dependency> requiredDependencies = binding.requiredDependencies();
+        writeImportsForRequiredDependencies(javaWriter, requiredDependencies);
         // TODO write qualifier annotation?
+        // TODO implements provider
+        javaWriter.beginType(typeName, "class", EnumSet.of(PUBLIC, FINAL));
+        // TODO should all be providers
+        writeFieldsForRequiredDependencies(javaWriter, binding.requiredDependencies());
+        writeConstructorForRequiredDependencies(javaWriter, binding.requiredDependencies());
+        javaWriter.endType().close();
 
+    }
+
+    void writeImportsForRequiredDependencies(
+            JavaWriter javaWriter, List<Dependency> dependencies) throws IOException {
+        List<String> imports = new ArrayList<>();
+        for (Dependency dependency : dependencies) {
+            // TODO will break on generic types
+            imports.add(dependency.typeMirror().toString());
+        }
+        imports.add(Provider.class.getName());
+        javaWriter.emitImports(imports);
+        javaWriter.emitEmptyLine();
+    }
+
+    void writeFieldsForRequiredDependencies(
+            JavaWriter javaWriter, List<Dependency> dependencies) throws IOException {
+        for (Dependency dependency : dependencies) {
+            javaWriter.emitField(
+                    getSimpleTypeName(dependency),
+                    getFieldNameForDependency(dependency));
+        }
+    }
+
+    void writeConstructorForRequiredDependencies(
+            JavaWriter javaWriter, List<Dependency> dependencies) throws IOException {
+        List<String> parameters = new ArrayList<>();
+        for (Dependency dependency : dependencies) {
+            parameters.add(getSimpleTypeName(dependency));
+            parameters.add(getFieldNameForDependency(dependency));
+        }
         javaWriter
-                .beginType(typeName, "class", EnumSet.of(PUBLIC, FINAL))
-                .beginConstructor(EnumSet.of(PUBLIC))
-                .endConstructor()
-                .endType()
-                .close();
+                .beginConstructor(EnumSet.of(PUBLIC), parameters, Collections.<String>emptyList());
+        for (Dependency dependency : dependencies) {
+            String fieldName = getFieldNameForDependency(dependency);
+            String statement =
+                    "this." + fieldName
+                    + " = " + fieldName;
+            javaWriter.emitStatement(statement);
+        }
+        javaWriter.endConstructor();
+    }
+
+    // TODO the names should use caching strategy similar to the ProviderNameResolver but per-binding
+
+    private String getFieldNameForDependency(Dependency dependency) {
+        return Introspector.decapitalize(clean(getSimpleTypeName(dependency)));
+    }
+
+    private static String getSimpleTypeName(Dependency dependency) {
+        String typeName = dependency.typeMirror().toString();
+        int nameIndex = typeName.lastIndexOf(".");
+        if (nameIndex > 0) {
+            return typeName
+                    .substring(nameIndex + 1);
+        }
+        return typeName;
+    }
+
+    private static String clean(String dirtyString) {
+        return dirtyString
+                .replaceAll("[^A-Za-z0-9]", "");
     }
 
     private static class ProviderNameResolver {
@@ -61,9 +129,7 @@ class ProviderWriter {
             int nameIndex = typeName.lastIndexOf(".");
             if (nameIndex > 0) {
                 // Strip special chars for generics, etc
-                String endName = typeName
-                        .substring(nameIndex)
-                        .replaceAll("[^A-Za-z0-9]", "");
+                String endName = clean(typeName.substring(nameIndex + 1));
                 String packageName = typeName.substring(0, nameIndex);
                 typeName = packageName + "." + endName;
             }

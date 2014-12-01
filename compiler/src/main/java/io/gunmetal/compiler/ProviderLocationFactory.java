@@ -18,6 +18,8 @@ public class ProviderLocationFactory implements Factory<ProviderLocation> {
 
     @Override public ProviderLocation create(Element providerElement) {
 
+        // TODO what about the location of the location, e.g. an inner class?
+
         Element classElement = providerElement.getEnclosingElement();
 
         return new ProviderLocation(

@@ -66,6 +66,9 @@ class BindingFactory implements Factory<Binding> {
 
                 @Override public ExecutableElement visitExecutableAsConstructor(
                         ExecutableElement constructorElement, Void v) {
+
+                    // TODO what to do about non-static inner class?  treat same as instance method?
+
                     producedType = constructorElement.getEnclosingElement().asType();
                     parameterElements = constructorElement.getParameters();
                     return null;
@@ -73,6 +76,9 @@ class BindingFactory implements Factory<Binding> {
 
                 @Override public ExecutableElement visitExecutableAsMethod(
                         ExecutableElement methodElement, Void p) {
+
+                    // TODO for instance method, what needs to be done to resolve instance?
+
                     producedType = methodElement.getReturnType();
                     parameterElements = methodElement.getParameters();
                     return null;
