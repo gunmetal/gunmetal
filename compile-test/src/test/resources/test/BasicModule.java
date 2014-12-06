@@ -1,6 +1,7 @@
 package test;
 
 import io.gunmetal.Module;
+import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Singleton;
 
@@ -26,6 +27,10 @@ public class BasicModule {
 
     @Provides @Main("module") static Object o(@Main("module") String name) {
         return name;
+    }
+
+    @Provides @Main("module") static Provider<? extends BasicModule> provider() {
+        return null;
     }
 
     @Retention(RetentionPolicy.RUNTIME)

@@ -46,11 +46,17 @@ class ProviderWriter {
         }
 
         List<Dependency> requiredDependencies = binding.requiredDependencies();
+        List<Dependency> requiredDependenciesPlusProviderInstance =
+                new ArrayList<>(requiredDependencies);
+        Dependency providerInstanceDependency = binding.providerInstanceDependency();
+        if (providerInstanceDependency != null) {
+            requiredDependenciesPlusProviderInstance.add(providerInstanceDependency);
+        }
         writeImportsForRequiredDependencies(javaWriter, requiredDependencies);
         // TODO write qualifier annotation?
         writeTypeDeclaration(javaWriter, typeName, fulfilledDependency);
-        writeFieldsForRequiredDependencies(javaWriter, requiredDependencies);
-        writeConstructorForRequiredDependencies(javaWriter, requiredDependencies);
+        writeFieldsForRequiredDependencies(javaWriter, requiredDependenciesPlusProviderInstance);
+        writeConstructorForRequiredDependencies(javaWriter, requiredDependenciesPlusProviderInstance);
 
         writeProvisionMethod(
                 javaWriter, fulfilledDependency, requiredDependencies, binding);
@@ -79,16 +85,20 @@ class ProviderWriter {
                 EnumSet.of(PUBLIC, FINAL),
                 null,
                 "Provider<" + fulfilledDependency.typeMirror().toString() + ">");
+        javaWriter.emitEmptyLine();
     }
 
     void writeFieldsForRequiredDependencies(
             JavaWriter javaWriter,
             List<Dependency> dependencies) throws IOException {
-        for (Dependency dependency : dependencies) {
-            javaWriter.emitField(
-                    providerNames.getProviderNameFor(dependency),
-                    getFieldNameForDependency(dependency),
-                    EnumSet.of(PRIVATE, FINAL));
+        if (!dependencies.isEmpty()) {
+            for (Dependency dependency : dependencies) {
+                javaWriter.emitField(
+                        providerNames.getProviderNameFor(dependency),
+                        getFieldNameForDependency(dependency),
+                        EnumSet.of(PRIVATE, FINAL));
+            }
+            javaWriter.emitEmptyLine();
         }
     }
 
@@ -110,6 +120,7 @@ class ProviderWriter {
             javaWriter.emitStatement(statement);
         }
         javaWriter.endConstructor();
+        javaWriter.emitEmptyLine();
     }
 
     void writeProvisionMethod(
@@ -124,28 +135,36 @@ class ProviderWriter {
                         "get",
                         EnumSet.of(PUBLIC));
 
-
-        if (ProviderKind.STATIC_CONSTRUCTOR.equals(binding.kind())) {
+        if (ProviderKind.STATIC_CONSTRUCTOR == binding.kind()
+                || ProviderKind.INSTANCE_CONSTRUCTOR == binding.kind()) {
             StringBuilder builder = new StringBuilder();
-            builder.append("return new ")
+            builder.append("return ");
+            if (binding.providerInstanceDependency() != null) {
+                builder.append(getFieldNameForDependency(binding.providerInstanceDependency()))
+                        .append(".get()");
+            }
+            builder.append("new ")
                     .append(binding.location().metadata().element().getSimpleName().toString())
-                    .append("(");
-            writeCommaSeparatedGetsFor(dependencies, builder);
-            javaWriter.emitStatement(builder.append(")").toString());
-        } else if (ProviderKind.STATIC_METHOD.equals(binding.kind())) {
-            StringBuilder builder = new StringBuilder();
-            builder.append("return ")
-                    .append(binding.location().metadata().element().getSimpleName().toString())
-                    .append(".")
-                    .append(binding.providerMetadata().element().getSimpleName().toString())
                     .append("(");
             writeCommaSeparatedGetsFor(dependencies, builder);
             javaWriter.emitStatement(builder.append(")").toString());
         } else {
-            // TODO for instance method or non-static inner class we need a provider
-            javaWriter.emitStatement("return null");
+            StringBuilder builder = new StringBuilder();
+            builder.append("return ");
+            if (binding.providerInstanceDependency() != null) {
+                builder.append(getFieldNameForDependency(binding.providerInstanceDependency()))
+                        .append(".get()");
+            } else {
+                builder.append(binding.location().metadata().element().getSimpleName().toString());
+            }
+            builder.append(".")
+                    .append(binding.providerMetadata().element().getSimpleName().toString())
+                    .append("(");
+            writeCommaSeparatedGetsFor(dependencies, builder);
+            javaWriter.emitStatement(builder.append(")").toString());
         }
         javaWriter.endMethod();
+        javaWriter.emitEmptyLine();
     }
 
     private void writeCommaSeparatedGetsFor(List<Dependency> requiredDependencies, StringBuilder builder) {

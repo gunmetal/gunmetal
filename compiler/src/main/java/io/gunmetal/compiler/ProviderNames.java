@@ -8,6 +8,8 @@ import java.util.Map;
  */
 final class ProviderNames {
 
+    // TODO create class such as WritableProvider with methods importString, fieldName, simpleTypeName, etc
+
     private final Map<Dependency, String> providerNames = new HashMap<>();
 
     String getProviderNameFor(Binding binding) {
@@ -16,6 +18,8 @@ final class ProviderNames {
         if (name != null) {
             return name;
         }
+
+        // TODO for generics this is not ideal...
         String typeName = dependency.typeMirror().toString();
         int nameIndex = typeName.lastIndexOf(".");
         if (nameIndex > 0) {
@@ -23,7 +27,7 @@ final class ProviderNames {
             typeName = clean(typeName.substring(nameIndex + 1));
         }
 
-        return getProviderNameFor(dependency, packageForBinding(binding) + "." + typeName + "_$Provider", 0);
+        return getProviderNameFor(dependency, packageForBinding(binding) + "." + typeName + "_Provider", 0);
     }
 
     String getProviderNameFor(Dependency dependency) {

@@ -12,18 +12,21 @@ final class Binding {
     private final ProviderLocation location;
     private final Dependency fulfilledDependency;
     private final List<Dependency> requiredDependencies;
+    private final Dependency providerInstanceDependency;
 
     Binding(
             MemberMetadata providerMetadata,
             ProviderKind kind,
             ProviderLocation location,
             Dependency fulfilledDependency,
-            List<Dependency> requiredDependencies) {
+            List<Dependency> requiredDependencies,
+            Dependency providerInstanceDependency) {
         this.providerMetadata = providerMetadata;
         this.kind = kind;
         this.location = location;
         this.fulfilledDependency = fulfilledDependency;
         this.requiredDependencies = requiredDependencies;
+        this.providerInstanceDependency = providerInstanceDependency;
     }
 
     MemberMetadata providerMetadata() {
@@ -44,6 +47,10 @@ final class Binding {
 
     List<Dependency> requiredDependencies() {
         return requiredDependencies;
+    }
+
+    Dependency providerInstanceDependency() {
+        return providerInstanceDependency;
     }
 
 }
