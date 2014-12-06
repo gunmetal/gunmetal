@@ -10,11 +10,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
 /**
@@ -22,18 +22,20 @@ import static javax.lang.model.element.Modifier.PUBLIC;
  */
 class ProviderWriter {
 
-    // TODO this is a complete, non-working hack ;)
-    private final ProviderNameResolver nameResolver = new ProviderNameResolver();
+    private final ProviderNames providerNames;
     private final Filer filer;
 
     ProviderWriter(
+            ProviderNames providerNames,
             Filer filer) {
+        this.providerNames = providerNames;
         this.filer = filer;
     }
 
     void writeProviderFor(Binding binding) throws IOException {
 
-        String typeName = nameResolver.getProviderNameFor(binding.fulfilledDependency());
+        Dependency fulfilledDependency = binding.fulfilledDependency();
+        String typeName = providerNames.getProviderNameFor(fulfilledDependency);
 
         JavaFileObject javaFileObject = filer.createSourceFile(typeName);
         JavaWriter javaWriter = new JavaWriter(javaFileObject.openWriter());
@@ -46,41 +48,56 @@ class ProviderWriter {
         List<Dependency> requiredDependencies = binding.requiredDependencies();
         writeImportsForRequiredDependencies(javaWriter, requiredDependencies);
         // TODO write qualifier annotation?
-        // TODO implements provider
-        javaWriter.beginType(typeName, "class", EnumSet.of(PUBLIC, FINAL));
-        // TODO should all be providers
-        writeFieldsForRequiredDependencies(javaWriter, binding.requiredDependencies());
-        writeConstructorForRequiredDependencies(javaWriter, binding.requiredDependencies());
+        writeTypeDeclaration(javaWriter, typeName, fulfilledDependency);
+        writeFieldsForRequiredDependencies(javaWriter, requiredDependencies);
+        writeConstructorForRequiredDependencies(javaWriter, requiredDependencies);
+
+        writeProvisionMethod(
+                javaWriter, fulfilledDependency, requiredDependencies, binding);
         javaWriter.endType().close();
 
     }
 
     void writeImportsForRequiredDependencies(
-            JavaWriter javaWriter, List<Dependency> dependencies) throws IOException {
+            JavaWriter javaWriter,
+            List<Dependency> dependencies) throws IOException {
         List<String> imports = new ArrayList<>();
         for (Dependency dependency : dependencies) {
             // TODO will break on generic types
-            imports.add(dependency.typeMirror().toString());
+            imports.add(providerNames.getProviderNameFor(dependency));
         }
         imports.add(Provider.class.getName());
         javaWriter.emitImports(imports);
         javaWriter.emitEmptyLine();
     }
 
+    void writeTypeDeclaration(
+            JavaWriter javaWriter, String typeName, Dependency fulfilledDependency) throws IOException {
+        javaWriter.beginType(
+                typeName,
+                "class",
+                EnumSet.of(PUBLIC, FINAL),
+                null,
+                "Provider<" + fulfilledDependency.typeMirror().toString() + ">");
+    }
+
     void writeFieldsForRequiredDependencies(
-            JavaWriter javaWriter, List<Dependency> dependencies) throws IOException {
+            JavaWriter javaWriter,
+            List<Dependency> dependencies) throws IOException {
         for (Dependency dependency : dependencies) {
             javaWriter.emitField(
-                    getSimpleTypeName(dependency),
-                    getFieldNameForDependency(dependency));
+                    providerNames.getProviderNameFor(dependency),
+                    getFieldNameForDependency(dependency),
+                    EnumSet.of(PRIVATE, FINAL));
         }
     }
 
     void writeConstructorForRequiredDependencies(
-            JavaWriter javaWriter, List<Dependency> dependencies) throws IOException {
+            JavaWriter javaWriter,
+            List<Dependency> dependencies) throws IOException {
         List<String> parameters = new ArrayList<>();
         for (Dependency dependency : dependencies) {
-            parameters.add(getSimpleTypeName(dependency));
+            parameters.add(providerNames.getProviderNameFor(dependency));
             parameters.add(getFieldNameForDependency(dependency));
         }
         javaWriter
@@ -95,58 +112,69 @@ class ProviderWriter {
         javaWriter.endConstructor();
     }
 
-    // TODO the names should use caching strategy similar to the ProviderNameResolver but per-binding
+    void writeProvisionMethod(
+            JavaWriter javaWriter,
+            Dependency fulfilledDependency,
+            List<Dependency> dependencies,
+            Binding binding) throws IOException {
 
-    private String getFieldNameForDependency(Dependency dependency) {
-        return Introspector.decapitalize(clean(getSimpleTypeName(dependency)));
+        javaWriter
+                .beginMethod(
+                        fulfilledDependency.typeMirror().toString(),
+                        "get",
+                        EnumSet.of(PUBLIC));
+
+
+        if (ProviderKind.STATIC_CONSTRUCTOR.equals(binding.kind())) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("return new ")
+                    .append(binding.location().metadata().element().getSimpleName().toString())
+                    .append("(");
+            writeCommaSeparatedGetsFor(dependencies, builder);
+            javaWriter.emitStatement(builder.append(")").toString());
+        } else if (ProviderKind.STATIC_METHOD.equals(binding.kind())) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("return ")
+                    .append(binding.location().metadata().element().getSimpleName().toString())
+                    .append(".")
+                    .append(binding.providerMetadata().element().getSimpleName().toString())
+                    .append("(");
+            writeCommaSeparatedGetsFor(dependencies, builder);
+            javaWriter.emitStatement(builder.append(")").toString());
+        } else {
+            // TODO for instance method or non-static inner class we need a provider
+            javaWriter.emitStatement("return null");
+        }
+        javaWriter.endMethod();
     }
 
-    private static String getSimpleTypeName(Dependency dependency) {
-        String typeName = dependency.typeMirror().toString();
+    private void writeCommaSeparatedGetsFor(List<Dependency> requiredDependencies, StringBuilder builder) {
+        for (Iterator<Dependency> i = requiredDependencies.iterator();
+             i.hasNext();) {
+            builder
+                    .append(getFieldNameForDependency(i.next()))
+                    .append(".get()");
+            if (i.hasNext()) {
+                builder.append(", ");
+            }
+        }
+    }
+
+
+    // TODO the names should use caching strategy similar to the ProviderNames but per-binding
+
+    private String getFieldNameForDependency(Dependency dependency) {
+        return Introspector.decapitalize(getSimpleTypeName(dependency));
+    }
+
+    private String getSimpleTypeName(Dependency dependency) {
+        String typeName = providerNames.getProviderNameFor(dependency);
         int nameIndex = typeName.lastIndexOf(".");
         if (nameIndex > 0) {
             return typeName
                     .substring(nameIndex + 1);
         }
         return typeName;
-    }
-
-    private static String clean(String dirtyString) {
-        return dirtyString
-                .replaceAll("[^A-Za-z0-9]", "");
-    }
-
-    private static class ProviderNameResolver {
-
-        private final Map<Dependency, String> providerNames = new HashMap<>();
-
-        private String getProviderNameFor(Dependency dependency) {
-            String name = providerNames.get(dependency);
-            if (name != null) {
-                return name;
-            }
-            String typeName = dependency.typeMirror().toString();
-            int nameIndex = typeName.lastIndexOf(".");
-            if (nameIndex > 0) {
-                // Strip special chars for generics, etc
-                String endName = clean(typeName.substring(nameIndex + 1));
-                String packageName = typeName.substring(0, nameIndex);
-                typeName = packageName + "." + endName;
-            }
-            return getProviderNameFor(dependency, typeName + "_$Provider", 0);
-        }
-
-        private String getProviderNameFor(Dependency dependency, String providerName, int index) {
-            if (index != 0) {
-                providerName += index;
-            }
-            if (providerNames.values().contains(providerName)) {
-                return getProviderNameFor(dependency, providerName, index + 1);
-            }
-            providerNames.put(dependency, providerName);
-            return providerName;
-        }
-
     }
 
 }

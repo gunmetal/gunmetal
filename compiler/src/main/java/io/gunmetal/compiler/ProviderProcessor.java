@@ -47,7 +47,9 @@ public class ProviderProcessor extends AbstractProcessor {
         }
 
         // Validate graph
+        ProviderNames providerNames = new ProviderNames();
         for (Binding binding : bindings.values()) {
+            providerNames.getProviderNameFor(binding); // TODO this is randomish
             for (Dependency dependency : binding.requiredDependencies()) {
                 Binding dependencyBinding = bindings.get(dependency);
                 if (dependencyBinding == null) {
@@ -57,7 +59,7 @@ public class ProviderProcessor extends AbstractProcessor {
         }
 
         // Generate code
-        ProviderWriter writer = new ProviderWriter(processingEnv.getFiler());
+        ProviderWriter writer = new ProviderWriter(providerNames, processingEnv.getFiler());
         for (Binding binding : bindings.values()) {
             try {
                 writer.writeProviderFor(binding);

@@ -24,8 +24,8 @@ public class BasicModule {
         return "name";
     }
 
-    @Provides @Main("module") static Object o() {
-        return "name";
+    @Provides @Main("module") static Object o(@Main("module") String name) {
+        return name;
     }
 
     @Retention(RetentionPolicy.RUNTIME)

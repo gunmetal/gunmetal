@@ -8,7 +8,9 @@ import javax.lang.model.element.Modifier;
  */
 enum ProviderKind {
 
-    CONSTRUCTOR,
+    INSTANCE_CONSTRUCTOR,
+
+    STATIC_CONSTRUCTOR,
 
     INSTANCE_METHOD,
 
@@ -16,7 +18,7 @@ enum ProviderKind {
 
     static ProviderKind fromElement(Element providerElement) {
         switch (providerElement.getKind()) {
-            case CONSTRUCTOR: return ProviderKind.CONSTRUCTOR;
+            case CONSTRUCTOR: return ProviderKind.STATIC_CONSTRUCTOR; // TODO instance??
             case METHOD: {
                 if (providerElement.getModifiers().contains(Modifier.STATIC)) {
                     return ProviderKind.STATIC_METHOD;
