@@ -1,5 +1,6 @@
 package io.gunmetal.compiler;
 
+import io.gunmetal.Component;
 import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 
@@ -42,14 +43,15 @@ public class ProviderProcessor extends AbstractProcessor {
         Map<Dependency, Binding> bindings = new HashMap<>();
         for (Element providerElement : providesElements) {
             Binding binding = bindingFactory.create(providerElement);
+            // TODO blow up if dependency already bound
             bindings.put(binding.fulfilledDependency(), binding);
             // TODO, go ahead and add bindings for Ref and Provider? RefBindFactory and ProviderBindingFactory
         }
 
         // Validate graph
-        ProviderNames providerNames = new ProviderNames();
+        WritableProviderRepository writableProviderRepository = new WritableProviderRepository();
         for (Binding binding : bindings.values()) {
-            providerNames.getProviderNameFor(binding); // TODO this is randomish
+            writableProviderRepository.addFor(binding); // TODO this is randomish
             for (Dependency dependency : binding.requiredDependencies()) {
                 Binding dependencyBinding = bindings.get(dependency);
                 if (dependencyBinding == null) {
@@ -59,13 +61,19 @@ public class ProviderProcessor extends AbstractProcessor {
         }
 
         // Generate code
-        ProviderWriter writer = new ProviderWriter(providerNames, processingEnv.getFiler());
+        ProviderWriter writer = new ProviderWriter(writableProviderRepository.asMap(), processingEnv.getFiler());
         for (Binding binding : bindings.values()) {
             try {
                 writer.writeProviderFor(binding);
             } catch (IOException e) {
                 throw new RuntimeException(e); // TODO
             }
+        }
+
+        // TODO not even sure where/when this should happen just yet...
+        Set<? extends Element> componentElements = roundEnv.getElementsAnnotatedWith(Component.class);
+        for (Element componentElement : componentElements) {
+            // TODO
         }
 
         return false;
