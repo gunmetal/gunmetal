@@ -7,6 +7,8 @@ import io.gunmetal.Singleton;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author rees.byars
@@ -15,10 +17,11 @@ import java.lang.annotation.RetentionPolicy;
 @test.BasicModule2.Main("module")
 public class BasicModule2 {
 
-    @Provides BasicModule2() { }
+    @Provides @Main("notModule") BasicModule2() { }
 
-    @Provides @Main("notModule") test.BasicModule2 module(@Main("module") String name, @Main("module") Object object) {
-        return this;
+    @Provides @Main("notModule") List<BasicModule2>
+    module(@Main("module") String name, @Main("module") Object object) {
+        return Arrays.asList(this);
     }
 
     @Provides @Main("module") @Singleton static String name() {

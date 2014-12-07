@@ -1,5 +1,6 @@
 package io.gunmetal.compiler;
 
+import bluh.BigUglyBlob;
 import com.google.common.io.Resources;
 import com.google.testing.compile.JavaFileObjects;
 import com.google.testing.compile.JavaSourceSubjectFactory;
@@ -17,6 +18,14 @@ public class ProviderProcessorTest {
                 .that(JavaFileObjects.forResource(Resources.getResource("test/BasicModule.java")))
                 .processedWith(new ProviderProcessor())
                 .compilesWithoutError();
+
+    }
+
+    @Test public void testGen() {
+
+        BigUglyBlob bigUglyBlob = new BigUglyBlob();
+
+
 
     }
 

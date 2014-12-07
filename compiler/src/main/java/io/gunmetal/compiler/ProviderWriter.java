@@ -74,7 +74,6 @@ class ProviderWriter {
             List<WritableProvider> dependencies) throws IOException {
         List<String> imports = new ArrayList<>();
         for (WritableProvider dependency : dependencies) {
-            // TODO will break on generic types
             imports.add(dependency.typeName());
         }
         imports.add(Provider.class.getName());
