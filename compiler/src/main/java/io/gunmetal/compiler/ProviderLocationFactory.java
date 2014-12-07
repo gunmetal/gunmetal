@@ -1,7 +1,5 @@
 package io.gunmetal.compiler;
 
-import io.gunmetal.Module;
-
 import javax.lang.model.element.Element;
 
 /**
@@ -23,8 +21,7 @@ public class ProviderLocationFactory implements Factory<ProviderLocation> {
         Element classElement = providerElement.getEnclosingElement();
 
         return new ProviderLocation(
-                memberMetadataFactory.create(classElement),
-                classElement.getAnnotation(Module.class));
+                memberMetadataFactory.create(classElement));
 
     }
 

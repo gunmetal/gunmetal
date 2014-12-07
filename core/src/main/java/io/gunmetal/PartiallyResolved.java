@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package io.gunmetal.internal;
+package io.gunmetal;
 
-import io.gunmetal.spi.Dependency;
-
-import java.util.List;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author rees.byars
  */
-interface Dependent {
-
-    List<Dependency<?>> dependencies();
-
-}
+@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Qualifier
+public @interface PartiallyResolved { }

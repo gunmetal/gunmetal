@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 
 /**
  *
- * Acknowledgement - this idea owes entirely to Greg Kick and the Dagger2 folks
+ * Acknowledgement - this idea owes entirely to Gr. Kick and the Dagger2 folks.
  *
  * @author rees.byars
  *
@@ -32,4 +32,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.SOURCE)
 @Documented
-public @interface Component { }
+public @interface Component {
+
+    Class<?>[] dependsOn() default {};
+
+    Class<?>[] providers() default {};
+
+}

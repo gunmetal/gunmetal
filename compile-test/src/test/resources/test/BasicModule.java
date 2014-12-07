@@ -1,6 +1,5 @@
 package test;
 
-import io.gunmetal.Module;
 import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Singleton;
@@ -13,7 +12,6 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-@Module
 @test.BasicModule.Main("module")
 public class BasicModule {
 

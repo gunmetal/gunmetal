@@ -1,6 +1,5 @@
 package io.gunmetal.compiler;
 
-import io.gunmetal.Module;
 import io.gunmetal.Singleton;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -33,8 +32,6 @@ class ScopeBuilder implements Builder<Scope> {
         DeclaredType declaredType = scopeMirror.getAnnotationType();
         // TODO is string comparison reliable?  probably not
         if (declaredType.toString().equals(Singleton.class.getName())) {
-            return Scope.Defaults.SINGLETON;
-        } else if (declaredType.toString().equals(Module.class.getName())) {
             return Scope.Defaults.SINGLETON;
         }
 
