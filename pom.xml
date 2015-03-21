@@ -48,8 +48,6 @@
 
     <modules>
         <module>core</module>
-        <module>compiler</module>
-        <module>compile-test</module>
     </modules>
 
     <properties>
