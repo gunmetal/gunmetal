@@ -171,7 +171,7 @@ class BindingFactoryImpl implements BindingFactory {
                 List<Dependency> dependencies = Collections.singletonList(
                         Dependency.from(resourceMetadata.qualifier(), f.getGenericType()));
                 resourceBindings.add(new BindingImpl(
-                        resourceFactory.withMemberProvider(resourceMetadata, moduleDependency, context),
+                        resourceFactory.withFieldProvider(resourceMetadata, moduleDependency, context),
                         dependencies,
                         moduleRequestVisitor,
                         decorateForModule(moduleMetadata, AccessFilter.create(f))));
@@ -189,7 +189,7 @@ class BindingFactoryImpl implements BindingFactory {
                 List<Dependency> dependencies = Collections.singletonList(
                         Dependency.from(resourceMetadata.qualifier(), m.getGenericReturnType()));
                 resourceBindings.add(new BindingImpl(
-                        resourceFactory.withMemberProvider(resourceMetadata, moduleDependency, context),
+                        resourceFactory.withMethodProvider(resourceMetadata, moduleDependency, context),
                         dependencies,
                         moduleRequestVisitor,
                         decorateForModule(moduleMetadata, AccessFilter.create(m))));

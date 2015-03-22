@@ -22,8 +22,8 @@ import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.spi.ResourceMetadata;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -49,21 +49,30 @@ class ResourceFactoryImpl implements ResourceFactory {
                 injectorFactory.compositeInjector(resourceMetadata, context));
     }
 
-    @Override public <M extends AnnotatedElement & Member> Resource withMemberProvider(
-            ResourceMetadata<M> resourceMetadata, Dependency moduleDependency, GraphContext context) {
-        return resource(
-                resourceMetadata,
-                context,
-                injectorFactory.memberInstantiator(resourceMetadata, moduleDependency, context),
-                injectorFactory.lazyCompositeInjector(resourceMetadata, context));
-    }
-
     @Override public Resource withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata,
                                                  GraphContext context) {
         return resource(
                 resourceMetadata,
                 context,
                 injectorFactory.instanceInstantiator(resourceMetadata, context),
+                injectorFactory.lazyCompositeInjector(resourceMetadata, context));
+    }
+
+    @Override public Resource withMethodProvider(
+            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, GraphContext context) {
+        return resource(
+                resourceMetadata,
+                context,
+                injectorFactory.methodInstantiator(resourceMetadata, moduleDependency, context),
+                injectorFactory.lazyCompositeInjector(resourceMetadata, context));
+    }
+
+    @Override public Resource withFieldProvider(
+            ResourceMetadata<Field> resourceMetadata, Dependency moduleDependency, GraphContext context) {
+        return resource(
+                resourceMetadata,
+                context,
+                injectorFactory.fieldInstantiator(resourceMetadata, moduleDependency, context),
                 injectorFactory.lazyCompositeInjector(resourceMetadata, context));
     }
 

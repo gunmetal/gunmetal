@@ -19,8 +19,8 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.ResourceMetadata;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
@@ -30,11 +30,16 @@ interface ResourceFactory {
     Resource withClassProvider(ResourceMetadata<Class<?>> resourceMetadata,
                                GraphContext context);
 
-    <M extends AnnotatedElement & Member> Resource withMemberProvider(
-            ResourceMetadata<M> resourceMetadata,
+    Resource withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
+
+    Resource withMethodProvider(
+            ResourceMetadata<Method> resourceMetadata,
             Dependency moduleDependency,
             GraphContext context);
 
-    Resource withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
+    Resource withFieldProvider(
+            ResourceMetadata<Field> resourceMetadata,
+            Dependency moduleDependency,
+            GraphContext context);
 
 }

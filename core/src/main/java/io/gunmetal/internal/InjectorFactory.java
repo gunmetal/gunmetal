@@ -19,8 +19,8 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.ResourceMetadata;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
@@ -35,7 +35,10 @@ interface InjectorFactory {
 
     Instantiator instanceInstantiator(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
 
-    <M extends AnnotatedElement & Member> Instantiator memberInstantiator(
-            ResourceMetadata<M> resourceMetadata, Dependency moduleDependency, GraphContext context);
+    Instantiator methodInstantiator(
+            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, GraphContext context);
+
+    Instantiator fieldInstantiator(
+            ResourceMetadata<Field> resourceMetadata, Dependency moduleDependency, GraphContext context);
 
 }

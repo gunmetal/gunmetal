@@ -32,7 +32,6 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -119,32 +118,12 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new ProvidedModuleInstantiator(resourceMetadata.providerClass());
     }
 
-    @Override public <M extends AnnotatedElement & Member> Instantiator memberInstantiator(
-            ResourceMetadata<M> resourceMetadata, Dependency moduleDependency, GraphContext context) {
-        M provider = resourceMetadata.provider();
+    @Override public Instantiator methodInstantiator(
+            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, GraphContext context) {
+        Method provider = resourceMetadata.provider();
         if (!Modifier.isStatic(provider.getModifiers())) {
-            if (provider instanceof Field) {
-                return new StatefulInstantiator(
-                        new ReverseFieldInjector((Field) provider), resourceMetadata,  moduleDependency);
-            } else {
-                ParameterizedFunction function = new MethodFunction((Method) resourceMetadata.provider());
-                FunctionInjector injector = new FunctionInjector(
-                        function,
-                        resourceMetadata,
-                        dependenciesForFunction(
-                                resourceMetadata,
-                                function,
-                                qualifierResolver,
-                                context),
-                        context.linkers());
-                return new StatefulInstantiator(injector, resourceMetadata, moduleDependency);
-            }
-        }
-        if (provider instanceof Field) {
-            return new InstantiatorImpl(new ReverseFieldInjector((Field) resourceMetadata.provider()));
-        } else {
-            ParameterizedFunction function = new MethodFunction((Method) resourceMetadata.provider());
-            Injector injector = new FunctionInjector(
+            ParameterizedFunction function = new MethodFunction(resourceMetadata.provider());
+            FunctionInjector injector = new FunctionInjector(
                     function,
                     resourceMetadata,
                     dependenciesForFunction(
@@ -153,8 +132,29 @@ class InjectorFactoryImpl implements InjectorFactory {
                             qualifierResolver,
                             context),
                     context.linkers());
-            return new InstantiatorImpl(injector);
+            return new StatefulInstantiator(injector, resourceMetadata, moduleDependency);
         }
+        ParameterizedFunction function = new MethodFunction(resourceMetadata.provider());
+        Injector injector = new FunctionInjector(
+                function,
+                resourceMetadata,
+                dependenciesForFunction(
+                        resourceMetadata,
+                        function,
+                        qualifierResolver,
+                        context),
+                context.linkers());
+        return new InstantiatorImpl(injector);
+    }
+
+    @Override public Instantiator fieldInstantiator(
+            ResourceMetadata<Field> resourceMetadata, Dependency moduleDependency, GraphContext context) {
+        Field provider = resourceMetadata.provider();
+        if (!Modifier.isStatic(provider.getModifiers())) {
+            return new StatefulInstantiator(
+                    new ReverseFieldInjector(provider), resourceMetadata,  moduleDependency);
+        }
+        return new InstantiatorImpl(new ReverseFieldInjector(resourceMetadata.provider()));
     }
 
     private static Dependency[] dependenciesForFunction(ResourceMetadata<?> resourceMetadata,
