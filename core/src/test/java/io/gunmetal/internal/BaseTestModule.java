@@ -23,8 +23,6 @@ import java.util.HashMap;
 @Singleton
 @Module(stateful = true, provided = false)
 public class BaseTestModule {
-    
-    @Provides GraphCache graphCache = new GraphCache(null);
 
     @Provides ProvisionStrategyDecorator strategyDecorator =
             ProvisionStrategyDecorator::none;
@@ -59,9 +57,14 @@ public class BaseTestModule {
             new ResourceFactoryImpl(injectorFactory, false);
 
     @Provides BindingFactory bindingFactory = new BindingFactoryImpl(
-            resourceFactory, metadataResolver, metadataResolver, requestVisitorFactory);
+            resourceFactory, metadataResolver, metadataResolver);
+
+    @Provides DependencyServiceFactory dependencyServiceFactory =
+            new DependencyServiceFactoryImpl(bindingFactory, requestVisitorFactory);
+
+    @Provides GraphCache graphCache = new GraphCache(dependencyServiceFactory, null);
 
     @Provides InternalProvider internalProvider = new GraphProvider(
-            providerAdapter, bindingFactory, to -> Collections.emptyList(), graphCache, graphContext, false);
+            providerAdapter, dependencyServiceFactory, to -> Collections.emptyList(), graphCache, graphContext, false);
 
 }

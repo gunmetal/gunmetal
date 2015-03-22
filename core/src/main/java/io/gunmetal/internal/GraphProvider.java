@@ -23,20 +23,20 @@ import java.util.List;
 class GraphProvider implements InternalProvider {
 
     private final ProviderAdapter providerAdapter;
-    private final BindingFactory bindingFactory;
+    private final DependencyServiceFactory dependencyServiceFactory;
     private final ConverterProvider converterProvider;
     private final GraphCache graphCache;
     private final GraphContext context;
     private final boolean requireInterfaces;
 
     GraphProvider(ProviderAdapter providerAdapter,
-                  BindingFactory bindingFactory,
+                  DependencyServiceFactory dependencyServiceFactory,
                   ConverterProvider converterProvider,
                   GraphCache graphCache,
                   GraphContext context,
                   boolean requireInterfaces) {
         this.providerAdapter = providerAdapter;
-        this.bindingFactory = bindingFactory;
+        this.dependencyServiceFactory = dependencyServiceFactory;
         this.converterProvider = converterProvider;
         this.graphCache = graphCache;
         this.context = context;
@@ -52,11 +52,11 @@ class GraphProvider implements InternalProvider {
             return strategy;
         }
 
-        // try jit constructor binding strategy
-        Binding binding = bindingFactory.createJitBindingForRequest(dependencyRequest, context);
-        if (binding != null) {
-            graphCache.put(dependencyRequest.dependency(), binding, context.errors());
-            return binding
+        // try jit constructor dependencyService strategy
+        DependencyService dependencyService = dependencyServiceFactory.createJit(dependencyRequest, context);
+        if (dependencyService != null) {
+            graphCache.put(dependencyRequest.dependency(), dependencyService, context.errors());
+            return dependencyService
                     .service(dependencyRequest, context.errors())
                     .provisionStrategy();
         }
@@ -66,20 +66,20 @@ class GraphProvider implements InternalProvider {
         TypeKey typeKey = dependency.typeKey();
         for (Converter converter : converterProvider.convertersForType(typeKey)) {
             for (Class<?> fromType : converter.supportedFromTypes()) {
-                binding = createConversionBinding(converter, fromType, dependency);
-                if (binding != null) {
-                    graphCache.put(dependency, binding, context.errors());
-                    return binding
+                dependencyService = createConversionDependencyService(converter, fromType, dependency);
+                if (dependencyService != null) {
+                    graphCache.put(dependency, dependencyService, context.errors());
+                    return dependencyService
                             .service(dependencyRequest, context.errors())
                             .provisionStrategy();
                 }
             }
         }
 
-        // try jit local factory method binding
-        List<Binding> factoryBindingsForRequest =
-                bindingFactory.createJitFactoryBindingsForRequest(dependencyRequest, context);
-        graphCache.putAll(factoryBindingsForRequest, context.errors());
+        // try jit local factory method dependencyService
+        List<DependencyService> factoryDependencyServicesForRequest =
+                dependencyServiceFactory.createJitFactoryRequest(dependencyRequest, context);
+        graphCache.putAll(factoryDependencyServicesForRequest, context.errors());
         strategy = getCachedProvisionStrategy(dependencyRequest);
         if (strategy != null) {
             return strategy;
@@ -109,26 +109,26 @@ class GraphProvider implements InternalProvider {
                     dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
-        Binding binding = graphCache.get(dependency);
-        if (binding != null) {
-            return binding
+        DependencyService dependencyService = graphCache.get(dependency);
+        if (dependencyService != null) {
+            return dependencyService
                     .service(dependencyRequest, context.errors())
                     .provisionStrategy();
         }
         if (providerAdapter.isProvider(dependency)) {
-            binding = createReferenceBinding(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
-            if (binding != null) {
-                graphCache.put(dependency, binding, context.errors());
-                return binding
+            dependencyService = createReferenceDependencyService(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
+            if (dependencyService != null) {
+                graphCache.put(dependency, dependencyService, context.errors());
+                return dependencyService
                         .service(dependencyRequest, context.errors())
                         .provisionStrategy();
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
-            binding = createReferenceBinding(dependencyRequest, RefStrategyFactory::new);
-            if (binding != null) {
-                graphCache.put(dependency, binding, context.errors());
-                return binding
+            dependencyService = createReferenceDependencyService(dependencyRequest, RefStrategyFactory::new);
+            if (dependencyService != null) {
+                graphCache.put(dependency, dependencyService, context.errors());
+                return dependencyService
                         .service(dependencyRequest, context.errors())
                         .provisionStrategy();
             }
@@ -136,31 +136,28 @@ class GraphProvider implements InternalProvider {
         return null;
     }
 
-    private Binding createReferenceBinding(
+    private DependencyService createReferenceDependencyService(
             final DependencyRequest refRequest, Provider<ReferenceStrategyFactory> factoryProvider) {
         Dependency providerDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency provisionDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        final Binding provisionBinding = graphCache.get(provisionDependency);
-        if (provisionBinding == null) {
+        final DependencyService provisionDependencyService = graphCache.get(provisionDependency);
+        if (provisionDependencyService == null) {
             return null;
         }
-        ProvisionStrategy provisionStrategy = provisionBinding.force();
-        final ProvisionStrategy providerStrategy = factoryProvider.get().create(provisionStrategy, this);
-        return new ReferenceBinding(
-                refRequest,
-                providerStrategy,
-                factoryProvider.get(),
-                provisionBinding,
-                provisionDependency);
+        ProvisionStrategy provisionStrategy = provisionDependencyService.force();
+        ReferenceStrategyFactory strategyFactory = factoryProvider.get();
+        final ProvisionStrategy providerStrategy = strategyFactory.create(provisionStrategy, this);
+        return dependencyServiceFactory.createForReference(
+                refRequest, provisionDependencyService, provisionDependency, providerStrategy, strategyFactory);
     }
 
-    private Binding createConversionBinding(
+    private DependencyService createConversionDependencyService(
             Converter converter, Class<?> fromType, Dependency to) {
         Dependency from = Dependency.from(to.qualifier(), fromType);
-        Binding fromBinding = graphCache.get(from);
-        if (fromBinding != null) {
-            return new ConversionBinding(fromBinding, converter, from, to);
+        DependencyService fromDependencyService = graphCache.get(from);
+        if (fromDependencyService != null) {
+            return dependencyServiceFactory.createForConversion(fromDependencyService, converter, from, to);
         }
         return null;
     }

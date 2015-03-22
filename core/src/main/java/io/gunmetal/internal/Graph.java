@@ -78,22 +78,22 @@ class Graph implements ObjectGraph {
                 qualifier,
                 dependencyType);
 
-        Binding binding = graphCache.get(dependency);
+        DependencyService dependencyService = graphCache.get(dependency);
 
-        if (binding != null) {
+        if (dependencyService != null) {
 
-            return Generics.as(binding.force().get(internalProvider, ResolutionContext.create()));
+            return Generics.as(dependencyService.force().get(internalProvider, ResolutionContext.create()));
 
         } else if (graphConfig.getProviderAdapter().isProvider(dependency)) {
 
             Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
             final Dependency provisionDependency = Dependency.from(dependency.qualifier(), providedType);
-            final Binding provisionBinding = graphCache.get(provisionDependency);
-            if (provisionBinding == null) {
+            final DependencyService provisionDependencyService = graphCache.get(provisionDependency);
+            if (provisionDependencyService == null) {
                 return null;
             }
             return Generics.as(new ProviderStrategyFactory(graphConfig.getProviderAdapter())
-                    .create(provisionBinding.force(), internalProvider)
+                    .create(provisionDependencyService.force(), internalProvider)
                     .get(internalProvider, ResolutionContext.create()));
 
         }

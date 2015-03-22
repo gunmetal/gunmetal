@@ -17,29 +17,18 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.Dependency;
-import io.gunmetal.spi.DependencyRequest;
-import io.gunmetal.spi.Errors;
-import io.gunmetal.spi.ProvisionStrategy;
 
 import java.util.List;
 
 /**
+ * Binds a resource to dependencies that it can fulfill.
+ *
  * @author rees.byars
  */
 interface Binding extends Replicable<Binding> {
 
     List<Dependency> targets();
 
-    List<Dependency> dependencies();
-
-    DependencyResponse service(DependencyRequest dependencyRequest, Errors errors);
-
-    ProvisionStrategy force();
-
-    boolean isModule();
-
-    boolean isCollectionElement();
-
-    boolean allowBindingOverride();
+    Resource resource();
 
 }

@@ -22,7 +22,7 @@ class GraphTemplate implements TemplateGraph {
     private final GraphConfig graphConfig;
     private final GraphInjectorProvider graphInjectorProvider;
     private final ProvisionStrategyDecorator strategyDecorator;
-    private final BindingFactory bindingFactory;
+    private final DependencyServiceFactory dependencyServiceFactory;
     private final GraphCache graphCache;
     private final Set<Class<?>> loadedModules;
 
@@ -30,14 +30,14 @@ class GraphTemplate implements TemplateGraph {
             GraphConfig graphConfig,
             InjectorFactory injectorFactory,
             ProvisionStrategyDecorator strategyDecorator,
-            BindingFactory bindingFactory,
+            DependencyServiceFactory dependencyServiceFactory,
             GraphCache graphCache,
             Set<Class<?>> loadedModules) {
         this.graphConfig = graphConfig;
         graphInjectorProvider = new GraphInjectorProvider(
                 injectorFactory, graphConfig.getConfigurableMetadataResolver());
         this.strategyDecorator = strategyDecorator;
-        this.bindingFactory = bindingFactory;
+        this.dependencyServiceFactory = dependencyServiceFactory;
         this.graphCache = graphCache;
         this.loadedModules = loadedModules;
     }
@@ -77,18 +77,22 @@ class GraphTemplate implements TemplateGraph {
         ResourceFactory resourceFactory =
                 new ResourceFactoryImpl(injectorFactory, graphConfig.getGraphMetadata().isRequireAcyclic());
 
+        BindingFactory bindingFactory = new BindingFactoryImpl(
+                resourceFactory,
+                graphConfig.getConfigurableMetadataResolver(),
+                graphConfig.getConfigurableMetadataResolver());
+
         RequestVisitorFactory requestVisitorFactory =
                 new RequestVisitorFactoryImpl(
                         graphConfig.getConfigurableMetadataResolver(),
                         graphConfig.getGraphMetadata().isRequireExplicitModuleDependencies());
 
-        BindingFactory bindingFactory = new BindingFactoryImpl(
-                resourceFactory,
-                graphConfig.getConfigurableMetadataResolver(),
-                graphConfig.getConfigurableMetadataResolver(),
-                requestVisitorFactory);
+        DependencyServiceFactory dependencyServiceFactory =
+                new DependencyServiceFactoryImpl(bindingFactory, requestVisitorFactory);
 
-        GraphCache graphCache = new GraphCache(parentGraph == null ? null : parentGraph.graphCache());
+        GraphCache graphCache = new GraphCache(
+                dependencyServiceFactory,
+                parentGraph == null ? null : parentGraph.graphCache());
 
         GraphLinker graphLinker = new GraphLinker();
         GraphErrors errors = new GraphErrors();
@@ -104,15 +108,15 @@ class GraphTemplate implements TemplateGraph {
         }
 
         for (Class<?> module : modules) {
-            List<Binding> moduleBindings =
-                    bindingFactory.createBindingsForModule(module, graphContext, loadedModules);
-            graphCache.putAll(moduleBindings, errors);
+            List<DependencyService> moduleDependencyServices =
+                    dependencyServiceFactory.createForModule(module, graphContext, loadedModules);
+            graphCache.putAll(moduleDependencyServices, errors);
         }
 
         InternalProvider internalProvider =
                 new GraphProvider(
                         graphConfig.getProviderAdapter(),
-                        bindingFactory,
+                        dependencyServiceFactory,
                         graphConfig.getConverterProvider(),
                         graphCache,
                         graphContext,
@@ -125,7 +129,7 @@ class GraphTemplate implements TemplateGraph {
                 graphConfig,
                 injectorFactory,
                 strategyDecorator,
-                bindingFactory,
+                dependencyServiceFactory,
                 graphCache,
                 loadedModules);
     }
@@ -152,7 +156,7 @@ class GraphTemplate implements TemplateGraph {
         InternalProvider internalProvider =
                 new GraphProvider(
                         graphConfig.getProviderAdapter(),
-                        bindingFactory,
+                        dependencyServiceFactory,
                         graphConfig.getConverterProvider(),
                         newGraphCache,
                         graphContext,

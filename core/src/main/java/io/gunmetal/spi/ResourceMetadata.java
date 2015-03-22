@@ -107,6 +107,10 @@ public class ResourceMetadata<P extends AnnotatedElement> {
         return isProvider;
     }
 
+    public boolean isProviderMember() {
+        return provider != providerClass;
+    }
+
     @Override public final int hashCode() {
         return hashCode;
     }

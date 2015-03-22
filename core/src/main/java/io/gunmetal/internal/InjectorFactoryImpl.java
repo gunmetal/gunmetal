@@ -386,7 +386,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             }
             try {
                 return function.invoke(target, parameters);
-            } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            } catch (IllegalAccessException | InvocationTargetException | InstantiationException | RuntimeException e) {
                 if (e.getCause() != null && e.getCause() instanceof RuntimeException) {
                     throw (RuntimeException) e.getCause();
                 }

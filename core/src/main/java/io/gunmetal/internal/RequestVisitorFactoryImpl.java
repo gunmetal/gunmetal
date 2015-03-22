@@ -7,6 +7,7 @@ import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.RequestVisitor;
+import io.gunmetal.spi.ResourceMetadata;
 
 /**
  * @author rees.byars
@@ -21,12 +22,20 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
         this.requireExplicitModuleDependencies = requireExplicitModuleDependencies;
     }
 
-    @Override public RequestVisitor moduleRequestVisitor(Class<?> module,
-                                                         Module moduleAnnotation,
-                                                         GraphContext context) {
+    @Override public RequestVisitor resourceRequestVisitor(Resource resource,
+                                                           GraphContext context) {
+        ResourceMetadata<?> resourceMetadata = resource.metadata();
+        ModuleMetadata moduleMetadata = resourceMetadata.moduleMetadata();
+        Class<?> module = moduleMetadata.moduleClass();
+        Module moduleAnnotation = moduleMetadata.moduleAnnotation();
+        if (moduleAnnotation == Module.NONE) {
+            return RequestVisitor.NONE;
+        }
         final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation, context);
         final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation, context);
         final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
+        final RequestVisitor moduleResourceVisitor =
+                moduleResourceVisitor(resourceMetadata, moduleMetadata);
         final AccessFilter<Class<?>> classAccessFilter = AccessFilter.create(moduleAnnotation.access(), module);
         final RequestVisitor moduleClassVisitor = (dependencyRequest, errors) -> {
             if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
@@ -41,6 +50,7 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
             dependsOnVisitor.visit(dependencyRequest, errors);
             blackListVisitor.visit(dependencyRequest, errors);
             whiteListVisitor.visit(dependencyRequest, errors);
+            moduleResourceVisitor.visit(dependencyRequest, errors);
         };
     }
 
@@ -152,6 +162,18 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
 
         };
 
+    }
+
+    private RequestVisitor moduleResourceVisitor(ResourceMetadata<?> resourceMetadata,
+                                                 ModuleMetadata moduleMetadata) {
+        if (!resourceMetadata.isModule()) {
+            return RequestVisitor.NONE;
+        }
+        return (dependencyRequest, dependencyResponse) -> {
+            if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
+                dependencyResponse.add("Module can only be requested by its providers"); // TODO
+            }
+        };
     }
 
 }

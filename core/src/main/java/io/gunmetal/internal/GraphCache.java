@@ -2,10 +2,10 @@ package io.gunmetal.internal;
 
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.Errors;
+import io.gunmetal.spi.ResourceMetadata;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -21,68 +21,77 @@ import java.util.concurrent.ConcurrentHashMap;
 class GraphCache implements Replicable<GraphCache> {
 
     private final GraphCache parentCache;
-    private final Map<Dependency, Binding> bindings = new ConcurrentHashMap<>(64, .75f, 2);
+    private final Map<Dependency, DependencyService> dependencyServices = new ConcurrentHashMap<>(64, .75f, 2);
     private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
-    private final Queue<Binding> myBindings = new LinkedList<>();
+    private final Queue<DependencyService> myDependencyServices = new LinkedList<>();
+    private final DependencyServiceFactory dependencyServiceFactory;
 
-    GraphCache(GraphCache parentCache) {
+    GraphCache(DependencyServiceFactory dependencyServiceFactory, 
+               GraphCache parentCache) {
+        this.dependencyServiceFactory = dependencyServiceFactory;
         this.parentCache = parentCache;
         if (parentCache != null) {
-            bindings.putAll(parentCache.bindings);
+            dependencyServices.putAll(parentCache.dependencyServices);
         }
     }
 
-    void putAll(List<Binding> bindings, Errors errors) {
-        for (Binding binding : bindings) {
-            putAll(binding, errors);
+    void putAll(List<DependencyService> dependencyServices, Errors errors) {
+        for (DependencyService dependencyService : dependencyServices) {
+            putAll(dependencyService, errors);
         }
     }
 
-    void putAll(Binding binding, Errors errors) {
-        for (Dependency dependency : binding.targets()) {
-            put(dependency, binding, errors);
+    void putAll(DependencyService dependencyService, Errors errors) {
+        for (Dependency dependency : dependencyService.binding().targets()) {
+            put(dependency, dependencyService, errors);
         }
     }
 
-    void put(final Dependency dependency, Binding binding, Errors errors) {
-        if (binding.isCollectionElement()) {
-            putCollectionElement(dependency, binding);
+    void put(final Dependency dependency, DependencyService dependencyService, Errors errors) {
+        ResourceMetadata<?> newMetadata = 
+                dependencyService.binding().resource().metadata();
+        if (newMetadata.isCollectionElement()) {
+            putCollectionElement(dependency, dependencyService);
         } else {
-            Binding previous = bindings.put(dependency, binding);
+            DependencyService previous = dependencyServices.put(dependency, dependencyService);
             if (previous != null) {
+
+                ResourceMetadata<?> prevMetadata =
+                        previous.binding().resource().metadata();
+                
                 // TODO better messages, include provisions, keep list?
-                if (previous.isModule()) { // TODO this is a hack that depends on the order from the binding factory
-                    myBindings.add(binding);
-                } else if (previous.allowBindingOverride()
-                        && binding.allowBindingOverride()) {
+                if (prevMetadata.isModule()) { // TODO this is a hack that depends on the order from the dependencyService factory
+                    myDependencyServices.add(dependencyService);
+                } else if (prevMetadata.overrides().allowMappingOverride()
+                        && newMetadata.overrides().allowMappingOverride()) {
                     errors.add("more than one of type with override enabled -> " + dependency);
-                    bindings.put(dependency, previous);
+                    dependencyServices.put(dependency, previous);
                 } else if (
                         (overriddenDependencies.contains(dependency)
-                                && !binding.allowBindingOverride())
-                                || (!previous.allowBindingOverride()
-                                && !binding.allowBindingOverride())) {
+                                && !newMetadata.overrides().allowMappingOverride())
+                                || (!prevMetadata.overrides().allowMappingOverride()
+                                && !newMetadata.overrides().allowMappingOverride())) {
                     errors.add("more than one of type without override enabled -> " + dependency);
-                    bindings.put(dependency, previous);
-                } else if (binding.allowBindingOverride()) {
-                    myBindings.add(binding);
+                    dependencyServices.put(dependency, previous);
+                } else if (newMetadata.overrides().allowMappingOverride()) {
+                    myDependencyServices.add(dependencyService);
                     overriddenDependencies.add(dependency);
-                } else if (previous.allowBindingOverride()) {
-                    bindings.put(dependency, previous);
+                } else if (prevMetadata.overrides().allowMappingOverride()) {
+                    dependencyServices.put(dependency, previous);
                     overriddenDependencies.add(dependency);
                 }
             } else {
-                myBindings.add(binding);
+                myDependencyServices.add(dependencyService);
             }
         }
     }
 
-    Binding get(Dependency dependency) {
-        return bindings.get(dependency);
+    DependencyService get(Dependency dependency) {
+        return dependencyServices.get(dependency);
     }
 
     private void putCollectionElement(final Dependency dependency,
-                                      Binding binding) {
+                                      DependencyService dependencyService) {
         Dependency collectionDependency =
                 Dependency.from(dependency.qualifier(), new ParameterizedType() {
                     @Override public Type[] getActualTypeArguments() {
@@ -114,20 +123,20 @@ class GraphCache implements Replicable<GraphCache> {
                     }
 
                 });
-        CollectionBinding collectionBinding
-                = (CollectionBinding) bindings.get(collectionDependency);
-        if (collectionBinding == null) {
-            collectionBinding = new CollectionBinding(collectionDependency, dependency, ArrayList::new);
-            bindings.put(collectionDependency, collectionBinding);
-            myBindings.add(collectionBinding);
+        CollectionDependencyService collectionDependencyService
+                = (CollectionDependencyService) dependencyServices.get(collectionDependency);
+        if (collectionDependencyService == null) {
+            collectionDependencyService = dependencyServiceFactory.createForCollection(collectionDependency, dependency);
+            dependencyServices.put(collectionDependency, collectionDependencyService);
+            myDependencyServices.add(collectionDependencyService);
         }
-        collectionBinding.add(binding);
+        collectionDependencyService.add(dependencyService);
     }
 
     @Override public GraphCache replicateWith(GraphContext context) {
-        GraphCache newCache = new GraphCache(parentCache);
-        for (Binding binding : myBindings) {
-            newCache.putAll(binding.replicateWith(context), context.errors());
+        GraphCache newCache = new GraphCache(dependencyServiceFactory, parentCache);
+        for (DependencyService dependencyService : myDependencyServices) {
+            newCache.putAll(dependencyService.replicateWith(context), context.errors());
         }
         return newCache;
     }

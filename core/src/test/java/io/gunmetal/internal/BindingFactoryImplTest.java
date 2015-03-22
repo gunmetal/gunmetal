@@ -58,7 +58,7 @@ public class BindingFactoryImplTest {
 
         Binding binding = bindings.get(0);
 
-        assertTrue(binding.force().get(internalProvider, ResolutionContext.create()) instanceof EmptyStatefulModule);
+        assertTrue(binding.resource().provisionStrategy().get(internalProvider, ResolutionContext.create()) instanceof EmptyStatefulModule);
 
     }
 
