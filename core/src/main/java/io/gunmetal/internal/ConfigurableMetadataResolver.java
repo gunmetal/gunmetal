@@ -1,20 +1,20 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.MultiBind;
 import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
+import io.gunmetal.MultiBind;
 import io.gunmetal.Overrides;
 import io.gunmetal.Provided;
 import io.gunmetal.Provides;
 import io.gunmetal.Singleton;
-import io.gunmetal.spi.ProvisionErrors;
-import io.gunmetal.spi.ResourceMetadata;
-import io.gunmetal.spi.ResourceMetadataResolver;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.ProvisionErrors;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
+import io.gunmetal.spi.ResourceMetadata;
+import io.gunmetal.spi.ResourceMetadataResolver;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.Scopes;
 
@@ -92,8 +92,8 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
     }
 
     @Override public ResourceMetadata<Method> resolveMetadata(Method method,
-                                                               ModuleMetadata moduleMetadata,
-                                                               Errors errors) {
+                                                              ModuleMetadata moduleMetadata,
+                                                              Errors errors) {
         final Resolver resolver = new Resolver(method, moduleMetadata);
         ResourceMetadata<Method> resourceMetadata =
                 new ResourceMetadata<>(
@@ -113,22 +113,22 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
     }
 
     @Override public ResourceMetadata<Class<?>> resolveMetadata(Class<?> cls,
-                                                                 ModuleMetadata moduleMetadata,
-                                                                 Errors errors) {
+                                                                ModuleMetadata moduleMetadata,
+                                                                Errors errors) {
         final Resolver resolver = new Resolver(cls, moduleMetadata);
         ResourceMetadata<Class<?>> resourceMetadata =
-                new ResourceMetadata<Class<?>>(
-                    cls,
-                    cls,
-                    moduleMetadata,
-                    resolver.qualifier(),
-                    resolver.scope(),
-                    resolver.overrides,
-                    resolver.eager,
-                    resolver.collectionElement,
-                    resolver.isModule,
-                    resolver.isProvided,
-                    resolver.isProvider);
+                new ResourceMetadata<>(
+                        cls,
+                        cls,
+                        moduleMetadata,
+                        resolver.qualifier(),
+                        resolver.scope(),
+                        resolver.overrides,
+                        resolver.eager,
+                        resolver.collectionElement,
+                        resolver.isModule,
+                        resolver.isProvided,
+                        resolver.isProvider);
         validate(resourceMetadata, (error) -> errors.add(resourceMetadata, error));
         return resourceMetadata;
     }

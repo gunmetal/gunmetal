@@ -25,9 +25,10 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target({ ElementType.METHOD, ElementType.TYPE })
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Scope
 @Singleton
-public @interface Singleton { }
+public @interface Singleton {
+}

@@ -24,13 +24,13 @@ import java.lang.reflect.Type;
 /**
  * @author rees.byars
  */
-public final class Dependency<T> {
+public final class Dependency {
 
     private final Qualifier qualifier;
-    private final TypeKey<T> typeKey;
+    private final TypeKey typeKey;
     private final int hashCode;
 
-    private Dependency(Qualifier qualifier, TypeKey<T> typeKey) {
+    private Dependency(Qualifier qualifier, TypeKey typeKey) {
         this.qualifier = qualifier;
         this.typeKey = typeKey;
         hashCode = typeKey().hashCode() * 67 + qualifier().hashCode();
@@ -40,7 +40,7 @@ public final class Dependency<T> {
         return qualifier;
     }
 
-    public TypeKey<T> typeKey() {
+    public TypeKey typeKey() {
         return typeKey;
     }
 
@@ -52,10 +52,10 @@ public final class Dependency<T> {
         if (target == this) {
             return true;
         }
-        if (!(target instanceof Dependency<?>)) {
+        if (!(target instanceof Dependency)) {
             return false;
         }
-        Dependency<?> dependencyTarget = (Dependency<?>) target;
+        Dependency dependencyTarget = (Dependency) target;
         return dependencyTarget.qualifier().equals(qualifier())
                 && dependencyTarget.typeKey().equals(typeKey());
     }
@@ -64,25 +64,26 @@ public final class Dependency<T> {
         return "dependency[ " + qualifier().toString() + ", " + typeKey().toString() + " ]";
     }
 
-    public static <T> Dependency<T> from(final Qualifier qualifier, Type type) {
-        return new Dependency<>(qualifier, Types.typeKey(type));
+    public static Dependency from(final Qualifier qualifier, Type type) {
+        return new Dependency(qualifier, Types.typeKey(type));
     }
 
-    public static <T> Dependency<T> from(final Qualifier qualifier, ParameterizedType type) {
-        return new Dependency<>(qualifier, Types.typeKey(type));
+    public static Dependency from(final Qualifier qualifier, ParameterizedType type) {
+        return new Dependency(qualifier, Types.typeKey(type));
     }
 
     private static final class Types {
 
-        private Types() { }
-
-        static <T> TypeKey<T> typeKey(final Class<T> cls) {
-            return new TypeKey<>(cls, cls);
+        private Types() {
         }
 
-        static <T> TypeKey<T> typeKey(final Type type) {
+        static TypeKey typeKey(final Class<?> cls) {
+            return new TypeKey(cls, cls);
+        }
+
+        static TypeKey typeKey(final Type type) {
             if (type instanceof Class) {
-                return Generics.as(typeKey((Class<?>) type));
+                return typeKey((Class<?>) type);
             } else if (type instanceof ParameterizedType) {
                 return typeKey(((ParameterizedType) type));
             } else {
@@ -90,9 +91,9 @@ public final class Dependency<T> {
             }
         }
 
-        static <T> TypeKey<T> typeKey(final ParameterizedType type) {
-            final Class<? super T> raw = Generics.as(type.getRawType());
-            return new TypeKey<>(type, raw);
+        static TypeKey typeKey(final ParameterizedType type) {
+            final Class<?> raw = Generics.as(type.getRawType());
+            return new TypeKey(type, raw);
         }
 
     }

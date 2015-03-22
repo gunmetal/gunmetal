@@ -2,13 +2,11 @@ package io.gunmetal.internal;
 
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.Errors;
-import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,14 +16,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
-* @author rees.byars
-*/
+ * @author rees.byars
+ */
 class GraphCache implements Replicable<GraphCache> {
 
     private final GraphCache parentCache;
-    private final Map<Dependency<?>, Binding<?>> bindings = new ConcurrentHashMap<>(64, .75f, 2);
-    private final Set<Dependency<?>> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
-    private final Queue<Binding<?>> myBindings = new LinkedList<>();
+    private final Map<Dependency, Binding> bindings = new ConcurrentHashMap<>(64, .75f, 2);
+    private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
+    private final Queue<Binding> myBindings = new LinkedList<>();
 
     GraphCache(GraphCache parentCache) {
         this.parentCache = parentCache;
@@ -34,23 +32,23 @@ class GraphCache implements Replicable<GraphCache> {
         }
     }
 
-    void putAll(List<Binding<?>> bindings, Errors errors) {
-        for (Binding<?> binding : bindings) {
+    void putAll(List<Binding> bindings, Errors errors) {
+        for (Binding binding : bindings) {
             putAll(binding, errors);
         }
     }
 
-    <T> void putAll(Binding<T> binding, Errors errors) {
-        for (Dependency<? super T> dependency : binding.targets()) {
+    void putAll(Binding binding, Errors errors) {
+        for (Dependency dependency : binding.targets()) {
             put(dependency, binding, errors);
         }
     }
 
-    <T> void put(final Dependency<? super T> dependency, Binding<T> binding, Errors errors) {
+    void put(final Dependency dependency, Binding binding, Errors errors) {
         if (binding.isCollectionElement()) {
             putCollectionElement(dependency, binding);
         } else {
-            Binding<?> previous = bindings.put(dependency, binding);
+            Binding previous = bindings.put(dependency, binding);
             if (previous != null) {
                 // TODO better messages, include provisions, keep list?
                 if (previous.isModule()) { // TODO this is a hack that depends on the order from the binding factory
@@ -62,7 +60,7 @@ class GraphCache implements Replicable<GraphCache> {
                 } else if (
                         (overriddenDependencies.contains(dependency)
                                 && !binding.allowBindingOverride())
-                        || (!previous.allowBindingOverride()
+                                || (!previous.allowBindingOverride()
                                 && !binding.allowBindingOverride())) {
                     errors.add("more than one of type without override enabled -> " + dependency);
                     bindings.put(dependency, previous);
@@ -79,16 +77,16 @@ class GraphCache implements Replicable<GraphCache> {
         }
     }
 
-    <T> Binding<? extends T> get(Dependency<T> dependency) {
-        return Generics.as(bindings.get(dependency));
+    Binding get(Dependency dependency) {
+        return bindings.get(dependency);
     }
 
-    private <T> void putCollectionElement(final Dependency<T> dependency,
-                                  Binding<? extends T> binding) {
-        Dependency<Collection<T>> collectionDependency =
+    private void putCollectionElement(final Dependency dependency,
+                                      Binding binding) {
+        Dependency collectionDependency =
                 Dependency.from(dependency.qualifier(), new ParameterizedType() {
                     @Override public Type[] getActualTypeArguments() {
-                        return new Type[] {dependency.typeKey().type()};
+                        return new Type[]{dependency.typeKey().type()};
                     }
 
                     @Override public Type getRawType() {
@@ -116,10 +114,10 @@ class GraphCache implements Replicable<GraphCache> {
                     }
 
                 });
-        CollectionBinding<T> collectionBinding
-                = Generics.as(bindings.get(collectionDependency));
+        CollectionBinding collectionBinding
+                = (CollectionBinding) bindings.get(collectionDependency);
         if (collectionBinding == null) {
-            collectionBinding = new CollectionBinding<>(collectionDependency, dependency, ArrayList::new);
+            collectionBinding = new CollectionBinding(collectionDependency, dependency, ArrayList::new);
             bindings.put(collectionDependency, collectionBinding);
             myBindings.add(collectionBinding);
         }
@@ -128,7 +126,7 @@ class GraphCache implements Replicable<GraphCache> {
 
     @Override public GraphCache replicateWith(GraphContext context) {
         GraphCache newCache = new GraphCache(parentCache);
-        for (Binding<?> binding : myBindings) {
+        for (Binding binding : myBindings) {
             newCache.putAll(binding.replicateWith(context), context.errors());
         }
         return newCache;

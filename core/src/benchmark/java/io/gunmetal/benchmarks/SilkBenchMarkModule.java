@@ -1,7 +1,6 @@
 package io.gunmetal.benchmarks;
 
-import io.gunmetal.testmocks.*;
-
+import io.gunmetal.sandbox.testmocks.*;
 import se.jbee.inject.bind.BinderModule;
 import se.jbee.inject.util.Scoped;
 
@@ -13,7 +12,7 @@ public class SilkBenchMarkModule extends BinderModule {
     public SilkBenchMarkModule() {
         super(Scoped.INJECTION);
     }
-    
+
     @Override
     protected void declare() {
         bind(AA.class).toConstructor();

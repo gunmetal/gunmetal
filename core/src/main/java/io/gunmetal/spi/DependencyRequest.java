@@ -21,7 +21,7 @@ import java.lang.reflect.AnnotatedElement;
 /**
  * @author rees.byars
  */
-public interface DependencyRequest<T> {
+public interface DependencyRequest {
 
     // TODO cleanup duplication between methods here and those on the provision metadata
 
@@ -37,11 +37,11 @@ public interface DependencyRequest<T> {
 
     ResourceMetadata<?> sourceProvision();
 
-    Dependency<T> dependency();
+    Dependency dependency();
 
-    static <T> DependencyRequest<T> create(final ResourceMetadata<?> requestingProvision, final Dependency<T> dependency) {
+    static DependencyRequest create(final ResourceMetadata<?> requestingProvision, final Dependency dependency) {
 
-        return new DependencyRequest<T>() {
+        return new DependencyRequest() {
 
             @Override public AnnotatedElement source() {
                 return requestingProvision.provider();
@@ -67,7 +67,7 @@ public interface DependencyRequest<T> {
                 return requestingProvision;
             }
 
-            @Override public Dependency<T> dependency() {
+            @Override public Dependency dependency() {
                 return dependency;
             }
 
@@ -75,10 +75,10 @@ public interface DependencyRequest<T> {
 
     }
 
-    static <T> DependencyRequest<T> create(final DependencyRequest<?> dependencyRequest,
-                                                  final Dependency<T> dependency) {
+    static DependencyRequest create(final DependencyRequest dependencyRequest,
+                                    final Dependency dependency) {
 
-        return new DependencyRequest<T>() {
+        return new DependencyRequest() {
 
             @Override public AnnotatedElement source() {
                 return dependencyRequest.source();
@@ -104,7 +104,7 @@ public interface DependencyRequest<T> {
                 return dependencyRequest.sourceProvision();
             }
 
-            @Override public Dependency<T> dependency() {
+            @Override public Dependency dependency() {
                 return dependency;
             }
 

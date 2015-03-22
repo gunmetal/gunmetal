@@ -1,6 +1,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ConstructorResolver;
+import io.gunmetal.spi.ConverterProvider;
 import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
@@ -19,6 +20,7 @@ class GraphConfig {
     private ConfigurableMetadataResolver configurableMetadataResolver;
     private ConstructorResolver constructorResolver;
     private ProviderAdapter providerAdapter;
+    private ConverterProvider converterProvider;
     private Map<Scope, ProvisionStrategyDecorator> scopeDecorators;
 
     GraphConfig(
@@ -27,12 +29,14 @@ class GraphConfig {
             ConfigurableMetadataResolver configurableMetadataResolver,
             ConstructorResolver constructorResolver,
             ProviderAdapter providerAdapter,
+            ConverterProvider converterProvider,
             Map<Scope, ProvisionStrategyDecorator> scopeDecorators) {
         this.graphMetadata = graphMetadata;
         this.injectionResolver = injectionResolver;
         this.configurableMetadataResolver = configurableMetadataResolver;
         this.constructorResolver = constructorResolver;
         this.providerAdapter = providerAdapter;
+        this.converterProvider = converterProvider;
         this.scopeDecorators = scopeDecorators;
     }
 
@@ -42,6 +46,7 @@ class GraphConfig {
         this.configurableMetadataResolver = graphConfig.configurableMetadataResolver.replicate();
         this.constructorResolver = graphConfig.constructorResolver;
         this.providerAdapter = graphConfig.providerAdapter;
+        this.converterProvider = graphConfig.converterProvider;
         this.scopeDecorators = new HashMap<>(graphConfig.scopeDecorators);
     }
 
@@ -83,6 +88,14 @@ class GraphConfig {
 
     public void setProviderAdapter(ProviderAdapter providerAdapter) {
         this.providerAdapter = providerAdapter;
+    }
+
+    public ConverterProvider getConverterProvider() {
+        return converterProvider;
+    }
+
+    public void setConverterProvider(ConverterProvider converterProvider) {
+        this.converterProvider = converterProvider;
     }
 
     public Map<Scope, ProvisionStrategyDecorator> getScopeDecorators() {

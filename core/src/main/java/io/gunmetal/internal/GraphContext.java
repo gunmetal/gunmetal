@@ -3,7 +3,6 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
-import io.gunmetal.util.Generics;
 
 import java.util.Map;
 
@@ -39,8 +38,8 @@ class GraphContext {
         return errors;
     }
 
-    <T> T statefulSource(Class<T> sourceClass) {
-        return Generics.as(statefulSources.get(sourceClass));
+    Object statefulSource(Class<?> sourceClass) {
+        return statefulSources.get(sourceClass);
     }
 
 }

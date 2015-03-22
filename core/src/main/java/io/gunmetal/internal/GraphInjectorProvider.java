@@ -5,7 +5,6 @@ import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
-import io.gunmetal.util.Generics;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,8 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class GraphInjectorProvider implements Replicable<GraphInjectorProvider> {
 
-    private final Map<Class<?>, Injector<?>> injectors = new ConcurrentHashMap<>(1, .75f, 4);
-    private final Map<Class<?>, Instantiator<?>> instantiators = new ConcurrentHashMap<>(0, .75f, 4);
+    private final Map<Class<?>, Injector> injectors = new ConcurrentHashMap<>(1, .75f, 4);
+    private final Map<Class<?>, Instantiator> instantiators = new ConcurrentHashMap<>(0, .75f, 4);
     private final InjectorFactory injectorFactory;
     private final ConfigurableMetadataResolver metadataResolver;
     private final GraphInjectorProvider parentProvider;
@@ -31,23 +30,23 @@ class GraphInjectorProvider implements Replicable<GraphInjectorProvider> {
     private GraphInjectorProvider(GraphInjectorProvider parentProvider, GraphContext context) {
         this.injectorFactory = parentProvider.injectorFactory;
         this.metadataResolver = parentProvider.metadataResolver;
-        for (Map.Entry<Class<?>, Injector<?>> entry : parentProvider.injectors.entrySet()) {
+        for (Map.Entry<Class<?>, Injector> entry : parentProvider.injectors.entrySet()) {
             injectors.put(entry.getKey(), entry.getValue().replicateWith(context));
         }
-        for (Map.Entry<Class<?>, Instantiator<?>> entry : parentProvider.instantiators.entrySet()) {
+        for (Map.Entry<Class<?>, Instantiator> entry : parentProvider.instantiators.entrySet()) {
             instantiators.put(entry.getKey(), entry.getValue().replicateWith(context));
         }
         this.parentProvider = parentProvider;
     }
 
-    <T> Injector<T> getInjector(T injectionTarget,
-                                InternalProvider internalProvider,
-                                GraphLinker graphLinker,
-                                GraphContext graphContext) {
+    Injector getInjector(Object injectionTarget,
+                         InternalProvider internalProvider,
+                         GraphLinker graphLinker,
+                         GraphContext graphContext) {
 
-        final Class<T> targetClass = Generics.as(injectionTarget.getClass());
+        final Class<?> targetClass = injectionTarget.getClass();
 
-        Injector<T> injector = Generics.as(injectors.get(targetClass));
+        Injector injector = injectors.get(targetClass);
 
         if (injector == null) {
 
@@ -73,12 +72,12 @@ class GraphInjectorProvider implements Replicable<GraphInjectorProvider> {
         return injector;
     }
 
-    <T> Instantiator<T> getInstantiator(Class<T> injectionTarget,
-                                        InternalProvider internalProvider,
-                                        GraphLinker graphLinker,
-                                        GraphContext graphContext) {
+    Instantiator getInstantiator(Class<?> injectionTarget,
+                                 InternalProvider internalProvider,
+                                 GraphLinker graphLinker,
+                                 GraphContext graphContext) {
 
-        Instantiator<T> instantiator = Generics.as(instantiators.get(injectionTarget));
+        Instantiator instantiator = instantiators.get(injectionTarget);
 
         if (instantiator == null) {
 

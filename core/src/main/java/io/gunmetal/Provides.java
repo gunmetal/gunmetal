@@ -25,7 +25,8 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR })
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Provides { }
+public @interface Provides {
+}

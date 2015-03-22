@@ -21,8 +21,8 @@ import io.gunmetal.spi.ProvisionStrategy;
 /**
  * @author rees.byars
  */
-interface DependencyResponse<T> {
+interface DependencyResponse {
 
-   ProvisionStrategy<? extends T> provisionStrategy();
+    ProvisionStrategy provisionStrategy();
 
 }

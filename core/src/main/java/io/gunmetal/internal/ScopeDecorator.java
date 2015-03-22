@@ -16,12 +16,12 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.ScopeBindings;
 import io.gunmetal.spi.Scopes;
@@ -38,9 +38,9 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
     }
 
     @Override
-    public <T> ProvisionStrategy<T> decorate(
+    public ProvisionStrategy decorate(
             final ResourceMetadata<?> resourceMetadata,
-            final ProvisionStrategy<T> delegateStrategy,
+            final ProvisionStrategy delegateStrategy,
             final Linkers linkers) {
 
         final Scope scope = resourceMetadata.scope();
@@ -50,10 +50,14 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
         }
 
         if (scope == Scopes.SINGLETON) {
-            return new ProvisionStrategy<T>() {
-                volatile T singleton;
-                { if (resourceMetadata.eager()) linkers.addEagerLinker(this::get); }
-                @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+            return new ProvisionStrategy() {
+                volatile Object singleton;
+
+                {
+                    if (resourceMetadata.eager()) linkers.addEagerLinker(this::get);
+                }
+
+                @Override public Object get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
                     if (singleton == null) {
                         synchronized (this) {
                             if (singleton == null) {

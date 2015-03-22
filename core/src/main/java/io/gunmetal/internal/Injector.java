@@ -20,10 +20,10 @@ import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.ResolutionContext;
 
 /**
-* @author rees.byars
-*/
-public interface Injector<T> extends Dependent, Replicable<Injector<T>> {
+ * @author rees.byars
+ */
+public interface Injector extends Dependent, Replicable<Injector> {
 
-    Object inject(T target, InternalProvider internalProvider, ResolutionContext resolutionContext);
+    Object inject(Object target, InternalProvider internalProvider, ResolutionContext resolutionContext);
 
 }

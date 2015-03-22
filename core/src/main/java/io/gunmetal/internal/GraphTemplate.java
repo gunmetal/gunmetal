@@ -3,11 +3,8 @@ package io.gunmetal.internal;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.Linkers;
-import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
-import io.gunmetal.spi.ResourceMetadata;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,8 +15,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
-* @author rees.byars
-*/
+ * @author rees.byars
+ */
 class GraphTemplate implements TemplateGraph {
 
     private final GraphConfig graphConfig;
@@ -62,16 +59,11 @@ class GraphTemplate implements TemplateGraph {
             }
             throw new UnsupportedOperationException(); // TODO
         }));
-        ProvisionStrategyDecorator strategyDecorator = new ProvisionStrategyDecorator() {
-            @Override public <T> ProvisionStrategy<T> decorate(
-                    ResourceMetadata<?> resourceMetadata,
-                    ProvisionStrategy<T> delegateStrategy,
-                    Linkers linkers) {
-                for (ProvisionStrategyDecorator decorator : strategyDecorators) {
-                    delegateStrategy = decorator.decorate(resourceMetadata, delegateStrategy, linkers);
-                }
-                return delegateStrategy;
+        ProvisionStrategyDecorator strategyDecorator = (resourceMetadata, delegateStrategy, linkers) -> {
+            for (ProvisionStrategyDecorator decorator : strategyDecorators) {
+                delegateStrategy = decorator.decorate(resourceMetadata, delegateStrategy, linkers);
             }
+            return delegateStrategy;
         };
 
         InjectorFactory injectorFactory = new InjectorFactoryImpl(
@@ -112,7 +104,7 @@ class GraphTemplate implements TemplateGraph {
         }
 
         for (Class<?> module : modules) {
-            List<Binding<?>> moduleBindings =
+            List<Binding> moduleBindings =
                     bindingFactory.createBindingsForModule(module, graphContext, loadedModules);
             graphCache.putAll(moduleBindings, errors);
         }
@@ -121,6 +113,7 @@ class GraphTemplate implements TemplateGraph {
                 new GraphProvider(
                         graphConfig.getProviderAdapter(),
                         bindingFactory,
+                        graphConfig.getConverterProvider(),
                         graphCache,
                         graphContext,
                         graphConfig.getGraphMetadata().isRequireInterfaces());
@@ -160,6 +153,7 @@ class GraphTemplate implements TemplateGraph {
                 new GraphProvider(
                         graphConfig.getProviderAdapter(),
                         bindingFactory,
+                        graphConfig.getConverterProvider(),
                         newGraphCache,
                         graphContext,
                         graphConfig.getGraphMetadata().isRequireInterfaces());

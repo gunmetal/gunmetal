@@ -18,9 +18,9 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Overrides;
 import io.gunmetal.spi.ClassWalker;
+import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.ProvisionErrors;
 import io.gunmetal.spi.ResourceMetadata;
-import io.gunmetal.spi.InjectionResolver;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

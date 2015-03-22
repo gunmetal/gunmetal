@@ -66,7 +66,7 @@ public interface Qualifier {
     };
 
     static Qualifier from(AnnotatedElement annotatedElement,
-                               Class<? extends Annotation> qualifierAnnotation) {
+                          Class<? extends Annotation> qualifierAnnotation) {
         List<Object> qualifiers = new LinkedList<>();
         for (Annotation annotation : annotatedElement.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();

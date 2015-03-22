@@ -14,19 +14,19 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class ReferenceBinding<T, C> implements Binding<T> {
+class ReferenceBinding implements Binding {
 
-    private final DependencyRequest<T> referenceRequest;
-    private final ProvisionStrategy<T> referenceStrategy;
+    private final DependencyRequest referenceRequest;
+    private final ProvisionStrategy referenceStrategy;
     private final ReferenceStrategyFactory referenceStrategyFactory;
-    private final Binding<? extends C> provisionBinding;
-    private final Dependency<C> provisionDependency;
+    private final Binding provisionBinding;
+    private final Dependency provisionDependency;
 
-    ReferenceBinding(DependencyRequest<T> referenceRequest,
-                     ProvisionStrategy<T> referenceStrategy,
+    ReferenceBinding(DependencyRequest referenceRequest,
+                     ProvisionStrategy referenceStrategy,
                      ReferenceStrategyFactory referenceStrategyFactory,
-                     Binding<? extends C> provisionBinding,
-                     Dependency<C> provisionDependency) {
+                     Binding provisionBinding,
+                     Dependency provisionDependency) {
         this.referenceRequest = referenceRequest;
         this.referenceStrategy = referenceStrategy;
         this.referenceStrategyFactory = referenceStrategyFactory;
@@ -34,21 +34,21 @@ class ReferenceBinding<T, C> implements Binding<T> {
         this.provisionDependency = provisionDependency;
     }
 
-    @Override public List<Dependency<? super T>> targets() {
-        return Collections.<Dependency<? super T>>singletonList(referenceRequest.dependency());
+    @Override public List<Dependency> targets() {
+        return Collections.singletonList(referenceRequest.dependency());
     }
 
-    @Override public List<Dependency<?>> dependencies() {
+    @Override public List<Dependency> dependencies() {
         return provisionBinding.dependencies();
     }
 
-    @Override public DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest,
-                                                   Errors errors) {
+    @Override public DependencyResponse service(DependencyRequest dependencyRequest,
+                                                Errors errors) {
         provisionBinding.service(DependencyRequest.create(referenceRequest, provisionDependency), errors);
         return () -> referenceStrategy;
     }
 
-    @Override public ProvisionStrategy<T> force() {
+    @Override public ProvisionStrategy force() {
         return referenceStrategy;
     }
 
@@ -64,28 +64,28 @@ class ReferenceBinding<T, C> implements Binding<T> {
         return false;
     }
 
-    @Override public Binding<T> replicateWith(GraphContext context) {
-        return new ReferenceBinding<>(
+    @Override public Binding replicateWith(GraphContext context) {
+        return new ReferenceBinding(
                 referenceRequest,
-                new DelegatingProvisionStrategy<T>(context.linkers()),
+                new DelegatingProvisionStrategy(context.linkers()),
                 referenceStrategyFactory,
                 provisionBinding,
                 provisionDependency);
     }
 
-    private class DelegatingProvisionStrategy<T> implements ProvisionStrategy<T> {
+    private class DelegatingProvisionStrategy implements ProvisionStrategy {
 
-        ProvisionStrategy<T> delegateStrategy;
+        ProvisionStrategy delegateStrategy;
 
         DelegatingProvisionStrategy(Linkers linkers) {
             linkers.addWiringLinker((reference, context) -> {
-                ProvisionStrategy<? extends C> provisionStrategy =
+                ProvisionStrategy provisionStrategy =
                         reference.getProvisionStrategy(DependencyRequest.create(referenceRequest, provisionDependency));
                 delegateStrategy = referenceStrategyFactory.create(provisionStrategy, reference);
             });
         }
 
-        @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+        @Override public Object get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
             return delegateStrategy.get(internalProvider, resolutionContext);
         }
 

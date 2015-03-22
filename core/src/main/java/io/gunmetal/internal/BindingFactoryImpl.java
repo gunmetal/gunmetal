@@ -57,9 +57,9 @@ class BindingFactoryImpl implements BindingFactory {
         this.requestVisitorFactory = requestVisitorFactory;
     }
 
-    @Override public List<Binding<?>> createBindingsForModule(final Class<?> module,
-                                                              GraphContext context,
-                                                              Set<Class<?>> loadedModules) {
+    @Override public List<Binding> createBindingsForModule(final Class<?> module,
+                                                           GraphContext context,
+                                                           Set<Class<?>> loadedModules) {
         if (loadedModules.contains(module)) {
             return Collections.emptyList();
         }
@@ -74,7 +74,7 @@ class BindingFactoryImpl implements BindingFactory {
         final RequestVisitor moduleRequestVisitor =
                 requestVisitorFactory.moduleRequestVisitor(module, moduleAnnotation, context);
         final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation, context);
-        final List<Binding<?>> resourceBindings = new ArrayList<>();
+        final List<Binding> resourceBindings = new ArrayList<>();
         addResourceBindings(
                 moduleAnnotation,
                 module,
@@ -87,23 +87,23 @@ class BindingFactoryImpl implements BindingFactory {
 
     }
 
-    @Override public <T> Binding<T> createJitBindingForRequest(
-            DependencyRequest<T> dependencyRequest, GraphContext context) {
-        Dependency<T> dependency = dependencyRequest.dependency();
-        TypeKey<T> typeKey = dependency.typeKey();
+    @Override public Binding createJitBindingForRequest(
+            DependencyRequest dependencyRequest, GraphContext context) {
+        Dependency dependency = dependencyRequest.dependency();
+        TypeKey typeKey = dependency.typeKey();
         if (!isInstantiable(typeKey.raw())) {
             return null;
         }
-        Class<? super T> cls = typeKey.raw();
+        Class<?> cls = typeKey.raw();
         ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library
-        Resource<T> resource = resourceFactory.withClassProvider(
+        Resource resource = resourceFactory.withClassProvider(
                 resourceMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
         if (!resource.metadata().qualifier().equals(dependency.qualifier())) {
             return null;
         }
-        return new BindingImpl<>(
+        return new BindingImpl(
                 resource,
-                Collections.<Dependency<? super T>>singletonList(dependency),
+                Collections.singletonList(dependency),
                 moduleMetadata.moduleAnnotation() == Module.NONE ?
                         RequestVisitor.NONE :
                         requestVisitorFactory
@@ -114,8 +114,8 @@ class BindingFactoryImpl implements BindingFactory {
                 decorateForModule(moduleMetadata, AccessFilter.create(cls)));
     }
 
-    @Override public List<Binding<?>> createJitFactoryBindingsForRequest(
-            DependencyRequest<?> dependencyRequest, GraphContext context) {
+    @Override public List<Binding> createJitFactoryBindingsForRequest(
+            DependencyRequest dependencyRequest, GraphContext context) {
         ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // TODO
         final RequestVisitor moduleRequestVisitor =
                 requestVisitorFactory
@@ -123,7 +123,7 @@ class BindingFactoryImpl implements BindingFactory {
                                 moduleMetadata.moduleClass(),
                                 moduleMetadata.moduleAnnotation(),
                                 context);
-        final List<Binding<?>> resourceBindings = new ArrayList<>();
+        final List<Binding> resourceBindings = new ArrayList<>();
         addResourceBindings(
                 Module.NONE,  // TODO hmmm
                 dependencyRequest.dependency().typeKey().raw(), // TODO hmmmm
@@ -141,13 +141,13 @@ class BindingFactoryImpl implements BindingFactory {
     }
 
     private void addResourceBindings(Module moduleAnnotation,
-                                    Class<?> module,
-                                    List<Binding<?>> resourceBindings,
-                                    ModuleMetadata moduleMetadata,
-                                    RequestVisitor moduleRequestVisitor,
-                                    GraphContext context,
-                                    Set<Class<?>> loadedModules) {
-        if (!module.isInterface() && module.getSuperclass() != Object.class) {
+                                     Class<?> module,
+                                     List<Binding> resourceBindings,
+                                     ModuleMetadata moduleMetadata,
+                                     RequestVisitor moduleRequestVisitor,
+                                     GraphContext context,
+                                     Set<Class<?>> loadedModules) {
+        if (!module.isInterface() && module.getSuperclass() != Object.class && !module.isPrimitive()) {
             context.errors().add("The module " + module.getName() + " extends a class other than Object");
         }
         if (moduleAnnotation.stateful()) {
@@ -156,9 +156,9 @@ class BindingFactoryImpl implements BindingFactory {
             } else {
                 resourceBindings.add(providedModuleResourceBinding(module, moduleMetadata, context));
             }
-            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
-                resourceBindings.add(statefulResourceBinding(m, module, moduleRequestVisitor, moduleMetadata, context));
-            });
+            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m ->
+                    resourceBindings.add(
+                            statefulResourceBinding(m, module, moduleRequestVisitor, moduleMetadata, context)));
         } else {
             Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
                 ResourceMetadata<Method> resourceMetadata =
@@ -200,6 +200,7 @@ class BindingFactoryImpl implements BindingFactory {
             @Override public AnnotatedElement filteredElement() {
                 return accessFilter.filteredElement();
             }
+
             @Override public boolean isAccessibleTo(Class<?> target) {
                 // supports library access
                 return target == moduleMetadata.moduleClass() || accessFilter.isAccessibleTo(target);
@@ -207,7 +208,7 @@ class BindingFactoryImpl implements BindingFactory {
         };
     }
 
-    private <T> Binding<T> resourceBinding(
+    private Binding resourceBinding(
             ResourceMetadata<Method> resourceMetadata,
             Class<?> module,
             RequestVisitor moduleRequestVisitor,
@@ -229,21 +230,21 @@ class BindingFactoryImpl implements BindingFactory {
         }
 
         // if (resourceMetadata.isModule()) {
-            // TODO
+        // TODO
         // }
 
         // TODO targeted return type check
-        final List<Dependency<? super T>> dependencies = Collections.<Dependency<? super T>>singletonList(
+        final List<Dependency> dependencies = Collections.singletonList(
                 Dependency.from(resourceMetadata.qualifier(), method.getGenericReturnType()));
 
-        return new BindingImpl<>(
-                resourceFactory.<T>withMethodProvider(resourceMetadata, context),
+        return new BindingImpl(
+                resourceFactory.withMethodProvider(resourceMetadata, context),
                 dependencies,
                 moduleRequestVisitor,
                 decorateForModule(moduleMetadata, AccessFilter.create(method)));
     }
 
-    private <T> Binding<T> statefulResourceBinding(
+    private Binding statefulResourceBinding(
             final Method method,
             Class<?> module,
             final RequestVisitor moduleRequestVisitor,
@@ -258,41 +259,41 @@ class BindingFactoryImpl implements BindingFactory {
         ResourceMetadata<Method> resourceMetadata =
                 resourceMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
 
-        Dependency<T> provisionDependency =
+        Dependency provisionDependency =
                 Dependency.from(resourceMetadata.qualifier(), method.getGenericReturnType());
 
-        Dependency<?> moduleDependency =
+        Dependency moduleDependency =
                 Dependency.from(moduleMetadata.qualifier(), module);
 
 
         // TODO targeted return type check
-        final List<Dependency<? super T>> dependencies =
-                Collections.<Dependency<? super T>>singletonList(provisionDependency);
+        final List<Dependency> dependencies =
+                Collections.singletonList(provisionDependency);
 
         if (Modifier.isStatic(resourceMetadata.provider().getModifiers())) {
-            return new BindingImpl<>(
-                    resourceFactory.<T>withMethodProvider(resourceMetadata, context),
+            return new BindingImpl(
+                    resourceFactory.withMethodProvider(resourceMetadata, context),
                     dependencies,
                     moduleRequestVisitor,
                     decorateForModule(moduleMetadata, AccessFilter.create(method)));
         }
 
-        return new BindingImpl<>(
-                resourceFactory.<T>withStatefulMethodProvider(resourceMetadata, moduleDependency, context),
+        return new BindingImpl(
+                resourceFactory.withStatefulMethodProvider(resourceMetadata, moduleDependency, context),
                 dependencies,
                 moduleRequestVisitor,
                 decorateForModule(moduleMetadata, AccessFilter.create(method)));
     }
 
-    private <T> Binding<T> managedModuleResourceBinding(Class<T> module,
-                                                                        ModuleMetadata moduleMetadata,
-                                                                        GraphContext context) {
-        Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
-        Resource<T> resource = resourceFactory.withClassProvider(
+    private Binding managedModuleResourceBinding(Class<?> module,
+                                                 ModuleMetadata moduleMetadata,
+                                                 GraphContext context) {
+        Dependency dependency = Dependency.from(moduleMetadata.qualifier(), module);
+        Resource resource = resourceFactory.withClassProvider(
                 resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
-        return new BindingImpl<>(
+        return new BindingImpl(
                 resource,
-                Collections.<Dependency<? super T>>singletonList(dependency),
+                Collections.singletonList(dependency),
                 (dependencyRequest, errors) -> {
                     if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
                         errors.add("Module can only be requested by its providers"); // TODO
@@ -301,20 +302,20 @@ class BindingFactoryImpl implements BindingFactory {
                 decorateForModule(moduleMetadata, AccessFilter.create(module)));
     }
 
-    private <T> Binding<T> providedModuleResourceBinding(Class<T> module,
-                                                                        ModuleMetadata moduleMetadata,
-                                                                        GraphContext context) {
-        Dependency<T> dependency = Dependency.from(moduleMetadata.qualifier(), module);
+    private Binding providedModuleResourceBinding(Class<?> module,
+                                                  ModuleMetadata moduleMetadata,
+                                                  GraphContext context) {
+        Dependency dependency = Dependency.from(moduleMetadata.qualifier(), module);
         ResourceMetadata<Class<?>> resourceMetadata =
                 resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors());
         if (resourceMetadata.scope() != Scopes.SINGLETON) {
             // TODO context.errors().add(resourceMetadata, "Provided modules must have a scope of singleton");
         }
-        Resource<T> resource = resourceFactory.withProvidedModule(
+        Resource resource = resourceFactory.withProvidedModule(
                 resourceMetadata, context);
-        return new BindingImpl<>(
+        return new BindingImpl(
                 resource,
-                Collections.<Dependency<? super T>>singletonList(dependency),
+                Collections.singletonList(dependency),
                 (dependencyRequest, dependencyResponse) -> {
                     if (!dependencyRequest.sourceModule().equals(moduleMetadata)) {
                         dependencyResponse.add("Module can only be requested by its providers"); // TODO

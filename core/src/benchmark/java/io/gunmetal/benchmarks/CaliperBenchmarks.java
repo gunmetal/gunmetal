@@ -7,11 +7,11 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.TemplateGraph;
-import io.gunmetal.testmocks.AA;
-import io.gunmetal.testmocks.E;
-import io.gunmetal.testmocks.N;
-import io.gunmetal.testmocks.NewGunmetalBenchMarkModule;
-import io.gunmetal.testmocks.SlimGunmetalBenchMarkModule;
+import io.gunmetal.sandbox.testmocks.AA;
+import io.gunmetal.sandbox.testmocks.E;
+import io.gunmetal.sandbox.testmocks.N;
+import io.gunmetal.sandbox.testmocks.NewGunmetalBenchMarkModule;
+import io.gunmetal.sandbox.testmocks.SlimGunmetalBenchMarkModule;
 import se.jbee.inject.bootstrap.Bootstrap;
 
 import javax.inject.Inject;
@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 
 /**
- *
  * mvn clean install -Pbenchmarks -DskipTests -Dbenchmark.instruments=runtime -Dbenchmark.args="--benchmark newGunmetalStandup,gunmetalStandup"
  *
  * @author rees.byars
@@ -38,14 +37,16 @@ public class CaliperBenchmarks {
     Injector INJECTOR;
     TemplateGraph template;
 
-    static class Dep implements io.gunmetal.Dependency<AA> { }
+    static class Dep implements io.gunmetal.Dependency<AA> {
+    }
 
     @BeforeExperiment() void setUp() {
         OBJECT_GRAPH = dagger.ObjectGraph.create(new DaggerBenchMarkModule());
         INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
-        class ProviderDep implements io.gunmetal.Dependency<Provider<N>> { }
+        class ProviderDep implements io.gunmetal.Dependency<Provider<N>> {
+        }
         newGunmetalProvider = ObjectGraph
                 .builder()
                 .requireAcyclic()
@@ -301,6 +302,7 @@ public class CaliperBenchmarks {
 
     static class Component {
         static int i = 0;
+
         int execute() {
             return i++;
         }

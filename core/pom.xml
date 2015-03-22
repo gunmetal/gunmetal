@@ -132,7 +132,7 @@
             </build>
             <properties>
                 <benchmark.instruments>allocation,runtime</benchmark.instruments>
-                <benchmark.args> </benchmark.args>
+                <benchmark.args></benchmark.args>
             </properties>
         </profile>
     </profiles>

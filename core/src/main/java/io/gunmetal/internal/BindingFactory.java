@@ -26,14 +26,14 @@ import java.util.Set;
  */
 interface BindingFactory {
 
-    List<Binding<?>> createBindingsForModule(Class<?> module,
-                                             GraphContext context,
-                                             Set<Class<?>> loadedModules);
+    List<Binding> createBindingsForModule(Class<?> module,
+                                          GraphContext context,
+                                          Set<Class<?>> loadedModules);
 
-    <T> Binding<T> createJitBindingForRequest(DependencyRequest<T> dependencyRequest,
-                                              GraphContext context);
+    Binding createJitBindingForRequest(DependencyRequest dependencyRequest,
+                                       GraphContext context);
 
-    List<Binding<?>> createJitFactoryBindingsForRequest(DependencyRequest<?> dependencyRequest,
-                                                        GraphContext context);
+    List<Binding> createJitFactoryBindingsForRequest(DependencyRequest dependencyRequest,
+                                                     GraphContext context);
 
 }

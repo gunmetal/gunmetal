@@ -24,21 +24,21 @@ import java.util.Map;
  */
 public interface ResolutionContext {
 
-    <T> ProvisionContext<T> provisionContext(ResourceMetadata<?> resourceMetadata);
+    ProvisionContext provisionContext(ResourceMetadata<?> resourceMetadata);
 
     static ResolutionContext create() {
         return new Internal.ResolutionContextImpl();
     }
 
-    interface States  {
+    interface States {
         byte NEW = 0;
         byte PRE_INSTANTIATION = 1;
         byte PRE_INJECTION = 2;
     }
 
-    final class ProvisionContext<T> {
+    final class ProvisionContext {
         public byte state = States.NEW;
-        public T provision;
+        public Object provision;
         public boolean attemptedCircularResolution = false;
     }
 
@@ -46,15 +46,14 @@ public interface ResolutionContext {
 
         private static class ResolutionContextImpl implements ResolutionContext {
 
-            private final Map<ResourceMetadata<?>, ProvisionContext<?>> contextMap = new HashMap<>();
+            private final Map<ResourceMetadata<?>, ProvisionContext> contextMap = new HashMap<>();
 
-            @Override public <T> ProvisionContext<T> provisionContext(ResourceMetadata<?> resourceMetadata) {
+            @Override public ProvisionContext provisionContext(ResourceMetadata<?> resourceMetadata) {
 
-                @SuppressWarnings("unchecked")
-                ProvisionContext<T> strategyContext = (ProvisionContext<T>) contextMap.get(resourceMetadata);
+                ProvisionContext strategyContext = contextMap.get(resourceMetadata);
 
                 if (strategyContext == null) {
-                    strategyContext = new ProvisionContext<>();
+                    strategyContext = new ProvisionContext();
                     contextMap.put(resourceMetadata, strategyContext);
                 }
 

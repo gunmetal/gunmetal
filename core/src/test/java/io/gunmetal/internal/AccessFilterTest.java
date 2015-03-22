@@ -1,8 +1,8 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.ObjectGraph;
-import io.gunmetal.testmocks.VisibilityTestBean;
-import io.gunmetal.testmocks.VisibilityTestBean2;
+import io.gunmetal.internal.mocks.VisibilityTestBean;
+import io.gunmetal.internal.mocks.VisibilityTestBean2;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
@@ -64,15 +64,18 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean2.getPrivate())
                 .isNotVisibleTo(AccessFilter.class)
                 .isNotVisibleTo(ObjectGraph.class)
-                .isNotVisibleTo(new VisibilityTestBean() { }.getClass())
-                .isVisibleTo(new VisibilityTestBean.PublicClass() { }.getClass());
+                .isNotVisibleTo(new VisibilityTestBean() {
+                }.getClass())
+                .isVisibleTo(new VisibilityTestBean.PublicClass() {
+                }.getClass());
     }
 
     @Test
     public void testGetMethodAdapter_local() {
 
         class Local {
-            public void publicMethod() { }
+            public void publicMethod() {
+            }
         }
 
         assertPublicMethodOn(Local.class)
@@ -124,14 +127,17 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean2.getPrivate())
                 .isNotVisibleTo(AccessFilter.class)
                 .isNotVisibleTo(ObjectGraph.class)
-                .isVisibleTo(new VisibilityTestBean() { }.getClass())
-                .isNotVisibleTo(new VisibilityTestBean.PublicClass() { }.getClass());
+                .isVisibleTo(new VisibilityTestBean() {
+                }.getClass())
+                .isNotVisibleTo(new VisibilityTestBean.PublicClass() {
+                }.getClass());
     }
 
     @Test
     public void testGetClassAdapter_local() {
 
-        class Local { }
+        class Local {
+        }
 
         assertClass(Local.class)
                 .isNotVisibleTo(VisibilityTestBean2.getPrivate())
@@ -163,11 +169,14 @@ public class AccessFilterTest {
 
         assertClass(VisibilityTestBean.getProtectedPublic())
                 .isVisibleTo(VisibilityTestBean2.getPrivate())
-                .isVisibleTo(new VisibilityTestBean() { }.getClass());
+                .isVisibleTo(new VisibilityTestBean() {
+                }.getClass());
 
         assertClass(VisibilityTestBean.PublicClass.getProtected())
-                .isVisibleTo(new VisibilityTestBean.PublicClass() { }.getClass())
-                .isNotVisibleTo(new VisibilityTestBean() { }.getClass());
+                .isVisibleTo(new VisibilityTestBean.PublicClass() {
+                }.getClass())
+                .isNotVisibleTo(new VisibilityTestBean() {
+                }.getClass());
 
     }
 

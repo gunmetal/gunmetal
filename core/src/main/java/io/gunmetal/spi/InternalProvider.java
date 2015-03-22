@@ -21,6 +21,6 @@ package io.gunmetal.spi;
  */
 public interface InternalProvider {
 
-    <T> ProvisionStrategy<? extends T> getProvisionStrategy(DependencyRequest<T> dependencyRequest);
+    ProvisionStrategy getProvisionStrategy(DependencyRequest dependencyRequest);
 
 }

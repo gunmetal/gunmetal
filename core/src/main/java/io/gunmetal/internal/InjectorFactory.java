@@ -16,8 +16,8 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.ResourceMetadata;
 
 import java.lang.reflect.Method;
 
@@ -25,11 +25,16 @@ import java.lang.reflect.Method;
  * @author rees.byars
  */
 interface InjectorFactory {
-    <T> Injector<T> compositeInjector(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
-    <T> Injector<T> lazyCompositeInjector(ResourceMetadata<?> resourceMetadata, GraphContext context);
-    <T> Instantiator<T> constructorInstantiator(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
-    <T> Instantiator<T> methodInstantiator(ResourceMetadata<Method> resourceMetadata, GraphContext context);
-    <T> Instantiator<T> instanceInstantiator(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
-    <T, S> Instantiator<T> statefulMethodInstantiator(
-            ResourceMetadata<Method> resourceMetadata, Dependency<S> moduleDependency, GraphContext context);
+    Injector compositeInjector(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
+
+    Injector lazyCompositeInjector(ResourceMetadata<?> resourceMetadata, GraphContext context);
+
+    Instantiator constructorInstantiator(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
+
+    Instantiator methodInstantiator(ResourceMetadata<Method> resourceMetadata, GraphContext context);
+
+    Instantiator instanceInstantiator(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
+
+    Instantiator statefulMethodInstantiator(
+            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, GraphContext context);
 }

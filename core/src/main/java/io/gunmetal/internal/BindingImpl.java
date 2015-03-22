@@ -11,18 +11,18 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
-* @author rees.byars
-*/
-class BindingImpl<T> implements Binding<T> {
+ * @author rees.byars
+ */
+class BindingImpl implements Binding {
 
-    private final Resource<T> resource;
-    private final List<Dependency<? super T>> targets;
+    private final Resource resource;
+    private final List<Dependency> targets;
     private final RequestVisitor moduleRequestVisitor;
     private final AccessFilter<Class<?>> classAccessFilter;
     private final RequestVisitor scopeVisitor;
 
-    BindingImpl(Resource<T> resource,
-                List<Dependency<? super T>> targets,
+    BindingImpl(Resource resource,
+                List<Dependency> targets,
                 RequestVisitor moduleRequestVisitor,
                 AccessFilter<Class<?>> classAccessFilter) {
         this.resource = resource;
@@ -36,31 +36,31 @@ class BindingImpl<T> implements Binding<T> {
         };
     }
 
-    @Override public List<Dependency<? super T>> targets() {
+    @Override public List<Dependency> targets() {
         return targets;
     }
 
-    @Override public List<Dependency<?>> dependencies() {
+    @Override public List<Dependency> dependencies() {
         return resource.dependencies();
     }
 
-    @Override public DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest,
-                                                   Errors errors) {
-        DependencyResponseImpl<T> response =
-                new DependencyResponseImpl<>(dependencyRequest, resource.provisionStrategy(), errors);
+    @Override public DependencyResponse service(DependencyRequest dependencyRequest,
+                                                Errors errors) {
+        DependencyResponseImpl response =
+                new DependencyResponseImpl(dependencyRequest, resource.provisionStrategy(), errors);
         moduleRequestVisitor.visit(dependencyRequest, response);
         scopeVisitor.visit(dependencyRequest, response);
         if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
             response.add(
                     "The class [" + dependencyRequest.sourceOrigin().getName()
-                    + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
+                            + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
             );
         }
         response.validateResponse();
         return response;
     }
 
-    @Override public ProvisionStrategy<T> force() {
+    @Override public ProvisionStrategy force() {
         return resource.provisionStrategy();
     }
 
@@ -76,30 +76,30 @@ class BindingImpl<T> implements Binding<T> {
         return resource.metadata().overrides().allowMappingOverride();
     }
 
-    @Override public Binding<T> replicateWith(GraphContext context) {
-        return new BindingImpl<>(
+    @Override public Binding replicateWith(GraphContext context) {
+        return new BindingImpl(
                 resource.replicateWith(context),
                 targets,
                 moduleRequestVisitor,
                 classAccessFilter);
     }
 
-    private static class DependencyResponseImpl<T> implements DependencyResponse<T>, ProvisionErrors {
+    private static class DependencyResponseImpl implements DependencyResponse, ProvisionErrors {
 
         List<String> errorMessages;
-        final DependencyRequest<? super T> dependencyRequest;
-        final ProvisionStrategy<? extends T> provisionStrategy;
+        final DependencyRequest dependencyRequest;
+        final ProvisionStrategy provisionStrategy;
         final Errors errors;
 
-        DependencyResponseImpl(DependencyRequest<? super T> dependencyRequest,
-                               ProvisionStrategy<T> provisionStrategy,
+        DependencyResponseImpl(DependencyRequest dependencyRequest,
+                               ProvisionStrategy provisionStrategy,
                                Errors errors) {
             this.dependencyRequest = dependencyRequest;
             this.provisionStrategy = provisionStrategy;
             this.errors = errors;
         }
 
-        @Override public ProvisionStrategy<? extends T> provisionStrategy() {
+        @Override public ProvisionStrategy provisionStrategy() {
             return provisionStrategy;
         }
 

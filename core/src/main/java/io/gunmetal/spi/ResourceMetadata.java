@@ -37,7 +37,7 @@ public class ResourceMetadata<P extends AnnotatedElement> {
     private final boolean isProvided;
     private final boolean isProvider;
     private final int hashCode;
-    
+
     public ResourceMetadata(P provider,
                             Class<?> providerClass,
                             ModuleMetadata moduleMetadata,

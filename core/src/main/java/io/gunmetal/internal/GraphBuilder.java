@@ -19,6 +19,7 @@ package io.gunmetal.internal;
 import io.gunmetal.Inject;
 import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.ConstructorResolver;
+import io.gunmetal.spi.ConverterProvider;
 import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
@@ -31,6 +32,7 @@ import io.gunmetal.spi.impl.Jsr330ProviderAdapter;
 import io.gunmetal.spi.impl.LeastGreedyConstructorResolver;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,6 +53,7 @@ public final class GraphBuilder {
                 new ConfigurableMetadataResolver(),
                 new LeastGreedyConstructorResolver(),
                 new GunmetalProviderAdapter(),
+                to -> Collections.emptyList(),
                 scopeDecorators);
     }
 
@@ -136,6 +139,11 @@ public final class GraphBuilder {
 
     public GraphBuilder withProviderAdapter(ProviderAdapter providerAdapter) {
         graphConfig.setProviderAdapter(providerAdapter);
+        return this;
+    }
+
+    public GraphBuilder withConverterProvider(ConverterProvider converterProvider) {
+        graphConfig.setConverterProvider(converterProvider);
         return this;
     }
 

@@ -21,7 +21,7 @@ import java.lang.reflect.Modifier;
 /**
  * @author rees.byars
  */
-public enum  AccessLevel {
+public enum AccessLevel {
 
     PRIVATE,
     PACKAGE_PRIVATE,

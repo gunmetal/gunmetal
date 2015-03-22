@@ -26,15 +26,15 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-interface Binding<T> extends Replicable<Binding<T>> {
+interface Binding extends Replicable<Binding> {
 
-    List<Dependency<? super T>> targets();
+    List<Dependency> targets();
 
-    List<Dependency<?>> dependencies();
+    List<Dependency> dependencies();
 
-    DependencyResponse<T> service(DependencyRequest<? super T> dependencyRequest, Errors errors);
+    DependencyResponse service(DependencyRequest dependencyRequest, Errors errors);
 
-    ProvisionStrategy<T> force();
+    ProvisionStrategy force();
 
     boolean isModule();
 

@@ -17,9 +17,9 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ClassWalker;
+import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.ProvisionErrors;
 import io.gunmetal.spi.ResourceMetadata;
-import io.gunmetal.spi.InjectionResolver;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.junit.Test;
@@ -60,9 +60,12 @@ public class ClassWalkerImplTest {
 
         new Expectations() {
             {
-                injectionResolver.shouldInject(field(field1)); result = true;
+                injectionResolver.shouldInject(field(field1));
+                result = true;
                 memberVisitor.visit(field(field1));
-                injectionResolver.shouldInject((Method) any); result = false; times = 2;
+                injectionResolver.shouldInject((Method) any);
+                result = false;
+                times = 2;
             }
         };
 
@@ -70,11 +73,15 @@ public class ClassWalkerImplTest {
 
         new Expectations() {
             {
-                injectionResolver.shouldInject(field(Inner.field2)); result = true;
+                injectionResolver.shouldInject(field(Inner.field2));
+                result = true;
                 memberVisitor.visit(field(Inner.field2));
-                injectionResolver.shouldInject(field(field1)); result = true;
+                injectionResolver.shouldInject(field(field1));
+                result = true;
                 memberVisitor.visit(field(field1));
-                injectionResolver.shouldInject((Method) any); result = false; times = 2;
+                injectionResolver.shouldInject((Method) any);
+                result = false;
+                times = 2;
             }
         };
 

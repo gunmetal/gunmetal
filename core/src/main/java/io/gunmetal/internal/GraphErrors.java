@@ -1,7 +1,7 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Errors;
+import io.gunmetal.spi.ResourceMetadata;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -17,7 +17,8 @@ class GraphErrors implements Errors {
     private volatile List<String> generalErrors;
     private volatile boolean failFast = false;
 
-    GraphErrors() { }
+    GraphErrors() {
+    }
 
     @Override public synchronized Errors add(ResourceMetadata<?> resourceMetadata, String errorMessage) {
         if (failFast) {

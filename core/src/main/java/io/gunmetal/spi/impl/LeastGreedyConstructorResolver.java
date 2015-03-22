@@ -1,7 +1,6 @@
 package io.gunmetal.spi.impl;
 
 import io.gunmetal.spi.ConstructorResolver;
-import io.gunmetal.util.Generics;
 
 import java.lang.reflect.Constructor;
 
@@ -10,15 +9,16 @@ import java.lang.reflect.Constructor;
  */
 public final class LeastGreedyConstructorResolver implements ConstructorResolver {
 
-    public LeastGreedyConstructorResolver() { }
+    public LeastGreedyConstructorResolver() {
+    }
 
-    @Override public <T> Constructor<T> resolve(Class<T> cls) {
+    @Override public Constructor<?> resolve(Class<?> cls) {
         for (Constructor<?> constructor : cls.getDeclaredConstructors()) {
             if (constructor.getParameterTypes().length == 0) {
-                return Generics.as(constructor);
+                return constructor;
             }
         }
-        return Generics.as(cls.getDeclaredConstructors()[0]);
+        return cls.getDeclaredConstructors()[0];
     }
 
 }

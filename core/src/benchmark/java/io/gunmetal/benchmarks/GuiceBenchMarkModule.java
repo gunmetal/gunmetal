@@ -1,7 +1,7 @@
 package io.gunmetal.benchmarks;
 
-import io.gunmetal.testmocks.*;
 import com.google.inject.AbstractModule;
+import io.gunmetal.sandbox.testmocks.*;
 
 /**
  * @author rees.byars

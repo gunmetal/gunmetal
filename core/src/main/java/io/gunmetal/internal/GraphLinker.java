@@ -9,14 +9,15 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 /**
-* @author rees.byars
-*/
+ * @author rees.byars
+ */
 class GraphLinker implements Linkers {
 
     private final Queue<Linker> postWiringLinkers = new LinkedList<>();
     private final Queue<Linker> eagerLinkers = new LinkedList<>();
 
-    GraphLinker() { }
+    GraphLinker() {
+    }
 
     @Override public synchronized void addWiringLinker(Linker linker) {
         postWiringLinkers.add(linker);

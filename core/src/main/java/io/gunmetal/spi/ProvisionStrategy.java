@@ -19,6 +19,6 @@ package io.gunmetal.spi;
 /**
  * @author rees.byars
  */
-public interface ProvisionStrategy<T> {
-    T get(InternalProvider internalProvider, ResolutionContext resolutionContext);
+public interface ProvisionStrategy {
+    Object get(InternalProvider internalProvider, ResolutionContext resolutionContext);
 }

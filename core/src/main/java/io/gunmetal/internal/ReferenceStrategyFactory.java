@@ -8,6 +8,6 @@ import io.gunmetal.spi.ProvisionStrategy;
  */
 interface ReferenceStrategyFactory {
 
-    <T> ProvisionStrategy<T> create(ProvisionStrategy<?> provisionStrategy, InternalProvider internalProvider);
+    ProvisionStrategy create(ProvisionStrategy provisionStrategy, InternalProvider internalProvider);
 
 }

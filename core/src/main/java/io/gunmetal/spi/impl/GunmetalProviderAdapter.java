@@ -9,7 +9,7 @@ import io.gunmetal.spi.ProviderAdapter;
  */
 public final class GunmetalProviderAdapter implements ProviderAdapter {
 
-    @Override public boolean isProvider(Dependency<?> dependency) {
+    @Override public boolean isProvider(Dependency dependency) {
         return Provider.class.isAssignableFrom(dependency.typeKey().raw());
     }
 

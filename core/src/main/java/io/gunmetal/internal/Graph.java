@@ -6,14 +6,15 @@ import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Set;
 
 /**
-* @author rees.byars
-*/
+ * @author rees.byars
+ */
 class Graph implements ObjectGraph {
 
     private final GraphConfig graphConfig;
@@ -57,13 +58,13 @@ class Graph implements ObjectGraph {
 
     @Override public <T> T inject(Class<T> injectionTarget) {
 
-        T t = graphInjectorProvider
+        Object t = graphInjectorProvider
                 .getInstantiator(injectionTarget, internalProvider, graphLinker, graphContext)
                 .newInstance(internalProvider, ResolutionContext.create());
 
         inject(t);
 
-        return t;
+        return Generics.as(t);
 
     }
 
@@ -73,27 +74,27 @@ class Graph implements ObjectGraph {
                 .resolve(dependencySpec, graphContext.errors());
         Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
         Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
-        Dependency<T> dependency = Dependency.from(
+        Dependency dependency = Dependency.from(
                 qualifier,
                 dependencyType);
 
-        Binding<? extends T> binding = graphCache.get(dependency);
+        Binding binding = graphCache.get(dependency);
 
         if (binding != null) {
 
-            return binding.force().get(internalProvider, ResolutionContext.create());
+            return Generics.as(binding.force().get(internalProvider, ResolutionContext.create()));
 
         } else if (graphConfig.getProviderAdapter().isProvider(dependency)) {
 
             Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
-            final Dependency<?> provisionDependency = Dependency.from(dependency.qualifier(), providedType);
-            final Binding<?> provisionBinding = graphCache.get(provisionDependency);
+            final Dependency provisionDependency = Dependency.from(dependency.qualifier(), providedType);
+            final Binding provisionBinding = graphCache.get(provisionDependency);
             if (provisionBinding == null) {
                 return null;
             }
-            return new ProviderStrategyFactory(graphConfig.getProviderAdapter())
-                    .<T>create(provisionBinding.force(), internalProvider)
-                    .get(internalProvider, ResolutionContext.create());
+            return Generics.as(new ProviderStrategyFactory(graphConfig.getProviderAdapter())
+                    .create(provisionBinding.force(), internalProvider)
+                    .get(internalProvider, ResolutionContext.create()));
 
         }
 
@@ -107,7 +108,6 @@ class Graph implements ObjectGraph {
     GraphCache graphCache() {
         return graphCache;
     }
-
 
     Set<Class<?>> loadedModules() {
         return loadedModules;

@@ -31,9 +31,9 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Module {
 
-    Class<?>[] dependsOn() default { };
+    Class<?>[] dependsOn() default {};
 
-    Class<?>[] subsumes() default { };
+    Class<?>[] subsumes() default {};
 
     Class<? extends BlackList> notAccessibleFrom() default BlackList.class;
 

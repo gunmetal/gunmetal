@@ -7,7 +7,7 @@ import io.gunmetal.Provider;
  */
 public interface ProviderAdapter {
 
-    boolean isProvider(Dependency<?> dependency);
+    boolean isProvider(Dependency dependency);
 
     Object provider(Provider<?> provider);
 

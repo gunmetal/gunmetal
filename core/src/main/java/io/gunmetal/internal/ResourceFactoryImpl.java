@@ -16,11 +16,11 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.spi.ResourceMetadata;
 
 import java.lang.reflect.Method;
 import java.util.LinkedList;
@@ -39,8 +39,8 @@ class ResourceFactoryImpl implements ResourceFactory {
         this.requireAcyclic = requireAcyclic;
     }
 
-    @Override public <T> Resource<T> withClassProvider(ResourceMetadata<Class<?>> resourceMetadata,
-                                                               GraphContext context) {
+    @Override public Resource withClassProvider(ResourceMetadata<Class<?>> resourceMetadata,
+                                                GraphContext context) {
         return resource(
                 resourceMetadata,
                 context,
@@ -48,8 +48,8 @@ class ResourceFactoryImpl implements ResourceFactory {
                 injectorFactory.compositeInjector(resourceMetadata, context));
     }
 
-    @Override public <T> Resource<T> withMethodProvider(ResourceMetadata<Method> resourceMetadata,
-                                                                GraphContext context) {
+    @Override public Resource withMethodProvider(ResourceMetadata<Method> resourceMetadata,
+                                                 GraphContext context) {
         return resource(
                 resourceMetadata,
                 context,
@@ -57,9 +57,9 @@ class ResourceFactoryImpl implements ResourceFactory {
                 injectorFactory.lazyCompositeInjector(resourceMetadata, context));
     }
 
-    @Override public <T> Resource<T> withStatefulMethodProvider(ResourceMetadata<Method> resourceMetadata,
-                                                                        Dependency<?> moduleDependency,
-                                                                        GraphContext context) {
+    @Override public Resource withStatefulMethodProvider(ResourceMetadata<Method> resourceMetadata,
+                                                         Dependency moduleDependency,
+                                                         GraphContext context) {
         return resource(
                 resourceMetadata,
                 context,
@@ -67,8 +67,8 @@ class ResourceFactoryImpl implements ResourceFactory {
                 injectorFactory.lazyCompositeInjector(resourceMetadata, context));
     }
 
-    @Override public <T> Resource<T> withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata,
-                                                                GraphContext context) {
+    @Override public Resource withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata,
+                                                 GraphContext context) {
         return resource(
                 resourceMetadata,
                 context,
@@ -76,31 +76,34 @@ class ResourceFactoryImpl implements ResourceFactory {
                 injectorFactory.lazyCompositeInjector(resourceMetadata, context));
     }
 
-    private <T> Resource<T> resource(
+    private Resource resource(
             final ResourceMetadata<?> metadata,
             GraphContext context,
-            final Instantiator<T> instantiator,
-            final Injector<T> injector) {
-        ProvisionStrategy<T> provisionStrategy = context.strategyDecorator().decorate(
+            final Instantiator instantiator,
+            final Injector injector) {
+        ProvisionStrategy provisionStrategy = context.strategyDecorator().decorate(
                 metadata,
                 baseProvisionStrategy(metadata, instantiator, injector),
                 context.linkers());
-        return new Resource<T>() {
+        return new Resource() {
             @Override public ResourceMetadata<?> metadata() {
                 return metadata;
             }
-            @Override public ProvisionStrategy<T> provisionStrategy() {
+
+            @Override public ProvisionStrategy provisionStrategy() {
                 return provisionStrategy;
             }
-            @Override public Resource<T> replicateWith(GraphContext context) {
+
+            @Override public Resource replicateWith(GraphContext context) {
                 return resource(
                         metadata,
                         context,
                         instantiator.replicateWith(context),
                         injector.replicateWith(context));
             }
-            @Override public List<Dependency<?>> dependencies() {
-                List<Dependency<?>> dependencies = new LinkedList<>();
+
+            @Override public List<Dependency> dependencies() {
+                List<Dependency> dependencies = new LinkedList<>();
                 dependencies.addAll(instantiator.dependencies());
                 dependencies.addAll(injector.dependencies());
                 return dependencies;
@@ -108,9 +111,9 @@ class ResourceFactoryImpl implements ResourceFactory {
         };
     }
 
-    private <T> ProvisionStrategy<T> baseProvisionStrategy(final ResourceMetadata<?> resourceMetadata,
-                                                           final Instantiator<T> instantiator,
-                                                           final Injector<T> injector) {
+    private ProvisionStrategy baseProvisionStrategy(final ResourceMetadata<?> resourceMetadata,
+                                                    final Instantiator instantiator,
+                                                    final Injector injector) {
 
         // TODO support needs to be added to allow the override to work
         if (!requireAcyclic || resourceMetadata.overrides().allowCycle()) {
@@ -118,7 +121,7 @@ class ResourceFactoryImpl implements ResourceFactory {
         }
 
         return (internalProvider, resolutionContext) -> {
-            ResolutionContext.ProvisionContext<T> strategyContext =
+            ResolutionContext.ProvisionContext strategyContext =
                     resolutionContext.provisionContext(resourceMetadata);
             if (strategyContext.state != ResolutionContext.States.NEW) {
                 throw new CircularReferenceException(resourceMetadata);
@@ -133,12 +136,12 @@ class ResourceFactoryImpl implements ResourceFactory {
 
     }
 
-    private <T> ProvisionStrategy<T> cyclicResolutionProvisionStrategy(final ResourceMetadata<?> resourceMetadata,
-                                                           final Instantiator<T> instantiator,
-                                                           final Injector<T> injector) {
-        return new ProvisionStrategy<T>() {
-            @Override public T get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-                ResolutionContext.ProvisionContext<T> strategyContext =
+    private ProvisionStrategy cyclicResolutionProvisionStrategy(final ResourceMetadata<?> resourceMetadata,
+                                                                final Instantiator instantiator,
+                                                                final Injector injector) {
+        return new ProvisionStrategy() {
+            @Override public Object get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+                ResolutionContext.ProvisionContext strategyContext =
                         resolutionContext.provisionContext(resourceMetadata);
                 if (strategyContext.state != ResolutionContext.States.NEW) {
                     if (strategyContext.state == ResolutionContext.States.PRE_INJECTION) {
@@ -156,7 +159,7 @@ class ResourceFactoryImpl implements ResourceFactory {
                 } catch (CircularReferenceException e) {
                     strategyContext.state = ResolutionContext.States.NEW;
                     if (e.metadata().equals(resourceMetadata)) {
-                        ProvisionStrategy<?> reverseStrategy = e.getReverseStrategy();
+                        ProvisionStrategy reverseStrategy = e.getReverseStrategy();
                         if (reverseStrategy == null) {
                             throw new RuntimeException(
                                     "The provision [" + resourceMetadata.toString() + "] depends on itself");
