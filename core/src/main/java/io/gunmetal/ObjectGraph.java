@@ -31,6 +31,8 @@ public interface ObjectGraph {
 
     <T, D extends Dependency<T>> T get(Class<D> dependency);
 
+    <T> T create(Class<T> componentInterface);
+
     GraphBuilder plus();
 
     static GraphBuilder builder() {

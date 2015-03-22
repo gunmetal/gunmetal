@@ -413,4 +413,19 @@ public class SandboxIntegrationTest {
         assertEquals(3425L, (long) c.numberLong);
     }
 
+    @Module(stateful = true, provided = true)
+    static interface MyComponent {
+        TestModule getTestModule();
+    }
+
+    @Test
+    public void testComponent() {
+        MyComponent component = ObjectGraph
+                .builder()
+                .buildTemplate(TestModule.class)
+                .newInstance(new StatefulModule("plus"))
+                .create(MyComponent.class);
+        System.out.println(component.getTestModule());
+    }
+
 }
