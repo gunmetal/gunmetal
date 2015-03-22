@@ -20,7 +20,7 @@ import io.gunmetal.spi.Scopes;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -91,14 +91,13 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
         return this;
     }
 
-    @Override public ResourceMetadata<Method> resolveMetadata(Method method,
-                                                              ModuleMetadata moduleMetadata,
-                                                              Errors errors) {
-        final Resolver resolver = new Resolver(method, moduleMetadata);
-        ResourceMetadata<Method> resourceMetadata =
+    public <T extends AnnotatedElement & Member> ResourceMetadata<T> resolveMetadata(
+            T annotatedElement, ModuleMetadata moduleMetadata, Errors errors) {
+        final Resolver resolver = new Resolver(annotatedElement, moduleMetadata);
+        ResourceMetadata<T> resourceMetadata =
                 new ResourceMetadata<>(
-                        method,
-                        method.getDeclaringClass(),
+                        annotatedElement,
+                        annotatedElement.getDeclaringClass(),
                         moduleMetadata,
                         resolver.qualifier(),
                         resolver.scope(),

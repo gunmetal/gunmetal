@@ -20,7 +20,8 @@ public class DalModule {
     class BlackList implements io.gunmetal.BlackList {
     }
 
-    @Inject @Overrides(allowFieldInjection = true, allowCycle = true) @Dal @Bl DalModule dalModule;
+    @Inject @Overrides(allowFieldInjection = true, allowCycle = true, allowPluralQualifier = true)
+    @Dal @Bl DalModule dalModule;
 
     @Provides public DongleDao dongleDao() {
         return new DongleDao() {

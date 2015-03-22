@@ -1,13 +1,15 @@
 package io.gunmetal.spi;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 
 /**
  * @author rees.byars
  */
 public interface ResourceMetadataResolver {
 
-    ResourceMetadata<Method> resolveMetadata(Method method, ModuleMetadata moduleMetadata, Errors errors);
+    <T extends AnnotatedElement & Member> ResourceMetadata<T>
+        resolveMetadata(T annotatedElement, ModuleMetadata moduleMetadata, Errors errors);
 
     ResourceMetadata<Class<?>> resolveMetadata(Class<?> cls, ModuleMetadata moduleMetadata, Errors errors);
 

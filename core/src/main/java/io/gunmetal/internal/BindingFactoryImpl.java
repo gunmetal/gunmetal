@@ -29,6 +29,7 @@ import io.gunmetal.spi.Scopes;
 import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -147,28 +148,54 @@ class BindingFactoryImpl implements BindingFactory {
                                      RequestVisitor moduleRequestVisitor,
                                      GraphContext context,
                                      Set<Class<?>> loadedModules) {
+
         if (!module.isInterface() && module.getSuperclass() != Object.class && !module.isPrimitive()) {
             context.errors().add("The module " + module.getName() + " extends a class other than Object");
         }
+
         if (moduleAnnotation.stateful()) {
             if (!moduleAnnotation.provided()) {
                 resourceBindings.add(managedModuleResourceBinding(module, moduleMetadata, context));
             } else {
                 resourceBindings.add(providedModuleResourceBinding(module, moduleMetadata, context));
             }
-            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m ->
-                    resourceBindings.add(
-                            statefulResourceBinding(m, module, moduleRequestVisitor, moduleMetadata, context)));
-        } else {
-            Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
-                ResourceMetadata<Method> resourceMetadata =
-                        resourceMetadataResolver.resolveMetadata(m, moduleMetadata, context.errors());
-                if (resourceMetadata.isProvider()) {
-                    resourceBindings.add(
-                            resourceBinding(resourceMetadata, module, moduleRequestVisitor, moduleMetadata, context));
-                }
-            });
         }
+
+        Dependency moduleDependency =
+                Dependency.from(moduleMetadata.qualifier(), module);
+
+        Arrays.stream(module.getDeclaredFields()).filter(f -> !f.isSynthetic()).forEach(f -> {
+            ResourceMetadata<Field> resourceMetadata =
+                    resourceMetadataResolver.resolveMetadata(f, moduleMetadata, context.errors());
+            if (resourceMetadata.isProvider()) {
+                List<Dependency> dependencies = Collections.singletonList(
+                        Dependency.from(resourceMetadata.qualifier(), f.getGenericType()));
+                resourceBindings.add(new BindingImpl(
+                        resourceFactory.withMemberProvider(resourceMetadata, moduleDependency, context),
+                        dependencies,
+                        moduleRequestVisitor,
+                        decorateForModule(moduleMetadata, AccessFilter.create(f))));
+            }
+        });
+
+        Arrays.stream(module.getDeclaredMethods()).filter(m -> !m.isSynthetic()).forEach(m -> {
+            ResourceMetadata<Method> resourceMetadata =
+                    resourceMetadataResolver.resolveMetadata(m, moduleMetadata, context.errors());
+            if (resourceMetadata.isProvider()) {
+                if (m.getReturnType() == void.class) {
+                    throw new IllegalArgumentException("A module's provider methods cannot have a void return type.  The method ["
+                            + m.getName() + "] in module [" + module.getName() + "] is returns void.");
+                }
+                List<Dependency> dependencies = Collections.singletonList(
+                        Dependency.from(resourceMetadata.qualifier(), m.getGenericReturnType()));
+                resourceBindings.add(new BindingImpl(
+                        resourceFactory.withMemberProvider(resourceMetadata, moduleDependency, context),
+                        dependencies,
+                        moduleRequestVisitor,
+                        decorateForModule(moduleMetadata, AccessFilter.create(m))));
+            }
+        });
+
         for (Class<?> library : moduleAnnotation.subsumes()) {
             Module libModule = library.getAnnotation(Module.class);
             // TODO allow provided? require prototype?
@@ -206,83 +233,6 @@ class BindingFactoryImpl implements BindingFactory {
                 return target == moduleMetadata.moduleClass() || accessFilter.isAccessibleTo(target);
             }
         };
-    }
-
-    private Binding resourceBinding(
-            ResourceMetadata<Method> resourceMetadata,
-            Class<?> module,
-            RequestVisitor moduleRequestVisitor,
-            ModuleMetadata moduleMetadata,
-            GraphContext context) {
-
-        Method method = resourceMetadata.provider();
-
-        int modifiers = method.getModifiers();
-
-        if (module.isInterface() && !Modifier.isStatic(modifiers)) {
-            throw new IllegalArgumentException("A module's provider methods must be static.  The method ["
-                    + method.getName() + "] in module [" + module.getName() + "] is not static.");
-        }
-
-        if (method.getReturnType() == void.class) {
-            throw new IllegalArgumentException("A module's provider methods cannot have a void return type.  The method ["
-                    + method.getName() + "] in module [" + module.getName() + "] is returns void.");
-        }
-
-        // if (resourceMetadata.isModule()) {
-        // TODO
-        // }
-
-        // TODO targeted return type check
-        final List<Dependency> dependencies = Collections.singletonList(
-                Dependency.from(resourceMetadata.qualifier(), method.getGenericReturnType()));
-
-        return new BindingImpl(
-                resourceFactory.withMethodProvider(resourceMetadata, context),
-                dependencies,
-                moduleRequestVisitor,
-                decorateForModule(moduleMetadata, AccessFilter.create(method)));
-    }
-
-    private Binding statefulResourceBinding(
-            final Method method,
-            Class<?> module,
-            final RequestVisitor moduleRequestVisitor,
-            final ModuleMetadata moduleMetadata,
-            GraphContext context) {
-
-        if (method.getReturnType() == void.class) {
-            throw new IllegalArgumentException("A module's provider methods cannot have a void return type.  The method ["
-                    + method.getName() + "] in module [" + module.getName() + "] is returns void.");
-        }
-
-        ResourceMetadata<Method> resourceMetadata =
-                resourceMetadataResolver.resolveMetadata(method, moduleMetadata, context.errors());
-
-        Dependency provisionDependency =
-                Dependency.from(resourceMetadata.qualifier(), method.getGenericReturnType());
-
-        Dependency moduleDependency =
-                Dependency.from(moduleMetadata.qualifier(), module);
-
-
-        // TODO targeted return type check
-        final List<Dependency> dependencies =
-                Collections.singletonList(provisionDependency);
-
-        if (Modifier.isStatic(resourceMetadata.provider().getModifiers())) {
-            return new BindingImpl(
-                    resourceFactory.withMethodProvider(resourceMetadata, context),
-                    dependencies,
-                    moduleRequestVisitor,
-                    decorateForModule(moduleMetadata, AccessFilter.create(method)));
-        }
-
-        return new BindingImpl(
-                resourceFactory.withStatefulMethodProvider(resourceMetadata, moduleDependency, context),
-                dependencies,
-                moduleRequestVisitor,
-                decorateForModule(moduleMetadata, AccessFilter.create(method)));
     }
 
     private Binding managedModuleResourceBinding(Class<?> module,

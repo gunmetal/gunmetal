@@ -19,22 +19,23 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.ResourceMetadata;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 
 /**
  * @author rees.byars
  */
 interface InjectorFactory {
+
     Injector compositeInjector(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
 
     Injector lazyCompositeInjector(ResourceMetadata<?> resourceMetadata, GraphContext context);
 
     Instantiator constructorInstantiator(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
 
-    Instantiator methodInstantiator(ResourceMetadata<Method> resourceMetadata, GraphContext context);
-
     Instantiator instanceInstantiator(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
 
-    Instantiator statefulMethodInstantiator(
-            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, GraphContext context);
+    <M extends AnnotatedElement & Member> Instantiator memberInstantiator(
+            ResourceMetadata<M> resourceMetadata, Dependency moduleDependency, GraphContext context);
+
 }

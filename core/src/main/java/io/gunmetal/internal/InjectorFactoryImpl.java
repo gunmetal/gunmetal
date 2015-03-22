@@ -32,7 +32,9 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,39 +114,47 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new InstantiatorImpl(injector);
     }
 
-    @Override public Instantiator methodInstantiator(ResourceMetadata<Method> resourceMetadata,
-                                                     GraphContext context) {
-        ParameterizedFunction function = new MethodFunction(resourceMetadata.provider());
-        Injector injector = new FunctionInjector(
-                function,
-                resourceMetadata,
-                dependenciesForFunction(
-                        resourceMetadata,
-                        function,
-                        qualifierResolver,
-                        context),
-                context.linkers());
-        return new InstantiatorImpl(injector);
-    }
-
     @Override public Instantiator instanceInstantiator(ResourceMetadata<Class<?>> resourceMetadata,
                                                        GraphContext context) {
         return new ProvidedModuleInstantiator(resourceMetadata.providerClass());
     }
 
-    @Override public Instantiator statefulMethodInstantiator(
-            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, GraphContext context) {
-        ParameterizedFunction function = new MethodFunction(resourceMetadata.provider());
-        FunctionInjector injector = new FunctionInjector(
-                function,
-                resourceMetadata,
-                dependenciesForFunction(
-                        resourceMetadata,
+    @Override public <M extends AnnotatedElement & Member> Instantiator memberInstantiator(
+            ResourceMetadata<M> resourceMetadata, Dependency moduleDependency, GraphContext context) {
+        M provider = resourceMetadata.provider();
+        if (!Modifier.isStatic(provider.getModifiers())) {
+            if (provider instanceof Field) {
+                return new StatefulInstantiator(
+                        new ReverseFieldInjector((Field) provider), resourceMetadata,  moduleDependency);
+            } else {
+                ParameterizedFunction function = new MethodFunction((Method) resourceMetadata.provider());
+                FunctionInjector injector = new FunctionInjector(
                         function,
-                        qualifierResolver,
-                        context),
-                context.linkers());
-        return new StatefulInstantiator(injector, resourceMetadata, moduleDependency);
+                        resourceMetadata,
+                        dependenciesForFunction(
+                                resourceMetadata,
+                                function,
+                                qualifierResolver,
+                                context),
+                        context.linkers());
+                return new StatefulInstantiator(injector, resourceMetadata, moduleDependency);
+            }
+        }
+        if (provider instanceof Field) {
+            return new InstantiatorImpl(new ReverseFieldInjector((Field) resourceMetadata.provider()));
+        } else {
+            ParameterizedFunction function = new MethodFunction((Method) resourceMetadata.provider());
+            Injector injector = new FunctionInjector(
+                    function,
+                    resourceMetadata,
+                    dependenciesForFunction(
+                            resourceMetadata,
+                            function,
+                            qualifierResolver,
+                            context),
+                    context.linkers());
+            return new InstantiatorImpl(injector);
+        }
     }
 
     private static Dependency[] dependenciesForFunction(ResourceMetadata<?> resourceMetadata,
@@ -303,6 +313,33 @@ class InjectorFactoryImpl implements InjectorFactory {
 
         @Override public List<Dependency> dependencies() {
             return Collections.singletonList(dependency);
+        }
+
+    }
+
+    private static class ReverseFieldInjector implements Injector {
+
+        private final Field field;
+
+        ReverseFieldInjector(Field field) {
+            field.setAccessible(true);
+            this.field = field;
+        }
+
+        @Override public Injector replicateWith(GraphContext context) {
+            return new ReverseFieldInjector(field);
+        }
+
+        @Override public Object inject(Object target, InternalProvider internalProvider, ResolutionContext resolutionContext) {
+            try {
+                return field.get(target);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("An unexpected exception has occurred", e);
+            }
+        }
+
+        @Override public List<Dependency> dependencies() {
+            return Collections.emptyList();
         }
 
     }
@@ -528,11 +565,11 @@ class InjectorFactoryImpl implements InjectorFactory {
     private static class StatefulInstantiator implements Instantiator {
 
         private final Injector injector;
-        private final ResourceMetadata<Method> resourceMetadata;
+        private final ResourceMetadata<?> resourceMetadata;
         private final Dependency moduleDependency;
 
         StatefulInstantiator(Injector injector,
-                             ResourceMetadata<Method> resourceMetadata,
+                             ResourceMetadata<?> resourceMetadata,
                              Dependency moduleDependency) {
             this.injector = injector;
             this.resourceMetadata = resourceMetadata;

@@ -10,8 +10,6 @@ import io.gunmetal.spi.InjectionResolver;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.ProviderAdapter;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
-import io.gunmetal.spi.QualifierResolver;
-import io.gunmetal.spi.ResourceMetadataResolver;
 import io.gunmetal.spi.impl.AnnotationInjectionResolver;
 import io.gunmetal.spi.impl.ExactlyOneConstructorResolver;
 import io.gunmetal.spi.impl.GunmetalProviderAdapter;
@@ -25,94 +23,45 @@ import java.util.HashMap;
 @Singleton
 @Module(stateful = true, provided = false)
 public class BaseTestModule {
+    
+    @Provides GraphCache graphCache = new GraphCache(null);
 
-    @Provides @Singleton BindingFactory bindingFactory(ResourceFactory resourceFactory,
-                                                       QualifierResolver qualifierResolver,
-                                                       ResourceMetadataResolver metadataResolver,
-                                                       RequestVisitorFactory visitorFactory) {
-        return new BindingFactoryImpl(resourceFactory, qualifierResolver, metadataResolver, visitorFactory);
-    }
+    @Provides ProvisionStrategyDecorator strategyDecorator =
+            ProvisionStrategyDecorator::none;
 
-    @Provides @Singleton ResourceFactory resourceFactory(InjectorFactory injectorFactory) {
-        return new ResourceFactoryImpl(injectorFactory, false);
-    }
+    @Provides ProviderAdapter providerAdapter = new GunmetalProviderAdapter();
 
-    @Provides @Singleton InjectorFactory injectorFactory(QualifierResolver qualifierResolver,
-                                                         ConstructorResolver constructorResolver,
-                                                         ClassWalker classWalker) {
-        return new InjectorFactoryImpl(qualifierResolver, constructorResolver, classWalker);
-    }
+    @Provides GraphErrors graphErrors = new GraphErrors();
 
-    @Provides @Singleton ConfigurableMetadataResolver configurableMetadataResolver() {
-        return new ConfigurableMetadataResolver();
-    }
+    @Provides GraphLinker graphLinker = new GraphLinker();
 
-    @Provides @Singleton QualifierResolver qualifierResolver(ConfigurableMetadataResolver metadataResolver) {
-        return metadataResolver;
-    }
+    @Provides GraphContext graphContext = new GraphContext(
+            strategyDecorator, graphLinker, graphErrors, new HashMap<>());  
 
-    @Provides @Singleton ResourceMetadataResolver resourceMetadataResolver(ConfigurableMetadataResolver metadataResolver) {
-        return metadataResolver;
-    }
+    @Provides InjectionResolver injectionResolver = new AnnotationInjectionResolver(Inject.class);
 
-    @Provides @Singleton ClassWalker classWalker(InjectionResolver injectionResolver) {
-        return new ClassWalkerImpl(injectionResolver, false, false);
-    }
+    @Provides ConstructorResolver constructorResolver =
+            new ExactlyOneConstructorResolver(injectionResolver);
 
-    @Provides @Singleton RequestVisitorFactory requestVisitorFactory(QualifierResolver qualifierResolver) {
-        return new RequestVisitorFactoryImpl(qualifierResolver, false);
-    }
+    @Provides ConfigurableMetadataResolver metadataResolver =
+            new ConfigurableMetadataResolver();
 
-    @Provides @Singleton ConstructorResolver constructorResolver(InjectionResolver injectionResolver) {
-        return new ExactlyOneConstructorResolver(injectionResolver);
-    }
+    @Provides RequestVisitorFactory requestVisitorFactory =
+            new RequestVisitorFactoryImpl(metadataResolver, false);
 
-    @Provides @Singleton InjectionResolver injectionResolver() {
-        return new AnnotationInjectionResolver(Inject.class);
-    }
+    @Provides ClassWalker classWalker =
+            new ClassWalkerImpl(injectionResolver, false, false);
 
-    @Provides @Singleton GraphContext graphContext(ProvisionStrategyDecorator provisionStrategyDecorator,
-                                                   GraphLinker graphLinker,
-                                                   GraphErrors graphErrors) {
-        return new GraphContext(
-                provisionStrategyDecorator,
-                graphLinker,
-                graphErrors,
-                new HashMap<>()
-        );
-    }
+    @Provides InjectorFactory injectorFactory =
+            new InjectorFactoryImpl(metadataResolver, constructorResolver, classWalker);
 
-    @Provides @Singleton GraphErrors graphErrors() {
-        return new GraphErrors();
-    }
+    @Provides ResourceFactory resourceFactory =
+            new ResourceFactoryImpl(injectorFactory, false);
 
-    @Provides @Singleton GraphLinker graphLinker() {
-        return new GraphLinker();
-    }
+    @Provides BindingFactory bindingFactory = new BindingFactoryImpl(
+            resourceFactory, metadataResolver, metadataResolver, requestVisitorFactory);
 
-    @Provides @Singleton ProvisionStrategyDecorator provisionStrategyDecorator() {
-        return ProvisionStrategyDecorator::none;
-    }
-
-    @Provides @Singleton InternalProvider internalProvider(ProviderAdapter providerAdapter,
-                                                           BindingFactory bindingFactory,
-                                                           GraphCache graphCache,
-                                                           GraphContext graphContext) {
-        return new GraphProvider(
-                providerAdapter,
-                bindingFactory,
-                to -> Collections.emptyList(),
-                graphCache,
-                graphContext,
-                false);
-    }
-
-    @Provides @Singleton ProviderAdapter providerAdapter() {
-        return new GunmetalProviderAdapter();
-    }
-
-    @Provides @Singleton GraphCache graphCache() {
-        return new GraphCache(null);
-    }
+    @Provides InternalProvider internalProvider = new GraphProvider(
+            providerAdapter, bindingFactory, to -> Collections.emptyList(), graphCache, graphContext, false);
 
 }
