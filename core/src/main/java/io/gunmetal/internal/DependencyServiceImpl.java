@@ -30,9 +30,9 @@ class DependencyServiceImpl implements DependencyService {
         this.moduleRequestVisitor = moduleRequestVisitor;
         this.classAccessFilter = accessFilter(binding.resource());
         scopeVisitor = (dependencyRequest, errors) -> {
-            if (!binding.resource().metadata().scope().canInject(
-                    dependencyRequest.sourceScope())) {
-                errors.add("mis-scoped"); // TODO message
+            if (!dependencyRequest.sourceProvision().overrides().allowFuzzyScopes() &&
+                    !binding.resource().metadata().scope().canInject(dependencyRequest.sourceScope())) {
+                errors.add("mis-scoped"); // TODO message, move to request visitor factory
             }
         };
     }

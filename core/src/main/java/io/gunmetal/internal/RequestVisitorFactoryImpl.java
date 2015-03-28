@@ -141,6 +141,10 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
 
         return (dependencyRequest, errors) -> {
 
+            if (dependencyRequest.sourceProvision().overrides().allowImplicitModuleDependency()) {
+                return;
+            }
+
             ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
 
             if (module == requestSourceModule.moduleClass()) {

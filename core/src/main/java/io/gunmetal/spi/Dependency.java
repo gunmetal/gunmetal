@@ -64,11 +64,7 @@ public final class Dependency {
         return "dependency[ " + qualifier().toString() + ", " + typeKey().toString() + " ]";
     }
 
-    public static Dependency from(final Qualifier qualifier, Type type) {
-        return new Dependency(qualifier, Types.typeKey(type));
-    }
-
-    public static Dependency from(final Qualifier qualifier, ParameterizedType type) {
+    public static Dependency from(Qualifier qualifier, Type type) {
         return new Dependency(qualifier, Types.typeKey(type));
     }
 

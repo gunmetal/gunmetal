@@ -1,17 +1,14 @@
 package io.gunmetal.sandbox;
 
 import com.google.common.eventbus.EventBus;
-import io.gunmetal.Dependency;
+import io.gunmetal.Inject;
 import io.gunmetal.ObjectGraph;
+import io.gunmetal.Overrides;
 import io.gunmetal.sandbox.testmocks.dongle.bl.Dongler;
 import io.gunmetal.sandbox.testmocks.dongle.config.RootModule;
-import io.gunmetal.sandbox.testmocks.dongle.layers.Ui;
-import io.gunmetal.sandbox.testmocks.dongle.layers.Ws;
 import io.gunmetal.sandbox.testmocks.dongle.scope.Scopes;
-import io.gunmetal.sandbox.testmocks.dongle.ui.DongleController;
 import io.gunmetal.sandbox.testmocks.dongle.ui.UiModule;
 import io.gunmetal.sandbox.testmocks.dongle.ui.UserModule;
-import io.gunmetal.sandbox.testmocks.dongle.ws.DongleResource;
 import io.gunmetal.sandbox.testmocks.dongle.ws.WsModule;
 import io.gunmetal.spi.ProvisionStrategy;
 import org.junit.Test;
@@ -21,15 +18,10 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author rees.byars
  */
+@Overrides(allowFieldInjection = true, allowImplicitModuleDependency = true, allowFuzzyScopes = true)
 public class ObjectGraphTest {
 
-    @Ui
-    class ControllerDependency implements Dependency<DongleController> {
-    }
-
-    @Ws
-    class ResourceDependency implements Dependency<DongleResource> {
-    }
+    @Inject EventBus eventBus;
 
     @Test
     public void testBasic() {
@@ -67,25 +59,21 @@ public class ObjectGraphTest {
                         .plus()
                         .buildTemplate(UiModule.class, WsModule.class)
                         .newInstance(new UserModule("test"))
-                        .get(ControllerDependency.class));
+                        .inject(this));
 
         assertNotNull(
                 configGraph
                         .plus()
                         .buildTemplate(WsModule.class)
                         .newInstance()
-                        .get(ResourceDependency.class));
-
-        class EventBusDep implements Dependency<EventBus> {
-        }
+                        .inject(this));
 
         ObjectGraph graph = configGraph
                 .plus()
                 .buildTemplate(UiModule.class, WsModule.class)
                 .newInstance(new UserModule("test"));
 
-        graph.get(ControllerDependency.class);
-        EventBus eventBus = graph.get(EventBusDep.class);
+        graph.inject(this);
         eventBus.post(new Dongler());
     }
 

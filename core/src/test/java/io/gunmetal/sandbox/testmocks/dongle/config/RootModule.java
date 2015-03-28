@@ -20,7 +20,7 @@ public interface RootModule {
         return new EventBus();
     }
 
-    @Provides static List<? extends ProvisionStrategyDecorator> decorators(EventBus eventBus) {
+    @Provides static List<ProvisionStrategyDecorator> decorators(EventBus eventBus) {
         return Collections.singletonList((resourceMetadata, delegateStrategy, linkers) -> {
 
             System.out.println("building " + resourceMetadata);

@@ -35,8 +35,4 @@ public interface ProvisionStrategyDecorator {
         return delegateStrategy;
     }
 
-    class DecoratorsDependency
-            implements io.gunmetal.Dependency<List<? extends ProvisionStrategyDecorator>> {
-    }
-
 }

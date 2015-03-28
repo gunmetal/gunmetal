@@ -26,6 +26,10 @@ public interface ResolutionContext {
 
     ProvisionContext provisionContext(ResourceMetadata<?> resourceMetadata);
 
+    void setParam(Dependency dependency, Object value);
+
+    Object getParam(Dependency dependency);
+
     static ResolutionContext create() {
         return new Internal.ResolutionContextImpl();
     }
@@ -47,6 +51,7 @@ public interface ResolutionContext {
         private static class ResolutionContextImpl implements ResolutionContext {
 
             private final Map<ResourceMetadata<?>, ProvisionContext> contextMap = new HashMap<>();
+            private Map<Dependency, Object> params;
 
             @Override public ProvisionContext provisionContext(ResourceMetadata<?> resourceMetadata) {
 
@@ -58,6 +63,20 @@ public interface ResolutionContext {
                 }
 
                 return strategyContext;
+            }
+
+            @Override public void setParam(Dependency dependency, Object value) {
+                if (params == null) {
+                    params = new HashMap<>();
+                }
+                params.put(dependency, value);
+            }
+
+            @Override public Object getParam(Dependency dependency) {
+                if (params == null) {
+                    return null;
+                }
+                return params.get(dependency);
             }
         }
 

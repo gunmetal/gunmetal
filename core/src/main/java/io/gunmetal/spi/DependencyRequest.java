@@ -39,7 +39,8 @@ public interface DependencyRequest {
 
     Dependency dependency();
 
-    static DependencyRequest create(final ResourceMetadata<?> requestingProvision, final Dependency dependency) {
+    static DependencyRequest create(final ResourceMetadata<?> requestingProvision,
+                                    final Dependency dependency) {
 
         return new DependencyRequest() {
 

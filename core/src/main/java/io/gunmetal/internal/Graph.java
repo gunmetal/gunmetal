@@ -1,15 +1,21 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Module;
 import io.gunmetal.ObjectGraph;
+import io.gunmetal.Param;
 import io.gunmetal.Provider;
 import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.util.Generics;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -72,56 +78,87 @@ class Graph implements ObjectGraph {
 
     }
 
-    @Override public <T, D extends io.gunmetal.Dependency<T>> T get(Class<D> dependencySpec) {
-
-        Qualifier qualifier = graphConfig.getConfigurableMetadataResolver()
-                .resolve(dependencySpec, graphContext.errors());
-        Type parameterizedDependencySpec = dependencySpec.getGenericInterfaces()[0];
-        Type dependencyType = ((ParameterizedType) parameterizedDependencySpec).getActualTypeArguments()[0];
-        Dependency dependency = Dependency.from(
-                qualifier,
-                dependencyType);
-
-        DependencyService dependencyService = graphCache.get(dependency);
-
-        if (dependencyService != null) {
-
-            return Generics.as(dependencyService.force().get(internalProvider, ResolutionContext.create()));
-
-        } else if (graphConfig.getProviderAdapter().isProvider(dependency)) {
-
-            Type providedType = ((ParameterizedType) dependency.typeKey().type()).getActualTypeArguments()[0];
-            final Dependency provisionDependency = Dependency.from(dependency.qualifier(), providedType);
-            final DependencyService provisionDependencyService = graphCache.get(provisionDependency);
-            if (provisionDependencyService == null) {
-                return null;
-            }
-            return Generics.as(new ProviderStrategyFactory(graphConfig.getProviderAdapter())
-                    .create(provisionDependencyService.force(), internalProvider)
-                    .get(internalProvider, ResolutionContext.create()));
-
+    static class ComponentMethodConfig {
+        private final DependencyService dependencyService;
+        private final Dependency[] dependencies;
+        ComponentMethodConfig(DependencyService dependencyService,
+                              Dependency[] dependencies) {
+            this.dependencyService = dependencyService;
+            this.dependencies = dependencies;
         }
-
-        return null;
     }
 
     @Override public <T> T create(Class<T> componentInterface) {
 
-        Map<Method, DependencyService> dependencyServiceMap = new HashMap<>();
+        Map<Method, ComponentMethodConfig> configMap = new HashMap<>();
+        Qualifier componentQualifier = graphConfig
+                .getConfigurableMetadataResolver()
+                .resolve(componentInterface, graphContext.errors());
         for (Method method : componentInterface.getDeclaredMethods()) {
-            if (method.getParameterCount() > 0) {
-                throw new RuntimeException("ain't no params allowed"); // TODO
+            Type[] paramTypes = method.getGenericParameterTypes();
+            final Annotation[][] methodParameterAnnotations
+                    = method.getParameterAnnotations();
+            Dependency[] dependencies = new Dependency[paramTypes.length];
+            for (int i = 0; i < paramTypes.length; i++) {
+                Type paramType = paramTypes[i];
+                Annotation[] annotations = methodParameterAnnotations[i];
+                AnnotatedElement annotatedElement =
+                        new AnnotatedElement() {
+                            @Override public <TT extends Annotation> TT getAnnotation(Class<TT> annotationClass) {
+                                for (Annotation annotation : annotations) {
+                                    if (annotationClass.isInstance(annotation)) {
+                                        return annotationClass.cast(annotation);
+                                    }
+                                }
+                                return null;
+                            }
+                            @Override public Annotation[] getAnnotations() {
+                                return annotations;
+                            }
+
+                            @Override public Annotation[] getDeclaredAnnotations() {
+                                return annotations;
+                            }
+                        };
+                if (!annotatedElement.isAnnotationPresent(Param.class)) {
+                    throw new RuntimeException("ain't no @Param"); // TODO
+                }
+                Qualifier paramQualifier = graphConfig
+                        .getConfigurableMetadataResolver()
+                        .resolveDependencyQualifier(
+                                annotatedElement,
+                                componentQualifier,
+                                graphContext.errors()::add);
+                Dependency paramDependency =
+                        Dependency.from(paramQualifier, paramType);
+                dependencies[i] = paramDependency;
             }
             Type type = method.getGenericReturnType();
             Dependency dependency = Dependency.from(
                     graphConfig.getConfigurableMetadataResolver()
-                            .resolve(method, graphContext.errors()),
+                            .resolve(method, graphContext.errors())
+                            .merge(componentQualifier),
                     type);
             DependencyService dependencyService = graphCache.get(dependency);
             if (dependencyService == null) {
+                Module module = componentInterface.getAnnotation(Module.class);
+                ResourceMetadata<Method> resourceMetadata =
+                        graphConfig.getConfigurableMetadataResolver()
+                                .resolveMetadata(
+                                        method,
+                                        new ModuleMetadata(
+                                                componentInterface,
+                                                componentQualifier,
+                                                module == null ? Module.NONE : module),
+                                        graphContext.errors());
+                internalProvider.getProvisionStrategy(
+                        DependencyRequest.create(resourceMetadata, dependency));
+                dependencyService = graphCache.get(dependency);
                 throw new RuntimeException("not fucking here!"); // TODO
+            } else {
+
             }
-            dependencyServiceMap.put(method, dependencyService);
+            configMap.put(method, new ComponentMethodConfig(dependencyService, dependencies));
         }
 
         return componentInterface.cast(Proxy.newProxyInstance(
@@ -142,10 +179,18 @@ class Graph implements ObjectGraph {
                             throw new IllegalStateException(String.valueOf(method));
                         }
                     }
-                    return dependencyServiceMap
-                            .get(method)
+                    ComponentMethodConfig config = configMap.get(method);
+                    ResolutionContext resolutionContext = ResolutionContext.create();
+                    if (args != null) {
+                        for (int i = 0; i < args.length; i++) {
+                            resolutionContext.setParam(
+                                    config.dependencies[i],
+                                    args[i]);
+                        }
+                    }
+                    return config.dependencyService
                             .force()
-                            .get(internalProvider, ResolutionContext.create());
+                            .get(internalProvider, resolutionContext);
                 }));
     }
 

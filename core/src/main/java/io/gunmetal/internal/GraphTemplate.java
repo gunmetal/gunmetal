@@ -44,14 +44,12 @@ class GraphTemplate implements TemplateGraph {
 
     static TemplateGraph buildTemplate(Graph parentGraph, GraphConfig graphConfig, Class<?>... modules) {
 
-        List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
+        GunmetalComponent gunmetalComponent = new GunmetalComponent();
         if (parentGraph != null) {
-            List<? extends ProvisionStrategyDecorator> parentDecorators =
-                    parentGraph.get(ProvisionStrategyDecorator.DecoratorsDependency.class);
-            if (parentDecorators != null) {
-                strategyDecorators.addAll(parentDecorators);
-            }
+             parentGraph.inject(gunmetalComponent);
         }
+
+        List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>(gunmetalComponent.strategyDecorators());
         strategyDecorators.add(new ScopeDecorator(scope -> {
             ProvisionStrategyDecorator decorator = graphConfig.getScopeDecorators().get(scope);
             if (decorator != null) {

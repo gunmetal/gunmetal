@@ -45,6 +45,10 @@ public @interface Overrides {
 
     boolean allowPluralQualifier() default false;
 
+    boolean allowImplicitModuleDependency() default false;
+
+    boolean allowFuzzyScopes() default false;
+
     Overrides NONE = new Overrides() {
 
         @Override public Class<? extends Annotation> annotationType() {
@@ -76,6 +80,14 @@ public @interface Overrides {
         }
 
         @Override public boolean allowPluralQualifier() {
+            return false;
+        }
+
+        @Override public boolean allowImplicitModuleDependency() {
+            return false;
+        }
+
+        @Override public boolean allowFuzzyScopes() {
             return false;
         }
 

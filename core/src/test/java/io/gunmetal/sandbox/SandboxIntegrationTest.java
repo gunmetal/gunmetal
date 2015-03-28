@@ -16,6 +16,7 @@
 
 package io.gunmetal.sandbox;
 
+import io.gunmetal.Factory;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
@@ -23,6 +24,7 @@ import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
 import io.gunmetal.ObjectGraph;
 import io.gunmetal.Overrides;
+import io.gunmetal.Param;
 import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Ref;
@@ -110,7 +112,8 @@ public class SandboxIntegrationTest {
             return new TestModule();
         }
 
-        @Provides @Singleton static TestModule tmO() {
+        @Provides @Singleton static TestModule tmO(@Param String name) {
+            System.out.println(name);
             return new TestModule();
         }
 
@@ -208,40 +211,50 @@ public class SandboxIntegrationTest {
 
         ObjectGraph app = templateGraph.newInstance(new StatefulModule("rees"));
 
-        @Main
-        class Dep implements io.gunmetal.Dependency<SandboxIntegrationTest> {
+        class Dep {
+            @Inject @Main SandboxIntegrationTest test;
         }
 
 
-        SandboxIntegrationTest test = app.get(Dep.class);
+        Dep dep = new Dep();
+        app.inject(dep);
+        SandboxIntegrationTest test = dep.test;
 
 
-        class BadDep implements io.gunmetal.Dependency<Circ> {
+        class BadDep {
+            @Inject Circ circ;
         }
 
-        Bad b = app.get(BadDep.class);
+        BadDep badDep = new BadDep();
+        BadDep badDep2 = new BadDep();
+        BadDep badDep3 = new BadDep();
+        BadDep badDep4 = new BadDep();
+        app.inject(badDep).inject(badDep2).inject(badDep3).inject(badDep4);
 
-        Bad b2 = app.get(BadDep.class);
+        assert badDep.circ != badDep4.circ;
 
-        Bad b3 = app.get(BadDep.class);
-
-        assert b != app.get(BadDep.class);
-
-        assert ((Circ) b).providedCirc != app.get(BadDep.class);
+        BadDep badDep5 = new BadDep();
+        app.inject(badDep5);
+        assert (badDep.circ).providedCirc != badDep5.circ;
 
         assert test != this;
 
-        class Dep2 implements io.gunmetal.Dependency<A> {
+        class Dep2 {
+            @Inject A a;
         }
+
+        Dep2 dep2 = new Dep2();
 
         app = ObjectGraph
                 .builder()
                 .buildTemplate(NewGunmetalBenchMarkModule.class)
                 .newInstance();
 
-        A a = app.get(Dep2.class);
+        app.inject(dep2);
+        A a = dep2.a;
 
-        assert a != app.get(Dep2.class);
+        app.inject(dep2);
+        assert a != dep2.a;
 
         class InjectTest {
             @Inject
@@ -308,9 +321,12 @@ public class SandboxIntegrationTest {
     @Test
     public void testPlus() {
 
-        @Main
-        class Dep implements io.gunmetal.Dependency<PlusModule> {
+
+        class Dep {
+            @Inject @Main PlusModule plusModule;
         }
+
+        Dep dep = new Dep();
 
         ObjectGraph parent = ObjectGraph.builder()
                 .buildTemplate(TestModule.class)
@@ -319,11 +335,14 @@ public class SandboxIntegrationTest {
         TemplateGraph childTemplate = parent.plus().buildTemplate(PlusModule.class);
         ObjectGraph child = childTemplate.newInstance();
 
-        PlusModule p = child.get(Dep.class);
+        child.inject(dep);
+        PlusModule p = dep.plusModule;
 
         assert p.sandboxIntegrationTest != null;
 
-        assert parent.get(Dep.class) == null;
+        dep.plusModule = null;
+        parent.inject(dep);
+        assert dep.plusModule != null;
 
         class InjectTest {
             @Inject
@@ -344,12 +363,13 @@ public class SandboxIntegrationTest {
         assert injectTest.f != null;
 
         ObjectGraph childCopy = childTemplate.newInstance();
+        Dep dep2 = new Dep();
+        child.inject(dep);
+        childCopy.inject(dep2);
+        assert dep.plusModule != dep2.plusModule;
 
-        assert child.get(Dep.class) != childCopy.get(Dep.class);
-
-        assert childCopy.get(Dep.class) == childCopy.get(Dep.class);
-
-        assert childCopy.get(Dep.class) != null;
+        child.inject(dep2);
+        assert dep.plusModule == dep2.plusModule;
 
         childCopy.inject(injectTest);
 
@@ -357,16 +377,20 @@ public class SandboxIntegrationTest {
 
     @Test
     public void testMore() {
-        class ProviderDep implements io.gunmetal.Dependency<io.gunmetal.Provider<N>> {
+        class ProviderDep {
+            @Inject Provider<N> nProvider;
         }
-        newGunmetalProvider = APPLICATION_CONTAINER.get(ProviderDep.class);
+        ProviderDep p =  new ProviderDep();
+        APPLICATION_CONTAINER.inject(p);
+        newGunmetalProvider = p.nProvider;
         newGunmetalStandup(10000);
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
     static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class).newInstance();
 
-    static class Dep implements io.gunmetal.Dependency<AA> {
+    static class AaHolder {
+        @Inject AA aa;
     }
 
     long newGunmetalStandup(int reps) {
@@ -413,19 +437,29 @@ public class SandboxIntegrationTest {
         assertEquals(3425L, (long) c.numberLong);
     }
 
-    @Module(stateful = true, provided = true)
+    @Module
+    static class MyModule {
+        String name;
+        @Provides static MyModule myModule(@Param String name) {
+            MyModule m = new MyModule();
+            m.name = name;
+            return m;
+        }
+    }
+
+    @Factory
     static interface MyComponent {
-        TestModule getTestModule();
+        MyModule getMyModule(@Param String name);
     }
 
     @Test
     public void testComponent() {
         MyComponent component = ObjectGraph
                 .builder()
-                .buildTemplate(TestModule.class)
-                .newInstance(new StatefulModule("plus"))
+                .buildTemplate(MyModule.class)
+                .newInstance()
                 .create(MyComponent.class);
-        System.out.println(component.getTestModule());
+        assertEquals("sweet", component.getMyModule("sweet").name);
     }
 
 }

@@ -237,15 +237,6 @@ class InjectorFactoryImpl implements InjectorFactory {
             type = parameterizedFunction.getParameterTypes()[index];
         }
 
-        @Override public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
-            for (Annotation annotation : annotations) {
-                if (annotationClass.isInstance(annotation)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         @Override public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
             for (Annotation annotation : annotations) {
                 if (annotationClass.isInstance(annotation)) {
@@ -279,7 +270,9 @@ class InjectorFactoryImpl implements InjectorFactory {
             field.setAccessible(true);
             linkers.addWiringLinker((internalProvider, linkingContext) ->
                     provisionStrategy = internalProvider.getProvisionStrategy(
-                            DependencyRequest.create(resourceMetadata, dependency)));
+                            DependencyRequest.create(
+                                    resourceMetadata,
+                                    dependency)));
             this.field = field;
             this.resourceMetadata = resourceMetadata;
             this.dependency = dependency;
@@ -362,7 +355,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             linkers.addWiringLinker((internalProvider, linkingContext) -> {
                 for (int i = 0; i < dependencies.length; i++) {
                     provisionStrategies[i] = internalProvider.getProvisionStrategy(
-                            DependencyRequest.create(resourceMetadata, dependencies[i]));
+                                DependencyRequest.create(resourceMetadata, dependencies[i]));
                 }
             });
         }
@@ -386,7 +379,7 @@ class InjectorFactoryImpl implements InjectorFactory {
             }
             try {
                 return function.invoke(target, parameters);
-            } catch (IllegalAccessException | InvocationTargetException | InstantiationException | RuntimeException e) {
+            } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
                 if (e.getCause() != null && e.getCause() instanceof RuntimeException) {
                     throw (RuntimeException) e.getCause();
                 }

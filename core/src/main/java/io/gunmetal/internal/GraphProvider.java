@@ -1,5 +1,6 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Param;
 import io.gunmetal.Provider;
 import io.gunmetal.Ref;
 import io.gunmetal.spi.Converter;
@@ -13,6 +14,7 @@ import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -45,6 +47,12 @@ class GraphProvider implements InternalProvider {
 
     @Override public synchronized ProvisionStrategy getProvisionStrategy(
             final DependencyRequest dependencyRequest) {
+
+        // TODO param check is nasty.  wrap qualifier in DependencyMetadata class and resolve this in resolver?
+        // TODO add visitor for param request and decorator for param provision
+        if (Arrays.stream(dependencyRequest.dependency().qualifier().qualifiers()).anyMatch(q -> q instanceof Param)) {
+            return (internalProvider, resolutionContext) -> resolutionContext.getParam(dependencyRequest.dependency());
+        }
 
         // try cached strategy
         ProvisionStrategy strategy = getCachedProvisionStrategy(dependencyRequest);

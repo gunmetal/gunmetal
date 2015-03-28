@@ -28,7 +28,7 @@ import java.util.HashMap;
  */
 public class CaliperBenchmarks {
 
-    Provider<N> newGunmetalProvider;
+    @Inject Provider<N> newGunmetalProvider;
     @Inject public Provider<N> daggerProvider;
     dagger.ObjectGraph OBJECT_GRAPH;
     static final Key<N> PROTOTYPE_KEY = Key.get(N.class);
@@ -37,23 +37,18 @@ public class CaliperBenchmarks {
     Injector INJECTOR;
     TemplateGraph template;
 
-    static class Dep implements io.gunmetal.Dependency<AA> {
-    }
-
     @BeforeExperiment() void setUp() {
         OBJECT_GRAPH = dagger.ObjectGraph.create(new DaggerBenchMarkModule());
         INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
-        class ProviderDep implements io.gunmetal.Dependency<Provider<N>> {
-        }
-        newGunmetalProvider = ObjectGraph
+        ObjectGraph
                 .builder()
                 .requireAcyclic()
                 .withJsr330Metadata()
                 .buildTemplate(SlimGunmetalBenchMarkModule.class)
                 .newInstance()
-                .get(ProviderDep.class);
+                .inject(this);
         template = ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class);
 
         guiceProvider(100);
@@ -77,7 +72,9 @@ public class CaliperBenchmarks {
     @Benchmark long template(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
-            dummy |= template.newInstance().get(Dep.class).hashCode();
+            InjectionTarget injectionTarget = new InjectionTarget();
+            template.newInstance().inject(injectionTarget);
+            dummy |= injectionTarget.hashCode();
         }
         return dummy;
     }
@@ -96,7 +93,7 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            io.gunmetal.ObjectGraph.builder()
+            ObjectGraph.builder()
                     .requireAcyclic()
                     .buildTemplate(SlimGunmetalBenchMarkModule.class)
                     .newInstance()
@@ -110,7 +107,7 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            io.gunmetal.ObjectGraph.builder()
+            ObjectGraph.builder()
                     .requireAcyclic()
                     .buildTemplate()
                     .newInstance()

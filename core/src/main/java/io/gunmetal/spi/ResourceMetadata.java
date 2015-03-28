@@ -36,6 +36,7 @@ public class ResourceMetadata<P extends AnnotatedElement> {
     private final boolean isModule;
     private final boolean isProvided;
     private final boolean isProvider;
+    private final boolean factory;
     private final int hashCode;
 
     public ResourceMetadata(P provider,
@@ -48,7 +49,8 @@ public class ResourceMetadata<P extends AnnotatedElement> {
                             boolean isCollectionElement,
                             boolean isModule,
                             boolean isProvided,
-                            boolean isProvider) {
+                            boolean isProvider,
+                            boolean factory) {
         this.provider = provider;
         this.providerClass = providerClass;
         this.moduleMetadata = moduleMetadata;
@@ -60,6 +62,7 @@ public class ResourceMetadata<P extends AnnotatedElement> {
         this.isModule = isModule;
         this.isProvided = isProvided;
         this.isProvider = isProvider;
+        this.factory = factory;
         hashCode = provider().hashCode() * 67 + qualifier().hashCode();
     }
 
@@ -109,6 +112,10 @@ public class ResourceMetadata<P extends AnnotatedElement> {
 
     public boolean isProviderMember() {
         return provider != providerClass;
+    }
+
+    public boolean isFactory() {
+        return factory;
     }
 
     @Override public final int hashCode() {
