@@ -16,25 +16,15 @@
 
 package io.gunmetal;
 
-import io.gunmetal.internal.GraphBuilder;
+import io.gunmetal.internal.ComponentBuilder;
 
 /**
  * @author rees.byars
  */
-public interface ObjectGraph {
+public interface Component {
 
-    <T> ObjectGraph inject(T injectionTarget);
-
-    <T> T inject(Provider<T> injectionTarget);
-
-    <T> T inject(Class<T> injectionTarget);
-
-    <T> T create(Class<T> componentInterface);
-
-    GraphBuilder plus();
-
-    static GraphBuilder builder() {
-        return new GraphBuilder();
+    static ComponentBuilder builder() {
+        return new ComponentBuilder();
     }
 
 }

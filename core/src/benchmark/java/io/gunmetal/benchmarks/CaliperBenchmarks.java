@@ -5,8 +5,7 @@ import com.google.caliper.Benchmark;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import io.gunmetal.ObjectGraph;
-import io.gunmetal.TemplateGraph;
+import io.gunmetal.Module;
 import io.gunmetal.sandbox.testmocks.AA;
 import io.gunmetal.sandbox.testmocks.E;
 import io.gunmetal.sandbox.testmocks.N;
@@ -35,21 +34,43 @@ public class CaliperBenchmarks {
     static final Key<E> SINGLETON_KEY = Key.get(E.class);
     Provider<N> guiceProvider;
     Injector INJECTOR;
-    TemplateGraph template;
+    FullComponent.Factory template;
+
+    @Module(dependsOn = SlimGunmetalBenchMarkModule.class)
+    public interface SlimComponent {
+
+        void inject(Object o);
+
+        public interface Factory {
+            SlimComponent create();
+        }
+
+    }
+
+    @Module(dependsOn = NewGunmetalBenchMarkModule.class)
+    public interface FullComponent {
+
+        void inject(Object o);
+
+        public interface Factory {
+            FullComponent create();
+        }
+
+    }
 
     @BeforeExperiment() void setUp() {
         OBJECT_GRAPH = dagger.ObjectGraph.create(new DaggerBenchMarkModule());
         INJECTOR = Guice.createInjector(new GuiceBenchMarkModule());
         OBJECT_GRAPH.inject(this);
         guiceProvider = INJECTOR.getProvider(PROTOTYPE_KEY);
-        ObjectGraph
+        io.gunmetal.Component
                 .builder()
                 .requireAcyclic()
                 .withJsr330Metadata()
-                .buildTemplate(SlimGunmetalBenchMarkModule.class)
-                .newInstance()
+                .build(SlimComponent.Factory.class)
+                .create()
                 .inject(this);
-        template = ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class);
+        template = io.gunmetal.Component.builder().build(FullComponent.Factory.class);
 
         guiceProvider(100);
         newGunmetalProvider(100);
@@ -60,9 +81,9 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            ObjectGraph.builder()
-                    .buildTemplate(NewGunmetalBenchMarkModule.class)
-                    .newInstance()
+            io.gunmetal.Component.builder()
+                    .build(FullComponent.Factory.class)
+                    .create()
                     .inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
@@ -73,7 +94,7 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            template.newInstance().inject(injectionTarget);
+            template.create().inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
         return dummy;
@@ -93,24 +114,35 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            ObjectGraph.builder()
+            io.gunmetal.Component.builder()
                     .requireAcyclic()
-                    .buildTemplate(SlimGunmetalBenchMarkModule.class)
-                    .newInstance()
+                    .build(SlimComponent.Factory.class)
+                    .create()
                     .inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
         return dummy;
     }
 
+    @Module
+    public interface ZeroComponent {
+
+        void inject(Object o);
+
+        public interface Factory {
+            ZeroComponent create();
+        }
+
+    }
+
     @Benchmark long zeroGunmetalStandup(int reps) {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            ObjectGraph.builder()
+            io.gunmetal.Component.builder()
                     .requireAcyclic()
-                    .buildTemplate()
-                    .newInstance()
+                    .build(ZeroComponent.Factory.class)
+                    .create()
                     .inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
@@ -119,12 +151,12 @@ public class CaliperBenchmarks {
 
     @Benchmark long slimTemplate(int reps) {
         int dummy = 0;
-        TemplateGraph templateGraph = io.gunmetal.ObjectGraph.builder()
+        SlimComponent.Factory templateGraph = io.gunmetal.Component.builder()
                 .requireAcyclic()
-                .buildTemplate(SlimGunmetalBenchMarkModule.class);
+                .build(SlimComponent.Factory.class);
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            templateGraph.newInstance().inject(injectionTarget);
+            templateGraph.create().inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
         }
         return dummy;

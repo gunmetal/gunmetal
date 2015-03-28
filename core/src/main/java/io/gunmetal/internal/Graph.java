@@ -1,9 +1,8 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Component;
 import io.gunmetal.Module;
-import io.gunmetal.ObjectGraph;
 import io.gunmetal.Param;
-import io.gunmetal.Provider;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.InternalProvider;
@@ -11,7 +10,6 @@ import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.spi.ResourceMetadata;
-import io.gunmetal.util.Generics;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -25,7 +23,7 @@ import java.util.Set;
 /**
  * @author rees.byars
  */
-class Graph implements ObjectGraph {
+class Graph implements Component {
 
     private final GraphConfig graphConfig;
     private final GraphLinker graphLinker;
@@ -51,31 +49,10 @@ class Graph implements ObjectGraph {
         this.loadedModules = loadedModules;
     }
 
-    @Override public <T> ObjectGraph inject(T injectionTarget) {
-
+    void inject(Object injectionTarget) {
         graphInjectorProvider
                 .getInjector(injectionTarget, internalProvider, graphLinker, graphContext)
                 .inject(injectionTarget, internalProvider, ResolutionContext.create());
-
-        return this;
-    }
-
-    @Override public <T> T inject(Provider<T> injectionTarget) {
-        T t = injectionTarget.get();
-        inject(t);
-        return t;
-    }
-
-    @Override public <T> T inject(Class<T> injectionTarget) {
-
-        Object t = graphInjectorProvider
-                .getInstantiator(injectionTarget, internalProvider, graphLinker, graphContext)
-                .newInstance(internalProvider, ResolutionContext.create());
-
-        inject(t);
-
-        return Generics.as(t);
-
     }
 
     static class ComponentMethodConfig {
@@ -88,13 +65,18 @@ class Graph implements ObjectGraph {
         }
     }
 
-    @Override public <T> T create(Class<T> componentInterface) {
+    <T> T create(Class<T> componentInterface) {
 
         Map<Method, ComponentMethodConfig> configMap = new HashMap<>();
         Qualifier componentQualifier = graphConfig
                 .getConfigurableMetadataResolver()
                 .resolve(componentInterface, graphContext.errors());
         for (Method method : componentInterface.getDeclaredMethods()) {
+            // TODO complete these checks
+            if (method.getReturnType() == void.class ||
+                    method.getName().equals("plus")) {
+                continue;
+            }
             Type[] paramTypes = method.getGenericParameterTypes();
             final Annotation[][] methodParameterAnnotations
                     = method.getParameterAnnotations();
@@ -121,7 +103,7 @@ class Graph implements ObjectGraph {
                             }
                         };
                 if (!annotatedElement.isAnnotationPresent(Param.class)) {
-                    throw new RuntimeException("ain't no @Param"); // TODO
+                    // throw new RuntimeException("ain't no @Param"); // TODO
                 }
                 Qualifier paramQualifier = graphConfig
                         .getConfigurableMetadataResolver()
@@ -156,7 +138,7 @@ class Graph implements ObjectGraph {
                 dependencyService = graphCache.get(dependency);
                 throw new RuntimeException("not fucking here!"); // TODO
             } else {
-
+              // TODO uuuhhhhhmmmm.....
             }
             configMap.put(method, new ComponentMethodConfig(dependencyService, dependencies));
         }
@@ -179,8 +161,20 @@ class Graph implements ObjectGraph {
                             throw new IllegalStateException(String.valueOf(method));
                         }
                     }
-                    ComponentMethodConfig config = configMap.get(method);
                     ResolutionContext resolutionContext = ResolutionContext.create();
+                    if (method.getName().equals("inject")) {
+                        // TODO validate etc, earlier
+                        for (Object arg : args) {
+                            inject(arg);
+                        }
+                        return null;
+                    }
+                    if (method.getReturnType() == ComponentBuilder.class &&
+                            method.getName().equals("plus")) {
+                        // TODO validate no params, do this earlier
+                        return new ComponentBuilder(this, graphConfig);
+                    }
+                    ComponentMethodConfig config = configMap.get(method);
                     if (args != null) {
                         for (int i = 0; i < args.length; i++) {
                             resolutionContext.setParam(
@@ -192,10 +186,6 @@ class Graph implements ObjectGraph {
                             .force()
                             .get(internalProvider, resolutionContext);
                 }));
-    }
-
-    @Override public GraphBuilder plus() {
-        return new GraphBuilder(this, graphConfig);
     }
 
     GraphCache graphCache() {

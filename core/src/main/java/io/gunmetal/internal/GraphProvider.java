@@ -1,5 +1,6 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.MultiBind;
 import io.gunmetal.Param;
 import io.gunmetal.Provider;
 import io.gunmetal.Ref;
@@ -14,6 +15,7 @@ import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -48,9 +50,11 @@ class GraphProvider implements InternalProvider {
     @Override public synchronized ProvisionStrategy getProvisionStrategy(
             final DependencyRequest dependencyRequest) {
 
+        Dependency dependency = dependencyRequest.dependency();
+
         // TODO param check is nasty.  wrap qualifier in DependencyMetadata class and resolve this in resolver?
         // TODO add visitor for param request and decorator for param provision
-        if (Arrays.stream(dependencyRequest.dependency().qualifier().qualifiers()).anyMatch(q -> q instanceof Param)) {
+        if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof Param)) {
             return (internalProvider, resolutionContext) -> resolutionContext.getParam(dependencyRequest.dependency());
         }
 
@@ -70,7 +74,6 @@ class GraphProvider implements InternalProvider {
         }
 
         // try conversion strategy
-        Dependency dependency = dependencyRequest.dependency();
         TypeKey typeKey = dependency.typeKey();
         for (Converter converter : converterProvider.convertersForType(typeKey)) {
             for (Class<?> fromType : converter.supportedFromTypes()) {
@@ -130,6 +133,13 @@ class GraphProvider implements InternalProvider {
                 return dependencyService
                         .service(dependencyRequest, context.errors())
                         .provisionStrategy();
+            } else {
+                // support empty multi-bind request
+                // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
+                if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
+                    return (internalProvider, resolutionContext) ->
+                            providerAdapter.provider(ArrayList::new);
+                }
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
@@ -139,8 +149,21 @@ class GraphProvider implements InternalProvider {
                 return dependencyService
                         .service(dependencyRequest, context.errors())
                         .provisionStrategy();
+            }  else {
+                // support empty multi-bind request
+                // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
+                if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
+                    return (internalProvider, resolutionContext) -> (Ref<Object>) ArrayList::new;
+                }
             }
         }
+
+        // support empty multi-bind request
+        // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
+        if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
+            return (internalProvider, resolutionContext) -> new ArrayList<>();
+        }
+
         return null;
     }
 
@@ -149,9 +172,9 @@ class GraphProvider implements InternalProvider {
         Dependency providerDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency provisionDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        final DependencyService provisionDependencyService = graphCache.get(provisionDependency);
+        DependencyService provisionDependencyService = graphCache.get(provisionDependency);
         if (provisionDependencyService == null) {
-            return null;
+             return null;
         }
         ProvisionStrategy provisionStrategy = provisionDependencyService.force();
         ReferenceStrategyFactory strategyFactory = factoryProvider.get();

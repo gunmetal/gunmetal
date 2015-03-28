@@ -2,13 +2,11 @@ package io.gunmetal.sandbox.testmocks.dongle.config;
 
 import com.google.common.eventbus.EventBus;
 import io.gunmetal.Module;
+import io.gunmetal.MultiBind;
 import io.gunmetal.Provides;
 import io.gunmetal.Singleton;
 import io.gunmetal.sandbox.testmocks.dongle.bl.Dongler;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author rees.byars
@@ -20,8 +18,8 @@ public interface RootModule {
         return new EventBus();
     }
 
-    @Provides static List<ProvisionStrategyDecorator> decorators(EventBus eventBus) {
-        return Collections.singletonList((resourceMetadata, delegateStrategy, linkers) -> {
+    @Provides @MultiBind static ProvisionStrategyDecorator eventDecorator(EventBus eventBus) {
+        return (resourceMetadata, delegateStrategy, linkers) -> {
 
             System.out.println("building " + resourceMetadata);
 
@@ -34,7 +32,7 @@ public interface RootModule {
 
                 return t;
             };
-        });
+        };
     }
 
 }

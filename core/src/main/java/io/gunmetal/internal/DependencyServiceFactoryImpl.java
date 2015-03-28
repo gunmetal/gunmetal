@@ -3,9 +3,12 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.Converter;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
+import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ResourceMetadata;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -82,6 +85,62 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
                 provisionDependency,
                 referenceStrategy,
                 referenceStrategyFactory);
+    }
+
+    @Override public DependencyService createForFalseResource(
+            Dependency dependency, ProvisionStrategy provisionStrategy) {
+
+        return new DependencyService() {
+
+            @Override public Binding binding() {
+
+                return new Binding() {
+
+                    @Override public List<Dependency> targets() {
+                        return Collections.singletonList(dependency);
+                    }
+
+                    @Override public Resource resource() {
+
+                        return new Resource() {
+
+                            @Override public ResourceMetadata<?> metadata() {
+                                return null;
+                            }
+
+                            @Override public ProvisionStrategy provisionStrategy() {
+                                return provisionStrategy;
+                            }
+
+                            @Override public List<Dependency> dependencies() {
+                                return Collections.emptyList();
+                            }
+
+                            @Override public Resource replicateWith(GraphContext context) {
+                                throw new UnsupportedOperationException();
+                            }
+                        };
+                    }
+
+                    @Override public Binding replicateWith(GraphContext context) {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+
+            @Override public DependencyResponse service(DependencyRequest dependencyRequest, Errors errors) {
+                return () -> provisionStrategy;
+            }
+
+            @Override public ProvisionStrategy force() {
+                return provisionStrategy;
+            }
+
+            @Override public DependencyService replicateWith(GraphContext context) {
+                return createForFalseResource(dependency, provisionStrategy);
+            }
+
+        };
     }
 
 }

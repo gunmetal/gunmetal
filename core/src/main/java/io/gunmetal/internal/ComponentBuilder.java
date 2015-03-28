@@ -17,7 +17,6 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.Inject;
-import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.ConverterProvider;
 import io.gunmetal.spi.InjectionResolver;
@@ -39,12 +38,12 @@ import java.util.Map;
 /**
  * @author rees.byars
  */
-public final class GraphBuilder {
+public final class ComponentBuilder {
 
     private GraphConfig graphConfig;
     private Graph parentGraph;
 
-    public GraphBuilder() {
+    public ComponentBuilder() {
         Map<Scope, ProvisionStrategyDecorator> scopeDecorators = new HashMap<>();
         scopeDecorators.put(Scopes.UNDEFINED, ProvisionStrategyDecorator::none);
         graphConfig = new GraphConfig(
@@ -57,57 +56,58 @@ public final class GraphBuilder {
                 scopeDecorators);
     }
 
-    GraphBuilder(Graph parentGraph, GraphConfig graphConfig) {
+    ComponentBuilder(Graph parentGraph,
+                     GraphConfig graphConfig) {
         this.parentGraph = parentGraph;
         this.graphConfig = new GraphConfig(graphConfig);
     }
 
-    public GraphBuilder requireQualifiers() {
+    public ComponentBuilder requireQualifiers() {
         graphConfig.getConfigurableMetadataResolver().requireQualifiers(true);
         return this;
     }
 
-    public GraphBuilder restrictPluralQualifiers() {
+    public ComponentBuilder restrictPluralQualifiers() {
         graphConfig.getConfigurableMetadataResolver().restrictPluralQualifiers(true);
         return this;
     }
 
-    public GraphBuilder requireInterfaces() {
+    public ComponentBuilder requireInterfaces() {
         graphConfig.getGraphMetadata().setRequireInterfaces(true);
         return this;
     }
 
-    public GraphBuilder requireAcyclic() {
+    public ComponentBuilder requireAcyclic() {
         graphConfig.getGraphMetadata().setRequireAcyclic(true);
         return this;
     }
 
-    public GraphBuilder requireExplicitModuleDependencies() {
+    public ComponentBuilder requireExplicitModuleDependencies() {
         graphConfig.getGraphMetadata().setRequireExplicitModuleDependencies(true);
         return this;
     }
 
-    public GraphBuilder restrictFieldInjection() {
+    public ComponentBuilder restrictFieldInjection() {
         graphConfig.getGraphMetadata().setRestrictFieldInjection(true);
         return this;
     }
 
-    public GraphBuilder restrictSetterInjection() {
+    public ComponentBuilder restrictSetterInjection() {
         graphConfig.getGraphMetadata().setRestrictSetterInjection(true);
         return this;
     }
 
-    public GraphBuilder withQualifierType(Class<? extends Annotation> qualifierType) {
+    public ComponentBuilder withQualifierType(Class<? extends Annotation> qualifierType) {
         graphConfig.getConfigurableMetadataResolver().qualifierType(qualifierType);
         return this;
     }
 
-    public GraphBuilder withEagerType(Class<? extends Annotation> eagerType, boolean indicatesEager) {
+    public ComponentBuilder withEagerType(Class<? extends Annotation> eagerType, boolean indicatesEager) {
         graphConfig.getConfigurableMetadataResolver().eagerType(eagerType, indicatesEager);
         return this;
     }
 
-    public GraphBuilder addScope(Class<? extends Annotation> scopeType,
+    public ComponentBuilder addScope(Class<? extends Annotation> scopeType,
                                  Scope scope,
                                  ProvisionStrategyDecorator scopeDecorator) {
         graphConfig.getConfigurableMetadataResolver().addScope(scopeType, scope);
@@ -115,7 +115,7 @@ public final class GraphBuilder {
         return this;
     }
 
-    public GraphBuilder withJsr330Metadata() {
+    public ComponentBuilder withJsr330Metadata() {
         graphConfig.getConfigurableMetadataResolver()
                 .scopeType(javax.inject.Scope.class)
                 .addScope(javax.inject.Singleton.class, Scopes.SINGLETON)
@@ -127,28 +127,28 @@ public final class GraphBuilder {
                 .withProviderAdapter(new Jsr330ProviderAdapter());
     }
 
-    public GraphBuilder withInjectionResolver(InjectionResolver injectionResolver) {
+    public ComponentBuilder withInjectionResolver(InjectionResolver injectionResolver) {
         graphConfig.setInjectionResolver(injectionResolver);
         return this;
     }
 
-    public GraphBuilder withConstructorResolver(ConstructorResolver constructorResolver) {
+    public ComponentBuilder withConstructorResolver(ConstructorResolver constructorResolver) {
         graphConfig.setConstructorResolver(constructorResolver);
         return this;
     }
 
-    public GraphBuilder withProviderAdapter(ProviderAdapter providerAdapter) {
+    public ComponentBuilder withProviderAdapter(ProviderAdapter providerAdapter) {
         graphConfig.setProviderAdapter(providerAdapter);
         return this;
     }
 
-    public GraphBuilder withConverterProvider(ConverterProvider converterProvider) {
+    public ComponentBuilder withConverterProvider(ConverterProvider converterProvider) {
         graphConfig.setConverterProvider(converterProvider);
         return this;
     }
 
-    public TemplateGraph buildTemplate(Class<?>... modules) {
-        return GraphTemplate.buildTemplate(parentGraph, graphConfig, modules);
+    public <T> T build(Class<T> componentFactoryInterface) {
+        return GraphTemplate.buildTemplate(parentGraph, graphConfig, componentFactoryInterface);
     }
 
 }

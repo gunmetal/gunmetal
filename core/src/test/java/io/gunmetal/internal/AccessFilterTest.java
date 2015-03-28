@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.ObjectGraph;
+import io.gunmetal.Component;
 import io.gunmetal.internal.mocks.VisibilityTestBean;
 import io.gunmetal.internal.mocks.VisibilityTestBean2;
 import org.junit.Test;
@@ -30,7 +30,7 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean.PublicClass.class)
                 .isVisibleTo(VisibilityTestBean.class)
                 .isVisibleTo(AccessFilter.class)
-                .isVisibleTo(ObjectGraph.class);
+                .isVisibleTo(Component.class);
     }
 
     @Test
@@ -43,7 +43,7 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean.PublicClass.class)
                 .isVisibleTo(VisibilityTestBean.class)
                 .isNotVisibleTo(AccessFilter.class)
-                .isNotVisibleTo(ObjectGraph.class);
+                .isNotVisibleTo(Component.class);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean.PublicClass.class)
                 .isVisibleTo(VisibilityTestBean.class)
                 .isVisibleTo(VisibilityTestBean2.class)
-                .isNotVisibleTo(ObjectGraph.class);
+                .isNotVisibleTo(Component.class);
     }
 
     @Test
@@ -63,7 +63,7 @@ public class AccessFilterTest {
         assertProtectedMethodOn(VisibilityTestBean.PublicClass.class)
                 .isVisibleTo(VisibilityTestBean2.getPrivate())
                 .isNotVisibleTo(AccessFilter.class)
-                .isNotVisibleTo(ObjectGraph.class)
+                .isNotVisibleTo(Component.class)
                 .isNotVisibleTo(new VisibilityTestBean() {
                 }.getClass())
                 .isVisibleTo(new VisibilityTestBean.PublicClass() {
@@ -81,7 +81,7 @@ public class AccessFilterTest {
         assertPublicMethodOn(Local.class)
                 .isNotVisibleTo(VisibilityTestBean2.getPrivate())
                 .isNotVisibleTo(AccessFilter.class)
-                .isNotVisibleTo(ObjectGraph.class)
+                .isNotVisibleTo(Component.class)
                 .isNotVisibleTo(getClass());
     }
 
@@ -94,7 +94,7 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean.PublicClass.class)
                 .isVisibleTo(VisibilityTestBean.class)
                 .isVisibleTo(AccessFilter.class)
-                .isVisibleTo(ObjectGraph.class);
+                .isVisibleTo(Component.class);
     }
 
     @Test
@@ -106,7 +106,7 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean.PublicClass.class)
                 .isNotVisibleTo(VisibilityTestBean2.class)
                 .isNotVisibleTo(AccessFilter.class)
-                .isNotVisibleTo(ObjectGraph.class);
+                .isNotVisibleTo(Component.class);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean.PublicClass.class)
                 .isVisibleTo(VisibilityTestBean.class)
                 .isVisibleTo(VisibilityTestBean2.class)
-                .isNotVisibleTo(ObjectGraph.class);
+                .isNotVisibleTo(Component.class);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class AccessFilterTest {
         assertClass(VisibilityTestBean.getProtected())
                 .isVisibleTo(VisibilityTestBean2.getPrivate())
                 .isNotVisibleTo(AccessFilter.class)
-                .isNotVisibleTo(ObjectGraph.class)
+                .isNotVisibleTo(Component.class)
                 .isVisibleTo(new VisibilityTestBean() {
                 }.getClass())
                 .isNotVisibleTo(new VisibilityTestBean.PublicClass() {
@@ -142,7 +142,7 @@ public class AccessFilterTest {
         assertClass(Local.class)
                 .isNotVisibleTo(VisibilityTestBean2.getPrivate())
                 .isNotVisibleTo(AccessFilter.class)
-                .isNotVisibleTo(ObjectGraph.class)
+                .isNotVisibleTo(Component.class)
                 .isNotVisibleTo(getClass());
     }
 
@@ -156,7 +156,7 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean.PublicClass.class)
                 .isVisibleTo(VisibilityTestBean.class)
                 .isNotVisibleTo(AccessFilter.class)
-                .isNotVisibleTo(ObjectGraph.class);
+                .isNotVisibleTo(Component.class);
 
         assertClass(VisibilityTestBean.getPackagePrivatePublic())
                 .isVisibleTo(VisibilityTestBean.getPrivate())
@@ -165,7 +165,7 @@ public class AccessFilterTest {
                 .isVisibleTo(VisibilityTestBean.PublicClass.class)
                 .isVisibleTo(VisibilityTestBean.class)
                 .isVisibleTo(VisibilityTestBean2.class)
-                .isNotVisibleTo(ObjectGraph.class);
+                .isNotVisibleTo(Component.class);
 
         assertClass(VisibilityTestBean.getProtectedPublic())
                 .isVisibleTo(VisibilityTestBean2.getPrivate())

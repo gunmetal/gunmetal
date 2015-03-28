@@ -2,7 +2,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
-import io.gunmetal.ObjectGraph;
+import io.gunmetal.Component;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.ResolutionContext;
 import org.junit.Before;
@@ -23,7 +23,23 @@ public class BindingFactoryImplTest {
     @Inject GraphCache graphCache;
     @Inject GraphErrors graphErrors;
 
-    ObjectGraph graph = ObjectGraph.builder().buildTemplate(BaseTestModule.class).newInstance();
+    @Module(dependsOn = BaseTestModule.class)
+    public interface TestComponent {
+
+        void inject(BindingFactoryImplTest test);
+
+        public interface Factory {
+
+            TestComponent create();
+
+        }
+
+    }
+
+    TestComponent graph = Component
+            .builder()
+            .build(TestComponent.Factory.class)
+            .create();
 
     @Module(provided = false, stateful = true)
     static class EmptyStatefulModule {

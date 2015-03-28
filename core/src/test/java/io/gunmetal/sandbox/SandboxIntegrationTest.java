@@ -16,21 +16,19 @@
 
 package io.gunmetal.sandbox;
 
-import io.gunmetal.Factory;
+import io.gunmetal.Component;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
-import io.gunmetal.ObjectGraph;
 import io.gunmetal.Overrides;
 import io.gunmetal.Param;
 import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
-import io.gunmetal.TemplateGraph;
-import io.gunmetal.internal.GraphBuilder;
+import io.gunmetal.internal.ComponentBuilder;
 import io.gunmetal.sandbox.testmocks.A;
 import io.gunmetal.sandbox.testmocks.AA;
 import io.gunmetal.sandbox.testmocks.F;
@@ -57,6 +55,8 @@ import static org.junit.Assert.assertEquals;
  * @author rees.byars
  */
 public class SandboxIntegrationTest {
+
+
 
     @Retention(RetentionPolicy.RUNTIME)
     @io.gunmetal.Qualifier
@@ -152,7 +152,7 @@ public class SandboxIntegrationTest {
             return System.in;
         }
 
-        @Provides @Singleton @Lazy static List<? extends ProvisionStrategyDecorator> decorators() {
+        @Provides @Singleton @Lazy static List<ProvisionStrategyDecorator> decorators() {
             return Collections.singletonList((resourceMetadata, delegateStrategy, linkers) -> delegateStrategy);
         }
 
@@ -201,15 +201,39 @@ public class SandboxIntegrationTest {
         }
     }
 
+    @Module(dependsOn = TestModule.class)
+    public interface TestComponent {
+
+        void inject(Object o);
+
+        ComponentBuilder plus();
+
+        public interface Factory {
+            TestComponent create(StatefulModule statefulModule);
+        }
+
+    }
+
+    @Module(dependsOn = NewGunmetalBenchMarkModule.class)
+    public interface GComponent {
+
+        void inject(Object o);
+
+        public interface Factory {
+            GComponent create();
+        }
+
+    }
+
     @Test
     public void testBuild() {
 
-        TemplateGraph templateGraph = ObjectGraph.builder()
+        TestComponent.Factory templateGraph = Component.builder()
                 .requireAcyclic()
-                .buildTemplate(TestModule.class);
-        templateGraph.newInstance(new StatefulModule("rees"));
+                .build(TestComponent.Factory.class);
+        templateGraph.create(new StatefulModule("rees"));
 
-        ObjectGraph app = templateGraph.newInstance(new StatefulModule("rees"));
+        TestComponent app = templateGraph.create(new StatefulModule("rees"));
 
         class Dep {
             @Inject @Main SandboxIntegrationTest test;
@@ -229,7 +253,10 @@ public class SandboxIntegrationTest {
         BadDep badDep2 = new BadDep();
         BadDep badDep3 = new BadDep();
         BadDep badDep4 = new BadDep();
-        app.inject(badDep).inject(badDep2).inject(badDep3).inject(badDep4);
+        app.inject(badDep);
+        app.inject(badDep2);
+        app.inject(badDep3);
+        app.inject(badDep4);
 
         assert badDep.circ != badDep4.circ;
 
@@ -245,15 +272,15 @@ public class SandboxIntegrationTest {
 
         Dep2 dep2 = new Dep2();
 
-        app = ObjectGraph
+        GComponent gApp = Component
                 .builder()
-                .buildTemplate(NewGunmetalBenchMarkModule.class)
-                .newInstance();
+                .build(GComponent.Factory.class)
+                .create();
 
-        app.inject(dep2);
+        gApp.inject(dep2);
         A a = dep2.a;
 
-        app.inject(dep2);
+        gApp.inject(dep2);
         assert a != dep2.a;
 
         class InjectTest {
@@ -268,17 +295,26 @@ public class SandboxIntegrationTest {
 
         InjectTest injectTest = new InjectTest();
 
-        app.inject(injectTest);
+        gApp.inject(injectTest);
 
-        app.inject(new InjectTest2());
+        gApp.inject(new InjectTest2());
 
         assert injectTest.f != null;
 
     }
 
+    @Module(dependsOn = {TestModule.class, M.class})
+    public interface BadComponent {
+
+        public interface Factory {
+            BadComponent create();
+        }
+
+    }
+
     @Test(expected = RuntimeException.class)
     public void testBlackList() {
-        new GraphBuilder().buildTemplate(TestModule.class, M.class);
+        new ComponentBuilder().build(BadComponent.Factory.class);
     }
 
     @Module(subsumes = MyLibrary.class)
@@ -318,6 +354,17 @@ public class SandboxIntegrationTest {
     interface Cheese {
     }
 
+    @Module(dependsOn = PlusModule.class)
+    public interface PlusComponent {
+
+        void inject(Object o);
+
+        public interface Factory {
+            PlusComponent create();
+        }
+
+    }
+
     @Test
     public void testPlus() {
 
@@ -328,12 +375,12 @@ public class SandboxIntegrationTest {
 
         Dep dep = new Dep();
 
-        ObjectGraph parent = ObjectGraph.builder()
-                .buildTemplate(TestModule.class)
-                .newInstance(new StatefulModule("plus"));
+        TestComponent parent = Component.builder()
+                .build(TestComponent.Factory.class)
+                .create(new StatefulModule("plus"));
 
-        TemplateGraph childTemplate = parent.plus().buildTemplate(PlusModule.class);
-        ObjectGraph child = childTemplate.newInstance();
+        PlusComponent.Factory childTemplate = parent.plus().build(PlusComponent.Factory.class);
+        PlusComponent child = childTemplate.create();
 
         child.inject(dep);
         PlusModule p = dep.plusModule;
@@ -362,7 +409,7 @@ public class SandboxIntegrationTest {
 
         assert injectTest.f != null;
 
-        ObjectGraph childCopy = childTemplate.newInstance();
+        PlusComponent childCopy = childTemplate.create();
         Dep dep2 = new Dep();
         child.inject(dep);
         childCopy.inject(dep2);
@@ -387,7 +434,7 @@ public class SandboxIntegrationTest {
     }
 
     io.gunmetal.Provider<N> newGunmetalProvider;
-    static final ObjectGraph APPLICATION_CONTAINER = ObjectGraph.builder().buildTemplate(NewGunmetalBenchMarkModule.class).newInstance();
+    static final GComponent APPLICATION_CONTAINER = Component.builder().build(GComponent.Factory.class).create();
 
     static class AaHolder {
         @Inject AA aa;
@@ -411,12 +458,22 @@ public class SandboxIntegrationTest {
 
     }
 
+    @Module(dependsOn = ConversionModule.class)
+    public interface ConversionComponent {
+
+        void inject(Object o);
+
+        public interface Factory {
+            ConversionComponent create();
+        }
+
+    }
 
     @Test
     public void testConversion() {
 
-        ObjectGraph graph =
-                ObjectGraph.builder()
+        ConversionComponent graph =
+                Component.builder()
                         .withConverterProvider(to -> {
                             if (to.raw().equals(Long.class) || to.raw().equals(long.class)) {
                                 return Collections.singletonList(new Converter() {
@@ -429,7 +486,7 @@ public class SandboxIntegrationTest {
                                 });
                             }
                             return Collections.emptyList();
-                        }).buildTemplate(ConversionModule.class).newInstance();
+                        }).build(ConversionComponent.Factory.class).create();
 
         ConversionModule c = new ConversionModule();
         graph.inject(c);
@@ -438,28 +495,37 @@ public class SandboxIntegrationTest {
     }
 
     @Module
-    static class MyModule {
+    public static class MyModule {
         String name;
-        @Provides static MyModule myModule(@Param String name) {
+        @Provides static MyModule myModule(
+                @Param String name,
+                @MultiBind Provider<List<ProvisionStrategyDecorator>> provider,
+                @MultiBind Ref<List<ProvisionStrategyDecorator>> ref) {
             MyModule m = new MyModule();
             m.name = name;
             return m;
         }
     }
 
-    @Factory
-    static interface MyComponent {
+    @Module(dependsOn = MyModule.class)
+    public interface MyComponent {
+
         MyModule getMyModule(@Param String name);
+
+        public interface Factory {
+            MyComponent create();
+        }
     }
 
     @Test
     public void testComponent() {
-        MyComponent component = ObjectGraph
+        MyComponent component = Component
                 .builder()
-                .buildTemplate(MyModule.class)
-                .newInstance()
-                .create(MyComponent.class);
+                .build(MyComponent.Factory.class)
+                .create();
         assertEquals("sweet", component.getMyModule("sweet").name);
     }
+
+
 
 }

@@ -1,11 +1,11 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.ObjectGraph;
-import io.gunmetal.TemplateGraph;
 import io.gunmetal.spi.InternalProvider;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.ResolutionContext;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,8 +17,9 @@ import java.util.Set;
 /**
  * @author rees.byars
  */
-class GraphTemplate implements TemplateGraph {
+class GraphTemplate {
 
+    private final Class<?> componentClass;
     private final GraphConfig graphConfig;
     private final GraphInjectorProvider graphInjectorProvider;
     private final ProvisionStrategyDecorator strategyDecorator;
@@ -27,12 +28,14 @@ class GraphTemplate implements TemplateGraph {
     private final Set<Class<?>> loadedModules;
 
     private GraphTemplate(
+            Class<?> componentClass,
             GraphConfig graphConfig,
             InjectorFactory injectorFactory,
             ProvisionStrategyDecorator strategyDecorator,
             DependencyServiceFactory dependencyServiceFactory,
             GraphCache graphCache,
             Set<Class<?>> loadedModules) {
+        this.componentClass = componentClass;
         this.graphConfig = graphConfig;
         graphInjectorProvider = new GraphInjectorProvider(
                 injectorFactory, graphConfig.getConfigurableMetadataResolver());
@@ -42,7 +45,24 @@ class GraphTemplate implements TemplateGraph {
         this.loadedModules = loadedModules;
     }
 
-    static TemplateGraph buildTemplate(Graph parentGraph, GraphConfig graphConfig, Class<?>... modules) {
+    static <T> T buildTemplate(Graph parentGraph,
+                               GraphConfig graphConfig,
+                               Class<T> componentFactoryInterface) {
+
+        if (!componentFactoryInterface.isInterface()) {
+            throw new IllegalArgumentException("no bueno"); // TODO message
+        }
+
+        Method[] factoryMethods = componentFactoryInterface.getDeclaredMethods();
+        if (factoryMethods.length != 1 || factoryMethods[0].getReturnType() == void.class) {
+            throw new IllegalArgumentException("too many methods"); // TODO message
+        }
+        Method componentMethod = factoryMethods[0];
+        Class<?> componentClass = componentMethod.getReturnType();
+
+        Set<Class<?>> modules = new HashSet<>();
+        modules.add(componentClass);
+        Collections.addAll(modules, componentMethod.getParameterTypes());
 
         GunmetalComponent gunmetalComponent = new GunmetalComponent();
         if (parentGraph != null) {
@@ -123,16 +143,25 @@ class GraphTemplate implements TemplateGraph {
         graphLinker.linkGraph(internalProvider, ResolutionContext.create());
         errors.throwIfNotEmpty();
 
-        return new GraphTemplate(
+        final GraphTemplate template = new GraphTemplate(
+                componentClass,
                 graphConfig,
                 injectorFactory,
                 strategyDecorator,
                 dependencyServiceFactory,
                 graphCache,
                 loadedModules);
+
+        return componentFactoryInterface.cast(Proxy.newProxyInstance(
+                componentFactoryInterface.getClassLoader(),
+                new Class<?>[]{componentFactoryInterface},
+                (proxy, method, args) -> {
+                    // TODO toString, hashCode etc
+                    return template.newInstance(args == null ? new Object[]{} : args);
+                }));
     }
 
-    @Override public ObjectGraph newInstance(Object... statefulModules) {
+    Object newInstance(Object... statefulModules) {
 
         Map<Class<?>, Object> statefulModulesMap = new HashMap<>();
 
@@ -165,7 +194,7 @@ class GraphTemplate implements TemplateGraph {
         graphLinker.linkAll(internalProvider, ResolutionContext.create());
         errors.throwIfNotEmpty();
 
-        return new Graph(
+        Graph graph = new Graph(
                 graphConfig,
                 graphLinker,
                 internalProvider,
@@ -173,6 +202,8 @@ class GraphTemplate implements TemplateGraph {
                 graphContext,
                 injectorProvider,
                 loadedModules);
+
+        return graph.create(componentClass);
 
     }
 

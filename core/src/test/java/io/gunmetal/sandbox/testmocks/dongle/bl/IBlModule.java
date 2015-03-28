@@ -38,7 +38,8 @@ public interface IBlModule {
         return new Dongler();
     }
 
-    @Provides static DonglerFactory donglerFactory(@MultiBind @Bl Provider<List<Dongler>> donglers) {
+    @Provides static DonglerFactory donglerFactory(
+            @MultiBind @Bl Provider<List<Dongler>> donglers) {
         List<Dongler> donglers1 = donglers.get();
         return name -> new Dongler(name, donglers1);
     }

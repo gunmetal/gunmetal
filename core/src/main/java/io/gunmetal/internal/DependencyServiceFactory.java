@@ -43,4 +43,7 @@ interface DependencyServiceFactory {
             ProvisionStrategy referenceStrategy,
             ReferenceStrategyFactory referenceStrategyFactory);
 
+    DependencyService createForFalseResource(
+            Dependency dependency, ProvisionStrategy provisionStrategy);
+
 }
