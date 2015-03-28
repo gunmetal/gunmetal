@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ResolutionContext;
 
 /**
@@ -24,6 +24,6 @@ import io.gunmetal.spi.ResolutionContext;
  */
 public interface Injector extends Dependent, Replicable<Injector> {
 
-    Object inject(Object target, InternalProvider internalProvider, ResolutionContext resolutionContext);
+    Object inject(Object target, DependencySupplier dependencySupplier, ResolutionContext resolutionContext);
 
 }

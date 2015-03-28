@@ -29,7 +29,7 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
     }
 
     @Override public List<DependencyService> createForModule(
-            Class<?> module, GraphContext context, Set<Class<?>> loadedModules) {
+            Class<?> module, ComponentContext context, Set<Class<?>> loadedModules) {
         return bindingFactory.createBindingsForModule(module, context, loadedModules)
                 .stream()
                 .map(binding -> new DependencyServiceImpl(
@@ -39,7 +39,7 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
                 .collect(Collectors.toList());
     }
 
-    @Override public DependencyService createJit(DependencyRequest dependencyRequest, GraphContext context) {
+    @Override public DependencyService createJit(DependencyRequest dependencyRequest, ComponentContext context) {
         Binding binding = bindingFactory.createJitBindingForRequest(dependencyRequest, context);
         if (binding == null) {
             return null;
@@ -50,7 +50,7 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
                         binding.resource(), context));
     }
 
-    @Override public List<DependencyService> createJitFactoryRequest(DependencyRequest dependencyRequest, GraphContext context) {
+    @Override public List<DependencyService> createJitFactoryRequest(DependencyRequest dependencyRequest, ComponentContext context) {
         return bindingFactory.createJitFactoryBindingsForRequest(dependencyRequest, context)
                 .stream()
                 .map(binding -> new DependencyServiceImpl(
@@ -116,13 +116,13 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
                                 return Collections.emptyList();
                             }
 
-                            @Override public Resource replicateWith(GraphContext context) {
+                            @Override public Resource replicateWith(ComponentContext context) {
                                 throw new UnsupportedOperationException();
                             }
                         };
                     }
 
-                    @Override public Binding replicateWith(GraphContext context) {
+                    @Override public Binding replicateWith(ComponentContext context) {
                         throw new UnsupportedOperationException();
                     }
                 };
@@ -136,7 +136,7 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
                 return provisionStrategy;
             }
 
-            @Override public DependencyService replicateWith(GraphContext context) {
+            @Override public DependencyService replicateWith(ComponentContext context) {
                 return createForFalseResource(dependency, provisionStrategy);
             }
 

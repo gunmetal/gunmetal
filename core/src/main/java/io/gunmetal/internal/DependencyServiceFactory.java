@@ -15,16 +15,16 @@ interface DependencyServiceFactory {
 
     List<DependencyService> createForModule(
             Class<?> module,
-            GraphContext context,
+            ComponentContext context,
             Set<Class<?>> loadedModules);
 
     DependencyService createJit(
             DependencyRequest dependencyRequest,
-            GraphContext context);
+            ComponentContext context);
 
     List<DependencyService> createJitFactoryRequest(
             DependencyRequest dependencyRequest,
-            GraphContext context);
+            ComponentContext context);
 
     CollectionDependencyService createForCollection(
             Dependency collectionDependency,

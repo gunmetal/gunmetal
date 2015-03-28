@@ -23,7 +23,7 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
     }
 
     @Override public RequestVisitor resourceRequestVisitor(Resource resource,
-                                                           GraphContext context) {
+                                                           ComponentContext context) {
         ResourceMetadata<?> resourceMetadata = resource.metadata();
         ModuleMetadata moduleMetadata = resourceMetadata.moduleMetadata();
         Class<?> module = moduleMetadata.moduleClass();
@@ -54,7 +54,7 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
         };
     }
 
-    private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {
+    private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation, ComponentContext context) {
 
         Class<? extends BlackList> blackListConfigClass =
                 moduleAnnotation.notAccessibleFrom();
@@ -98,7 +98,7 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
         };
     }
 
-    private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation, GraphContext context) {
+    private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation, ComponentContext context) {
 
         Class<? extends WhiteList> whiteListConfigClass =
                 moduleAnnotation.onlyAccessibleFrom();

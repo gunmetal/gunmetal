@@ -19,7 +19,7 @@ package io.gunmetal.spi;
 /**
  * @author rees.byars
  */
-public interface InternalProvider {
+public interface DependencySupplier {
 
     ProvisionStrategy getProvisionStrategy(DependencyRequest dependencyRequest);
 

@@ -1,7 +1,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.Ref;
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ProvisionStrategy;
 
 /**
@@ -10,7 +10,7 @@ import io.gunmetal.spi.ProvisionStrategy;
 class RefStrategyFactory implements ReferenceStrategyFactory {
 
     @Override public ProvisionStrategy create(ProvisionStrategy provisionStrategy,
-                                              InternalProvider internalProvider) {
+                                              DependencySupplier dependencySupplier) {
         return createRefStrategy(provisionStrategy);
     }
 

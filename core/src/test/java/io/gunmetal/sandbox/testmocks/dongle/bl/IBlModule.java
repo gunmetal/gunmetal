@@ -4,7 +4,6 @@ import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
-import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
@@ -14,6 +13,7 @@ import io.gunmetal.sandbox.testmocks.dongle.layers.Bl;
 import io.gunmetal.sandbox.testmocks.dongle.layers.Dal;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * @author rees.byars
@@ -39,7 +39,7 @@ public interface IBlModule {
     }
 
     @Provides static DonglerFactory donglerFactory(
-            @MultiBind @Bl Provider<List<Dongler>> donglers) {
+            @MultiBind @Bl Supplier<List<Dongler>> donglers) {
         List<Dongler> donglers1 = donglers.get();
         return name -> new Dongler(name, donglers1);
     }

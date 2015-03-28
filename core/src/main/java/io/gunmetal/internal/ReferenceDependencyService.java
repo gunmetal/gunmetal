@@ -3,7 +3,7 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Errors;
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ResolutionContext;
@@ -38,7 +38,7 @@ class ReferenceDependencyService implements DependencyService {
                 Collections.singletonList(referenceRequest.dependency()));
     }
 
-    @Override public DependencyService replicateWith(GraphContext context) {
+    @Override public DependencyService replicateWith(ComponentContext context) {
         return new ReferenceDependencyService(
                 referenceRequest,
                 provisionService.replicateWith(context),
@@ -72,8 +72,8 @@ class ReferenceDependencyService implements DependencyService {
             });
         }
 
-        @Override public Object get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
-            return delegateStrategy.get(internalProvider, resolutionContext);
+        @Override public Object get(DependencySupplier dependencySupplier, ResolutionContext resolutionContext) {
+            return delegateStrategy.get(dependencySupplier, resolutionContext);
         }
 
     }

@@ -3,7 +3,7 @@ package io.gunmetal.internal;
 /**
  * @author rees.byars
  */
-final class MutableGraphMetadata {
+final class ComponentSettings {
 
     private boolean requireInterfaces = false;
     private boolean requireAcyclic = false;
@@ -11,8 +11,8 @@ final class MutableGraphMetadata {
     private boolean restrictFieldInjection = false;
     private boolean restrictSetterInjection = false;
 
-    MutableGraphMetadata replicate() {
-        MutableGraphMetadata copy = new MutableGraphMetadata();
+    ComponentSettings replicate() {
+        ComponentSettings copy = new ComponentSettings();
         copy.requireInterfaces = requireInterfaces;
         copy.requireAcyclic = requireAcyclic;
         copy.requireExplicitModuleDependencies = requireExplicitModuleDependencies;

@@ -33,7 +33,7 @@ class ConversionDependencyService implements DependencyService {
                 Collections.singletonList(toDependency));
     }
 
-    @Override public DependencyService replicateWith(GraphContext context) {
+    @Override public DependencyService replicateWith(ComponentContext context) {
         return new ConversionDependencyService(
                 fromService.replicateWith(context),
                 converter,
@@ -51,8 +51,8 @@ class ConversionDependencyService implements DependencyService {
     }
 
     @Override public ProvisionStrategy force() {
-        return (internalProvider, resolutionContext) ->
+        return (supplier, resolutionContext) ->
                 converter.convert(
-                        fromService.force().get(internalProvider, resolutionContext));
+                        fromService.force().get(supplier, resolutionContext));
     }
 }

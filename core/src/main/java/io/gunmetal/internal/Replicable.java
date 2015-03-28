@@ -5,6 +5,6 @@ package io.gunmetal.internal;
  */
 interface Replicable<T> {
 
-    T replicateWith(GraphContext context);
+    T replicateWith(ComponentContext context);
 
 }

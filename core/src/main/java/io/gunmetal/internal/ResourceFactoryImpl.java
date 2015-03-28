@@ -17,7 +17,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.Dependency;
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ResolutionContext;
 import io.gunmetal.spi.ResourceMetadata;
@@ -41,7 +41,7 @@ class ResourceFactoryImpl implements ResourceFactory {
     }
 
     @Override public Resource withClassProvider(ResourceMetadata<Class<?>> resourceMetadata,
-                                                GraphContext context) {
+                                                ComponentContext context) {
         return resource(
                 resourceMetadata,
                 context,
@@ -50,7 +50,7 @@ class ResourceFactoryImpl implements ResourceFactory {
     }
 
     @Override public Resource withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata,
-                                                 GraphContext context) {
+                                                 ComponentContext context) {
         return resource(
                 resourceMetadata,
                 context,
@@ -59,7 +59,7 @@ class ResourceFactoryImpl implements ResourceFactory {
     }
 
     @Override public Resource withMethodProvider(
-            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, GraphContext context) {
+            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, ComponentContext context) {
         return resource(
                 resourceMetadata,
                 context,
@@ -68,7 +68,7 @@ class ResourceFactoryImpl implements ResourceFactory {
     }
 
     @Override public Resource withFieldProvider(
-            ResourceMetadata<Field> resourceMetadata, Dependency moduleDependency, GraphContext context) {
+            ResourceMetadata<Field> resourceMetadata, Dependency moduleDependency, ComponentContext context) {
         return resource(
                 resourceMetadata,
                 context,
@@ -78,7 +78,7 @@ class ResourceFactoryImpl implements ResourceFactory {
 
     private Resource resource(
             final ResourceMetadata<?> metadata,
-            GraphContext context,
+            ComponentContext context,
             final Instantiator instantiator,
             final Injector injector) {
         ProvisionStrategy provisionStrategy = context.strategyDecorator().decorate(
@@ -94,7 +94,7 @@ class ResourceFactoryImpl implements ResourceFactory {
                 return provisionStrategy;
             }
 
-            @Override public Resource replicateWith(GraphContext context) {
+            @Override public Resource replicateWith(ComponentContext context) {
                 return resource(
                         metadata,
                         context,
@@ -120,16 +120,16 @@ class ResourceFactoryImpl implements ResourceFactory {
             return cyclicResolutionProvisionStrategy(resourceMetadata, instantiator, injector);
         }
 
-        return (internalProvider, resolutionContext) -> {
+        return (supplier, resolutionContext) -> {
             ResolutionContext.ProvisionContext strategyContext =
                     resolutionContext.provisionContext(resourceMetadata);
             if (strategyContext.state != ResolutionContext.States.NEW) {
                 throw new CircularReferenceException(resourceMetadata);
             }
             strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
-            strategyContext.provision = instantiator.newInstance(internalProvider, resolutionContext);
+            strategyContext.provision = instantiator.newInstance(supplier, resolutionContext);
             strategyContext.state = ResolutionContext.States.PRE_INJECTION;
-            injector.inject(strategyContext.provision, internalProvider, resolutionContext);
+            injector.inject(strategyContext.provision, supplier, resolutionContext);
             strategyContext.state = ResolutionContext.States.NEW;
             return strategyContext.provision;
         };
@@ -140,7 +140,7 @@ class ResourceFactoryImpl implements ResourceFactory {
                                                                 final Instantiator instantiator,
                                                                 final Injector injector) {
         return new ProvisionStrategy() {
-            @Override public Object get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+            @Override public Object get(DependencySupplier dependencySupplier, ResolutionContext resolutionContext) {
                 ResolutionContext.ProvisionContext strategyContext =
                         resolutionContext.provisionContext(resourceMetadata);
                 if (strategyContext.state != ResolutionContext.States.NEW) {
@@ -151,9 +151,9 @@ class ResourceFactoryImpl implements ResourceFactory {
                 }
                 strategyContext.state = ResolutionContext.States.PRE_INSTANTIATION;
                 try {
-                    strategyContext.provision = instantiator.newInstance(internalProvider, resolutionContext);
+                    strategyContext.provision = instantiator.newInstance(dependencySupplier, resolutionContext);
                     strategyContext.state = ResolutionContext.States.PRE_INJECTION;
-                    injector.inject(strategyContext.provision, internalProvider, resolutionContext);
+                    injector.inject(strategyContext.provision, dependencySupplier, resolutionContext);
                     strategyContext.state = ResolutionContext.States.NEW;
                     return strategyContext.provision;
                 } catch (CircularReferenceException e) {
@@ -166,7 +166,7 @@ class ResourceFactoryImpl implements ResourceFactory {
                         }
                         if (!strategyContext.attemptedCircularResolution) {
                             strategyContext.attemptedCircularResolution = true;
-                            e.getReverseStrategy().get(internalProvider, resolutionContext);
+                            e.getReverseStrategy().get(dependencySupplier, resolutionContext);
                             return strategyContext.provision;
                         }
                     } else if (e.getReverseStrategy() == null) {

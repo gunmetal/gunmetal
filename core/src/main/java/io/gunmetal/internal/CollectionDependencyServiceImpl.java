@@ -2,7 +2,6 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Module;
 import io.gunmetal.Overrides;
-import io.gunmetal.Provider;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Errors;
@@ -15,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 class CollectionDependencyServiceImpl implements CollectionDependencyService {
 
     private final List<DependencyService> elementServices = new ArrayList<>();
-    private final Provider<Collection<Object>> collectionProvider;
+    private final Supplier<Collection<Object>> collectionSupplier;
     private final Dependency collectionDependency;
     private final Dependency collectionElementDependency;
     private final CollectionBinding binding = new CollectionBinding();
@@ -31,10 +31,10 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
     private final ResourceMetadata<Class<?>> resourceMetadata;
 
     CollectionDependencyServiceImpl(
-            Provider<Collection<Object>> collectionProvider,
+            Supplier<Collection<Object>> collectionSupplier,
             Dependency collectionDependency,
             Dependency collectionElementDependency) {
-        this.collectionProvider = collectionProvider;
+        this.collectionSupplier = collectionSupplier;
         this.collectionDependency = collectionDependency;
         this.collectionElementDependency = collectionElementDependency;
         resourceMetadata = new ResourceMetadata<>(
@@ -51,14 +51,13 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
                         false,
                         false,
                         true,
-                        false,
                         false);
     }
 
-    @Override public DependencyService replicateWith(GraphContext context) {
+    @Override public DependencyService replicateWith(ComponentContext context) {
         CollectionDependencyServiceImpl newService =
                 new CollectionDependencyServiceImpl(
-                        collectionProvider,
+                        collectionSupplier,
                         collectionDependency,
                         collectionElementDependency);
         newService.elementServices
@@ -95,7 +94,7 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
 
     private class CollectionBinding implements Binding {
 
-        @Override public Binding replicateWith(GraphContext context) {
+        @Override public Binding replicateWith(ComponentContext context) {
             throw new UnsupportedOperationException(); // TODO message
         }
 
@@ -111,7 +110,7 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
 
     private class CollectionResource implements Resource {
 
-        @Override public Resource replicateWith(GraphContext context) {
+        @Override public Resource replicateWith(ComponentContext context) {
             throw new UnsupportedOperationException(); // TODO message
         }
 
@@ -120,11 +119,11 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
         }
 
         @Override public ProvisionStrategy provisionStrategy() {
-            return (internalProvider, resolutionContext) -> {
-                Collection<Object> collection = collectionProvider.get();
+            return (supplier, resolutionContext) -> {
+                Collection<Object> collection = collectionSupplier.get();
                 for (DependencyService elementService : elementServices) {
                     ProvisionStrategy provisionStrategy = elementService.force();
-                    collection.add(provisionStrategy.get(internalProvider, resolutionContext));
+                    collection.add(provisionStrategy.get(supplier, resolutionContext));
                 }
                 return collection;
             };

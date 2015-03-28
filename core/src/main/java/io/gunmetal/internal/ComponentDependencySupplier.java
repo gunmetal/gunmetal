@@ -2,14 +2,13 @@ package io.gunmetal.internal;
 
 import io.gunmetal.MultiBind;
 import io.gunmetal.Param;
-import io.gunmetal.Provider;
 import io.gunmetal.Ref;
 import io.gunmetal.spi.Converter;
-import io.gunmetal.spi.ConverterProvider;
+import io.gunmetal.spi.ConverterSupplier;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
-import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.ProviderAdapter;
+import io.gunmetal.spi.DependencySupplier;
+import io.gunmetal.spi.SupplierAdapter;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.TypeKey;
 
@@ -18,31 +17,32 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
- * Instances of the provider should not be accessed concurrently.
+ * Instances of the supplier should not be accessed concurrently.
  *
  * @author rees.byars
  */
-class GraphProvider implements InternalProvider {
+class ComponentDependencySupplier implements DependencySupplier {
 
-    private final ProviderAdapter providerAdapter;
+    private final SupplierAdapter supplierAdapter;
     private final DependencyServiceFactory dependencyServiceFactory;
-    private final ConverterProvider converterProvider;
-    private final GraphCache graphCache;
-    private final GraphContext context;
+    private final ConverterSupplier converterSupplier;
+    private final ComponentRepository componentRepository;
+    private final ComponentContext context;
     private final boolean requireInterfaces;
 
-    GraphProvider(ProviderAdapter providerAdapter,
-                  DependencyServiceFactory dependencyServiceFactory,
-                  ConverterProvider converterProvider,
-                  GraphCache graphCache,
-                  GraphContext context,
-                  boolean requireInterfaces) {
-        this.providerAdapter = providerAdapter;
+    ComponentDependencySupplier(SupplierAdapter supplierAdapter,
+                                DependencyServiceFactory dependencyServiceFactory,
+                                ConverterSupplier converterSupplier,
+                                ComponentRepository componentRepository,
+                                ComponentContext context,
+                                boolean requireInterfaces) {
+        this.supplierAdapter = supplierAdapter;
         this.dependencyServiceFactory = dependencyServiceFactory;
-        this.converterProvider = converterProvider;
-        this.graphCache = graphCache;
+        this.converterSupplier = converterSupplier;
+        this.componentRepository = componentRepository;
         this.context = context;
         this.requireInterfaces = requireInterfaces;
     }
@@ -55,7 +55,7 @@ class GraphProvider implements InternalProvider {
         // TODO param check is nasty.  wrap qualifier in DependencyMetadata class and resolve this in resolver?
         // TODO add visitor for param request and decorator for param provision
         if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof Param)) {
-            return (internalProvider, resolutionContext) -> resolutionContext.getParam(dependencyRequest.dependency());
+            return (supplier, resolutionContext) -> resolutionContext.getParam(dependencyRequest.dependency());
         }
 
         // try cached strategy
@@ -67,7 +67,7 @@ class GraphProvider implements InternalProvider {
         // try jit constructor dependencyService strategy
         DependencyService dependencyService = dependencyServiceFactory.createJit(dependencyRequest, context);
         if (dependencyService != null) {
-            graphCache.put(dependencyRequest.dependency(), dependencyService, context.errors());
+            componentRepository.put(dependencyRequest.dependency(), dependencyService, context.errors());
             return dependencyService
                     .service(dependencyRequest, context.errors())
                     .provisionStrategy();
@@ -75,11 +75,11 @@ class GraphProvider implements InternalProvider {
 
         // try conversion strategy
         TypeKey typeKey = dependency.typeKey();
-        for (Converter converter : converterProvider.convertersForType(typeKey)) {
+        for (Converter converter : converterSupplier.convertersForType(typeKey)) {
             for (Class<?> fromType : converter.supportedFromTypes()) {
                 dependencyService = createConversionDependencyService(converter, fromType, dependency);
                 if (dependencyService != null) {
-                    graphCache.put(dependency, dependencyService, context.errors());
+                    componentRepository.put(dependency, dependencyService, context.errors());
                     return dependencyService
                             .service(dependencyRequest, context.errors())
                             .provisionStrategy();
@@ -90,7 +90,7 @@ class GraphProvider implements InternalProvider {
         // try jit local factory method dependencyService
         List<DependencyService> factoryDependencyServicesForRequest =
                 dependencyServiceFactory.createJitFactoryRequest(dependencyRequest, context);
-        graphCache.putAll(factoryDependencyServicesForRequest, context.errors());
+        componentRepository.putAll(factoryDependencyServicesForRequest, context.errors());
         strategy = getCachedProvisionStrategy(dependencyRequest);
         if (strategy != null) {
             return strategy;
@@ -103,7 +103,7 @@ class GraphProvider implements InternalProvider {
 
         // TODO shouldn't need to cast
         return (p, c) -> {
-            ((GraphErrors) context.errors()).throwIfNotEmpty();
+            ((ComponentErrors) context.errors()).throwIfNotEmpty();
             return null;
         };
 
@@ -120,16 +120,17 @@ class GraphProvider implements InternalProvider {
                     dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
-        DependencyService dependencyService = graphCache.get(dependency);
+        DependencyService dependencyService = componentRepository.get(dependency);
         if (dependencyService != null) {
             return dependencyService
                     .service(dependencyRequest, context.errors())
                     .provisionStrategy();
         }
-        if (providerAdapter.isProvider(dependency)) {
-            dependencyService = createReferenceDependencyService(dependencyRequest, () -> new ProviderStrategyFactory(providerAdapter));
+        if (supplierAdapter.isSupplier(dependency)) {
+            dependencyService = createReferenceDependencyService(
+                    dependencyRequest, () -> new SupplierStrategyFactory(supplierAdapter));
             if (dependencyService != null) {
-                graphCache.put(dependency, dependencyService, context.errors());
+                componentRepository.put(dependency, dependencyService, context.errors());
                 return dependencyService
                         .service(dependencyRequest, context.errors())
                         .provisionStrategy();
@@ -137,15 +138,15 @@ class GraphProvider implements InternalProvider {
                 // support empty multi-bind request
                 // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
                 if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
-                    return (internalProvider, resolutionContext) ->
-                            providerAdapter.provider(ArrayList::new);
+                    return (supplier, resolutionContext) ->
+                            supplierAdapter.supplier(ArrayList::new);
                 }
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
             dependencyService = createReferenceDependencyService(dependencyRequest, RefStrategyFactory::new);
             if (dependencyService != null) {
-                graphCache.put(dependency, dependencyService, context.errors());
+                componentRepository.put(dependency, dependencyService, context.errors());
                 return dependencyService
                         .service(dependencyRequest, context.errors())
                         .provisionStrategy();
@@ -153,7 +154,7 @@ class GraphProvider implements InternalProvider {
                 // support empty multi-bind request
                 // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
                 if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
-                    return (internalProvider, resolutionContext) -> (Ref<Object>) ArrayList::new;
+                    return (supplier, resolutionContext) -> (Ref<Object>) ArrayList::new;
                 }
             }
         }
@@ -161,32 +162,32 @@ class GraphProvider implements InternalProvider {
         // support empty multi-bind request
         // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
         if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
-            return (internalProvider, resolutionContext) -> new ArrayList<>();
+            return (supplier, resolutionContext) -> new ArrayList<>();
         }
 
         return null;
     }
 
     private DependencyService createReferenceDependencyService(
-            final DependencyRequest refRequest, Provider<ReferenceStrategyFactory> factoryProvider) {
-        Dependency providerDependency = refRequest.dependency();
-        Type providedType = ((ParameterizedType) providerDependency.typeKey().type()).getActualTypeArguments()[0];
-        final Dependency provisionDependency = Dependency.from(providerDependency.qualifier(), providedType);
-        DependencyService provisionDependencyService = graphCache.get(provisionDependency);
+            final DependencyRequest refRequest, Supplier<ReferenceStrategyFactory> factorySupplier) {
+        Dependency referenceDependency = refRequest.dependency();
+        Type providedType = ((ParameterizedType) referenceDependency.typeKey().type()).getActualTypeArguments()[0];
+        final Dependency provisionDependency = Dependency.from(referenceDependency.qualifier(), providedType);
+        DependencyService provisionDependencyService = componentRepository.get(provisionDependency);
         if (provisionDependencyService == null) {
              return null;
         }
         ProvisionStrategy provisionStrategy = provisionDependencyService.force();
-        ReferenceStrategyFactory strategyFactory = factoryProvider.get();
-        final ProvisionStrategy providerStrategy = strategyFactory.create(provisionStrategy, this);
+        ReferenceStrategyFactory strategyFactory = factorySupplier.get();
+        final ProvisionStrategy referenceStrategy = strategyFactory.create(provisionStrategy, this);
         return dependencyServiceFactory.createForReference(
-                refRequest, provisionDependencyService, provisionDependency, providerStrategy, strategyFactory);
+                refRequest, provisionDependencyService, provisionDependency, referenceStrategy, strategyFactory);
     }
 
     private DependencyService createConversionDependencyService(
             Converter converter, Class<?> fromType, Dependency to) {
         Dependency from = Dependency.from(to.qualifier(), fromType);
-        DependencyService fromDependencyService = graphCache.get(from);
+        DependencyService fromDependencyService = componentRepository.get(from);
         if (fromDependencyService != null) {
             return dependencyServiceFactory.createForConversion(fromDependencyService, converter, from, to);
         }

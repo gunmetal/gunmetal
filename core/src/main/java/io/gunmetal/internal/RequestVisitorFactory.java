@@ -7,6 +7,6 @@ import io.gunmetal.spi.RequestVisitor;
  */
 interface RequestVisitorFactory {
 
-    RequestVisitor resourceRequestVisitor(Resource resource, GraphContext context);
+    RequestVisitor resourceRequestVisitor(Resource resource, ComponentContext context);
 
 }

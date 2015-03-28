@@ -18,16 +18,16 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author rees.byars
  */
-class GraphCache implements Replicable<GraphCache> {
+class ComponentRepository implements Replicable<ComponentRepository> {
 
-    private final GraphCache parentCache;
+    private final ComponentRepository parentCache;
     private final Map<Dependency, DependencyService> dependencyServices = new ConcurrentHashMap<>(64, .75f, 2);
     private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
     private final Queue<DependencyService> myDependencyServices = new LinkedList<>();
     private final DependencyServiceFactory dependencyServiceFactory;
 
-    GraphCache(DependencyServiceFactory dependencyServiceFactory, 
-               GraphCache parentCache) {
+    ComponentRepository(DependencyServiceFactory dependencyServiceFactory,
+                        ComponentRepository parentCache) {
         this.dependencyServiceFactory = dependencyServiceFactory;
         this.parentCache = parentCache;
         if (parentCache != null) {
@@ -133,8 +133,8 @@ class GraphCache implements Replicable<GraphCache> {
         collectionDependencyService.add(dependencyService);
     }
 
-    @Override public GraphCache replicateWith(GraphContext context) {
-        GraphCache newCache = new GraphCache(dependencyServiceFactory, parentCache);
+    @Override public ComponentRepository replicateWith(ComponentContext context) {
+        ComponentRepository newCache = new ComponentRepository(dependencyServiceFactory, parentCache);
         for (DependencyService dependencyService : myDependencyServices) {
             newCache.putAll(dependencyService.replicateWith(context), context.errors());
         }

@@ -18,16 +18,16 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Inject;
 import io.gunmetal.spi.ConstructorResolver;
-import io.gunmetal.spi.ConverterProvider;
+import io.gunmetal.spi.ConverterSupplier;
 import io.gunmetal.spi.InjectionResolver;
-import io.gunmetal.spi.ProviderAdapter;
+import io.gunmetal.spi.SupplierAdapter;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Scope;
 import io.gunmetal.spi.Scopes;
 import io.gunmetal.spi.impl.AnnotationInjectionResolver;
 import io.gunmetal.spi.impl.ExactlyOneConstructorResolver;
-import io.gunmetal.spi.impl.GunmetalProviderAdapter;
-import io.gunmetal.spi.impl.Jsr330ProviderAdapter;
+import io.gunmetal.spi.impl.DefaultSupplierAdapter;
+import io.gunmetal.spi.impl.Jsr330SupplierAdapter;
 import io.gunmetal.spi.impl.LeastGreedyConstructorResolver;
 
 import java.lang.annotation.Annotation;
@@ -40,115 +40,115 @@ import java.util.Map;
  */
 public final class ComponentBuilder {
 
-    private GraphConfig graphConfig;
-    private Graph parentGraph;
+    private ComponentConfig componentConfig;
+    private ComponentGraph parentComponentGraph;
 
     public ComponentBuilder() {
         Map<Scope, ProvisionStrategyDecorator> scopeDecorators = new HashMap<>();
         scopeDecorators.put(Scopes.UNDEFINED, ProvisionStrategyDecorator::none);
-        graphConfig = new GraphConfig(
-                new MutableGraphMetadata(),
+        componentConfig = new ComponentConfig(
+                new ComponentSettings(),
                 new AnnotationInjectionResolver(Inject.class),
                 new ConfigurableMetadataResolver(),
                 new LeastGreedyConstructorResolver(),
-                new GunmetalProviderAdapter(),
+                new DefaultSupplierAdapter(),
                 to -> Collections.emptyList(),
                 scopeDecorators);
     }
 
-    ComponentBuilder(Graph parentGraph,
-                     GraphConfig graphConfig) {
-        this.parentGraph = parentGraph;
-        this.graphConfig = new GraphConfig(graphConfig);
+    ComponentBuilder(ComponentGraph parentComponentGraph,
+                     ComponentConfig componentConfig) {
+        this.parentComponentGraph = parentComponentGraph;
+        this.componentConfig = new ComponentConfig(componentConfig);
     }
 
     public ComponentBuilder requireQualifiers() {
-        graphConfig.getConfigurableMetadataResolver().requireQualifiers(true);
+        componentConfig.getConfigurableMetadataResolver().requireQualifiers(true);
         return this;
     }
 
     public ComponentBuilder restrictPluralQualifiers() {
-        graphConfig.getConfigurableMetadataResolver().restrictPluralQualifiers(true);
+        componentConfig.getConfigurableMetadataResolver().restrictPluralQualifiers(true);
         return this;
     }
 
     public ComponentBuilder requireInterfaces() {
-        graphConfig.getGraphMetadata().setRequireInterfaces(true);
+        componentConfig.getComponentSettings().setRequireInterfaces(true);
         return this;
     }
 
     public ComponentBuilder requireAcyclic() {
-        graphConfig.getGraphMetadata().setRequireAcyclic(true);
+        componentConfig.getComponentSettings().setRequireAcyclic(true);
         return this;
     }
 
     public ComponentBuilder requireExplicitModuleDependencies() {
-        graphConfig.getGraphMetadata().setRequireExplicitModuleDependencies(true);
+        componentConfig.getComponentSettings().setRequireExplicitModuleDependencies(true);
         return this;
     }
 
     public ComponentBuilder restrictFieldInjection() {
-        graphConfig.getGraphMetadata().setRestrictFieldInjection(true);
+        componentConfig.getComponentSettings().setRestrictFieldInjection(true);
         return this;
     }
 
     public ComponentBuilder restrictSetterInjection() {
-        graphConfig.getGraphMetadata().setRestrictSetterInjection(true);
+        componentConfig.getComponentSettings().setRestrictSetterInjection(true);
         return this;
     }
 
     public ComponentBuilder withQualifierType(Class<? extends Annotation> qualifierType) {
-        graphConfig.getConfigurableMetadataResolver().qualifierType(qualifierType);
+        componentConfig.getConfigurableMetadataResolver().qualifierType(qualifierType);
         return this;
     }
 
     public ComponentBuilder withEagerType(Class<? extends Annotation> eagerType, boolean indicatesEager) {
-        graphConfig.getConfigurableMetadataResolver().eagerType(eagerType, indicatesEager);
+        componentConfig.getConfigurableMetadataResolver().eagerType(eagerType, indicatesEager);
         return this;
     }
 
     public ComponentBuilder addScope(Class<? extends Annotation> scopeType,
                                  Scope scope,
                                  ProvisionStrategyDecorator scopeDecorator) {
-        graphConfig.getConfigurableMetadataResolver().addScope(scopeType, scope);
-        graphConfig.getScopeDecorators().put(scope, scopeDecorator);
+        componentConfig.getConfigurableMetadataResolver().addScope(scopeType, scope);
+        componentConfig.getScopeDecorators().put(scope, scopeDecorator);
         return this;
     }
 
     public ComponentBuilder withJsr330Metadata() {
-        graphConfig.getConfigurableMetadataResolver()
+        componentConfig.getConfigurableMetadataResolver()
                 .scopeType(javax.inject.Scope.class)
                 .addScope(javax.inject.Singleton.class, Scopes.SINGLETON)
                 .addScope(null, Scopes.PROTOTYPE)
                 .qualifierType(javax.inject.Qualifier.class)
                 .restrictPluralQualifiers(true);
         return withInjectionResolver(new AnnotationInjectionResolver(javax.inject.Inject.class))
-                .withConstructorResolver(new ExactlyOneConstructorResolver(graphConfig.getInjectionResolver()))
-                .withProviderAdapter(new Jsr330ProviderAdapter());
+                .withConstructorResolver(new ExactlyOneConstructorResolver(componentConfig.getInjectionResolver()))
+                .withSupplierAdapter(new Jsr330SupplierAdapter());
     }
 
     public ComponentBuilder withInjectionResolver(InjectionResolver injectionResolver) {
-        graphConfig.setInjectionResolver(injectionResolver);
+        componentConfig.setInjectionResolver(injectionResolver);
         return this;
     }
 
     public ComponentBuilder withConstructorResolver(ConstructorResolver constructorResolver) {
-        graphConfig.setConstructorResolver(constructorResolver);
+        componentConfig.setConstructorResolver(constructorResolver);
         return this;
     }
 
-    public ComponentBuilder withProviderAdapter(ProviderAdapter providerAdapter) {
-        graphConfig.setProviderAdapter(providerAdapter);
+    public ComponentBuilder withSupplierAdapter(SupplierAdapter supplierAdapter) {
+        componentConfig.setSupplierAdapter(supplierAdapter);
         return this;
     }
 
-    public ComponentBuilder withConverterProvider(ConverterProvider converterProvider) {
-        graphConfig.setConverterProvider(converterProvider);
+    public ComponentBuilder withConverterSupplier(ConverterSupplier converterSupplier) {
+        componentConfig.setConverterSupplier(converterSupplier);
         return this;
     }
 
     public <T> T build(Class<T> componentFactoryInterface) {
-        return GraphTemplate.buildTemplate(parentGraph, graphConfig, componentFactoryInterface);
+        return ComponentTemplate.buildTemplate(parentComponentGraph, componentConfig, componentFactoryInterface);
     }
 
 }

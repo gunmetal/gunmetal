@@ -1,15 +1,10 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.Component;
-import io.gunmetal.Module;
 import io.gunmetal.Param;
 import io.gunmetal.spi.Dependency;
-import io.gunmetal.spi.DependencyRequest;
-import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
-import io.gunmetal.spi.ResourceMetadata;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -23,36 +18,36 @@ import java.util.Set;
 /**
  * @author rees.byars
  */
-class Graph implements Component {
+final class ComponentGraph {
 
-    private final GraphConfig graphConfig;
-    private final GraphLinker graphLinker;
-    private final InternalProvider internalProvider;
-    private final GraphCache graphCache;
-    private final GraphContext graphContext;
-    private final GraphInjectorProvider graphInjectorProvider;
+    private final ComponentConfig componentConfig;
+    private final ComponentLinker componentLinker;
+    private final DependencySupplier dependencySupplier;
+    private final ComponentRepository componentRepository;
+    private final ComponentContext componentContext;
+    private final ComponentInjectors componentInjectors;
     private final Set<Class<?>> loadedModules;
 
-    Graph(GraphConfig graphConfig,
-          GraphLinker graphLinker,
-          InternalProvider internalProvider,
-          GraphCache graphCache,
-          GraphContext graphContext,
-          GraphInjectorProvider graphInjectorProvider,
-          Set<Class<?>> loadedModules) {
-        this.graphConfig = graphConfig;
-        this.graphLinker = graphLinker;
-        this.internalProvider = internalProvider;
-        this.graphCache = graphCache;
-        this.graphContext = graphContext;
-        this.graphInjectorProvider = graphInjectorProvider;
+    ComponentGraph(ComponentConfig componentConfig,
+                   ComponentLinker componentLinker,
+                   DependencySupplier dependencySupplier,
+                   ComponentRepository componentRepository,
+                   ComponentContext componentContext,
+                   ComponentInjectors componentInjectors,
+                   Set<Class<?>> loadedModules) {
+        this.componentConfig = componentConfig;
+        this.componentLinker = componentLinker;
+        this.dependencySupplier = dependencySupplier;
+        this.componentRepository = componentRepository;
+        this.componentContext = componentContext;
+        this.componentInjectors = componentInjectors;
         this.loadedModules = loadedModules;
     }
 
     void inject(Object injectionTarget) {
-        graphInjectorProvider
-                .getInjector(injectionTarget, internalProvider, graphLinker, graphContext)
-                .inject(injectionTarget, internalProvider, ResolutionContext.create());
+        componentInjectors
+                .getInjector(injectionTarget, dependencySupplier, componentLinker, componentContext)
+                .inject(injectionTarget, dependencySupplier, ResolutionContext.create());
     }
 
     static class ComponentMethodConfig {
@@ -65,12 +60,12 @@ class Graph implements Component {
         }
     }
 
-    <T> T create(Class<T> componentInterface) {
+    <T> T createProxy(Class<T> componentInterface) {
 
         Map<Method, ComponentMethodConfig> configMap = new HashMap<>();
-        Qualifier componentQualifier = graphConfig
+        Qualifier componentQualifier = componentConfig
                 .getConfigurableMetadataResolver()
-                .resolve(componentInterface, graphContext.errors());
+                .resolve(componentInterface, componentContext.errors());
         for (Method method : componentInterface.getDeclaredMethods()) {
             // TODO complete these checks
             if (method.getReturnType() == void.class ||
@@ -103,42 +98,27 @@ class Graph implements Component {
                             }
                         };
                 if (!annotatedElement.isAnnotationPresent(Param.class)) {
-                    // throw new RuntimeException("ain't no @Param"); // TODO
+                    throw new RuntimeException("ain't no @Param"); // TODO
                 }
-                Qualifier paramQualifier = graphConfig
+                Qualifier paramQualifier = componentConfig
                         .getConfigurableMetadataResolver()
                         .resolveDependencyQualifier(
                                 annotatedElement,
                                 componentQualifier,
-                                graphContext.errors()::add);
+                                componentContext.errors()::add);
                 Dependency paramDependency =
                         Dependency.from(paramQualifier, paramType);
                 dependencies[i] = paramDependency;
             }
             Type type = method.getGenericReturnType();
             Dependency dependency = Dependency.from(
-                    graphConfig.getConfigurableMetadataResolver()
-                            .resolve(method, graphContext.errors())
+                    componentConfig.getConfigurableMetadataResolver()
+                            .resolve(method, componentContext.errors())
                             .merge(componentQualifier),
                     type);
-            DependencyService dependencyService = graphCache.get(dependency);
+            DependencyService dependencyService = componentRepository.get(dependency);
             if (dependencyService == null) {
-                Module module = componentInterface.getAnnotation(Module.class);
-                ResourceMetadata<Method> resourceMetadata =
-                        graphConfig.getConfigurableMetadataResolver()
-                                .resolveMetadata(
-                                        method,
-                                        new ModuleMetadata(
-                                                componentInterface,
-                                                componentQualifier,
-                                                module == null ? Module.NONE : module),
-                                        graphContext.errors());
-                internalProvider.getProvisionStrategy(
-                        DependencyRequest.create(resourceMetadata, dependency));
-                dependencyService = graphCache.get(dependency);
                 throw new RuntimeException("not fucking here!"); // TODO
-            } else {
-              // TODO uuuhhhhhmmmm.....
             }
             configMap.put(method, new ComponentMethodConfig(dependencyService, dependencies));
         }
@@ -172,7 +152,7 @@ class Graph implements Component {
                     if (method.getReturnType() == ComponentBuilder.class &&
                             method.getName().equals("plus")) {
                         // TODO validate no params, do this earlier
-                        return new ComponentBuilder(this, graphConfig);
+                        return new ComponentBuilder(this, componentConfig);
                     }
                     ComponentMethodConfig config = configMap.get(method);
                     if (args != null) {
@@ -184,12 +164,12 @@ class Graph implements Component {
                     }
                     return config.dependencyService
                             .force()
-                            .get(internalProvider, resolutionContext);
+                            .get(dependencySupplier, resolutionContext);
                 }));
     }
 
-    GraphCache graphCache() {
-        return graphCache;
+    ComponentRepository graphCache() {
+        return componentRepository;
     }
 
     Set<Class<?>> loadedModules() {

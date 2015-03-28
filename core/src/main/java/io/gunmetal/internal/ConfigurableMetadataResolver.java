@@ -1,6 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.Factory;
 import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
@@ -107,8 +106,7 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
                         resolver.collectionElement,
                         resolver.isModule,
                         resolver.isProvided,
-                        resolver.isProvider,
-                        resolver.factory);
+                        resolver.isProvider);
         validate(resourceMetadata, (error) -> errors.add(resourceMetadata, error));
         return resourceMetadata;
     }
@@ -129,8 +127,7 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
                         resolver.collectionElement,
                         resolver.isModule,
                         resolver.isProvided,
-                        resolver.isProvider,
-                        resolver.factory);
+                        resolver.isProvider);
         validate(resourceMetadata, (error) -> errors.add(resourceMetadata, error));
         return resourceMetadata;
     }
@@ -189,7 +186,6 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
         boolean isModule = false;
         boolean isProvided = false;
         boolean isProvider = false;
-        boolean factory = false;
 
         Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
             this.moduleMetadata = moduleMetadata;
@@ -229,9 +225,7 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
                 isModule = true;
             } else if (annotationType == Provided.class) {
                 isProvided = true;
-            } else if (annotationType == Factory.class) {
-                factory = true;
-            } else {
+            }else {
                 if (annotationType.isAnnotationPresent(scopeType)) {
                     scopeAnnotationType = annotationType;
                 }

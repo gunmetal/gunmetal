@@ -74,7 +74,7 @@ class DependencyServiceImpl implements DependencyService {
         return binding.resource().provisionStrategy();
     }
 
-    @Override public DependencyService replicateWith(GraphContext context) {
+    @Override public DependencyService replicateWith(ComponentContext context) {
         return new DependencyServiceImpl(
                 binding.replicateWith(context),
                 moduleRequestVisitor,

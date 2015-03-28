@@ -54,7 +54,7 @@ class BindingFactoryImpl implements BindingFactory {
     }
 
     @Override public List<Binding> createBindingsForModule(final Class<?> module,
-                                                           GraphContext context,
+                                                           ComponentContext context,
                                                            Set<Class<?>> loadedModules) {
         if (loadedModules.contains(module)) {
             return Collections.emptyList();
@@ -81,7 +81,7 @@ class BindingFactoryImpl implements BindingFactory {
     }
 
     @Override public Binding createJitBindingForRequest(
-            DependencyRequest dependencyRequest, GraphContext context) {
+            DependencyRequest dependencyRequest, ComponentContext context) {
         Dependency dependency = dependencyRequest.dependency();
         TypeKey typeKey = dependency.typeKey();
         if (!isInstantiable(typeKey.raw())) {
@@ -98,7 +98,7 @@ class BindingFactoryImpl implements BindingFactory {
     }
 
     @Override public List<Binding> createJitFactoryBindingsForRequest(
-            DependencyRequest dependencyRequest, GraphContext context) {
+            DependencyRequest dependencyRequest, ComponentContext context) {
         ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // TODO
         final List<Binding> resourceBindings = new ArrayList<>();
         addResourceBindings(
@@ -111,7 +111,7 @@ class BindingFactoryImpl implements BindingFactory {
         return resourceBindings;
     }
 
-    private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation, GraphContext context) {
+    private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation, ComponentContext context) {
         final Qualifier qualifier = qualifierResolver.resolve(module, context.errors());
         return new ModuleMetadata(module, qualifier, moduleAnnotation);
     }
@@ -120,7 +120,7 @@ class BindingFactoryImpl implements BindingFactory {
                                      Class<?> module,
                                      List<Binding> resourceBindings,
                                      ModuleMetadata moduleMetadata,
-                                     GraphContext context,
+                                     ComponentContext context,
                                      Set<Class<?>> loadedModules) {
 
         if (!module.isInterface() && module.getSuperclass() != Object.class && !module.isPrimitive()) {
@@ -192,7 +192,7 @@ class BindingFactoryImpl implements BindingFactory {
 
     private Binding managedModuleResourceBinding(Class<?> module,
                                                  ModuleMetadata moduleMetadata,
-                                                 GraphContext context) {
+                                                 ComponentContext context) {
         Dependency dependency = Dependency.from(moduleMetadata.qualifier(), module);
         Resource resource = resourceFactory.withClassProvider(
                 resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
@@ -203,7 +203,7 @@ class BindingFactoryImpl implements BindingFactory {
 
     private Binding providedModuleResourceBinding(Class<?> module,
                                                   ModuleMetadata moduleMetadata,
-                                                  GraphContext context) {
+                                                  ComponentContext context) {
         Dependency dependency = Dependency.from(moduleMetadata.qualifier(), module);
         ResourceMetadata<Class<?>> resourceMetadata =
                 resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors());

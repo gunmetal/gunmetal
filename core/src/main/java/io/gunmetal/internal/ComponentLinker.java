@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.Linker;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ResolutionContext;
@@ -11,12 +11,12 @@ import java.util.Queue;
 /**
  * @author rees.byars
  */
-class GraphLinker implements Linkers {
+class ComponentLinker implements Linkers {
 
     private final Queue<Linker> postWiringLinkers = new LinkedList<>();
     private final Queue<Linker> eagerLinkers = new LinkedList<>();
 
-    GraphLinker() {
+    ComponentLinker() {
     }
 
     @Override public synchronized void addWiringLinker(Linker linker) {
@@ -27,18 +27,18 @@ class GraphLinker implements Linkers {
         eagerLinkers.add(linker);
     }
 
-    synchronized void linkGraph(InternalProvider internalProvider, ResolutionContext linkingContext) {
+    synchronized void linkGraph(DependencySupplier dependencySupplier, ResolutionContext linkingContext) {
         while (!postWiringLinkers.isEmpty()) {
-            postWiringLinkers.remove().link(internalProvider, linkingContext);
+            postWiringLinkers.remove().link(dependencySupplier, linkingContext);
         }
     }
 
-    synchronized void linkAll(InternalProvider internalProvider, ResolutionContext linkingContext) {
+    synchronized void linkAll(DependencySupplier dependencySupplier, ResolutionContext linkingContext) {
         while (!postWiringLinkers.isEmpty()) {
-            postWiringLinkers.remove().link(internalProvider, linkingContext);
+            postWiringLinkers.remove().link(dependencySupplier, linkingContext);
         }
         while (!eagerLinkers.isEmpty()) {
-            eagerLinkers.remove().link(internalProvider, linkingContext);
+            eagerLinkers.remove().link(dependencySupplier, linkingContext);
         }
     }
 

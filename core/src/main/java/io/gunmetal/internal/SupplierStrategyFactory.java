@@ -1,39 +1,39 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.ProviderAdapter;
+import io.gunmetal.spi.DependencySupplier;
+import io.gunmetal.spi.SupplierAdapter;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ResolutionContext;
 
 /**
  * @author rees.byars
  */
-class ProviderStrategyFactory implements ReferenceStrategyFactory {
+class SupplierStrategyFactory implements ReferenceStrategyFactory {
 
     private static final ThreadLocal<ResolutionContext> contextThreadLocal = new ThreadLocal<>();
-    private final ProviderAdapter providerAdapter;
+    private final SupplierAdapter supplierAdapter;
 
-    ProviderStrategyFactory(ProviderAdapter providerAdapter) {
-        this.providerAdapter = providerAdapter;
+    SupplierStrategyFactory(SupplierAdapter supplierAdapter) {
+        this.supplierAdapter = supplierAdapter;
     }
 
     public ProvisionStrategy create(
             final ProvisionStrategy provisionStrategy,
-            final InternalProvider internalProvider) {
+            final DependencySupplier dependencySupplier) {
 
-        return (p, c) -> providerAdapter.provider(() -> {
+        return (p, c) -> supplierAdapter.supplier(() -> {
 
             ResolutionContext context = contextThreadLocal.get();
 
             if (context != null) {
                 return provisionStrategy.get(
-                        internalProvider, context);
+                        dependencySupplier, context);
             }
 
             try {
                 contextThreadLocal.set(ResolutionContext.create());
                 return provisionStrategy.get(
-                        internalProvider, contextThreadLocal.get());
+                        dependencySupplier, contextThreadLocal.get());
             } finally {
                 contextThreadLocal.remove();
             }

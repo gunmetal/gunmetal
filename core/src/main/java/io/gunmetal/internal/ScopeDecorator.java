@@ -16,7 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
@@ -57,11 +57,11 @@ class ScopeDecorator implements ProvisionStrategyDecorator {
                     if (resourceMetadata.eager()) linkers.addEagerLinker(this::get);
                 }
 
-                @Override public Object get(InternalProvider internalProvider, ResolutionContext resolutionContext) {
+                @Override public Object get(DependencySupplier dependencySupplier, ResolutionContext resolutionContext) {
                     if (singleton == null) {
                         synchronized (this) {
                             if (singleton == null) {
-                                singleton = delegateStrategy.get(internalProvider, resolutionContext);
+                                singleton = delegateStrategy.get(dependencySupplier, resolutionContext);
                             }
                         }
                     }

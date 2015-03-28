@@ -26,7 +26,7 @@ class BindingImpl implements Binding {
         return resource;
     }
 
-    @Override public Binding replicateWith(GraphContext context) {
+    @Override public Binding replicateWith(ComponentContext context) {
         return new BindingImpl(resource.replicateWith(context), targets);
     }
 

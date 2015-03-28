@@ -3,7 +3,7 @@ package io.gunmetal.internal;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
 import io.gunmetal.Component;
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ResolutionContext;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,11 +17,11 @@ import static org.junit.Assert.assertTrue;
 public class BindingFactoryImplTest {
 
     @Inject BindingFactory bindingFactory;
-    @Inject InternalProvider internalProvider;
-    @Inject GraphContext graphContext;
-    @Inject GraphLinker graphLinker;
-    @Inject GraphCache graphCache;
-    @Inject GraphErrors graphErrors;
+    @Inject DependencySupplier dependencySupplier;
+    @Inject ComponentContext componentContext;
+    @Inject ComponentLinker componentLinker;
+    @Inject ComponentRepository componentRepository;
+    @Inject ComponentErrors componentErrors;
 
     @Module(dependsOn = BaseTestModule.class)
     public interface TestComponent {
@@ -58,7 +58,7 @@ public class BindingFactoryImplTest {
         }
 
         List<Binding> bindings =
-                bindingFactory.createBindingsForModule(MyModule.class, graphContext, new HashSet<>());
+                bindingFactory.createBindingsForModule(MyModule.class, componentContext, new HashSet<>());
 
         assertEquals(0, bindings.size());
 
@@ -68,13 +68,13 @@ public class BindingFactoryImplTest {
     public void testCreateBindingsForModule_emptyStatefulModule() {
 
         List<Binding> bindings =
-                bindingFactory.createBindingsForModule(EmptyStatefulModule.class, graphContext, new HashSet<>());
+                bindingFactory.createBindingsForModule(EmptyStatefulModule.class, componentContext, new HashSet<>());
 
         assertEquals(1, bindings.size());
 
         Binding binding = bindings.get(0);
 
-        assertTrue(binding.resource().provisionStrategy().get(internalProvider, ResolutionContext.create()) instanceof EmptyStatefulModule);
+        assertTrue(binding.resource().provisionStrategy().get(dependencySupplier, ResolutionContext.create()) instanceof EmptyStatefulModule);
 
     }
 

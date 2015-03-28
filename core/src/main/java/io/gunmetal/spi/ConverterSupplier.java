@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-public interface ConverterProvider {
+public interface ConverterSupplier {
 
     List<Converter> convertersForType(TypeKey to);
 

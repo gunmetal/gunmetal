@@ -1,9 +1,9 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.ConstructorResolver;
-import io.gunmetal.spi.ConverterProvider;
+import io.gunmetal.spi.ConverterSupplier;
 import io.gunmetal.spi.InjectionResolver;
-import io.gunmetal.spi.ProviderAdapter;
+import io.gunmetal.spi.SupplierAdapter;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Scope;
 
@@ -13,49 +13,49 @@ import java.util.Map;
 /**
  * @author rees.byars
  */
-class GraphConfig {
+class ComponentConfig {
 
-    private MutableGraphMetadata graphMetadata;
+    private ComponentSettings componentSettings;
     private InjectionResolver injectionResolver;
     private ConfigurableMetadataResolver configurableMetadataResolver;
     private ConstructorResolver constructorResolver;
-    private ProviderAdapter providerAdapter;
-    private ConverterProvider converterProvider;
+    private SupplierAdapter supplierAdapter;
+    private ConverterSupplier converterSupplier;
     private Map<Scope, ProvisionStrategyDecorator> scopeDecorators;
 
-    GraphConfig(
-            MutableGraphMetadata graphMetadata,
+    ComponentConfig(
+            ComponentSettings componentSettings,
             InjectionResolver injectionResolver,
             ConfigurableMetadataResolver configurableMetadataResolver,
             ConstructorResolver constructorResolver,
-            ProviderAdapter providerAdapter,
-            ConverterProvider converterProvider,
+            SupplierAdapter supplierAdapter,
+            ConverterSupplier converterSupplier,
             Map<Scope, ProvisionStrategyDecorator> scopeDecorators) {
-        this.graphMetadata = graphMetadata;
+        this.componentSettings = componentSettings;
         this.injectionResolver = injectionResolver;
         this.configurableMetadataResolver = configurableMetadataResolver;
         this.constructorResolver = constructorResolver;
-        this.providerAdapter = providerAdapter;
-        this.converterProvider = converterProvider;
+        this.supplierAdapter = supplierAdapter;
+        this.converterSupplier = converterSupplier;
         this.scopeDecorators = scopeDecorators;
     }
 
-    GraphConfig(GraphConfig graphConfig) {
-        this.graphMetadata = graphConfig.graphMetadata.replicate();
-        this.injectionResolver = graphConfig.injectionResolver;
-        this.configurableMetadataResolver = graphConfig.configurableMetadataResolver.replicate();
-        this.constructorResolver = graphConfig.constructorResolver;
-        this.providerAdapter = graphConfig.providerAdapter;
-        this.converterProvider = graphConfig.converterProvider;
-        this.scopeDecorators = new HashMap<>(graphConfig.scopeDecorators);
+    ComponentConfig(ComponentConfig componentConfig) {
+        this.componentSettings = componentConfig.componentSettings.replicate();
+        this.injectionResolver = componentConfig.injectionResolver;
+        this.configurableMetadataResolver = componentConfig.configurableMetadataResolver.replicate();
+        this.constructorResolver = componentConfig.constructorResolver;
+        this.supplierAdapter = componentConfig.supplierAdapter;
+        this.converterSupplier = componentConfig.converterSupplier;
+        this.scopeDecorators = new HashMap<>(componentConfig.scopeDecorators);
     }
 
-    public MutableGraphMetadata getGraphMetadata() {
-        return graphMetadata;
+    public ComponentSettings getComponentSettings() {
+        return componentSettings;
     }
 
-    public void setGraphMetadata(MutableGraphMetadata graphMetadata) {
-        this.graphMetadata = graphMetadata;
+    public void setComponentSettings(ComponentSettings componentSettings) {
+        this.componentSettings = componentSettings;
     }
 
     public InjectionResolver getInjectionResolver() {
@@ -82,20 +82,20 @@ class GraphConfig {
         this.constructorResolver = constructorResolver;
     }
 
-    public ProviderAdapter getProviderAdapter() {
-        return providerAdapter;
+    public SupplierAdapter getSupplierAdapter() {
+        return supplierAdapter;
     }
 
-    public void setProviderAdapter(ProviderAdapter providerAdapter) {
-        this.providerAdapter = providerAdapter;
+    public void setSupplierAdapter(SupplierAdapter supplierAdapter) {
+        this.supplierAdapter = supplierAdapter;
     }
 
-    public ConverterProvider getConverterProvider() {
-        return converterProvider;
+    public ConverterSupplier getConverterSupplier() {
+        return converterSupplier;
     }
 
-    public void setConverterProvider(ConverterProvider converterProvider) {
-        this.converterProvider = converterProvider;
+    public void setConverterSupplier(ConverterSupplier converterSupplier) {
+        this.converterSupplier = converterSupplier;
     }
 
     public Map<Scope, ProvisionStrategyDecorator> getScopeDecorators() {

@@ -14,7 +14,7 @@ import java.util.List;
 @Overrides(
         allowFieldInjection = true,
         allowImplicitModuleDependency = true)
-final class GunmetalComponent {
+final class ComponentExtensions {
 
     @Inject @MultiBind
     private List<ProvisionStrategyDecorator> strategyDecorators = Collections.emptyList();

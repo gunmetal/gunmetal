@@ -7,12 +7,12 @@ import io.gunmetal.Singleton;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.InjectionResolver;
-import io.gunmetal.spi.InternalProvider;
-import io.gunmetal.spi.ProviderAdapter;
+import io.gunmetal.spi.DependencySupplier;
+import io.gunmetal.spi.SupplierAdapter;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.impl.AnnotationInjectionResolver;
 import io.gunmetal.spi.impl.ExactlyOneConstructorResolver;
-import io.gunmetal.spi.impl.GunmetalProviderAdapter;
+import io.gunmetal.spi.impl.DefaultSupplierAdapter;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,14 +27,14 @@ public class BaseTestModule {
     @Provides ProvisionStrategyDecorator strategyDecorator =
             ProvisionStrategyDecorator::none;
 
-    @Provides ProviderAdapter providerAdapter = new GunmetalProviderAdapter();
+    @Provides SupplierAdapter supplierAdapter = new DefaultSupplierAdapter();
 
-    @Provides GraphErrors graphErrors = new GraphErrors();
+    @Provides ComponentErrors componentErrors = new ComponentErrors();
 
-    @Provides GraphLinker graphLinker = new GraphLinker();
+    @Provides ComponentLinker componentLinker = new ComponentLinker();
 
-    @Provides GraphContext graphContext = new GraphContext(
-            strategyDecorator, graphLinker, graphErrors, new HashMap<>());  
+    @Provides ComponentContext componentContext = new ComponentContext(
+            strategyDecorator, componentLinker, componentErrors, new HashMap<>());
 
     @Provides InjectionResolver injectionResolver = new AnnotationInjectionResolver(Inject.class);
 
@@ -62,9 +62,9 @@ public class BaseTestModule {
     @Provides DependencyServiceFactory dependencyServiceFactory =
             new DependencyServiceFactoryImpl(bindingFactory, requestVisitorFactory);
 
-    @Provides GraphCache graphCache = new GraphCache(dependencyServiceFactory, null);
+    @Provides ComponentRepository componentRepository = new ComponentRepository(dependencyServiceFactory, null);
 
-    @Provides InternalProvider internalProvider = new GraphProvider(
-            providerAdapter, dependencyServiceFactory, to -> Collections.emptyList(), graphCache, graphContext, false);
+    @Provides DependencySupplier dependencySupplier = new ComponentDependencySupplier(
+            supplierAdapter, dependencyServiceFactory, to -> Collections.emptyList(), componentRepository, componentContext, false);
 
 }

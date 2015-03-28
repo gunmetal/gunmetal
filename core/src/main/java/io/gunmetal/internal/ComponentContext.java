@@ -9,17 +9,17 @@ import java.util.Map;
 /**
  * @author rees.byars
  */
-class GraphContext {
+class ComponentContext {
 
     private final ProvisionStrategyDecorator strategyDecorator;
     private final Linkers linkers;
     private final Errors errors;
     private final Map<Class<?>, Object> statefulSources;
 
-    GraphContext(ProvisionStrategyDecorator strategyDecorator,
-                 Linkers linkers,
-                 Errors errors,
-                 Map<Class<?>, Object> statefulSources) {
+    ComponentContext(ProvisionStrategyDecorator strategyDecorator,
+                     Linkers linkers,
+                     Errors errors,
+                     Map<Class<?>, Object> statefulSources) {
         this.strategyDecorator = strategyDecorator;
         this.linkers = linkers;
         this.errors = errors;

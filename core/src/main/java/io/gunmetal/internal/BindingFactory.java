@@ -28,15 +28,15 @@ interface BindingFactory {
 
     List<Binding> createBindingsForModule(
             Class<?> module,
-            GraphContext context,
+            ComponentContext context,
             Set<Class<?>> loadedModules);
 
     Binding createJitBindingForRequest(
             DependencyRequest dependencyRequest,
-            GraphContext context);
+            ComponentContext context);
 
     List<Binding> createJitFactoryBindingsForRequest(
             DependencyRequest dependencyRequest,
-            GraphContext context);
+            ComponentContext context);
 
 }

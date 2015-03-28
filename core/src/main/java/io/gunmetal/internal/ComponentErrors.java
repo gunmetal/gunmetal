@@ -11,13 +11,13 @@ import java.util.Map;
 /**
  * @author rees.byars
  */
-class GraphErrors implements Errors {
+class ComponentErrors implements Errors {
 
     private volatile Map<ResourceMetadata<?>, List<String>> provisionErrors;
     private volatile List<String> generalErrors;
     private volatile boolean failFast = false;
 
-    GraphErrors() {
+    ComponentErrors() {
     }
 
     @Override public synchronized Errors add(ResourceMetadata<?> resourceMetadata, String errorMessage) {

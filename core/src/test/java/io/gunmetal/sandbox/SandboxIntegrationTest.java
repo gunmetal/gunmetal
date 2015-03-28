@@ -24,7 +24,6 @@ import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
 import io.gunmetal.Overrides;
 import io.gunmetal.Param;
-import io.gunmetal.Provider;
 import io.gunmetal.Provides;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
@@ -48,6 +47,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 
@@ -84,7 +84,7 @@ public class SandboxIntegrationTest {
     @Module(notAccessibleFrom = TestModule.BlackList.class, dependsOn = StatefulModule.class)
     static class TestModule {
 
-        @Provides @Singleton @Overrides(allowCycle = true) static Bad providedCirc(Provider<Circ> circProvider) {
+        @Provides @Singleton @Overrides(allowCycle = true) static Bad providedCirc(Supplier<Circ> circProvider) {
             return circProvider.get();
         }
 
@@ -121,7 +121,7 @@ public class SandboxIntegrationTest {
             return new SandboxIntegrationTest();
         }
 
-        @Provides @Singleton static Object test2(Provider<SandboxIntegrationTest> test, BlackList blackList) {
+        @Provides @Singleton static Object test2(Supplier<SandboxIntegrationTest> test, BlackList blackList) {
             System.out.println(test.get());
             System.out.println(test.get());
 
@@ -425,7 +425,7 @@ public class SandboxIntegrationTest {
     @Test
     public void testMore() {
         class ProviderDep {
-            @Inject Provider<N> nProvider;
+            @Inject Supplier<N> nProvider;
         }
         ProviderDep p =  new ProviderDep();
         APPLICATION_CONTAINER.inject(p);
@@ -433,7 +433,7 @@ public class SandboxIntegrationTest {
         newGunmetalStandup(10000);
     }
 
-    io.gunmetal.Provider<N> newGunmetalProvider;
+    Supplier<N> newGunmetalProvider;
     static final GComponent APPLICATION_CONTAINER = Component.builder().build(GComponent.Factory.class).create();
 
     static class AaHolder {
@@ -474,12 +474,13 @@ public class SandboxIntegrationTest {
 
         ConversionComponent graph =
                 Component.builder()
-                        .withConverterProvider(to -> {
+                        .withConverterSupplier(to -> {
                             if (to.raw().equals(Long.class) || to.raw().equals(long.class)) {
                                 return Collections.singletonList(new Converter() {
                                     @Override public List<Class<?>> supportedFromTypes() {
                                         return Arrays.asList(String.class);
                                     }
+
                                     @Override public Object convert(Object from) {
                                         return Long.valueOf(from.toString());
                                     }
@@ -499,7 +500,7 @@ public class SandboxIntegrationTest {
         String name;
         @Provides static MyModule myModule(
                 @Param String name,
-                @MultiBind Provider<List<ProvisionStrategyDecorator>> provider,
+                @MultiBind Supplier<List<ProvisionStrategyDecorator>> provider,
                 @MultiBind Ref<List<ProvisionStrategyDecorator>> ref) {
             MyModule m = new MyModule();
             m.name = name;

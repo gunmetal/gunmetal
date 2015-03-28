@@ -27,19 +27,22 @@ import java.lang.reflect.Method;
  */
 interface ResourceFactory {
 
-    Resource withClassProvider(ResourceMetadata<Class<?>> resourceMetadata,
-                               GraphContext context);
+    Resource withClassProvider(
+            ResourceMetadata<Class<?>> resourceMetadata,
+            ComponentContext context);
 
-    Resource withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata, GraphContext context);
+    Resource withProvidedModule(
+            ResourceMetadata<Class<?>> resourceMetadata,
+            ComponentContext context);
 
     Resource withMethodProvider(
             ResourceMetadata<Method> resourceMetadata,
             Dependency moduleDependency,
-            GraphContext context);
+            ComponentContext context);
 
     Resource withFieldProvider(
             ResourceMetadata<Field> resourceMetadata,
             Dependency moduleDependency,
-            GraphContext context);
+            ComponentContext context);
 
 }
