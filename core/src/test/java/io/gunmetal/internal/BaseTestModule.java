@@ -59,12 +59,12 @@ public class BaseTestModule {
     @Provides BindingFactory bindingFactory = new BindingFactoryImpl(
             resourceFactory, metadataResolver, metadataResolver);
 
-    @Provides DependencyServiceFactory dependencyServiceFactory =
-            new DependencyServiceFactoryImpl(bindingFactory, requestVisitorFactory);
+    @Provides ResourceAccessorFactory resourceAccessorFactory =
+            new ResourceAccessorFactoryImpl(bindingFactory, requestVisitorFactory);
 
-    @Provides ComponentRepository componentRepository = new ComponentRepository(dependencyServiceFactory, null);
+    @Provides ComponentRepository componentRepository = new ComponentRepository(resourceAccessorFactory, null);
 
     @Provides DependencySupplier dependencySupplier = new ComponentDependencySupplier(
-            supplierAdapter, dependencyServiceFactory, to -> Collections.emptyList(), componentRepository, componentContext, false);
+            supplierAdapter, resourceAccessorFactory, to -> Collections.emptyList(), componentRepository, componentContext, false);
 
 }

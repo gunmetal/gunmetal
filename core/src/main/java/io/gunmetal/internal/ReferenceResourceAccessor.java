@@ -13,18 +13,18 @@ import java.util.Collections;
 /**
  * @author rees.byars
  */
-class ReferenceDependencyService implements DependencyService {
+class ReferenceResourceAccessor implements ResourceAccessor {
 
     private final DependencyRequest referenceRequest;
-    private final DependencyService provisionService;
+    private final ResourceAccessor provisionService;
     private final Dependency provisionDependency;
     private final ProvisionStrategy referenceStrategy;
     private final ReferenceStrategyFactory referenceStrategyFactory;
     private final Binding binding;
 
-    ReferenceDependencyService(
+    ReferenceResourceAccessor(
             DependencyRequest referenceRequest,
-            DependencyService provisionService,
+            ResourceAccessor provisionService,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
             ReferenceStrategyFactory referenceStrategyFactory) {
@@ -38,8 +38,8 @@ class ReferenceDependencyService implements DependencyService {
                 Collections.singletonList(referenceRequest.dependency()));
     }
 
-    @Override public DependencyService replicateWith(ComponentContext context) {
-        return new ReferenceDependencyService(
+    @Override public ResourceAccessor replicateWith(ComponentContext context) {
+        return new ReferenceResourceAccessor(
                 referenceRequest,
                 provisionService.replicateWith(context),
                 provisionDependency,
@@ -51,9 +51,9 @@ class ReferenceDependencyService implements DependencyService {
         return binding;
     }
 
-    @Override public DependencyResponse service(DependencyRequest dependencyRequest, Errors errors) {
-        provisionService.service(DependencyRequest.create(referenceRequest, provisionDependency), errors);
-        return this::force;
+    @Override public ProvisionStrategy process(DependencyRequest dependencyRequest, Errors errors) {
+        provisionService.process(DependencyRequest.create(referenceRequest, provisionDependency), errors);
+        return force();
     }
 
     @Override public ProvisionStrategy force() {

@@ -27,20 +27,20 @@ import java.util.function.Supplier;
 class ComponentDependencySupplier implements DependencySupplier {
 
     private final SupplierAdapter supplierAdapter;
-    private final DependencyServiceFactory dependencyServiceFactory;
+    private final ResourceAccessorFactory resourceAccessorFactory;
     private final ConverterSupplier converterSupplier;
     private final ComponentRepository componentRepository;
     private final ComponentContext context;
     private final boolean requireInterfaces;
 
     ComponentDependencySupplier(SupplierAdapter supplierAdapter,
-                                DependencyServiceFactory dependencyServiceFactory,
+                                ResourceAccessorFactory resourceAccessorFactory,
                                 ConverterSupplier converterSupplier,
                                 ComponentRepository componentRepository,
                                 ComponentContext context,
                                 boolean requireInterfaces) {
         this.supplierAdapter = supplierAdapter;
-        this.dependencyServiceFactory = dependencyServiceFactory;
+        this.resourceAccessorFactory = resourceAccessorFactory;
         this.converterSupplier = converterSupplier;
         this.componentRepository = componentRepository;
         this.context = context;
@@ -65,31 +65,29 @@ class ComponentDependencySupplier implements DependencySupplier {
         }
 
         // try jit constructor dependencyService strategy
-        DependencyService dependencyService = dependencyServiceFactory.createJit(dependencyRequest, context);
-        if (dependencyService != null) {
-            componentRepository.put(dependencyRequest.dependency(), dependencyService, context.errors());
-            return dependencyService
-                    .service(dependencyRequest, context.errors())
-                    .provisionStrategy();
+        ResourceAccessor resourceAccessor = resourceAccessorFactory.createJit(dependencyRequest, context);
+        if (resourceAccessor != null) {
+            componentRepository.put(dependencyRequest.dependency(), resourceAccessor, context.errors());
+            return resourceAccessor
+                    .process(dependencyRequest, context.errors());
         }
 
         // try conversion strategy
         TypeKey typeKey = dependency.typeKey();
         for (Converter converter : converterSupplier.convertersForType(typeKey)) {
             for (Class<?> fromType : converter.supportedFromTypes()) {
-                dependencyService = createConversionDependencyService(converter, fromType, dependency);
-                if (dependencyService != null) {
-                    componentRepository.put(dependency, dependencyService, context.errors());
-                    return dependencyService
-                            .service(dependencyRequest, context.errors())
-                            .provisionStrategy();
+                resourceAccessor = createConversionDependencyService(converter, fromType, dependency);
+                if (resourceAccessor != null) {
+                    componentRepository.put(dependency, resourceAccessor, context.errors());
+                    return resourceAccessor
+                            .process(dependencyRequest, context.errors());
                 }
             }
         }
 
         // try jit local factory method dependencyService
-        List<DependencyService> factoryDependencyServicesForRequest =
-                dependencyServiceFactory.createJitFactoryRequest(dependencyRequest, context);
+        List<ResourceAccessor> factoryDependencyServicesForRequest =
+                resourceAccessorFactory.createJitFactoryRequest(dependencyRequest, context);
         componentRepository.putAll(factoryDependencyServicesForRequest, context.errors());
         strategy = getCachedProvisionStrategy(dependencyRequest);
         if (strategy != null) {
@@ -120,20 +118,18 @@ class ComponentDependencySupplier implements DependencySupplier {
                     dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
-        DependencyService dependencyService = componentRepository.get(dependency);
-        if (dependencyService != null) {
-            return dependencyService
-                    .service(dependencyRequest, context.errors())
-                    .provisionStrategy();
+        ResourceAccessor resourceAccessor = componentRepository.get(dependency);
+        if (resourceAccessor != null) {
+            return resourceAccessor
+                    .process(dependencyRequest, context.errors());
         }
         if (supplierAdapter.isSupplier(dependency)) {
-            dependencyService = createReferenceDependencyService(
+            resourceAccessor = createReferenceDependencyService(
                     dependencyRequest, () -> new SupplierStrategyFactory(supplierAdapter));
-            if (dependencyService != null) {
-                componentRepository.put(dependency, dependencyService, context.errors());
-                return dependencyService
-                        .service(dependencyRequest, context.errors())
-                        .provisionStrategy();
+            if (resourceAccessor != null) {
+                componentRepository.put(dependency, resourceAccessor, context.errors());
+                return resourceAccessor
+                        .process(dependencyRequest, context.errors());
             } else {
                 // support empty multi-bind request
                 // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
@@ -144,12 +140,11 @@ class ComponentDependencySupplier implements DependencySupplier {
             }
         }
         if (dependency.typeKey().raw() == Ref.class) {
-            dependencyService = createReferenceDependencyService(dependencyRequest, RefStrategyFactory::new);
-            if (dependencyService != null) {
-                componentRepository.put(dependency, dependencyService, context.errors());
-                return dependencyService
-                        .service(dependencyRequest, context.errors())
-                        .provisionStrategy();
+            resourceAccessor = createReferenceDependencyService(dependencyRequest, RefStrategyFactory::new);
+            if (resourceAccessor != null) {
+                componentRepository.put(dependency, resourceAccessor, context.errors());
+                return resourceAccessor
+                        .process(dependencyRequest, context.errors());
             }  else {
                 // support empty multi-bind request
                 // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
@@ -168,28 +163,28 @@ class ComponentDependencySupplier implements DependencySupplier {
         return null;
     }
 
-    private DependencyService createReferenceDependencyService(
+    private ResourceAccessor createReferenceDependencyService(
             final DependencyRequest refRequest, Supplier<ReferenceStrategyFactory> factorySupplier) {
         Dependency referenceDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) referenceDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency provisionDependency = Dependency.from(referenceDependency.qualifier(), providedType);
-        DependencyService provisionDependencyService = componentRepository.get(provisionDependency);
-        if (provisionDependencyService == null) {
+        ResourceAccessor provisionResourceAccessor = componentRepository.get(provisionDependency);
+        if (provisionResourceAccessor == null) {
              return null;
         }
-        ProvisionStrategy provisionStrategy = provisionDependencyService.force();
+        ProvisionStrategy provisionStrategy = provisionResourceAccessor.force();
         ReferenceStrategyFactory strategyFactory = factorySupplier.get();
         final ProvisionStrategy referenceStrategy = strategyFactory.create(provisionStrategy, this);
-        return dependencyServiceFactory.createForReference(
-                refRequest, provisionDependencyService, provisionDependency, referenceStrategy, strategyFactory);
+        return resourceAccessorFactory.createForReference(
+                refRequest, provisionResourceAccessor, provisionDependency, referenceStrategy, strategyFactory);
     }
 
-    private DependencyService createConversionDependencyService(
+    private ResourceAccessor createConversionDependencyService(
             Converter converter, Class<?> fromType, Dependency to) {
         Dependency from = Dependency.from(to.qualifier(), fromType);
-        DependencyService fromDependencyService = componentRepository.get(from);
-        if (fromDependencyService != null) {
-            return dependencyServiceFactory.createForConversion(fromDependencyService, converter, from, to);
+        ResourceAccessor fromResourceAccessor = componentRepository.get(from);
+        if (fromResourceAccessor != null) {
+            return resourceAccessorFactory.createForConversion(fromResourceAccessor, converter, from, to);
         }
         return null;
     }

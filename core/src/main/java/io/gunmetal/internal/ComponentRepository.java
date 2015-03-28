@@ -20,40 +20,40 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class ComponentRepository implements Replicable<ComponentRepository> {
 
-    private final ComponentRepository parentCache;
-    private final Map<Dependency, DependencyService> dependencyServices = new ConcurrentHashMap<>(64, .75f, 2);
+    private final ComponentRepository parentRepository;     
+    private final Map<Dependency, ResourceAccessor> dependencyServices = new ConcurrentHashMap<>(64, .75f, 2);
     private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
-    private final Queue<DependencyService> myDependencyServices = new LinkedList<>();
-    private final DependencyServiceFactory dependencyServiceFactory;
+    private final Queue<ResourceAccessor> myResourceAccessors = new LinkedList<>();
+    private final ResourceAccessorFactory resourceAccessorFactory;
 
-    ComponentRepository(DependencyServiceFactory dependencyServiceFactory,
-                        ComponentRepository parentCache) {
-        this.dependencyServiceFactory = dependencyServiceFactory;
-        this.parentCache = parentCache;
-        if (parentCache != null) {
-            dependencyServices.putAll(parentCache.dependencyServices);
+    ComponentRepository(ResourceAccessorFactory resourceAccessorFactory,
+                        ComponentRepository parentRepository) {
+        this.resourceAccessorFactory = resourceAccessorFactory;
+        this.parentRepository = parentRepository;
+        if (parentRepository != null) {
+            dependencyServices.putAll(parentRepository.dependencyServices);
         }
     }
 
-    void putAll(List<DependencyService> dependencyServices, Errors errors) {
-        for (DependencyService dependencyService : dependencyServices) {
-            putAll(dependencyService, errors);
+    void putAll(List<ResourceAccessor> resourceAccessors, Errors errors) {
+        for (ResourceAccessor resourceAccessor : resourceAccessors) {
+            putAll(resourceAccessor, errors);
         }
     }
 
-    void putAll(DependencyService dependencyService, Errors errors) {
-        for (Dependency dependency : dependencyService.binding().targets()) {
-            put(dependency, dependencyService, errors);
+    void putAll(ResourceAccessor resourceAccessor, Errors errors) {
+        for (Dependency dependency : resourceAccessor.binding().targets()) {
+            put(dependency, resourceAccessor, errors);
         }
     }
 
-    void put(final Dependency dependency, DependencyService dependencyService, Errors errors) {
+    void put(final Dependency dependency, ResourceAccessor resourceAccessor, Errors errors) {
         ResourceMetadata<?> newMetadata = 
-                dependencyService.binding().resource().metadata();
+                resourceAccessor.binding().resource().metadata();
         if (newMetadata.isCollectionElement()) {
-            putCollectionElement(dependency, dependencyService);
+            putCollectionElement(dependency, resourceAccessor);
         } else {
-            DependencyService previous = dependencyServices.put(dependency, dependencyService);
+            ResourceAccessor previous = dependencyServices.put(dependency, resourceAccessor);
             if (previous != null) {
 
                 ResourceMetadata<?> prevMetadata =
@@ -61,7 +61,7 @@ class ComponentRepository implements Replicable<ComponentRepository> {
                 
                 // TODO better messages, include provisions, keep list?
                 if (prevMetadata.isModule()) { // TODO this is a hack that depends on the order from the dependencyService factory
-                    myDependencyServices.add(dependencyService);
+                    myResourceAccessors.add(resourceAccessor);
                 } else if (prevMetadata.overrides().allowMappingOverride()
                         && newMetadata.overrides().allowMappingOverride()) {
                     errors.add("more than one of type with override enabled -> " + dependency);
@@ -74,24 +74,24 @@ class ComponentRepository implements Replicable<ComponentRepository> {
                     errors.add("more than one of type without override enabled -> " + dependency);
                     dependencyServices.put(dependency, previous);
                 } else if (newMetadata.overrides().allowMappingOverride()) {
-                    myDependencyServices.add(dependencyService);
+                    myResourceAccessors.add(resourceAccessor);
                     overriddenDependencies.add(dependency);
                 } else if (prevMetadata.overrides().allowMappingOverride()) {
                     dependencyServices.put(dependency, previous);
                     overriddenDependencies.add(dependency);
                 }
             } else {
-                myDependencyServices.add(dependencyService);
+                myResourceAccessors.add(resourceAccessor);
             }
         }
     }
 
-    DependencyService get(Dependency dependency) {
+    ResourceAccessor get(Dependency dependency) {
         return dependencyServices.get(dependency);
     }
 
     private void putCollectionElement(final Dependency dependency,
-                                      DependencyService dependencyService) {
+                                      ResourceAccessor resourceAccessor) {
         Dependency collectionDependency =
                 Dependency.from(dependency.qualifier(), new ParameterizedType() {
                     @Override public Type[] getActualTypeArguments() {
@@ -123,20 +123,20 @@ class ComponentRepository implements Replicable<ComponentRepository> {
                     }
 
                 });
-        CollectionDependencyService collectionDependencyService
-                = (CollectionDependencyService) dependencyServices.get(collectionDependency);
+        CollectionResourceAccessor collectionDependencyService
+                = (CollectionResourceAccessor) dependencyServices.get(collectionDependency);
         if (collectionDependencyService == null) {
-            collectionDependencyService = dependencyServiceFactory.createForCollection(collectionDependency, dependency);
+            collectionDependencyService = resourceAccessorFactory.createForCollection(collectionDependency, dependency);
             dependencyServices.put(collectionDependency, collectionDependencyService);
-            myDependencyServices.add(collectionDependencyService);
+            myResourceAccessors.add(collectionDependencyService);
         }
-        collectionDependencyService.add(dependencyService);
+        collectionDependencyService.add(resourceAccessor);
     }
 
     @Override public ComponentRepository replicateWith(ComponentContext context) {
-        ComponentRepository newCache = new ComponentRepository(dependencyServiceFactory, parentCache);
-        for (DependencyService dependencyService : myDependencyServices) {
-            newCache.putAll(dependencyService.replicateWith(context), context.errors());
+        ComponentRepository newCache = new ComponentRepository(resourceAccessorFactory, parentRepository);
+        for (ResourceAccessor resourceAccessor : myResourceAccessors) {
+            newCache.putAll(resourceAccessor.replicateWith(context), context.errors());
         }
         return newCache;
     }

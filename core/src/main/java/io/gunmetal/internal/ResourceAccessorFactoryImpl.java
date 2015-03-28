@@ -16,70 +16,70 @@ import java.util.stream.Collectors;
 /**
  * @author rees.byars
  */
-class DependencyServiceFactoryImpl implements DependencyServiceFactory {
+class ResourceAccessorFactoryImpl implements ResourceAccessorFactory {
 
     private final BindingFactory bindingFactory;
     private final RequestVisitorFactory requestVisitorFactory;
 
-    DependencyServiceFactoryImpl(
+    ResourceAccessorFactoryImpl(
             BindingFactory bindingFactory,
             RequestVisitorFactory requestVisitorFactory) {
         this.bindingFactory = bindingFactory;
         this.requestVisitorFactory = requestVisitorFactory;
     }
 
-    @Override public List<DependencyService> createForModule(
+    @Override public List<ResourceAccessor> createForModule(
             Class<?> module, ComponentContext context, Set<Class<?>> loadedModules) {
         return bindingFactory.createBindingsForModule(module, context, loadedModules)
                 .stream()
-                .map(binding -> new DependencyServiceImpl(
+                .map(binding -> new ResourceAccessorImpl(
                         binding,
                         requestVisitorFactory.resourceRequestVisitor(
                                 binding.resource(), context)))
                 .collect(Collectors.toList());
     }
 
-    @Override public DependencyService createJit(DependencyRequest dependencyRequest, ComponentContext context) {
+    @Override public ResourceAccessor createJit(DependencyRequest dependencyRequest, ComponentContext context) {
         Binding binding = bindingFactory.createJitBindingForRequest(dependencyRequest, context);
         if (binding == null) {
             return null;
         }
-        return new DependencyServiceImpl(
+        return new ResourceAccessorImpl(
                 binding,
                 requestVisitorFactory.resourceRequestVisitor(
                         binding.resource(), context));
     }
 
-    @Override public List<DependencyService> createJitFactoryRequest(DependencyRequest dependencyRequest, ComponentContext context) {
+    @Override public List<ResourceAccessor> createJitFactoryRequest(DependencyRequest dependencyRequest, ComponentContext context) {
         return bindingFactory.createJitFactoryBindingsForRequest(dependencyRequest, context)
                 .stream()
-                .map(binding -> new DependencyServiceImpl(
+                .map(binding -> new ResourceAccessorImpl(
                         binding,
                         requestVisitorFactory.resourceRequestVisitor(
                                 binding.resource(), context)))
                 .collect(Collectors.toList());
     }
 
-    @Override public CollectionDependencyService createForCollection(
+    @Override public CollectionResourceAccessor createForCollection(
             Dependency collectionDependency, Dependency collectionElementDependency) {
-        return new CollectionDependencyServiceImpl(
+        return new CollectionResourceAccessorImpl(
                 ArrayList::new,
                 collectionDependency,
                 collectionElementDependency);
     }
 
-    @Override public DependencyService createForConversion(DependencyService fromService, Converter converter, Dependency fromDependency, Dependency toDependency) {
-        return new ConversionDependencyService(
+    @Override public ResourceAccessor createForConversion(ResourceAccessor fromService, Converter converter, Dependency fromDependency, Dependency toDependency) {
+        return new ConversionResourceAccessor(
                 fromService, converter, fromDependency, toDependency);
     }
 
-    @Override public DependencyService createForReference(
+    @Override public ResourceAccessor createForReference(
             DependencyRequest referenceRequest,
-            DependencyService provisionService,
+            ResourceAccessor provisionService,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
             ReferenceStrategyFactory referenceStrategyFactory) {
-        return new ReferenceDependencyService(
+        return new ReferenceResourceAccessor(
                 referenceRequest,
                 provisionService,
                 provisionDependency,
@@ -87,10 +87,11 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
                 referenceStrategyFactory);
     }
 
-    @Override public DependencyService createForFalseResource(
+    @Override public ResourceAccessor createForFalseResource(
             Dependency dependency, ProvisionStrategy provisionStrategy) {
 
-        return new DependencyService() {
+        // TODO extract to class, better messages
+        return new ResourceAccessor() {
 
             @Override public Binding binding() {
 
@@ -105,7 +106,7 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
                         return new Resource() {
 
                             @Override public ResourceMetadata<?> metadata() {
-                                return null;
+                                throw new UnsupportedOperationException();
                             }
 
                             @Override public ProvisionStrategy provisionStrategy() {
@@ -128,15 +129,15 @@ class DependencyServiceFactoryImpl implements DependencyServiceFactory {
                 };
             }
 
-            @Override public DependencyResponse service(DependencyRequest dependencyRequest, Errors errors) {
-                return () -> provisionStrategy;
+            @Override public ProvisionStrategy process(DependencyRequest dependencyRequest, Errors errors) {
+                return provisionStrategy;
             }
 
             @Override public ProvisionStrategy force() {
                 return provisionStrategy;
             }
 
-            @Override public DependencyService replicateWith(ComponentContext context) {
+            @Override public ResourceAccessor replicateWith(ComponentContext context) {
                 return createForFalseResource(dependency, provisionStrategy);
             }
 

@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 /**
  * @author rees.byars
  */
-class CollectionDependencyServiceImpl implements CollectionDependencyService {
+class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
 
-    private final List<DependencyService> elementServices = new ArrayList<>();
+    private final List<ResourceAccessor> elementServices = new ArrayList<>();
     private final Supplier<Collection<Object>> collectionSupplier;
     private final Dependency collectionDependency;
     private final Dependency collectionElementDependency;
@@ -30,7 +30,7 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
     private final CollectionResource resource = new CollectionResource();
     private final ResourceMetadata<Class<?>> resourceMetadata;
 
-    CollectionDependencyServiceImpl(
+    CollectionResourceAccessorImpl(
             Supplier<Collection<Object>> collectionSupplier,
             Dependency collectionDependency,
             Dependency collectionElementDependency) {
@@ -38,10 +38,10 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
         this.collectionDependency = collectionDependency;
         this.collectionElementDependency = collectionElementDependency;
         resourceMetadata = new ResourceMetadata<>(
-                        CollectionDependencyServiceImpl.class,
-                        CollectionDependencyServiceImpl.class,
+                        CollectionResourceAccessorImpl.class,
+                        CollectionResourceAccessorImpl.class,
                         new ModuleMetadata(
-                                CollectionDependencyServiceImpl.class,
+                                CollectionResourceAccessorImpl.class,
                                 collectionDependency.qualifier(),
                                 Module.NONE),
                         collectionDependency.qualifier(),
@@ -54,9 +54,9 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
                         false);
     }
 
-    @Override public DependencyService replicateWith(ComponentContext context) {
-        CollectionDependencyServiceImpl newService =
-                new CollectionDependencyServiceImpl(
+    @Override public ResourceAccessor replicateWith(ComponentContext context) {
+        CollectionResourceAccessorImpl newService =
+                new CollectionResourceAccessorImpl(
                         collectionSupplier,
                         collectionDependency,
                         collectionElementDependency);
@@ -69,23 +69,21 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
         return newService;
     }
 
-    @Override public void add(DependencyService dependencyService) {
-        elementServices.add(dependencyService);
+    @Override public void add(ResourceAccessor resourceAccessor) {
+        elementServices.add(resourceAccessor);
     }
 
     @Override public Binding binding() {
         return binding;
     }
 
-    @Override public DependencyResponse service(DependencyRequest dependencyRequest, Errors errors) {
-        return () -> {
-            DependencyRequest subRequest =
-                    DependencyRequest.create(dependencyRequest, collectionElementDependency);
-            for (DependencyService elementService : elementServices) {
-                elementService.service(subRequest, errors);
-            }
-            return force();
-        };
+    @Override public ProvisionStrategy process(DependencyRequest dependencyRequest, Errors errors) {
+        DependencyRequest subRequest =
+                DependencyRequest.create(dependencyRequest, collectionElementDependency);
+        for (ResourceAccessor elementService : elementServices) {
+            elementService.process(subRequest, errors);
+        }
+        return force();
     }
 
     @Override public ProvisionStrategy force() {
@@ -121,7 +119,7 @@ class CollectionDependencyServiceImpl implements CollectionDependencyService {
         @Override public ProvisionStrategy provisionStrategy() {
             return (supplier, resolutionContext) -> {
                 Collection<Object> collection = collectionSupplier.get();
-                for (DependencyService elementService : elementServices) {
+                for (ResourceAccessor elementService : elementServices) {
                     ProvisionStrategy provisionStrategy = elementService.force();
                     collection.add(provisionStrategy.get(supplier, resolutionContext));
                 }

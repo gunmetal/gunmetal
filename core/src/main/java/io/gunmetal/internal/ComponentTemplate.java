@@ -23,7 +23,7 @@ final class ComponentTemplate {
     private final ComponentConfig componentConfig;
     private final ComponentInjectors componentInjectors;
     private final ProvisionStrategyDecorator strategyDecorator;
-    private final DependencyServiceFactory dependencyServiceFactory;
+    private final ResourceAccessorFactory resourceAccessorFactory;
     private final ComponentRepository componentRepository;
     private final Set<Class<?>> loadedModules;
 
@@ -32,7 +32,7 @@ final class ComponentTemplate {
             ComponentConfig componentConfig,
             InjectorFactory injectorFactory,
             ProvisionStrategyDecorator strategyDecorator,
-            DependencyServiceFactory dependencyServiceFactory,
+            ResourceAccessorFactory resourceAccessorFactory,
             ComponentRepository componentRepository,
             Set<Class<?>> loadedModules) {
         this.componentClass = componentClass;
@@ -40,7 +40,7 @@ final class ComponentTemplate {
         componentInjectors = new ComponentInjectors(
                 injectorFactory, componentConfig.getConfigurableMetadataResolver());
         this.strategyDecorator = strategyDecorator;
-        this.dependencyServiceFactory = dependencyServiceFactory;
+        this.resourceAccessorFactory = resourceAccessorFactory;
         this.componentRepository = componentRepository;
         this.loadedModules = loadedModules;
     }
@@ -105,11 +105,11 @@ final class ComponentTemplate {
                         componentConfig.getConfigurableMetadataResolver(),
                         componentConfig.getComponentSettings().isRequireExplicitModuleDependencies());
 
-        DependencyServiceFactory dependencyServiceFactory =
-                new DependencyServiceFactoryImpl(bindingFactory, requestVisitorFactory);
+        ResourceAccessorFactory resourceAccessorFactory =
+                new ResourceAccessorFactoryImpl(bindingFactory, requestVisitorFactory);
 
         ComponentRepository componentRepository = new ComponentRepository(
-                dependencyServiceFactory,
+                resourceAccessorFactory,
                 parentComponentGraph == null ? null : parentComponentGraph.graphCache());
 
         ComponentLinker componentLinker = new ComponentLinker();
@@ -126,15 +126,15 @@ final class ComponentTemplate {
         }
 
         for (Class<?> module : modules) {
-            List<DependencyService> moduleDependencyServices =
-                    dependencyServiceFactory.createForModule(module, componentContext, loadedModules);
-            componentRepository.putAll(moduleDependencyServices, errors);
+            List<ResourceAccessor> moduleResourceAccessors =
+                    resourceAccessorFactory.createForModule(module, componentContext, loadedModules);
+            componentRepository.putAll(moduleResourceAccessors, errors);
         }
 
         DependencySupplier dependencySupplier =
                 new ComponentDependencySupplier(
                         componentConfig.getSupplierAdapter(),
-                        dependencyServiceFactory,
+                        resourceAccessorFactory,
                         componentConfig.getConverterSupplier(),
                         componentRepository,
                         componentContext,
@@ -148,7 +148,7 @@ final class ComponentTemplate {
                 componentConfig,
                 injectorFactory,
                 strategyDecorator,
-                dependencyServiceFactory,
+                resourceAccessorFactory,
                 componentRepository,
                 loadedModules);
 
@@ -183,7 +183,7 @@ final class ComponentTemplate {
         DependencySupplier dependencySupplier =
                 new ComponentDependencySupplier(
                         componentConfig.getSupplierAdapter(),
-                        dependencyServiceFactory,
+                        resourceAccessorFactory,
                         componentConfig.getConverterSupplier(),
                         newComponentRepository,
                         componentContext,

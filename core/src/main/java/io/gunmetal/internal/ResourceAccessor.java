@@ -7,11 +7,13 @@ import io.gunmetal.spi.ProvisionStrategy;
 /**
  * @author rees.byars
  */
-interface DependencyService extends Replicable<DependencyService> {
+interface ResourceAccessor extends Replicable<ResourceAccessor> {
 
     Binding binding();
 
-    DependencyResponse service(DependencyRequest dependencyRequest, Errors errors);
+    ProvisionStrategy process(
+            DependencyRequest dependencyRequest,
+            Errors errors);
 
     ProvisionStrategy force();
 

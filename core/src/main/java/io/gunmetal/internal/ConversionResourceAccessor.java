@@ -11,16 +11,16 @@ import java.util.Collections;
 /**
  * @author rees.byars
  */
-class ConversionDependencyService implements DependencyService {
+class ConversionResourceAccessor implements ResourceAccessor {
 
-    private final DependencyService fromService;
+    private final ResourceAccessor fromService;
     private final Converter converter;
     private final Dependency fromDependency;
     private final Dependency toDependency;
     private final Binding binding;
 
-    ConversionDependencyService(
-            DependencyService fromService,
+    ConversionResourceAccessor(
+            ResourceAccessor fromService,
             Converter converter,
             Dependency fromDependency,
             Dependency toDependency) {
@@ -33,8 +33,8 @@ class ConversionDependencyService implements DependencyService {
                 Collections.singletonList(toDependency));
     }
 
-    @Override public DependencyService replicateWith(ComponentContext context) {
-        return new ConversionDependencyService(
+    @Override public ResourceAccessor replicateWith(ComponentContext context) {
+        return new ConversionResourceAccessor(
                 fromService.replicateWith(context),
                 converter,
                 fromDependency,
@@ -45,9 +45,9 @@ class ConversionDependencyService implements DependencyService {
         return binding;
     }
 
-    @Override public DependencyResponse service(DependencyRequest dependencyRequest, Errors errors) {
-        fromService.service(DependencyRequest.create(dependencyRequest, fromDependency), errors);
-        return this::force;
+    @Override public ProvisionStrategy process(DependencyRequest dependencyRequest, Errors errors) {
+        fromService.process(DependencyRequest.create(dependencyRequest, fromDependency), errors);
+        return force();
     }
 
     @Override public ProvisionStrategy force() {

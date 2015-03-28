@@ -5,8 +5,7 @@ package io.gunmetal.spi;
  */
 public interface RequestVisitor {
 
-    RequestVisitor NONE = (dependencyRequest, errors) -> {
-    };
+    RequestVisitor NONE = (dependencyRequest, errors) -> { };
 
     void visit(DependencyRequest dependencyRequest, ProvisionErrors errors);
 

@@ -11,39 +11,39 @@ import java.util.Set;
 /**
  * @author rees.byars
  */
-interface DependencyServiceFactory {
+interface ResourceAccessorFactory {
 
-    List<DependencyService> createForModule(
+    List<ResourceAccessor> createForModule(
             Class<?> module,
             ComponentContext context,
             Set<Class<?>> loadedModules);
 
-    DependencyService createJit(
+    ResourceAccessor createJit(
             DependencyRequest dependencyRequest,
             ComponentContext context);
 
-    List<DependencyService> createJitFactoryRequest(
+    List<ResourceAccessor> createJitFactoryRequest(
             DependencyRequest dependencyRequest,
             ComponentContext context);
 
-    CollectionDependencyService createForCollection(
+    CollectionResourceAccessor createForCollection(
             Dependency collectionDependency,
             Dependency collectionElementDependency);
 
-    DependencyService createForConversion(
-            DependencyService fromService,
+    ResourceAccessor createForConversion(
+            ResourceAccessor fromService,
             Converter converter,
             Dependency fromDependency,
             Dependency toDependency);
 
-    DependencyService createForReference(
+    ResourceAccessor createForReference(
             DependencyRequest referenceRequest,
-            DependencyService provisionService,
+            ResourceAccessor provisionService,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
             ReferenceStrategyFactory referenceStrategyFactory);
 
-    DependencyService createForFalseResource(
+    ResourceAccessor createForFalseResource(
             Dependency dependency, ProvisionStrategy provisionStrategy);
 
 }

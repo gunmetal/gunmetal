@@ -16,14 +16,14 @@ import java.util.List;
 /**
  * @author rees.byars
  */
-class DependencyServiceImpl implements DependencyService {
+class ResourceAccessorImpl implements ResourceAccessor {
 
     private final Binding binding;
     private final RequestVisitor moduleRequestVisitor;
     private final AccessFilter<Class<?>> classAccessFilter;
     private final RequestVisitor scopeVisitor;
 
-    DependencyServiceImpl(
+    ResourceAccessorImpl(
             Binding binding,
             RequestVisitor moduleRequestVisitor) {
         this.binding = binding;
@@ -37,7 +37,7 @@ class DependencyServiceImpl implements DependencyService {
         };
     }
 
-    private DependencyServiceImpl(
+    private ResourceAccessorImpl(
             Binding binding,
             RequestVisitor moduleRequestVisitor,
             AccessFilter<Class<?>> classAccessFilter,
@@ -52,12 +52,10 @@ class DependencyServiceImpl implements DependencyService {
         return binding;
     }
 
-    @Override public DependencyResponse service(
+    @Override public ProvisionStrategy process(
             DependencyRequest dependencyRequest, Errors errors) {
-        DependencyResponseImpl response =
-                new DependencyResponseImpl(
-                        dependencyRequest,
-                        binding.resource().provisionStrategy(), errors);
+        RequestErrors response =
+                new RequestErrors(dependencyRequest, errors);
         moduleRequestVisitor.visit(dependencyRequest, response);
         scopeVisitor.visit(dependencyRequest, response);
         if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
@@ -66,16 +64,16 @@ class DependencyServiceImpl implements DependencyService {
                             + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
             );
         }
-        response.validateResponse();
-        return response;
+        response.complete();
+        return force();
     }
 
     @Override public ProvisionStrategy force() {
         return binding.resource().provisionStrategy();
     }
 
-    @Override public DependencyService replicateWith(ComponentContext context) {
-        return new DependencyServiceImpl(
+    @Override public ResourceAccessor replicateWith(ComponentContext context) {
+        return new ResourceAccessorImpl(
                 binding.replicateWith(context),
                 moduleRequestVisitor,
                 classAccessFilter,
@@ -108,23 +106,16 @@ class DependencyServiceImpl implements DependencyService {
 
     }
 
-    private static class DependencyResponseImpl implements DependencyResponse, ProvisionErrors {
+    private static class RequestErrors implements ProvisionErrors {
 
         List<String> errorMessages;
         final DependencyRequest dependencyRequest;
-        final ProvisionStrategy provisionStrategy;
         final Errors errors;
 
-        DependencyResponseImpl(DependencyRequest dependencyRequest,
-                               ProvisionStrategy provisionStrategy,
-                               Errors errors) {
+        RequestErrors(DependencyRequest dependencyRequest,
+                      Errors errors) {
             this.dependencyRequest = dependencyRequest;
-            this.provisionStrategy = provisionStrategy;
             this.errors = errors;
-        }
-
-        @Override public ProvisionStrategy provisionStrategy() {
-            return provisionStrategy;
         }
 
         @Override public void add(String errorMessage) {
@@ -134,7 +125,7 @@ class DependencyServiceImpl implements DependencyService {
             errorMessages.add(errorMessage);
         }
 
-        void validateResponse() {
+        void complete() {
             if (errorMessages != null) {
                 for (String error : errorMessages) {
                     errors.add(

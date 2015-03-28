@@ -51,11 +51,11 @@ final class ComponentGraph {
     }
 
     static class ComponentMethodConfig {
-        private final DependencyService dependencyService;
+        private final ResourceAccessor resourceAccessor;
         private final Dependency[] dependencies;
-        ComponentMethodConfig(DependencyService dependencyService,
+        ComponentMethodConfig(ResourceAccessor resourceAccessor,
                               Dependency[] dependencies) {
-            this.dependencyService = dependencyService;
+            this.resourceAccessor = resourceAccessor;
             this.dependencies = dependencies;
         }
     }
@@ -116,11 +116,11 @@ final class ComponentGraph {
                             .resolve(method, componentContext.errors())
                             .merge(componentQualifier),
                     type);
-            DependencyService dependencyService = componentRepository.get(dependency);
-            if (dependencyService == null) {
+            ResourceAccessor resourceAccessor = componentRepository.get(dependency);
+            if (resourceAccessor == null) {
                 throw new RuntimeException("not fucking here!"); // TODO
             }
-            configMap.put(method, new ComponentMethodConfig(dependencyService, dependencies));
+            configMap.put(method, new ComponentMethodConfig(resourceAccessor, dependencies));
         }
 
         return componentInterface.cast(Proxy.newProxyInstance(
@@ -162,7 +162,7 @@ final class ComponentGraph {
                                     args[i]);
                         }
                     }
-                    return config.dependencyService
+                    return config.resourceAccessor
                             .force()
                             .get(dependencySupplier, resolutionContext);
                 }));
