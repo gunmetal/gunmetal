@@ -1,14 +1,13 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Component;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
-import io.gunmetal.Component;
 import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ResolutionContext;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -58,7 +57,7 @@ public class BindingFactoryImplTest {
         }
 
         List<Binding> bindings =
-                bindingFactory.createBindingsForModule(MyModule.class, componentContext, new HashSet<>());
+                bindingFactory.createBindingsForModule(MyModule.class, componentContext);
 
         assertEquals(0, bindings.size());
 
@@ -68,7 +67,7 @@ public class BindingFactoryImplTest {
     public void testCreateBindingsForModule_emptyStatefulModule() {
 
         List<Binding> bindings =
-                bindingFactory.createBindingsForModule(EmptyStatefulModule.class, componentContext, new HashSet<>());
+                bindingFactory.createBindingsForModule(EmptyStatefulModule.class, componentContext);
 
         assertEquals(1, bindings.size());
 

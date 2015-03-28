@@ -6,7 +6,6 @@ import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ProvisionStrategy;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author rees.byars
@@ -15,8 +14,7 @@ interface ResourceAccessorFactory {
 
     List<ResourceAccessor> createForModule(
             Class<?> module,
-            ComponentContext context,
-            Set<Class<?>> loadedModules);
+            ComponentContext context);
 
     ResourceAccessor createJit(
             DependencyRequest dependencyRequest,

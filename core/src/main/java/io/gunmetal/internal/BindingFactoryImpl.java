@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author rees.byars
@@ -54,12 +53,11 @@ class BindingFactoryImpl implements BindingFactory {
     }
 
     @Override public List<Binding> createBindingsForModule(final Class<?> module,
-                                                           ComponentContext context,
-                                                           Set<Class<?>> loadedModules) {
-        if (loadedModules.contains(module)) {
+                                                           ComponentContext context) {
+        if (context.loadedModules().contains(module)) {
             return Collections.emptyList();
         }
-        loadedModules.add(module);
+        context.loadedModules().add(module);
 
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {
@@ -74,8 +72,7 @@ class BindingFactoryImpl implements BindingFactory {
                 module,
                 resourceBindings,
                 moduleMetadata,
-                context,
-                loadedModules);
+                context);
         return resourceBindings;
 
     }
@@ -106,13 +103,12 @@ class BindingFactoryImpl implements BindingFactory {
                 dependencyRequest.dependency().typeKey().raw(), // TODO hmmmm
                 resourceBindings,
                 moduleMetadata,
-                context,
-                Collections.emptySet()); // TODO is this okay?
+                context);
         return resourceBindings;
     }
 
     private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation, ComponentContext context) {
-        final Qualifier qualifier = qualifierResolver.resolve(module, context.errors());
+        final Qualifier qualifier = qualifierResolver.resolve(module);
         return new ModuleMetadata(module, qualifier, moduleAnnotation);
     }
 
@@ -120,8 +116,7 @@ class BindingFactoryImpl implements BindingFactory {
                                      Class<?> module,
                                      List<Binding> resourceBindings,
                                      ModuleMetadata moduleMetadata,
-                                     ComponentContext context,
-                                     Set<Class<?>> loadedModules) {
+                                     ComponentContext context) {
 
         if (!module.isInterface() && module.getSuperclass() != Object.class && !module.isPrimitive()) {
             context.errors().add("The module " + module.getName() + " extends a class other than Object");
@@ -169,7 +164,7 @@ class BindingFactoryImpl implements BindingFactory {
         for (Class<?> library : moduleAnnotation.subsumes()) {
             Module libModule = library.getAnnotation(Module.class);
             // TODO allow provided? require prototype?
-            Qualifier libQualifier = qualifierResolver.resolve(library, context.errors());
+            Qualifier libQualifier = qualifierResolver.resolve(library);
             if (libModule == null) {
                 context.errors().add("A class without @Module cannot be subsumed");
             } else if (!libModule.lib()) {
@@ -182,11 +177,10 @@ class BindingFactoryImpl implements BindingFactory {
                     library,
                     resourceBindings,
                     moduleMetadata,
-                    context,
-                    loadedModules);
+                    context);
         }
         for (Class<?> m : moduleAnnotation.dependsOn()) {
-            resourceBindings.addAll(createBindingsForModule(m, context, loadedModules));
+            resourceBindings.addAll(createBindingsForModule(m, context));
         }
     }
 

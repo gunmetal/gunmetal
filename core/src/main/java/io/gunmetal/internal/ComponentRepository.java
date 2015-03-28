@@ -20,11 +20,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class ComponentRepository implements Replicable<ComponentRepository> {
 
+    private final ResourceAccessorFactory resourceAccessorFactory;
     private final ComponentRepository parentRepository;     
     private final Map<Dependency, ResourceAccessor> dependencyServices = new ConcurrentHashMap<>(64, .75f, 2);
     private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
     private final Queue<ResourceAccessor> myResourceAccessors = new LinkedList<>();
-    private final ResourceAccessorFactory resourceAccessorFactory;
 
     ComponentRepository(ResourceAccessorFactory resourceAccessorFactory,
                         ComponentRepository parentRepository) {
@@ -134,11 +134,12 @@ class ComponentRepository implements Replicable<ComponentRepository> {
     }
 
     @Override public ComponentRepository replicateWith(ComponentContext context) {
-        ComponentRepository newCache = new ComponentRepository(resourceAccessorFactory, parentRepository);
+        ComponentRepository newRepo =
+                new ComponentRepository(resourceAccessorFactory, parentRepository);
         for (ResourceAccessor resourceAccessor : myResourceAccessors) {
-            newCache.putAll(resourceAccessor.replicateWith(context), context.errors());
+            newRepo.putAll(resourceAccessor.replicateWith(context), context.errors());
         }
-        return newCache;
+        return newRepo;
     }
 
 }

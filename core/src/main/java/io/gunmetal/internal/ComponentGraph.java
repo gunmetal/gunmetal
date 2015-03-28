@@ -6,14 +6,12 @@ import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.ResolutionContext;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author rees.byars
@@ -26,22 +24,27 @@ final class ComponentGraph {
     private final ComponentRepository componentRepository;
     private final ComponentContext componentContext;
     private final ComponentInjectors componentInjectors;
-    private final Set<Class<?>> loadedModules;
 
     ComponentGraph(ComponentConfig componentConfig,
                    ComponentLinker componentLinker,
                    DependencySupplier dependencySupplier,
                    ComponentRepository componentRepository,
                    ComponentContext componentContext,
-                   ComponentInjectors componentInjectors,
-                   Set<Class<?>> loadedModules) {
+                   ComponentInjectors componentInjectors) {
         this.componentConfig = componentConfig;
         this.componentLinker = componentLinker;
         this.dependencySupplier = dependencySupplier;
         this.componentRepository = componentRepository;
         this.componentContext = componentContext;
         this.componentInjectors = componentInjectors;
-        this.loadedModules = loadedModules;
+    }
+
+    ComponentContext context() {
+        return componentContext;
+    }
+
+    ComponentRepository repository() {
+        return componentRepository;
     }
 
     void inject(Object injectionTarget) {
@@ -65,55 +68,27 @@ final class ComponentGraph {
         Map<Method, ComponentMethodConfig> configMap = new HashMap<>();
         Qualifier componentQualifier = componentConfig
                 .getConfigurableMetadataResolver()
-                .resolve(componentInterface, componentContext.errors());
+                .resolve(componentInterface);
         for (Method method : componentInterface.getDeclaredMethods()) {
             // TODO complete these checks
             if (method.getReturnType() == void.class ||
                     method.getName().equals("plus")) {
                 continue;
             }
-            Type[] paramTypes = method.getGenericParameterTypes();
-            final Annotation[][] methodParameterAnnotations
-                    = method.getParameterAnnotations();
-            Dependency[] dependencies = new Dependency[paramTypes.length];
-            for (int i = 0; i < paramTypes.length; i++) {
-                Type paramType = paramTypes[i];
-                Annotation[] annotations = methodParameterAnnotations[i];
-                AnnotatedElement annotatedElement =
-                        new AnnotatedElement() {
-                            @Override public <TT extends Annotation> TT getAnnotation(Class<TT> annotationClass) {
-                                for (Annotation annotation : annotations) {
-                                    if (annotationClass.isInstance(annotation)) {
-                                        return annotationClass.cast(annotation);
-                                    }
-                                }
-                                return null;
-                            }
-                            @Override public Annotation[] getAnnotations() {
-                                return annotations;
-                            }
+            Dependency[] dependencies = DependencyUtils.forMethod(
+                    method, componentConfig.getConfigurableMetadataResolver(), componentQualifier);
 
-                            @Override public Annotation[] getDeclaredAnnotations() {
-                                return annotations;
-                            }
-                        };
-                if (!annotatedElement.isAnnotationPresent(Param.class)) {
+            // TODO should be rolled into qualifier wrapper class
+            for (Dependency dependency : dependencies) {
+                if (Arrays.stream(dependency.qualifier().qualifiers()).noneMatch(q -> q instanceof Param)) {
                     throw new RuntimeException("ain't no @Param"); // TODO
                 }
-                Qualifier paramQualifier = componentConfig
-                        .getConfigurableMetadataResolver()
-                        .resolveDependencyQualifier(
-                                annotatedElement,
-                                componentQualifier,
-                                componentContext.errors()::add);
-                Dependency paramDependency =
-                        Dependency.from(paramQualifier, paramType);
-                dependencies[i] = paramDependency;
             }
+
             Type type = method.getGenericReturnType();
             Dependency dependency = Dependency.from(
                     componentConfig.getConfigurableMetadataResolver()
-                            .resolve(method, componentContext.errors())
+                            .resolve(method)
                             .merge(componentQualifier),
                     type);
             ResourceAccessor resourceAccessor = componentRepository.get(dependency);
@@ -166,14 +141,6 @@ final class ComponentGraph {
                             .force()
                             .get(dependencySupplier, resolutionContext);
                 }));
-    }
-
-    ComponentRepository graphCache() {
-        return componentRepository;
-    }
-
-    Set<Class<?>> loadedModules() {
-        return loadedModules;
     }
 
 }

@@ -132,13 +132,12 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
         return resourceMetadata;
     }
 
-    @Override public Qualifier resolve(AnnotatedElement annotatedElement, Errors errors) {
+    @Override public Qualifier resolve(AnnotatedElement annotatedElement) {
         return Qualifier.from(annotatedElement, qualifierType);
     }
 
     @Override public Qualifier resolveDependencyQualifier(AnnotatedElement parameter,
-                                                          Qualifier parentQualifier,
-                                                          ProvisionErrors errors) {
+                                                          Qualifier parentQualifier) {
         // TODO somewhat inefficient
         if (parameter.isAnnotationPresent(FromModule.class)) {
             return Qualifier.from(parameter, qualifierType).merge(parentQualifier);

@@ -68,8 +68,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                     Dependency dependency = Dependency.from(
                             qualifierResolver.resolveDependencyQualifier(
                                     field,
-                                    resourceMetadata.moduleMetadata().qualifier(),
-                                    (error) -> context.errors().add(resourceMetadata, error)),
+                                    resourceMetadata.moduleMetadata().qualifier()),
                             field.getGenericType());
                     injectors.add(new FieldInjector(field, resourceMetadata, dependency, context.linkers()));
                 },
@@ -81,8 +80,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                             dependenciesForFunction(
                                     resourceMetadata,
                                     function,
-                                    qualifierResolver,
-                                    context),
+                                    qualifierResolver),
                             context.linkers()));
                 },
                 resourceMetadata,
@@ -107,8 +105,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 dependenciesForFunction(
                         resourceMetadata,
                         function,
-                        qualifierResolver,
-                        context),
+                        qualifierResolver),
                 context.linkers());
         return new InstantiatorImpl(injector);
     }
@@ -129,8 +126,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                     dependenciesForFunction(
                             resourceMetadata,
                             function,
-                            qualifierResolver,
-                            context),
+                            qualifierResolver),
                     context.linkers());
             return new StatefulInstantiator(injector, resourceMetadata, moduleDependency);
         }
@@ -141,8 +137,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                 dependenciesForFunction(
                         resourceMetadata,
                         function,
-                        qualifierResolver,
-                        context),
+                        qualifierResolver),
                 context.linkers());
         return new InstantiatorImpl(injector);
     }
@@ -159,16 +154,14 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     private static Dependency[] dependenciesForFunction(ResourceMetadata<?> resourceMetadata,
                                                         ParameterizedFunction function,
-                                                        QualifierResolver qualifierResolver,
-                                                        ComponentContext context) {
+                                                        QualifierResolver qualifierResolver) {
         Dependency[] dependencies = new Dependency[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
             Parameter parameter = new Parameter(function, i);
             dependencies[i] = Dependency.from(
                     qualifierResolver.resolveDependencyQualifier(
                             parameter,
-                            resourceMetadata.moduleMetadata().qualifier(),
-                            (error) -> context.errors().add(resourceMetadata, error)),
+                            resourceMetadata.moduleMetadata().qualifier()),
                     parameter.type);
         }
         return dependencies;
@@ -461,8 +454,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                         Dependency dependency = Dependency.from(
                                 qualifierResolver.resolveDependencyQualifier(
                                         field,
-                                        resourceMetadata.moduleMetadata().qualifier(),
-                                        (error) -> context.errors().add(resourceMetadata, error)),
+                                        resourceMetadata.moduleMetadata().qualifier()),
                                 field.getGenericType());
                         ProvisionStrategy provisionStrategy = dependencySupplier.getProvisionStrategy(
                                 DependencyRequest.create(resourceMetadata, dependency));
@@ -474,8 +466,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                 dependenciesForFunction(
                                         resourceMetadata,
                                         function,
-                                        qualifierResolver,
-                                        context);
+                                        qualifierResolver);
                         ProvisionStrategy[] provisionStrategies = new ProvisionStrategy[dependencies.length];
                         for (int i = 0; i < dependencies.length; i++) {
                             provisionStrategies[i] = dependencySupplier.getProvisionStrategy(

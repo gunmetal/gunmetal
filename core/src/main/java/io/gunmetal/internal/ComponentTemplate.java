@@ -25,7 +25,6 @@ final class ComponentTemplate {
     private final ProvisionStrategyDecorator strategyDecorator;
     private final ResourceAccessorFactory resourceAccessorFactory;
     private final ComponentRepository componentRepository;
-    private final Set<Class<?>> loadedModules;
 
     private ComponentTemplate(
             Class<?> componentClass,
@@ -33,8 +32,7 @@ final class ComponentTemplate {
             InjectorFactory injectorFactory,
             ProvisionStrategyDecorator strategyDecorator,
             ResourceAccessorFactory resourceAccessorFactory,
-            ComponentRepository componentRepository,
-            Set<Class<?>> loadedModules) {
+            ComponentRepository componentRepository) {
         this.componentClass = componentClass;
         this.componentConfig = componentConfig;
         componentInjectors = new ComponentInjectors(
@@ -42,7 +40,6 @@ final class ComponentTemplate {
         this.strategyDecorator = strategyDecorator;
         this.resourceAccessorFactory = resourceAccessorFactory;
         this.componentRepository = componentRepository;
-        this.loadedModules = loadedModules;
     }
 
     static <T> T buildTemplate(ComponentGraph parentComponentGraph,
@@ -110,7 +107,7 @@ final class ComponentTemplate {
 
         ComponentRepository componentRepository = new ComponentRepository(
                 resourceAccessorFactory,
-                parentComponentGraph == null ? null : parentComponentGraph.graphCache());
+                parentComponentGraph == null ? null : parentComponentGraph.repository());
 
         ComponentLinker componentLinker = new ComponentLinker();
         ComponentErrors errors = new ComponentErrors();
@@ -120,14 +117,14 @@ final class ComponentTemplate {
                 errors,
                 Collections.emptyMap()
         );
-        Set<Class<?>> loadedModules = new HashSet<>();
         if (parentComponentGraph != null) {
-            loadedModules.addAll(parentComponentGraph.loadedModules());
+            componentContext.loadedModules().addAll(
+                    parentComponentGraph.context().loadedModules());
         }
 
         for (Class<?> module : modules) {
             List<ResourceAccessor> moduleResourceAccessors =
-                    resourceAccessorFactory.createForModule(module, componentContext, loadedModules);
+                    resourceAccessorFactory.createForModule(module, componentContext);
             componentRepository.putAll(moduleResourceAccessors, errors);
         }
 
@@ -149,8 +146,7 @@ final class ComponentTemplate {
                 injectorFactory,
                 strategyDecorator,
                 resourceAccessorFactory,
-                componentRepository,
-                loadedModules);
+                componentRepository);
 
         return componentFactoryInterface.cast(Proxy.newProxyInstance(
                 componentFactoryInterface.getClassLoader(),
@@ -200,8 +196,7 @@ final class ComponentTemplate {
                 dependencySupplier,
                 newComponentRepository,
                 componentContext,
-                injectors,
-                loadedModules);
+                injectors);
 
         return componentGraph.createProxy(componentClass);
 

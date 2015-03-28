@@ -19,7 +19,6 @@ package io.gunmetal.internal;
 import io.gunmetal.spi.DependencyRequest;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author rees.byars
@@ -28,8 +27,7 @@ interface BindingFactory {
 
     List<Binding> createBindingsForModule(
             Class<?> module,
-            ComponentContext context,
-            Set<Class<?>> loadedModules);
+            ComponentContext context);
 
     Binding createJitBindingForRequest(
             DependencyRequest dependencyRequest,

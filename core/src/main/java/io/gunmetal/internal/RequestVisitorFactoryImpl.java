@@ -31,8 +31,8 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
         if (moduleAnnotation == Module.NONE) {
             return RequestVisitor.NONE;
         }
-        final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation, context);
-        final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation, context);
+        final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation);
+        final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation);
         final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
         final RequestVisitor moduleResourceVisitor =
                 moduleResourceVisitor(resourceMetadata, moduleMetadata);
@@ -54,7 +54,7 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
         };
     }
 
-    private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation, ComponentContext context) {
+    private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation) {
 
         Class<? extends BlackList> blackListConfigClass =
                 moduleAnnotation.notAccessibleFrom();
@@ -74,7 +74,7 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
             blackListClasses = new Class<?>[]{};
         }
 
-        final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass, context.errors());
+        final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
 
         return (dependencyRequest, errors) -> {
 
@@ -98,7 +98,7 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
         };
     }
 
-    private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation, ComponentContext context) {
+    private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation) {
 
         Class<? extends WhiteList> whiteListConfigClass =
                 moduleAnnotation.onlyAccessibleFrom();
@@ -118,7 +118,7 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
             whiteListClasses = new Class<?>[]{};
         }
 
-        final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass, context.errors());
+        final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
 
         return (dependencyRequest, errors) -> {
 

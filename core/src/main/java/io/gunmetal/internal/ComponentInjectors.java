@@ -46,7 +46,7 @@ final class ComponentInjectors implements Replicable<ComponentInjectors> {
 
         if (injector == null) {
 
-            final Qualifier qualifier = metadataResolver.resolve(targetClass, componentContext.errors());
+            final Qualifier qualifier = metadataResolver.resolve(targetClass);
 
             injector = injectorFactory.compositeInjector(
                     metadataResolver.resolveMetadata(

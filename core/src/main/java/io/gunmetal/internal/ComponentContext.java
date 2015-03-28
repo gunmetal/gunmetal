@@ -4,7 +4,9 @@ import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.Linkers;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author rees.byars
@@ -14,6 +16,7 @@ class ComponentContext {
     private final ProvisionStrategyDecorator strategyDecorator;
     private final Linkers linkers;
     private final Errors errors;
+    private final Set<Class<?>> loadedModules = new HashSet<>();
     private final Map<Class<?>, Object> statefulSources;
 
     ComponentContext(ProvisionStrategyDecorator strategyDecorator,
@@ -36,6 +39,10 @@ class ComponentContext {
 
     Errors errors() {
         return errors;
+    }
+
+    Set<Class<?>> loadedModules() {
+        return loadedModules;
     }
 
     Object statefulSource(Class<?> sourceClass) {

@@ -10,7 +10,6 @@ import io.gunmetal.spi.ResourceMetadata;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -29,8 +28,8 @@ class ResourceAccessorFactoryImpl implements ResourceAccessorFactory {
     }
 
     @Override public List<ResourceAccessor> createForModule(
-            Class<?> module, ComponentContext context, Set<Class<?>> loadedModules) {
-        return bindingFactory.createBindingsForModule(module, context, loadedModules)
+            Class<?> module, ComponentContext context) {
+        return bindingFactory.createBindingsForModule(module, context)
                 .stream()
                 .map(binding -> new ResourceAccessorImpl(
                         binding,
