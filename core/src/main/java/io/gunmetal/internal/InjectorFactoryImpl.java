@@ -100,7 +100,11 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new Instantiator() {
             @Override public Object newInstance(DependencySupplier supplier,
                                                 ResolutionContext resolutionContext) {
-                return resolutionContext.getParam(dependency);
+                Object param = resolutionContext.getParam(dependency);
+                if (param == null && !resolutionContext.hasParam(dependency)) {
+                    throw new IllegalArgumentException("ain't no param u mess up"); // TODO
+                }
+                return param;
             }
 
             @Override public List<Dependency> dependencies() {

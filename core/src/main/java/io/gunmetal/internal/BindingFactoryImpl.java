@@ -51,7 +51,7 @@ class BindingFactoryImpl implements BindingFactory {
         this.resourceMetadataResolver = resourceMetadataResolver;
     }
 
-    @Override public List<Binding> createBindingsForModule(final Class<?> module,
+    @Override public List<Binding> createBindingsForModule(Class<?> module,
                                                            ComponentContext context) {
         if (context.loadedModules().contains(module)) {
             return Collections.emptyList();

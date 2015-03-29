@@ -225,7 +225,8 @@ final class ComponentTemplate {
                 statefulModulesMap
         );
 
-        ComponentRepository newComponentRepository = componentRepository.replicateWith(componentContext);
+        ComponentRepository newComponentRepository =
+                componentRepository.replicateWith(componentContext);
 
         DependencySupplier dependencySupplier =
                 new ComponentDependencySupplier(

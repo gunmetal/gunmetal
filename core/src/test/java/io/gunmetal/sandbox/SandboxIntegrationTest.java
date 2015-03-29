@@ -31,7 +31,6 @@ import io.gunmetal.internal.ComponentBuilder;
 import io.gunmetal.sandbox.testmocks.A;
 import io.gunmetal.sandbox.testmocks.AA;
 import io.gunmetal.sandbox.testmocks.F;
-import io.gunmetal.sandbox.testmocks.N;
 import io.gunmetal.sandbox.testmocks.NewGunmetalBenchMarkModule;
 import io.gunmetal.spi.Converter;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
@@ -81,8 +80,10 @@ public class SandboxIntegrationTest {
         @Inject SandboxIntegrationTest sandboxIntegrationTest;
     }
 
-    @Module(notAccessibleFrom = TestModule.BlackList.class, dependsOn = StatefulModule.class)
-    static class TestModule {
+    @Module(notAccessibleFrom = TestModule.BlackList.class,
+            dependsOn = StatefulModule.class,
+            type = Module.Type.STATELESS)
+    public static class TestModule {
 
         @Provides @Singleton @Overrides(allowCycle = true) static Bad providedCirc(Supplier<Circ> circProvider) {
             return circProvider.get();
@@ -121,7 +122,7 @@ public class SandboxIntegrationTest {
             return new SandboxIntegrationTest();
         }
 
-        @Provides @Singleton static Object test2(Supplier<SandboxIntegrationTest> test, BlackList blackList) {
+        @Provides @Singleton static Object test2(TestModule testModule, Supplier<SandboxIntegrationTest> test, BlackList blackList) {
             System.out.println(test.get());
             System.out.println(test.get());
 
@@ -167,7 +168,7 @@ public class SandboxIntegrationTest {
     @Module(type = Module.Type.COMPONENT_PARAM)
     @Stateful
     @Singleton
-    static class StatefulModule {
+    public static class StatefulModule {
 
         String name;
 
@@ -207,6 +208,8 @@ public class SandboxIntegrationTest {
         void inject(Object o);
 
         ComponentBuilder plus();
+
+        TestModule t(@Param String name);
 
         public interface Factory {
             TestComponent create(StatefulModule statefulModule);
@@ -319,7 +322,7 @@ public class SandboxIntegrationTest {
 
     @Module(subsumes = MyLibrary.class, type = Module.Type.PROVIDED)
     @Main
-    static class PlusModule implements Cheese {
+    public static class PlusModule implements Cheese {
 
         @Inject SandboxIntegrationTest sandboxIntegrationTest;
 
@@ -351,7 +354,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    interface Cheese {
+    public interface Cheese {
     }
 
     @Module(dependsOn = PlusModule.class)
@@ -420,30 +423,8 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Test
-    public void testMore() {
-        class ProviderDep {
-            @Inject Supplier<N> nProvider;
-        }
-        ProviderDep p =  new ProviderDep();
-        APPLICATION_CONTAINER.inject(p);
-        newGunmetalProvider = p.nProvider;
-        newGunmetalStandup(10000);
-    }
-
-    Supplier<N> newGunmetalProvider;
-    static final GComponent APPLICATION_CONTAINER = Component.builder().build(GComponent.Factory.class).create();
-
     static class AaHolder {
         @Inject AA aa;
-    }
-
-    long newGunmetalStandup(int reps) {
-        int dummy = 0;
-        for (long i = 0; i < reps; i++) {
-            dummy |= newGunmetalProvider.get().hashCode();
-        }
-        return dummy;
     }
 
     @Module static class ConversionModule {
@@ -525,6 +506,34 @@ public class SandboxIntegrationTest {
         assertEquals("sweet", component.getMyModule("sweet").name);
     }
 
+    @Module
+    public static class Bullshit {
 
+        @Provides static Bullshit bs(@Param String word) {
+            System.out.println(word);
+            return new Bullshit();
+        }
+
+        @Provides @Singleton static String bs() {
+            return "test";
+        }
+
+    }
+
+    @Module(dependsOn = Bullshit.class)
+    public interface BullshitComponent {
+        Bullshit bs(@Param String word);
+        public static interface Factory {
+            BullshitComponent bullshitComponent();
+        }
+    }
+
+    @Test
+    public void testBullShit() {
+        Component.builder()
+                .build(BullshitComponent.Factory.class)
+                .bullshitComponent()
+                .bs("what");
+    }
 
 }

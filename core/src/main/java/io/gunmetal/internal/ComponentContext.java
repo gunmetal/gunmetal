@@ -90,6 +90,10 @@ class ComponentContext {
             return params.get(dependency);
         }
 
+        @Override public boolean hasParam(Dependency dependency) {
+            return params != null && params.containsKey(dependency);
+        }
+
     }
 
 }

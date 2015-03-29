@@ -27,6 +27,8 @@ public interface ResolutionContext {
 
     Object getParam(Dependency dependency);
 
+    boolean hasParam(Dependency dependency);
+
     interface States {
         byte NEW = 0;
         byte PRE_INSTANTIATION = 1;

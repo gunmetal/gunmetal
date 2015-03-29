@@ -48,39 +48,43 @@ class ComponentRepository implements Replicable<ComponentRepository> {
     }
 
     void put(final Dependency dependency, ResourceAccessor resourceAccessor, Errors errors) {
-        ResourceMetadata<?> newMetadata = 
+
+        ResourceMetadata<?> newMetadata =
                 resourceAccessor.binding().resource().metadata();
+
         if (newMetadata.isCollectionElement()) {
             putCollectionElement(dependency, resourceAccessor);
-        } else {
-            ResourceAccessor previous = dependencyServices.put(dependency, resourceAccessor);
-            if (previous != null) {
+            return;
+        }
 
-                ResourceMetadata<?> prevMetadata =
-                        previous.binding().resource().metadata();
-                
-                // TODO better messages, include provisions, keep list?
-                if (prevMetadata.overrides().allowMappingOverride()
-                        && newMetadata.overrides().allowMappingOverride()) {
-                    errors.add("more than one of type with override enabled -> " + dependency);
-                    dependencyServices.put(dependency, previous);
-                } else if (
-                        (overriddenDependencies.contains(dependency)
-                                && !newMetadata.overrides().allowMappingOverride())
-                                || (!prevMetadata.overrides().allowMappingOverride()
-                                && !newMetadata.overrides().allowMappingOverride())) {
-                    errors.add("more than one of type without override enabled -> " + dependency);
-                    dependencyServices.put(dependency, previous);
-                } else if (newMetadata.overrides().allowMappingOverride()) {
-                    myResourceAccessors.add(resourceAccessor);
-                    overriddenDependencies.add(dependency);
-                } else if (prevMetadata.overrides().allowMappingOverride()) {
-                    dependencyServices.put(dependency, previous);
-                    overriddenDependencies.add(dependency);
-                }
-            } else {
-                myResourceAccessors.add(resourceAccessor);
-            }
+        ResourceAccessor previous = dependencyServices.put(dependency, resourceAccessor);
+        if (previous == null) {
+            myResourceAccessors.add(resourceAccessor);
+            return;
+        }
+
+        ResourceMetadata<?> prevMetadata =
+                previous.binding().resource().metadata();
+
+        // TODO better messages
+        if (prevMetadata.overrides().allowMappingOverride()
+                && newMetadata.overrides().allowMappingOverride()) {
+            dependencyServices.put(dependency, previous);
+            errors.add("more than one of type with override enabled -> " + dependency);
+        } else if (
+                (overriddenDependencies.contains(dependency)
+                        && !newMetadata.overrides().allowMappingOverride())
+                        || (!prevMetadata.overrides().allowMappingOverride()
+                        && !newMetadata.overrides().allowMappingOverride())) {
+            dependencyServices.put(dependency, previous);
+            errors.add("more than one of type without override enabled -> " + dependency);
+        } else if (newMetadata.overrides().allowMappingOverride()) {
+            myResourceAccessors.add(resourceAccessor);
+            myResourceAccessors.remove(previous);
+            overriddenDependencies.add(dependency);
+        } else if (prevMetadata.overrides().allowMappingOverride()) {
+            dependencyServices.put(dependency, previous);
+            overriddenDependencies.add(dependency);
         }
     }
 
@@ -137,6 +141,7 @@ class ComponentRepository implements Replicable<ComponentRepository> {
         for (ResourceAccessor resourceAccessor : myResourceAccessors) {
             newRepo.putAll(resourceAccessor.replicateWith(context), context.errors());
         }
+        newRepo.overriddenDependencies.addAll(overriddenDependencies);
         return newRepo;
     }
 

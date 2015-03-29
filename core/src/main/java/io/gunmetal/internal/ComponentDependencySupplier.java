@@ -1,15 +1,14 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.MultiBind;
-import io.gunmetal.Param;
 import io.gunmetal.Ref;
 import io.gunmetal.spi.Converter;
 import io.gunmetal.spi.ConverterSupplier;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.DependencySupplier;
-import io.gunmetal.spi.SupplierAdapter;
 import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.SupplierAdapter;
 import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.ParameterizedType;
@@ -51,12 +50,6 @@ class ComponentDependencySupplier implements DependencySupplier {
             final DependencyRequest dependencyRequest) {
 
         Dependency dependency = dependencyRequest.dependency();
-
-        // TODO param check is nasty.  wrap qualifier in DependencyMetadata class and resolve this in resolver?
-        // TODO add visitor for param request and decorator for param provision
-        if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof Param)) {
-            return (supplier, resolutionContext) -> resolutionContext.getParam(dependencyRequest.dependency());
-        }
 
         // try cached strategy
         ProvisionStrategy strategy = getCachedProvisionStrategy(dependencyRequest);
