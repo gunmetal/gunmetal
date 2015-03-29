@@ -29,6 +29,7 @@ import io.gunmetal.spi.TypeKey;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,13 +78,17 @@ class BindingFactoryImpl implements BindingFactory {
     }
 
     @Override public Binding createParamBinding(
-            Dependency dependency, ComponentContext context) {
-        // TODO provider and module?  what should they be?
-        ResourceMetadata<?> resourceMetadata =
+            Parameter parameter, ComponentContext context) {
+        ResourceMetadata<Parameter> resourceMetadata =
                 resourceMetadataResolver.resolveMetadata(
-                        dependency.typeKey().raw(),
-                        moduleMetadata(dependency.typeKey().raw(), Module.NONE),
+                        parameter,
+                        moduleMetadata(
+                                parameter.getDeclaringExecutable().getDeclaringClass(),
+                                Module.NONE),
                         context.errors());
+        Dependency dependency = Dependency.from(
+                resourceMetadata.qualifier(),
+                parameter.getType());
         return new BindingImpl(
                 resourceFactory.withParamProvider(resourceMetadata, dependency, context),
                 Collections.singletonList(dependency));

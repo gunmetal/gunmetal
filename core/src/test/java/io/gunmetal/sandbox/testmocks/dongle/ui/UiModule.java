@@ -2,7 +2,7 @@ package io.gunmetal.sandbox.testmocks.dongle.ui;
 
 import io.gunmetal.FromModule;
 import io.gunmetal.Module;
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 import io.gunmetal.sandbox.testmocks.dongle.auth.AuthAdapter;
 import io.gunmetal.sandbox.testmocks.dongle.auth.AuthLib;
 import io.gunmetal.sandbox.testmocks.dongle.auth.AuthService;
@@ -29,18 +29,18 @@ public class UiModule {
     class WhiteList implements io.gunmetal.WhiteList {
     }
 
-    @Provides @Thread static DongleController dongleController(
+    @Supplies @Thread static DongleController dongleController(
             @Bl DongleService dongleService,
             @FromModule AuthService authService,
             @FromModule Map<String, String> requestContext) {
         return new DongleController();
     }
 
-    @Provides @Thread private static Map<String, String> requestContext(@FromModule User user) {
+    @Supplies @Thread private static Map<String, String> requestContext(@FromModule User user) {
         return new HashMap<>();
     }
 
-    @Provides private static AuthAdapter authAdapter(@FromModule FactoryTest factoryTest) {
+    @Supplies private static AuthAdapter authAdapter(@FromModule FactoryTest factoryTest) {
         return new AuthAdapter() {
         };
     }

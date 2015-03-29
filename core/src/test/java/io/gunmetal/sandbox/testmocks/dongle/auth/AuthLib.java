@@ -2,7 +2,7 @@ package io.gunmetal.sandbox.testmocks.dongle.auth;
 
 import io.gunmetal.FromModule;
 import io.gunmetal.Module;
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 
 /**
  * @author rees.byars
@@ -10,18 +10,18 @@ import io.gunmetal.Provides;
 @Module(lib = true, type = Module.Type.CONSTRUCTED)
 public class AuthLib {
 
-    @Provides private AuthService authService(@FromModule AuthAdapter authAdapter,
+    @Supplies private AuthService authService(@FromModule AuthAdapter authAdapter,
                                               @FromModule Author author,
                                               @FromModule Authorizer authorizer,
                                               @FromModule Auteur auteur) {
         return new AuthService();
     }
 
-    @Provides Authorizer authorizer(@FromModule AuthAdapter authAdapter) {
+    @Supplies Authorizer authorizer(@FromModule AuthAdapter authAdapter) {
         return () -> false;
     }
 
-    @Provides Auteur authorizer(@FromModule Author author) {
+    @Supplies Auteur authorizer(@FromModule Author author) {
         return author;
     }
 

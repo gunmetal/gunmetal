@@ -17,12 +17,12 @@
 package io.gunmetal.sandbox.testmocks;
 
 import io.gunmetal.Module;
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 
 @Module
 public class SlimGunmetalBenchMarkModule {
 
-    @Provides public static AA aa(A a, BB bb, R r, E e, E ee, S s) {
+    @Supplies public static AA aa(A a, BB bb, R r, E e, E ee, S s) {
         return new AA(a, bb, r, e, ee, s);
     }
 

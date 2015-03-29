@@ -2,7 +2,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 import io.gunmetal.Singleton;
 import io.gunmetal.spi.ClassWalker;
 import io.gunmetal.spi.ConstructorResolver;
@@ -24,47 +24,47 @@ import java.util.HashMap;
 @Module(type = Module.Type.CONSTRUCTED)
 public class BaseTestModule {
 
-    @Provides ProvisionStrategyDecorator strategyDecorator =
+    @Supplies ProvisionStrategyDecorator strategyDecorator =
             ProvisionStrategyDecorator::none;
 
-    @Provides SupplierAdapter supplierAdapter = new DefaultSupplierAdapter();
+    @Supplies SupplierAdapter supplierAdapter = new DefaultSupplierAdapter();
 
-    @Provides ComponentErrors componentErrors = new ComponentErrors();
+    @Supplies ComponentErrors componentErrors = new ComponentErrors();
 
-    @Provides ComponentLinker componentLinker = new ComponentLinker();
+    @Supplies ComponentLinker componentLinker = new ComponentLinker();
 
-    @Provides ComponentContext componentContext = new ComponentContext(
+    @Supplies ComponentContext componentContext = new ComponentContext(
             strategyDecorator, componentLinker, componentErrors, new HashMap<>());
 
-    @Provides InjectionResolver injectionResolver = new AnnotationInjectionResolver(Inject.class);
+    @Supplies InjectionResolver injectionResolver = new AnnotationInjectionResolver(Inject.class);
 
-    @Provides ConstructorResolver constructorResolver =
+    @Supplies ConstructorResolver constructorResolver =
             new ExactlyOneConstructorResolver(injectionResolver);
 
-    @Provides ConfigurableMetadataResolver metadataResolver =
+    @Supplies ConfigurableMetadataResolver metadataResolver =
             new ConfigurableMetadataResolver();
 
-    @Provides RequestVisitorFactory requestVisitorFactory =
+    @Supplies RequestVisitorFactory requestVisitorFactory =
             new RequestVisitorFactoryImpl(metadataResolver, false);
 
-    @Provides ClassWalker classWalker =
+    @Supplies ClassWalker classWalker =
             new ClassWalkerImpl(injectionResolver, false, false);
 
-    @Provides InjectorFactory injectorFactory =
+    @Supplies InjectorFactory injectorFactory =
             new InjectorFactoryImpl(metadataResolver, constructorResolver, classWalker);
 
-    @Provides ResourceFactory resourceFactory =
+    @Supplies ResourceFactory resourceFactory =
             new ResourceFactoryImpl(injectorFactory, false);
 
-    @Provides BindingFactory bindingFactory = new BindingFactoryImpl(
+    @Supplies BindingFactory bindingFactory = new BindingFactoryImpl(
             resourceFactory, metadataResolver, metadataResolver);
 
-    @Provides ResourceAccessorFactory resourceAccessorFactory =
+    @Supplies ResourceAccessorFactory resourceAccessorFactory =
             new ResourceAccessorFactoryImpl(bindingFactory, requestVisitorFactory);
 
-    @Provides ComponentRepository componentRepository = new ComponentRepository(resourceAccessorFactory, null);
+    @Supplies ComponentRepository componentRepository = new ComponentRepository(resourceAccessorFactory, null);
 
-    @Provides DependencySupplier dependencySupplier = new ComponentDependencySupplier(
+    @Supplies DependencySupplier dependencySupplier = new ComponentDependencySupplier(
             supplierAdapter, resourceAccessorFactory, to -> Collections.emptyList(), componentRepository, componentContext, false);
 
 }

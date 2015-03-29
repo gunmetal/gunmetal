@@ -5,6 +5,7 @@ import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.ProvisionStrategy;
 
+import java.lang.reflect.Parameter;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ interface ResourceAccessorFactory {
             ComponentContext context);
 
     ResourceAccessor createForParam(
-            Dependency dependency,
+            Parameter parameter,
             ComponentContext context);
 
     ResourceAccessor createJit(

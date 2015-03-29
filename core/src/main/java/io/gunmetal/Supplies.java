@@ -16,6 +16,7 @@
 
 package io.gunmetal;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,6 +29,17 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Provides {
-    Class<?> implementedBy() default void.class;
+public @interface Supplies {
+
+    Class<?> with() default void.class;
+
+    Supplies NONE = new Supplies() {
+        @Override public Class<?> with() {
+            return void.class;
+        }
+        @Override public Class<? extends Annotation> annotationType() {
+            return Supplies.class;
+        }
+    } ;
+
 }

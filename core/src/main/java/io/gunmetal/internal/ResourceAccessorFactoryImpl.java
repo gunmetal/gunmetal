@@ -7,6 +7,7 @@ import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ResourceMetadata;
 
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,8 +40,8 @@ class ResourceAccessorFactoryImpl implements ResourceAccessorFactory {
     }
 
     @Override public ResourceAccessor createForParam(
-            Dependency dependency, ComponentContext context) {
-        Binding binding = bindingFactory.createParamBinding(dependency, context);
+            Parameter parameter, ComponentContext context) {
+        Binding binding = bindingFactory.createParamBinding(parameter, context);
         return new ResourceAccessorImpl(
                 binding,
                 requestVisitorFactory.resourceRequestVisitor(

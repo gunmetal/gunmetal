@@ -96,7 +96,8 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new LazyCompositeInjector(classWalker, qualifierResolver, resourceMetadata, context);
     }
 
-    @Override public Instantiator paramInstantiator(Dependency dependency) {
+    @Override public Instantiator paramInstantiator(
+            Dependency dependency) {
         return new Instantiator() {
             @Override public Object newInstance(DependencySupplier supplier,
                                                 ResolutionContext resolutionContext) {
@@ -162,6 +163,20 @@ class InjectorFactoryImpl implements InjectorFactory {
     @Override public Instantiator fieldInstantiator(
             ResourceMetadata<Field> resourceMetadata, Dependency moduleDependency, ComponentContext context) {
         Field provider = resourceMetadata.provider();
+        if (resourceMetadata.supplies().with() != void.class) {
+            Constructor<?> constructor = constructorResolver.resolve(
+                    resourceMetadata.supplies().with());
+            ParameterizedFunction function = new ConstructorFunction(constructor);
+            Injector injector = new FunctionInjector(
+                    function,
+                    resourceMetadata,
+                    dependenciesForFunction(
+                            resourceMetadata,
+                            function,
+                            qualifierResolver),
+                    context.linkers());
+            return new InstantiatorImpl(injector);
+        }
         if (!Modifier.isStatic(provider.getModifiers())) {
             return new StatefulInstantiator(
                     new ReverseFieldInjector(provider), resourceMetadata,  moduleDependency);
@@ -174,14 +189,48 @@ class InjectorFactoryImpl implements InjectorFactory {
                                                         QualifierResolver qualifierResolver) {
         Dependency[] dependencies = new Dependency[function.getParameterTypes().length];
         for (int i = 0; i < dependencies.length; i++) {
-            Parameter parameter = new Parameter(function, i);
+            Parameter parameter = new Parameter(
+                    function.getParameterAnnotations()[i],
+                    function.getParameterTypes()[i]);
             dependencies[i] = Dependency.from(
                     qualifierResolver.resolveDependencyQualifier(
                             parameter,
                             resourceMetadata.moduleMetadata().qualifier()),
-                    parameter.type);
+                    parameter.type());
         }
         return dependencies;
+    }
+
+    private static class Parameter implements AnnotatedElement {
+
+        private final Annotation[] annotations;
+        private final Type type;
+
+        Parameter(Annotation[] annotations, Type type) {
+            this.annotations = annotations;
+            this.type = type;
+        }
+
+        @Override public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+            for (Annotation annotation : annotations) {
+                if (annotationClass.isInstance(annotation)) {
+                    return annotationClass.cast(annotation);
+                }
+            }
+            return null;
+        }
+
+        @Override public Annotation[] getAnnotations() {
+            return annotations;
+        }
+
+        @Override public Annotation[] getDeclaredAnnotations() {
+            return annotations;
+        }
+
+        Type type() {
+            return type;
+        }
     }
 
     private interface ParameterizedFunction {
@@ -235,35 +284,6 @@ class InjectorFactoryImpl implements InjectorFactory {
         @Override public Annotation[][] getParameterAnnotations() {
             return constructor.getParameterAnnotations();
         }
-    }
-
-    private static class Parameter implements AnnotatedElement {
-
-        final Annotation[] annotations;
-        final Type type;
-
-        Parameter(ParameterizedFunction parameterizedFunction, int index) {
-            annotations = parameterizedFunction.getParameterAnnotations()[index];
-            type = parameterizedFunction.getParameterTypes()[index];
-        }
-
-        @Override public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-            for (Annotation annotation : annotations) {
-                if (annotationClass.isInstance(annotation)) {
-                    return annotationClass.cast(annotation);
-                }
-            }
-            return null;
-        }
-
-        @Override public Annotation[] getAnnotations() {
-            return annotations;
-        }
-
-        @Override public Annotation[] getDeclaredAnnotations() {
-            return annotations;
-        }
-
     }
 
     private static class FieldInjector implements Injector {

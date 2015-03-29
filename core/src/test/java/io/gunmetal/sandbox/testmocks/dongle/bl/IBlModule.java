@@ -4,7 +4,7 @@ import io.gunmetal.FromModule;
 import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
 import io.gunmetal.sandbox.testmocks.dongle.dal.DalModule;
@@ -28,29 +28,29 @@ public interface IBlModule {
     class BlackList implements io.gunmetal.BlackList {
     }
 
-    @Provides public DongleService dongleService(@Dal DongleDao dongleDao,
+    @Supplies public DongleService dongleService(@Dal DongleDao dongleDao,
                                                  @FromModule DonglerFactory donglerFactory,
                                                  @FromModule Ref<RuntimeException> runtimeExceptionRef);
 
-    @Provides @MultiBind static Dongler dongler1() {
+    @Supplies @MultiBind static Dongler dongler1() {
         return new Dongler();
     }
 
-    @Provides @MultiBind static Dongler dongler2() {
+    @Supplies @MultiBind static Dongler dongler2() {
         return new Dongler();
     }
 
-    @Provides static DonglerFactory donglerFactory(
+    @Supplies static DonglerFactory donglerFactory(
             @MultiBind @Bl Supplier<List<Dongler>> donglers) {
         List<Dongler> donglers1 = donglers.get();
         return name -> new Dongler(name, donglers1);
     }
 
-    @Provides @Lazy static RuntimeException runtimeException() {
+    @Supplies @Lazy static RuntimeException runtimeException() {
         throw new UnsupportedOperationException("this dependency should not be instantiated");
     }
 
-    @Provides @Singleton static IBlModule me() {
+    @Supplies @Singleton static IBlModule me() {
         return new BlModule();
     }
 

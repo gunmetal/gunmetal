@@ -3,7 +3,7 @@ package io.gunmetal.sandbox.testmocks.dongle.ws;
 import io.gunmetal.AccessLevel;
 import io.gunmetal.FromModule;
 import io.gunmetal.Module;
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 import io.gunmetal.sandbox.testmocks.dongle.auth.AuthAdapter;
 import io.gunmetal.sandbox.testmocks.dongle.auth.AuthLib;
 import io.gunmetal.sandbox.testmocks.dongle.auth.AuthService;
@@ -27,12 +27,12 @@ public class WsModule {
     class WhiteList implements io.gunmetal.WhiteList {
     }
 
-    @Provides static DongleResource dongleResource(@Bl DongleService dongleService,
+    @Supplies static DongleResource dongleResource(@Bl DongleService dongleService,
                                                    @FromModule AuthService authService) {
         return new DongleResource();
     }
 
-    @Provides static AuthAdapter authAdapter() {
+    @Supplies static AuthAdapter authAdapter() {
         return new AuthAdapter() {
         };
     }

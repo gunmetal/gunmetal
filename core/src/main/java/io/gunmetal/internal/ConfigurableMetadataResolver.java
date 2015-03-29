@@ -5,9 +5,9 @@ import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
 import io.gunmetal.Overrides;
-import io.gunmetal.Provided;
-import io.gunmetal.Provides;
+import io.gunmetal.Param;
 import io.gunmetal.Singleton;
+import io.gunmetal.Supplies;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.ProvisionErrors;
@@ -21,6 +21,7 @@ import io.gunmetal.spi.Scopes;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -91,7 +92,7 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
         return this;
     }
 
-    public <T extends AnnotatedElement & Member> ResourceMetadata<T> resolveMetadata(
+    @Override public <T extends AnnotatedElement & Member> ResourceMetadata<T> resolveMetadata(
             T annotatedElement, ModuleMetadata moduleMetadata, Errors errors) {
         final Resolver resolver = new Resolver(annotatedElement, moduleMetadata);
         ResourceMetadata<T> resourceMetadata =
@@ -105,8 +106,30 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
                         resolver.eager,
                         resolver.collectionElement,
                         resolver.isModule,
-                        resolver.isProvided,
-                        resolver.isProvider);
+                        resolver.isProvider,
+                        resolver.supplies,
+                        resolver.isParam);
+        validate(resourceMetadata, (error) -> errors.add(resourceMetadata, error));
+        return resourceMetadata;
+    }
+
+    @Override public <T extends Parameter> ResourceMetadata<T> resolveMetadata(
+            T annotatedElement, ModuleMetadata moduleMetadata, Errors errors) {
+        final Resolver resolver = new Resolver(annotatedElement, moduleMetadata);
+        ResourceMetadata<T> resourceMetadata =
+                new ResourceMetadata<>(
+                        annotatedElement,
+                        annotatedElement.getDeclaringExecutable().getDeclaringClass(),
+                        moduleMetadata,
+                        resolver.qualifier(),
+                        resolver.scope(),
+                        resolver.overrides,
+                        resolver.eager,
+                        resolver.collectionElement,
+                        resolver.isModule,
+                        resolver.isProvider,
+                        resolver.supplies,
+                        resolver.isParam);
         validate(resourceMetadata, (error) -> errors.add(resourceMetadata, error));
         return resourceMetadata;
     }
@@ -126,8 +149,9 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
                         resolver.eager,
                         resolver.collectionElement,
                         resolver.isModule,
-                        resolver.isProvided,
-                        resolver.isProvider);
+                        resolver.isProvider,
+                        resolver.supplies,
+                        resolver.isParam);
         validate(resourceMetadata, (error) -> errors.add(resourceMetadata, error));
         return resourceMetadata;
     }
@@ -183,8 +207,9 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
         boolean collectionElement = false;
         boolean eager = !indicatesEager;
         boolean isModule = false;
-        boolean isProvided = false;
         boolean isProvider = false;
+        Supplies supplies= Supplies.NONE;
+        boolean isParam = false;
 
         Resolver(AnnotatedElement annotatedElement, ModuleMetadata moduleMetadata) {
             this.moduleMetadata = moduleMetadata;
@@ -211,8 +236,9 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
 
         private void processAnnotation(Annotation annotation) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
-            if (annotationType == Provides.class) {
+            if (annotationType == Supplies.class) {
                 isProvider = true;
+                supplies = (Supplies) annotation;
             } else if (annotationType == Overrides.class) {
                 overrides = (Overrides) annotation;
             } else if (annotationType == MultiBind.class) {
@@ -222,9 +248,10 @@ final class ConfigurableMetadataResolver implements ResourceMetadataResolver, Qu
                 eager = indicatesEager;
             } else if (annotationType == Module.class) {
                 isModule = true;
-            } else if (annotationType == Provided.class) {
-                isProvided = true;
-            }else {
+            } else if (annotationType == Param.class) {
+                isParam = true;
+                qualifiers.add(annotation);
+            } else {
                 if (annotationType.isAnnotationPresent(scopeType)) {
                     scopeAnnotationType = annotationType;
                 }

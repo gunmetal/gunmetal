@@ -85,13 +85,16 @@ class ResourceAccessorImpl implements ResourceAccessor {
         ResourceMetadata<?> resourceMetadata = resource.metadata();
         ModuleMetadata moduleMetadata = resourceMetadata.moduleMetadata();
 
+        // TODO this could be better
         AccessFilter<Class<?>> accessFilter;
-        if (resourceMetadata.isProviderMember()) {
+        if (resourceMetadata.provider() instanceof Class) {
+            accessFilter = AccessFilter.create(
+                    (Class<?>) resourceMetadata.provider());
+        } else if (resourceMetadata.provider() instanceof Member) {
             accessFilter = AccessFilter.create(
                     (AnnotatedElement & Member) resourceMetadata.provider());
         } else {
-            accessFilter = AccessFilter.create(
-                    (Class<?>) resourceMetadata.provider());
+            accessFilter = AccessFilter.create(resourceMetadata.providerClass());
         }
 
         return new AccessFilter<Class<?>>() {

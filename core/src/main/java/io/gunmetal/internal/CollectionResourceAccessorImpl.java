@@ -2,6 +2,7 @@ package io.gunmetal.internal;
 
 import io.gunmetal.Module;
 import io.gunmetal.Overrides;
+import io.gunmetal.Supplies;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.Errors;
@@ -50,7 +51,8 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
                         false,
                         false,
                         false,
-                        true,
+                        false,
+                        Supplies.NONE,
                         false);
     }
 

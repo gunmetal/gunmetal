@@ -16,9 +16,9 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 
+import java.lang.reflect.Parameter;
 import java.util.List;
 
 /**
@@ -31,7 +31,7 @@ interface BindingFactory {
             ComponentContext context);
 
     Binding createParamBinding(
-            Dependency dependency,
+            Parameter parameter,
             ComponentContext context);
 
     Binding createJitBindingForRequest(

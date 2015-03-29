@@ -1,16 +1,15 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.Param;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -153,23 +152,27 @@ final class ComponentTemplate {
                 .getConfigurableMetadataResolver()
                 .resolve(componentClass);
         for (Method method : componentClass.getDeclaredMethods()) {
+
             // TODO complete these checks
             if (method.getReturnType() == void.class ||
                     method.getName().equals("plus")) {
                 continue;
             }
-            Dependency[] dependencies = DependencyUtils.forParams(
-                    method, componentConfig.getConfigurableMetadataResolver(), componentQualifier);
 
-            // TODO should be rolled into qualifier wrapper class
-            for (Dependency dependency : dependencies) {
-                if (Arrays.stream(dependency.qualifier().qualifiers()).noneMatch(q -> q instanceof Param)) {
+            Parameter[] parameters = method.getParameters();
+            Dependency[] dependencies = new Dependency[parameters.length];
+            for (int i = 0; i < parameters.length; i++) {
+                ResourceAccessor resourceAccessor =
+                        resourceAccessorFactory.createForParam(parameters[i], componentContext);
+                if (!resourceAccessor.binding().resource().metadata().isParam()) {
                     throw new RuntimeException("ain't no @Param"); // TODO
                 }
+                dependencies[i] = resourceAccessor.binding().targets().get(0);
                 componentRepository.putAll(
-                        resourceAccessorFactory.createForParam(dependency, componentContext),
+                        resourceAccessor,
                         errors);
             }
+
             Type type = method.getGenericReturnType();
             Dependency dependency = Dependency.from(
                     componentConfig.getConfigurableMetadataResolver()

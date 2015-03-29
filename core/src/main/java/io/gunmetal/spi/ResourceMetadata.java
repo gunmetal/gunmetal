@@ -17,6 +17,7 @@
 package io.gunmetal.spi;
 
 import io.gunmetal.Overrides;
+import io.gunmetal.Supplies;
 
 import java.lang.reflect.AnnotatedElement;
 
@@ -34,8 +35,9 @@ public class ResourceMetadata<P extends AnnotatedElement> {
     private final boolean eager;
     private final boolean isCollectionElement;
     private final boolean isModule;
-    private final boolean isProvided;
     private final boolean isProvider;
+    private final Supplies supplies;
+    private final boolean isParam;
     private final int hashCode;
 
     public ResourceMetadata(P provider,
@@ -47,8 +49,9 @@ public class ResourceMetadata<P extends AnnotatedElement> {
                             boolean eager,
                             boolean isCollectionElement,
                             boolean isModule,
-                            boolean isProvided,
-                            boolean isProvider) {
+                            boolean isProvider,
+                            Supplies supplies,
+                            boolean isParam) {
         this.provider = provider;
         this.providerClass = providerClass;
         this.moduleMetadata = moduleMetadata;
@@ -58,8 +61,9 @@ public class ResourceMetadata<P extends AnnotatedElement> {
         this.eager = eager;
         this.isCollectionElement = isCollectionElement;
         this.isModule = isModule;
-        this.isProvided = isProvided;
         this.isProvider = isProvider;
+        this.supplies = supplies;
+        this.isParam = isParam;
         hashCode = provider().hashCode() * 67 + qualifier().hashCode();
     }
 
@@ -99,16 +103,16 @@ public class ResourceMetadata<P extends AnnotatedElement> {
         return isModule;
     }
 
-    public boolean isProvided() {
-        return isProvided;
-    }
-
     public boolean isProvider() {
         return isProvider;
     }
 
-    public boolean isProviderMember() {
-        return provider != providerClass;
+    public Supplies supplies() {
+        return supplies;
+    }
+
+    public boolean isParam() {
+        return isParam;
     }
 
     @Override public final int hashCode() {
@@ -130,5 +134,4 @@ public class ResourceMetadata<P extends AnnotatedElement> {
     @Override public final String toString() {
         return "provision[ " + qualifier() + ", provider[ " + provider() + "] ]";
     }
-
 }

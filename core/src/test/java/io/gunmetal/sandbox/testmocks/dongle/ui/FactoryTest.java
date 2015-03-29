@@ -1,13 +1,13 @@
 package io.gunmetal.sandbox.testmocks.dongle.ui;
 
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 
 /**
  * @author rees.byars
  */
 interface FactoryTest {
 
-    @Provides static FactoryTest create() {
+    @Supplies static FactoryTest create() {
         return new FactoryTest() {
         };
     }

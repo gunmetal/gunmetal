@@ -1,7 +1,7 @@
 package io.gunmetal.sandbox.testmocks.dongle.ui;
 
 import io.gunmetal.Module;
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 import io.gunmetal.Singleton;
 import io.gunmetal.sandbox.testmocks.dongle.layers.Ui;
 
@@ -19,7 +19,7 @@ public class UserModule {
         user = new User(name);
     }
 
-    @Provides public User user() {
+    @Supplies public User user() {
         return user;
     }
 

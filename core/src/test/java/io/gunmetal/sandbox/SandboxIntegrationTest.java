@@ -24,7 +24,7 @@ import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
 import io.gunmetal.Overrides;
 import io.gunmetal.Param;
-import io.gunmetal.Provides;
+import io.gunmetal.Supplies;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
 import io.gunmetal.internal.ComponentBuilder;
@@ -85,11 +85,11 @@ public class SandboxIntegrationTest {
             type = Module.Type.STATELESS)
     public static class TestModule {
 
-        @Provides @Singleton @Overrides(allowCycle = true) static Bad providedCirc(Supplier<Circ> circProvider) {
+        @Supplies @Singleton @Overrides(allowCycle = true) static Bad providedCirc(Supplier<Circ> circProvider) {
             return circProvider.get();
         }
 
-        @Provides @Overrides(allowCycle = true) static Circ circ() {
+        @Supplies @Overrides(allowCycle = true) static Circ circ() {
             return new Circ();
         }
 
@@ -103,26 +103,26 @@ public class SandboxIntegrationTest {
         }
 
 
-        @Provides @Singleton static Class<Void> routine(BlackList blackList) {
+        @Supplies @Singleton static Class<Void> routine(BlackList blackList) {
             System.out.println("routineeee" + blackList);
             return Void.TYPE;
         }
 
 
-        @Provides @Singleton @Overrides(allowMappingOverride = true) static TestModule tm(ArrayList<Integer> integers) {
+        @Supplies @Singleton @Overrides(allowMappingOverride = true) static TestModule tm(ArrayList<Integer> integers) {
             return new TestModule();
         }
 
-        @Provides @Singleton static TestModule tmO(@Param String name) {
+        @Supplies @Singleton static TestModule tmO(@Param String name) {
             System.out.println(name);
             return new TestModule();
         }
 
-        @Provides @Singleton @Main static SandboxIntegrationTest test(SandboxIntegrationTest test) {
+        @Supplies @Singleton @Main static SandboxIntegrationTest test(SandboxIntegrationTest test) {
             return new SandboxIntegrationTest();
         }
 
-        @Provides @Singleton static Object test2(TestModule testModule, Supplier<SandboxIntegrationTest> test, BlackList blackList) {
+        @Supplies @Singleton static Object test2(TestModule testModule, Supplier<SandboxIntegrationTest> test, BlackList blackList) {
             System.out.println(test.get());
             System.out.println(test.get());
 
@@ -130,34 +130,34 @@ public class SandboxIntegrationTest {
             return test.get();
         }
 
-        @Provides static SandboxIntegrationTest testy() {
+        @Supplies static SandboxIntegrationTest testy() {
             return new SandboxIntegrationTest();
         }
 
-        @Provides @Singleton @MultiBind static String s1(@Stateful String name) {
+        @Supplies @Singleton @MultiBind static String s1(@Stateful String name) {
             return name;
         }
 
-        @Provides @Singleton @MultiBind static String s2() {
+        @Supplies @Singleton @MultiBind static String s2() {
             return "2";
         }
 
-        @Provides @Singleton @MultiBind static String s3() {
+        @Supplies @Singleton @MultiBind static String s3() {
             return "3";
         }
 
-        @Provides @Singleton @Main static InputStream printStrings(@MultiBind List<String> strings) {
+        @Supplies @Singleton @Main static InputStream printStrings(@MultiBind List<String> strings) {
             for (String s : strings) {
                 System.out.println(s);
             }
             return System.in;
         }
 
-        @Provides @Singleton @Lazy static List<ProvisionStrategyDecorator> decorators() {
+        @Supplies @Singleton @Lazy static List<ProvisionStrategyDecorator> decorators() {
             return Collections.singletonList((resourceMetadata, delegateStrategy, linkers) -> delegateStrategy);
         }
 
-        @Provides @Singleton @Lazy static Map<? extends Scope, ? extends ProvisionStrategyDecorator> scopeDecorators() {
+        @Supplies @Singleton @Lazy static Map<? extends Scope, ? extends ProvisionStrategyDecorator> scopeDecorators() {
             return Collections.singletonMap(
                     CustomScopes.TEST,
                     (resourceMetadata, delegateStrategy, linkers) -> delegateStrategy);
@@ -176,11 +176,11 @@ public class SandboxIntegrationTest {
             this.name = name;
         }
 
-        @Provides @Singleton String name(SandboxIntegrationTest test) {
+        @Supplies @Singleton String name(SandboxIntegrationTest test) {
             return name + test.getClass().getName();
         }
 
-        @Provides @Singleton List<StatefulModule> statefulModules(@FromModule Ref<StatefulModule> statefulModuleRef) {
+        @Supplies @Singleton List<StatefulModule> statefulModules(@FromModule Ref<StatefulModule> statefulModuleRef) {
             assert statefulModuleRef.get() == statefulModuleRef.get();
             return Collections.singletonList(statefulModuleRef.get());
         }
@@ -189,7 +189,7 @@ public class SandboxIntegrationTest {
 
     @Module
     static class M {
-        @Provides @Singleton @Lazy static M m(SandboxIntegrationTest test) {
+        @Supplies @Singleton @Lazy static M m(SandboxIntegrationTest test) {
             return new M();
         }
     }
@@ -326,15 +326,15 @@ public class SandboxIntegrationTest {
 
         @Inject SandboxIntegrationTest sandboxIntegrationTest;
 
-        @Provides @Singleton static PlusModule plusModule() {
+        @Supplies @Singleton static PlusModule plusModule() {
             return new PlusModule();
         }
 
-        @Provides @Singleton static Cheese cheese() {
+        @Supplies @Singleton static Cheese cheese() {
             return new PlusModule();
         }
 
-        @Provides @Singleton static OutputStream r(@FromModule Cheese cheese, @Main Lib myLibrary) {
+        @Supplies @Singleton static OutputStream r(@FromModule Cheese cheese, @Main Lib myLibrary) {
             System.out.println("sup");
             return System.out;
         }
@@ -347,7 +347,7 @@ public class SandboxIntegrationTest {
     @Module(lib = true)
     static class MyLibrary implements Lib {
 
-        @Provides @Singleton static Lib huh(@FromModule Cheese cheese) {
+        @Supplies @Singleton static Lib huh(@FromModule Cheese cheese) {
             System.out.println("sup library");
             return new MyLibrary();
         }
@@ -431,7 +431,7 @@ public class SandboxIntegrationTest {
 
         @Inject Long numberLong;
 
-        @Provides static String numberString() {
+        @Supplies static String numberString() {
             return "3425";
         }
 
@@ -477,7 +477,7 @@ public class SandboxIntegrationTest {
     @Module
     public static class MyModule {
         String name;
-        @Provides static MyModule myModule(
+        @Supplies static MyModule myModule(
                 @Param String name,
                 @MultiBind Supplier<List<ProvisionStrategyDecorator>> provider,
                 @MultiBind Ref<List<ProvisionStrategyDecorator>> ref) {
@@ -509,12 +509,12 @@ public class SandboxIntegrationTest {
     @Module
     public static class Bullshit {
 
-        @Provides static Bullshit bs(@Param String word) {
+        @Supplies static Bullshit bs(@Param String word) {
             System.out.println(word);
             return new Bullshit();
         }
 
-        @Provides @Singleton static String bs() {
+        @Supplies @Singleton static String bs() {
             return "test";
         }
 
