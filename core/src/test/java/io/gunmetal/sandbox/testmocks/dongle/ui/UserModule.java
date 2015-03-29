@@ -10,7 +10,7 @@ import io.gunmetal.sandbox.testmocks.dongle.layers.Ui;
  */
 @Ui
 @Singleton
-@Module(stateful = true)
+@Module(type = Module.Type.COMPONENT_PARAM)
 public class UserModule {
 
     private final User user;

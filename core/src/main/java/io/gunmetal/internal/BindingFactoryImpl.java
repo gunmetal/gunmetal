@@ -24,7 +24,6 @@ import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ResourceMetadataResolver;
-import io.gunmetal.spi.Scopes;
 import io.gunmetal.spi.TypeKey;
 
 import java.lang.reflect.Field;
@@ -65,7 +64,7 @@ class BindingFactoryImpl implements BindingFactory {
                     + "] must be annotated with @Module()");
             return Collections.emptyList();
         }
-        final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation, context);
+        final ModuleMetadata moduleMetadata = moduleMetadata(module, moduleAnnotation);
         final List<Binding> resourceBindings = new ArrayList<>();
         addResourceBindings(
                 moduleAnnotation,
@@ -75,6 +74,19 @@ class BindingFactoryImpl implements BindingFactory {
                 context);
         return resourceBindings;
 
+    }
+
+    @Override public Binding createParamBinding(
+            Dependency dependency, ComponentContext context) {
+        // TODO provider and module?  what should they be?
+        ResourceMetadata<?> resourceMetadata =
+                resourceMetadataResolver.resolveMetadata(
+                        dependency.typeKey().raw(),
+                        moduleMetadata(dependency.typeKey().raw(), Module.NONE),
+                        context.errors());
+        return new BindingImpl(
+                resourceFactory.withParamProvider(resourceMetadata, dependency, context),
+                Collections.singletonList(dependency));
     }
 
     @Override public Binding createJitBindingForRequest(
@@ -107,7 +119,7 @@ class BindingFactoryImpl implements BindingFactory {
         return resourceBindings;
     }
 
-    private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation, ComponentContext context) {
+    private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation) {
         final Qualifier qualifier = qualifierResolver.resolve(module);
         return new ModuleMetadata(module, qualifier, moduleAnnotation);
     }
@@ -122,16 +134,24 @@ class BindingFactoryImpl implements BindingFactory {
             context.errors().add("The module " + module.getName() + " extends a class other than Object");
         }
 
-        if (moduleAnnotation.stateful()) {
-            if (!moduleAnnotation.provided()) {
-                resourceBindings.add(managedModuleResourceBinding(module, moduleMetadata, context));
-            } else {
-                resourceBindings.add(providedModuleResourceBinding(module, moduleMetadata, context));
-            }
-        }
-
         Dependency moduleDependency =
                 Dependency.from(moduleMetadata.qualifier(), module);
+
+        if (moduleAnnotation.type() == Module.Type.COMPONENT_PARAM) {
+            Resource resource = resourceFactory.withParamProvider(
+                    resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()),
+                    moduleDependency,
+                    context);
+            resourceBindings.add(new BindingImpl(
+                    resource,
+                    Collections.singletonList(moduleDependency)));
+        } else if (moduleAnnotation.type() == Module.Type.CONSTRUCTED) {
+            Resource resource = resourceFactory.withClassProvider(
+                    resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
+            resourceBindings.add(new BindingImpl(
+                    resource,
+                    Collections.singletonList(moduleDependency)));
+        }
 
         Arrays.stream(module.getDeclaredFields()).filter(f -> !f.isSynthetic()).forEach(f -> {
             ResourceMetadata<Field> resourceMetadata =
@@ -182,33 +202,6 @@ class BindingFactoryImpl implements BindingFactory {
         for (Class<?> m : moduleAnnotation.dependsOn()) {
             resourceBindings.addAll(createBindingsForModule(m, context));
         }
-    }
-
-    private Binding managedModuleResourceBinding(Class<?> module,
-                                                 ModuleMetadata moduleMetadata,
-                                                 ComponentContext context) {
-        Dependency dependency = Dependency.from(moduleMetadata.qualifier(), module);
-        Resource resource = resourceFactory.withClassProvider(
-                resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
-        return new BindingImpl(
-                resource,
-                Collections.singletonList(dependency));
-    }
-
-    private Binding providedModuleResourceBinding(Class<?> module,
-                                                  ModuleMetadata moduleMetadata,
-                                                  ComponentContext context) {
-        Dependency dependency = Dependency.from(moduleMetadata.qualifier(), module);
-        ResourceMetadata<Class<?>> resourceMetadata =
-                resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors());
-        if (resourceMetadata.scope() != Scopes.SINGLETON) {
-            // TODO context.errors().add(resourceMetadata, "Provided modules must have a scope of singleton");
-        }
-        Resource resource = resourceFactory.withProvidedModule(
-                resourceMetadata, context);
-        return new BindingImpl(
-                resource,
-                Collections.singletonList(dependency));
     }
 
     private boolean isInstantiable(Class<?> cls) {

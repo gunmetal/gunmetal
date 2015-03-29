@@ -4,7 +4,6 @@ import io.gunmetal.Module;
 import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
-import io.gunmetal.spi.ResolutionContext;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,7 +54,7 @@ final class ComponentInjectors implements Replicable<ComponentInjectors> {
                             componentContext.errors()),
                     componentContext);
 
-            componentLinker.linkAll(dependencySupplier, ResolutionContext.create());
+            componentLinker.linkAll(dependencySupplier, componentContext.newResolutionContext());
 
             injectors.put(targetClass, injector);
 

@@ -1,12 +1,16 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Param;
+import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
-import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.spi.Qualifier;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +29,8 @@ final class ComponentTemplate {
     private final ProvisionStrategyDecorator strategyDecorator;
     private final ResourceAccessorFactory resourceAccessorFactory;
     private final ComponentRepository componentRepository;
+    private final Dependency[] providedDependencies;
+    private final Map<Method, ComponentMethodConfig> componentMethodConfigs;
 
     private ComponentTemplate(
             Class<?> componentClass,
@@ -32,7 +38,9 @@ final class ComponentTemplate {
             InjectorFactory injectorFactory,
             ProvisionStrategyDecorator strategyDecorator,
             ResourceAccessorFactory resourceAccessorFactory,
-            ComponentRepository componentRepository) {
+            ComponentRepository componentRepository,
+            Dependency[] providedDependencies,
+            Map<Method, ComponentMethodConfig> componentMethodConfigs) {
         this.componentClass = componentClass;
         this.componentConfig = componentConfig;
         componentInjectors = new ComponentInjectors(
@@ -40,6 +48,8 @@ final class ComponentTemplate {
         this.strategyDecorator = strategyDecorator;
         this.resourceAccessorFactory = resourceAccessorFactory;
         this.componentRepository = componentRepository;
+        this.providedDependencies = providedDependencies;
+        this.componentMethodConfigs = componentMethodConfigs;
     }
 
     static <T> T buildTemplate(ComponentGraph parentComponentGraph,
@@ -137,7 +147,43 @@ final class ComponentTemplate {
                         componentContext,
                         componentConfig.getComponentSettings().isRequireInterfaces());
 
-        componentLinker.linkGraph(dependencySupplier, ResolutionContext.create());
+         // TODO move all this shit to a method or sumpin
+        Map<Method, ComponentMethodConfig> componentMethodConfigs = new HashMap<>();
+        Qualifier componentQualifier = componentConfig
+                .getConfigurableMetadataResolver()
+                .resolve(componentClass);
+        for (Method method : componentClass.getDeclaredMethods()) {
+            // TODO complete these checks
+            if (method.getReturnType() == void.class ||
+                    method.getName().equals("plus")) {
+                continue;
+            }
+            Dependency[] dependencies = DependencyUtils.forParams(
+                    method, componentConfig.getConfigurableMetadataResolver(), componentQualifier);
+
+            // TODO should be rolled into qualifier wrapper class
+            for (Dependency dependency : dependencies) {
+                if (Arrays.stream(dependency.qualifier().qualifiers()).noneMatch(q -> q instanceof Param)) {
+                    throw new RuntimeException("ain't no @Param"); // TODO
+                }
+                componentRepository.putAll(
+                        resourceAccessorFactory.createForParam(dependency, componentContext),
+                        errors);
+            }
+            Type type = method.getGenericReturnType();
+            Dependency dependency = Dependency.from(
+                    componentConfig.getConfigurableMetadataResolver()
+                            .resolve(method)
+                            .merge(componentQualifier),
+                    type);
+            ResourceAccessor resourceAccessor = componentRepository.get(dependency);
+            if (resourceAccessor == null) {
+                throw new RuntimeException("not fucking here!"); // TODO
+            }
+            componentMethodConfigs.put(method, new ComponentMethodConfig(resourceAccessor, dependencies));
+        }
+
+        componentLinker.linkGraph(dependencySupplier, componentContext.newResolutionContext());
         errors.throwIfNotEmpty();
 
         final ComponentTemplate template = new ComponentTemplate(
@@ -146,7 +192,12 @@ final class ComponentTemplate {
                 injectorFactory,
                 strategyDecorator,
                 resourceAccessorFactory,
-                componentRepository);
+                componentRepository,
+                DependencyUtils.forParamTypes(
+                        componentMethod,
+                        componentConfig.getConfigurableMetadataResolver(),
+                        Qualifier.NONE),
+                componentMethodConfigs);
 
         return componentFactoryInterface.cast(Proxy.newProxyInstance(
                 componentFactoryInterface.getClassLoader(),
@@ -159,10 +210,10 @@ final class ComponentTemplate {
 
     Object newInstance(Object... statefulModules) {
 
-        Map<Class<?>, Object> statefulModulesMap = new HashMap<>();
+        Map<Dependency, Object> statefulModulesMap = new HashMap<>();
 
-        for (Object module : statefulModules) {
-            statefulModulesMap.put(module.getClass(), module);
+        for (int i = 0; i < statefulModules.length; i++) {
+            statefulModulesMap.put(providedDependencies[i], statefulModules[i]);
         }
 
         ComponentLinker componentLinker = new ComponentLinker();
@@ -187,7 +238,7 @@ final class ComponentTemplate {
 
         ComponentInjectors injectors = componentInjectors.replicateWith(componentContext);
 
-        componentLinker.linkAll(dependencySupplier, ResolutionContext.create());
+        componentLinker.linkAll(dependencySupplier, componentContext.newResolutionContext());
         errors.throwIfNotEmpty();
 
         ComponentGraph componentGraph = new ComponentGraph(
@@ -196,7 +247,8 @@ final class ComponentTemplate {
                 dependencySupplier,
                 newComponentRepository,
                 componentContext,
-                injectors);
+                injectors,
+                componentMethodConfigs);
 
         return componentGraph.createProxy(componentClass);
 

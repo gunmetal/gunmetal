@@ -4,7 +4,6 @@ import io.gunmetal.Component;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
 import io.gunmetal.spi.DependencySupplier;
-import io.gunmetal.spi.ResolutionContext;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,7 +39,7 @@ public class BindingFactoryImplTest {
             .build(TestComponent.Factory.class)
             .create();
 
-    @Module(provided = false, stateful = true)
+    @Module(type = Module.Type.CONSTRUCTED)
     static class EmptyStatefulModule {
     }
 
@@ -73,7 +72,7 @@ public class BindingFactoryImplTest {
 
         Binding binding = bindings.get(0);
 
-        assertTrue(binding.resource().provisionStrategy().get(dependencySupplier, ResolutionContext.create()) instanceof EmptyStatefulModule);
+        assertTrue(binding.resource().provisionStrategy().get(dependencySupplier, componentContext.newResolutionContext()) instanceof EmptyStatefulModule);
 
     }
 

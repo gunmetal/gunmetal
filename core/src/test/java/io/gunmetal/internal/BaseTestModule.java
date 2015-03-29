@@ -21,7 +21,7 @@ import java.util.HashMap;
  * @author rees.byars
  */
 @Singleton
-@Module(stateful = true, provided = false)
+@Module(type = Module.Type.CONSTRUCTED)
 public class BaseTestModule {
 
     @Provides ProvisionStrategyDecorator strategyDecorator =

@@ -19,7 +19,9 @@ import java.util.function.Supplier;
  * @author rees.byars
  */
 @Bl
-@Module(dependsOn = DalModule.class, notAccessibleFrom = IBlModule.BlackList.class, stateful = true, provided = true)
+@Module(dependsOn = DalModule.class,
+        notAccessibleFrom = IBlModule.BlackList.class,
+        type = Module.Type.PROVIDED)
 public interface IBlModule {
 
     @Dal

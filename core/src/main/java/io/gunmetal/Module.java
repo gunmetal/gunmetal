@@ -41,9 +41,7 @@ public @interface Module {
 
     AccessLevel access() default AccessLevel.UNDEFINED;
 
-    boolean stateful() default false;
-
-    boolean provided() default true;
+    Type type() default Type.STATELESS;
 
     boolean lib() default false;
 
@@ -73,12 +71,8 @@ public @interface Module {
             return AccessLevel.UNDEFINED;
         }
 
-        @Override public boolean stateful() {
-            return false;
-        }
-
-        @Override public boolean provided() {
-            return false;
+        @Override public Type type() {
+            return Type.STATELESS;
         }
 
         @Override public boolean lib() {
@@ -86,5 +80,9 @@ public @interface Module {
         }
 
     };
+
+    public enum Type {
+        STATELESS, COMPONENT_PARAM, CONSTRUCTED, PROVIDED
+    }
 
 }

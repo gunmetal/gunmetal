@@ -16,14 +16,34 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ResolutionContext;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author rees.byars
  */
-public interface Injector extends Dependent, Replicable<Injector> {
+interface Injector extends Dependent, Replicable<Injector> {
 
     Object inject(Object target, DependencySupplier dependencySupplier, ResolutionContext resolutionContext);
+
+    Injector NONE = new Injector() {
+        @Override public Object inject(Object target,
+                                       DependencySupplier dependencySupplier,
+                                       ResolutionContext resolutionContext) {
+            return null;
+        }
+
+        @Override public List<Dependency> dependencies() {
+            return Collections.emptyList();
+        }
+
+        @Override public Injector replicateWith(ComponentContext context) {
+            return this;
+        }
+    };
 
 }

@@ -16,9 +16,6 @@
 
 package io.gunmetal.spi;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author rees.byars
  */
@@ -29,10 +26,6 @@ public interface ResolutionContext {
     void setParam(Dependency dependency, Object value);
 
     Object getParam(Dependency dependency);
-
-    static ResolutionContext create() {
-        return new Internal.ResolutionContextImpl();
-    }
 
     interface States {
         byte NEW = 0;
@@ -46,39 +39,4 @@ public interface ResolutionContext {
         public boolean attemptedCircularResolution = false;
     }
 
-    final class Internal {
-
-        private static class ResolutionContextImpl implements ResolutionContext {
-
-            private final Map<ResourceMetadata<?>, ProvisionContext> contextMap = new HashMap<>();
-            private Map<Dependency, Object> params;
-
-            @Override public ProvisionContext provisionContext(ResourceMetadata<?> resourceMetadata) {
-
-                ProvisionContext strategyContext = contextMap.get(resourceMetadata);
-
-                if (strategyContext == null) {
-                    strategyContext = new ProvisionContext();
-                    contextMap.put(resourceMetadata, strategyContext);
-                }
-
-                return strategyContext;
-            }
-
-            @Override public void setParam(Dependency dependency, Object value) {
-                if (params == null) {
-                    params = new HashMap<>();
-                }
-                params.put(dependency, value);
-            }
-
-            @Override public Object getParam(Dependency dependency) {
-                if (params == null) {
-                    return null;
-                }
-                return params.get(dependency);
-            }
-        }
-
-    }
 }

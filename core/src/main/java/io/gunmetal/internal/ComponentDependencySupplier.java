@@ -47,7 +47,7 @@ class ComponentDependencySupplier implements DependencySupplier {
         this.requireInterfaces = requireInterfaces;
     }
 
-    @Override public synchronized ProvisionStrategy getProvisionStrategy(
+    @Override public synchronized ProvisionStrategy supply(
             final DependencyRequest dependencyRequest) {
 
         Dependency dependency = dependencyRequest.dependency();
@@ -67,6 +67,8 @@ class ComponentDependencySupplier implements DependencySupplier {
         // try jit constructor dependencyService strategy
         ResourceAccessor resourceAccessor = resourceAccessorFactory.createJit(dependencyRequest, context);
         if (resourceAccessor != null) {
+            // TODO jit injections by a parent can cause new children to
+            // TODO have provision override errors.  does it matter?
             componentRepository.put(dependencyRequest.dependency(), resourceAccessor, context.errors());
             return resourceAccessor
                     .process(dependencyRequest, context.errors());
@@ -174,9 +176,14 @@ class ComponentDependencySupplier implements DependencySupplier {
         }
         ProvisionStrategy provisionStrategy = provisionResourceAccessor.force();
         ReferenceStrategyFactory strategyFactory = factorySupplier.get();
-        final ProvisionStrategy referenceStrategy = strategyFactory.create(provisionStrategy, this);
+        final ProvisionStrategy referenceStrategy = strategyFactory.create(provisionStrategy, this, context);
         return resourceAccessorFactory.createForReference(
-                refRequest, provisionResourceAccessor, provisionDependency, referenceStrategy, strategyFactory);
+                refRequest,
+                provisionResourceAccessor,
+                provisionDependency,
+                referenceStrategy,
+                strategyFactory,
+                context);
     }
 
     private ResourceAccessor createConversionDependencyService(

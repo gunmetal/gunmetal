@@ -1,6 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.Param;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
@@ -15,7 +14,7 @@ import java.lang.reflect.Type;
  */
 public class DependencyUtils {
 
-    static Dependency[] forMethod(
+    static Dependency[] forParams(
             Method method,
             QualifierResolver qualifierResolver,
             Qualifier parentQualifier) {
@@ -47,6 +46,25 @@ public class DependencyUtils {
             Qualifier paramQualifier = qualifierResolver
                     .resolveDependencyQualifier(
                             annotatedElement,
+                            parentQualifier);
+            Dependency paramDependency =
+                    Dependency.from(paramQualifier, paramType);
+            dependencies[i] = paramDependency;
+        }
+        return dependencies;
+    }
+
+    static Dependency[] forParamTypes(
+            Method method,
+            QualifierResolver qualifierResolver,
+            Qualifier parentQualifier) {
+        Class<?>[] paramTypes = method.getParameterTypes();
+        Dependency[] dependencies = new Dependency[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++) {
+            Class<?> paramType = paramTypes[i];
+            Qualifier paramQualifier = qualifierResolver
+                    .resolveDependencyQualifier(
+                            paramType,
                             parentQualifier);
             Dependency paramDependency =
                     Dependency.from(paramQualifier, paramType);

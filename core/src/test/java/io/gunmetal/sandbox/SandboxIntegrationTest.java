@@ -164,7 +164,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(stateful = true)
+    @Module(type = Module.Type.COMPONENT_PARAM)
     @Stateful
     @Singleton
     static class StatefulModule {
@@ -317,7 +317,7 @@ public class SandboxIntegrationTest {
         new ComponentBuilder().build(BadComponent.Factory.class);
     }
 
-    @Module(subsumes = MyLibrary.class)
+    @Module(subsumes = MyLibrary.class, type = Module.Type.PROVIDED)
     @Main
     static class PlusModule implements Cheese {
 
@@ -388,8 +388,6 @@ public class SandboxIntegrationTest {
         assert p.sandboxIntegrationTest != null;
 
         dep.plusModule = null;
-        parent.inject(dep);
-        assert dep.plusModule != null;
 
         class InjectTest {
             @Inject

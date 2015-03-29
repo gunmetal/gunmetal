@@ -38,6 +38,15 @@ class ResourceAccessorFactoryImpl implements ResourceAccessorFactory {
                 .collect(Collectors.toList());
     }
 
+    @Override public ResourceAccessor createForParam(
+            Dependency dependency, ComponentContext context) {
+        Binding binding = bindingFactory.createParamBinding(dependency, context);
+        return new ResourceAccessorImpl(
+                binding,
+                requestVisitorFactory.resourceRequestVisitor(
+                        binding.resource(), context));
+    }
+
     @Override public ResourceAccessor createJit(DependencyRequest dependencyRequest, ComponentContext context) {
         Binding binding = bindingFactory.createJitBindingForRequest(dependencyRequest, context);
         if (binding == null) {
@@ -67,7 +76,11 @@ class ResourceAccessorFactoryImpl implements ResourceAccessorFactory {
                 collectionElementDependency);
     }
 
-    @Override public ResourceAccessor createForConversion(ResourceAccessor fromService, Converter converter, Dependency fromDependency, Dependency toDependency) {
+    @Override public ResourceAccessor createForConversion(
+            ResourceAccessor fromService,
+            Converter converter,
+            Dependency fromDependency,
+            Dependency toDependency) {
         return new ConversionResourceAccessor(
                 fromService, converter, fromDependency, toDependency);
     }
@@ -77,13 +90,15 @@ class ResourceAccessorFactoryImpl implements ResourceAccessorFactory {
             ResourceAccessor provisionService,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
-            ReferenceStrategyFactory referenceStrategyFactory) {
+            ReferenceStrategyFactory referenceStrategyFactory,
+            ComponentContext componentContext) {
         return new ReferenceResourceAccessor(
                 referenceRequest,
                 provisionService,
                 provisionDependency,
                 referenceStrategy,
-                referenceStrategyFactory);
+                referenceStrategyFactory,
+                componentContext);
     }
 
     @Override public ResourceAccessor createForFalseResource(

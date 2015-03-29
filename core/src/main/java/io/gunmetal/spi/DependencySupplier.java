@@ -21,6 +21,6 @@ package io.gunmetal.spi;
  */
 public interface DependencySupplier {
 
-    ProvisionStrategy getProvisionStrategy(DependencyRequest dependencyRequest);
+    ProvisionStrategy supply(DependencyRequest dependencyRequest);
 
 }

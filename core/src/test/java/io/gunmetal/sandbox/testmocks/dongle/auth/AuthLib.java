@@ -7,7 +7,7 @@ import io.gunmetal.Provides;
 /**
  * @author rees.byars
  */
-@Module(lib = true, provided = false, stateful = true)
+@Module(lib = true, type = Module.Type.CONSTRUCTED)
 public class AuthLib {
 
     @Provides private AuthService authService(@FromModule AuthAdapter authAdapter,

@@ -13,7 +13,7 @@ import io.gunmetal.sandbox.testmocks.dongle.layers.Ui;
  */
 @Overrides(allowPluralQualifier = true, allowCycle = true)
 @Dal
-@Module(notAccessibleFrom = DalModule.BlackList.class, stateful = true, provided = false)
+@Module(notAccessibleFrom = DalModule.BlackList.class, type = Module.Type.CONSTRUCTED)
 public class DalModule {
 
     @Ui

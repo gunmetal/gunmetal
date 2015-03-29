@@ -10,7 +10,8 @@ import io.gunmetal.spi.ProvisionStrategy;
 class RefStrategyFactory implements ReferenceStrategyFactory {
 
     @Override public ProvisionStrategy create(ProvisionStrategy provisionStrategy,
-                                              DependencySupplier dependencySupplier) {
+                                              DependencySupplier dependencySupplier,
+                                              ComponentContext componentContext) {
         return createRefStrategy(provisionStrategy);
     }
 

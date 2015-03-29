@@ -21,13 +21,15 @@ class ReferenceResourceAccessor implements ResourceAccessor {
     private final ProvisionStrategy referenceStrategy;
     private final ReferenceStrategyFactory referenceStrategyFactory;
     private final Binding binding;
+    private final ComponentContext componentContext;
 
     ReferenceResourceAccessor(
             DependencyRequest referenceRequest,
             ResourceAccessor provisionService,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
-            ReferenceStrategyFactory referenceStrategyFactory) {
+            ReferenceStrategyFactory referenceStrategyFactory,
+            ComponentContext componentContext) {
         this.referenceRequest = referenceRequest;
         this.provisionService = provisionService;
         this.provisionDependency = provisionDependency;
@@ -36,6 +38,7 @@ class ReferenceResourceAccessor implements ResourceAccessor {
         binding = new BindingImpl(
                 provisionService.binding().resource(),
                 Collections.singletonList(referenceRequest.dependency()));
+        this.componentContext = componentContext;
     }
 
     @Override public ResourceAccessor replicateWith(ComponentContext context) {
@@ -44,7 +47,8 @@ class ReferenceResourceAccessor implements ResourceAccessor {
                 provisionService.replicateWith(context),
                 provisionDependency,
                 new DelegatingProvisionStrategy(context.linkers()),
-                referenceStrategyFactory);
+                referenceStrategyFactory,
+                context);
     }
 
     @Override public Binding binding() {
@@ -67,8 +71,9 @@ class ReferenceResourceAccessor implements ResourceAccessor {
         DelegatingProvisionStrategy(Linkers linkers) {
             linkers.addWiringLinker((reference, context) -> {
                 ProvisionStrategy provisionStrategy =
-                        reference.getProvisionStrategy(DependencyRequest.create(referenceRequest, provisionDependency));
-                delegateStrategy = referenceStrategyFactory.create(provisionStrategy, reference);
+                        reference.supply(DependencyRequest.create(referenceRequest, provisionDependency));
+                delegateStrategy = referenceStrategyFactory.create(
+                        provisionStrategy, reference, componentContext);
             });
         }
 

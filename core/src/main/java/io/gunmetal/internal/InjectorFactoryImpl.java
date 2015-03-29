@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author rees.byars
@@ -95,6 +96,23 @@ class InjectorFactoryImpl implements InjectorFactory {
         return new LazyCompositeInjector(classWalker, qualifierResolver, resourceMetadata, context);
     }
 
+    @Override public Instantiator paramInstantiator(Dependency dependency) {
+        return new Instantiator() {
+            @Override public Object newInstance(DependencySupplier supplier,
+                                                ResolutionContext resolutionContext) {
+                return resolutionContext.getParam(dependency);
+            }
+
+            @Override public List<Dependency> dependencies() {
+                return Collections.emptyList();
+            }
+
+            @Override public Instantiator replicateWith(ComponentContext context) {
+                return this;
+            }
+        };
+    }
+
     @Override public Instantiator constructorInstantiator(ResourceMetadata<Class<?>> resourceMetadata,
                                                           ComponentContext context) {
         Constructor<?> constructor = constructorResolver.resolve(resourceMetadata.provider());
@@ -108,11 +126,6 @@ class InjectorFactoryImpl implements InjectorFactory {
                         qualifierResolver),
                 context.linkers());
         return new InstantiatorImpl(injector);
-    }
-
-    @Override public Instantiator instanceInstantiator(ResourceMetadata<Class<?>> resourceMetadata,
-                                                       ComponentContext context) {
-        return new ProvidedModuleInstantiator(resourceMetadata.providerClass());
     }
 
     @Override public Instantiator methodInstantiator(
@@ -262,7 +275,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                       Linkers linkers) {
             field.setAccessible(true);
             linkers.addWiringLinker((supplier, linkingContext) ->
-                    provisionStrategy = supplier.getProvisionStrategy(
+                    provisionStrategy = supplier.supply(
                             DependencyRequest.create(
                                     resourceMetadata,
                                     dependency)));
@@ -347,8 +360,8 @@ class InjectorFactoryImpl implements InjectorFactory {
             provisionStrategies = new ProvisionStrategy[dependencies.length];
             linkers.addWiringLinker((supplier, linkingContext) -> {
                 for (int i = 0; i < dependencies.length; i++) {
-                    provisionStrategies[i] = supplier.getProvisionStrategy(
-                                DependencyRequest.create(resourceMetadata, dependencies[i]));
+                    provisionStrategies[i] = supplier.supply(
+                            DependencyRequest.create(resourceMetadata, dependencies[i]));
                 }
             });
         }
@@ -456,7 +469,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                         field,
                                         resourceMetadata.moduleMetadata().qualifier()),
                                 field.getGenericType());
-                        ProvisionStrategy provisionStrategy = dependencySupplier.getProvisionStrategy(
+                        ProvisionStrategy provisionStrategy = dependencySupplier.supply(
                                 DependencyRequest.create(resourceMetadata, dependency));
                         injectors.add(new FieldInjector(field, resourceMetadata, dependency, provisionStrategy));
                     },
@@ -469,7 +482,7 @@ class InjectorFactoryImpl implements InjectorFactory {
                                         qualifierResolver);
                         ProvisionStrategy[] provisionStrategies = new ProvisionStrategy[dependencies.length];
                         for (int i = 0; i < dependencies.length; i++) {
-                            provisionStrategies[i] = dependencySupplier.getProvisionStrategy(
+                            provisionStrategies[i] = dependencySupplier.supply(
                                     DependencyRequest.create(resourceMetadata, dependencies[i]));
                         }
                         injectors.add(new FunctionInjector(
@@ -503,10 +516,11 @@ class InjectorFactoryImpl implements InjectorFactory {
             if (injectors == null) {
                 return new LazyCompositeInjector(classWalker, qualifierResolver, resourceMetadata, context);
             }
-            List<Injector> newInjectors = new ArrayList<>();
-            for (Injector injector : injectors) {
-                newInjectors.add(injector.replicateWith(context));
-            }
+            List<Injector> newInjectors =
+                    injectors
+                            .stream()
+                            .map(injector -> injector.replicateWith(context))
+                            .collect(Collectors.toList());
             return new CompositeInjector(newInjectors);
         }
 
@@ -566,7 +580,7 @@ class InjectorFactoryImpl implements InjectorFactory {
 
         @Override public Object newInstance(DependencySupplier supplier, ResolutionContext resolutionContext) {
             ProvisionStrategy provisionStrategy = supplier
-                    .getProvisionStrategy(DependencyRequest.create(resourceMetadata, moduleDependency));
+                    .supply(DependencyRequest.create(resourceMetadata, moduleDependency));
             if (provisionStrategy == null) {
                 throw new IllegalStateException(
                         "Missing stateful module defined by " + moduleDependency);
@@ -580,42 +594,6 @@ class InjectorFactoryImpl implements InjectorFactory {
                     injector.replicateWith(context),
                     resourceMetadata,
                     moduleDependency);
-        }
-
-    }
-
-    private static class ProvidedModuleInstantiator implements Instantiator {
-
-        private final Class<?> moduleClass;
-        private final Object instance;
-
-        ProvidedModuleInstantiator(Class<?> moduleClass) {
-            this.moduleClass = moduleClass;
-            this.instance = null;
-        }
-
-        ProvidedModuleInstantiator(Class<?> moduleClass,
-                                   Object instance) {
-            this.moduleClass = moduleClass;
-            this.instance = instance;
-        }
-
-        @Override public List<Dependency> dependencies() {
-            return Collections.emptyList();
-        }
-
-        @Override public Object newInstance(DependencySupplier supplier, ResolutionContext resolutionContext) {
-            // TODO message
-            if (instance == null) {
-                throw new IllegalStateException(moduleClass + " is null");
-            }
-            return instance;
-        }
-
-        @Override public Instantiator replicateWith(ComponentContext context) {
-            return new ProvidedModuleInstantiator(
-                    moduleClass,
-                    context.statefulSource(moduleClass));
         }
 
     }

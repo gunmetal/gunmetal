@@ -19,7 +19,8 @@ class SupplierStrategyFactory implements ReferenceStrategyFactory {
 
     public ProvisionStrategy create(
             final ProvisionStrategy provisionStrategy,
-            final DependencySupplier dependencySupplier) {
+            final DependencySupplier dependencySupplier,
+            ComponentContext componentContext) {
 
         return (p, c) -> supplierAdapter.supplier(() -> {
 
@@ -31,7 +32,7 @@ class SupplierStrategyFactory implements ReferenceStrategyFactory {
             }
 
             try {
-                contextThreadLocal.set(ResolutionContext.create());
+                contextThreadLocal.set(componentContext.newResolutionContext());
                 return provisionStrategy.get(
                         dependencySupplier, contextThreadLocal.get());
             } finally {

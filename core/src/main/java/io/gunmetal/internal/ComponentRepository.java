@@ -30,7 +30,7 @@ class ComponentRepository implements Replicable<ComponentRepository> {
                         ComponentRepository parentRepository) {
         this.resourceAccessorFactory = resourceAccessorFactory;
         this.parentRepository = parentRepository;
-        if (parentRepository != null) {
+        if (parentRepository != null && dependencyServices.isEmpty()) {
             dependencyServices.putAll(parentRepository.dependencyServices);
         }
     }
@@ -60,9 +60,7 @@ class ComponentRepository implements Replicable<ComponentRepository> {
                         previous.binding().resource().metadata();
                 
                 // TODO better messages, include provisions, keep list?
-                if (prevMetadata.isModule()) { // TODO this is a hack that depends on the order from the dependencyService factory
-                    myResourceAccessors.add(resourceAccessor);
-                } else if (prevMetadata.overrides().allowMappingOverride()
+                if (prevMetadata.overrides().allowMappingOverride()
                         && newMetadata.overrides().allowMappingOverride()) {
                     errors.add("more than one of type with override enabled -> " + dependency);
                     dependencyServices.put(dependency, previous);

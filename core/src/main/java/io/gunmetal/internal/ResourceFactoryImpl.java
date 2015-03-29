@@ -40,6 +40,16 @@ class ResourceFactoryImpl implements ResourceFactory {
         this.requireAcyclic = requireAcyclic;
     }
 
+    @Override public Resource withParamProvider(ResourceMetadata<?> resourceMetadata,
+                                                Dependency dependency,
+                                                ComponentContext context) {
+        return resource(
+                resourceMetadata,
+                context,
+                injectorFactory.paramInstantiator(dependency),
+                Injector.NONE);
+    }
+
     @Override public Resource withClassProvider(ResourceMetadata<Class<?>> resourceMetadata,
                                                 ComponentContext context) {
         return resource(
@@ -47,15 +57,6 @@ class ResourceFactoryImpl implements ResourceFactory {
                 context,
                 injectorFactory.constructorInstantiator(resourceMetadata, context),
                 injectorFactory.compositeInjector(resourceMetadata, context));
-    }
-
-    @Override public Resource withProvidedModule(ResourceMetadata<Class<?>> resourceMetadata,
-                                                 ComponentContext context) {
-        return resource(
-                resourceMetadata,
-                context,
-                injectorFactory.instanceInstantiator(resourceMetadata, context),
-                injectorFactory.lazyCompositeInjector(resourceMetadata, context));
     }
 
     @Override public Resource withMethodProvider(

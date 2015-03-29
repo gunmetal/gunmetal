@@ -16,6 +16,7 @@
 
 package io.gunmetal.internal;
 
+import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 
 import java.util.List;
@@ -29,6 +30,10 @@ interface BindingFactory {
             Class<?> module,
             ComponentContext context);
 
+    Binding createParamBinding(
+            Dependency dependency,
+            ComponentContext context);
+
     Binding createJitBindingForRequest(
             DependencyRequest dependencyRequest,
             ComponentContext context);
@@ -36,5 +41,4 @@ interface BindingFactory {
     List<Binding> createJitFactoryBindingsForRequest(
             DependencyRequest dependencyRequest,
             ComponentContext context);
-
 }

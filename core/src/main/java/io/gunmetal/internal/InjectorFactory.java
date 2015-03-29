@@ -27,18 +27,29 @@ import java.lang.reflect.Method;
  */
 interface InjectorFactory {
 
-    Injector compositeInjector(ResourceMetadata<Class<?>> resourceMetadata, ComponentContext context);
+    Injector compositeInjector(
+            ResourceMetadata<Class<?>> resourceMetadata,
+            ComponentContext context);
 
-    Injector lazyCompositeInjector(ResourceMetadata<?> resourceMetadata, ComponentContext context);
+    Injector lazyCompositeInjector(
+            ResourceMetadata<?> resourceMetadata,
+            ComponentContext context);
 
-    Instantiator constructorInstantiator(ResourceMetadata<Class<?>> resourceMetadata, ComponentContext context);
+    Instantiator paramInstantiator(
+            Dependency dependency);
 
-    Instantiator instanceInstantiator(ResourceMetadata<Class<?>> resourceMetadata, ComponentContext context);
+    Instantiator constructorInstantiator(
+            ResourceMetadata<Class<?>> resourceMetadata,
+            ComponentContext context);
 
     Instantiator methodInstantiator(
-            ResourceMetadata<Method> resourceMetadata, Dependency moduleDependency, ComponentContext context);
+            ResourceMetadata<Method> resourceMetadata,
+            Dependency moduleDependency,
+            ComponentContext context);
 
     Instantiator fieldInstantiator(
-            ResourceMetadata<Field> resourceMetadata, Dependency moduleDependency, ComponentContext context);
+            ResourceMetadata<Field> resourceMetadata,
+            Dependency moduleDependency,
+            ComponentContext context);
 
 }

@@ -8,6 +8,9 @@ import io.gunmetal.spi.ProvisionStrategy;
  */
 interface ReferenceStrategyFactory {
 
-    ProvisionStrategy create(ProvisionStrategy provisionStrategy, DependencySupplier dependencySupplier);
+    ProvisionStrategy create(
+            ProvisionStrategy provisionStrategy,
+            DependencySupplier dependencySupplier,
+            ComponentContext componentContext);
 
 }

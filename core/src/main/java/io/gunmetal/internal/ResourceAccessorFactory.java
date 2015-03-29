@@ -16,6 +16,10 @@ interface ResourceAccessorFactory {
             Class<?> module,
             ComponentContext context);
 
+    ResourceAccessor createForParam(
+            Dependency dependency,
+            ComponentContext context);
+
     ResourceAccessor createJit(
             DependencyRequest dependencyRequest,
             ComponentContext context);
@@ -39,7 +43,8 @@ interface ResourceAccessorFactory {
             ResourceAccessor provisionService,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
-            ReferenceStrategyFactory referenceStrategyFactory);
+            ReferenceStrategyFactory referenceStrategyFactory,
+            ComponentContext componentContext);
 
     ResourceAccessor createForFalseResource(
             Dependency dependency, ProvisionStrategy provisionStrategy);
