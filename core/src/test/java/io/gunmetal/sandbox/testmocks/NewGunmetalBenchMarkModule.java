@@ -17,8 +17,8 @@
 package io.gunmetal.sandbox.testmocks;
 
 import io.gunmetal.Module;
-import io.gunmetal.Supplies;
 import io.gunmetal.Singleton;
+import io.gunmetal.Supplies;
 
 @Module
 public class NewGunmetalBenchMarkModule {

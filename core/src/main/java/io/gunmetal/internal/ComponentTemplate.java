@@ -5,7 +5,6 @@ import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ModuleMetadata;
-import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
@@ -202,15 +201,8 @@ final class ComponentTemplate {
                             .merge(componentQualifier),
                     type);
 
-            ProvisionStrategy strategy =
-                    dependencySupplier.supply(
-                            DependencyRequest.create(componentMetadata, dependency));
-
-            if (strategy == null) {
-                // TODO no matching resource
-                throw new RuntimeException("not fucking here!");
-            }
-            componentMethodConfigs.put(method, new ComponentMethodConfig(strategy, dependencies));
+            componentMethodConfigs.put(method, new ComponentMethodConfig(
+                    DependencyRequest.create(componentMetadata, dependency), dependencies));
         }
 
         componentLinker.linkGraph(dependencySupplier, componentContext.newResolutionContext());

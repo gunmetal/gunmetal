@@ -1,6 +1,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.DependencySupplier;
+import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ResolutionContext;
 
 import java.lang.reflect.Method;
@@ -90,7 +91,12 @@ final class ComponentGraph {
                                     args[i]);
                         }
                     }
-                    return config.provisionStrategy().get(dependencySupplier, resolutionContext);
+                    ProvisionStrategy strategy = dependencySupplier.supply(config.dependencyRequest());
+                    if (strategy == null) {
+                        // TODO no matching resource
+                        throw new RuntimeException("not fucking here!");
+                    }
+                    return strategy.get(dependencySupplier, resolutionContext);
                 }));
     }
 

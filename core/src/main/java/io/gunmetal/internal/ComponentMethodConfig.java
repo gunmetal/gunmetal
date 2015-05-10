@@ -1,24 +1,24 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.spi.Dependency;
-import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.DependencyRequest;
 
 /**
 * @author rees.byars
 */
 class ComponentMethodConfig {
 
-    private final ProvisionStrategy provisionStrategy;
+    private final DependencyRequest dependencyRequest;
     private final Dependency[] dependencies;
 
-    ComponentMethodConfig(ProvisionStrategy provisionStrategy,
+    ComponentMethodConfig(DependencyRequest dependencyRequest,
                           Dependency[] dependencies) {
-        this.provisionStrategy = provisionStrategy;
+        this.dependencyRequest = dependencyRequest;
         this.dependencies = dependencies;
     }
 
-    ProvisionStrategy provisionStrategy() {
-        return provisionStrategy;
+    DependencyRequest dependencyRequest() {
+        return dependencyRequest;
     }
 
     Dependency[] dependencies() {
