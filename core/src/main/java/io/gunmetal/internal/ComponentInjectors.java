@@ -48,6 +48,7 @@ final class ComponentInjectors implements Replicable<ComponentInjectors> {
             final Qualifier qualifier = metadataResolver.resolve(targetClass);
 
             injector = injectorFactory.compositeInjector(
+                    targetClass,
                     metadataResolver.resolveMetadata(
                             targetClass,
                             new ModuleMetadata(targetClass, qualifier, Module.NONE),

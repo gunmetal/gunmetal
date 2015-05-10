@@ -34,14 +34,14 @@ interface ResourceAccessorFactory {
             Dependency collectionElementDependency);
 
     ResourceAccessor createForConversion(
-            ResourceAccessor fromService,
+            ResourceAccessor fromAccessor,
             Converter converter,
             Dependency fromDependency,
             Dependency toDependency);
 
     ResourceAccessor createForReference(
             DependencyRequest referenceRequest,
-            ResourceAccessor provisionService,
+            ResourceAccessor provisionAccessor,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
             ReferenceStrategyFactory referenceStrategyFactory,

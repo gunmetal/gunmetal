@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
 
-    private final List<ResourceAccessor> elementServices = new ArrayList<>();
+    private final List<ResourceAccessor> elementAccessors = new ArrayList<>();
     private final Supplier<Collection<Object>> collectionSupplier;
     private final Dependency collectionDependency;
     private final Dependency collectionElementDependency;
@@ -62,8 +62,8 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
                         collectionSupplier,
                         collectionDependency,
                         collectionElementDependency);
-        newService.elementServices
-                .addAll(elementServices
+        newService.elementAccessors
+                .addAll(elementAccessors
                         .stream()
                         .map(elementService ->
                                 elementService.replicateWith(context))
@@ -72,7 +72,7 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
     }
 
     @Override public void add(ResourceAccessor resourceAccessor) {
-        elementServices.add(resourceAccessor);
+        elementAccessors.add(resourceAccessor);
     }
 
     @Override public Binding binding() {
@@ -82,7 +82,7 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
     @Override public ProvisionStrategy process(DependencyRequest dependencyRequest, Errors errors) {
         DependencyRequest subRequest =
                 DependencyRequest.create(dependencyRequest, collectionElementDependency);
-        for (ResourceAccessor elementService : elementServices) {
+        for (ResourceAccessor elementService : elementAccessors) {
             elementService.process(subRequest, errors);
         }
         return force();
@@ -121,7 +121,7 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
         @Override public ProvisionStrategy provisionStrategy() {
             return (supplier, resolutionContext) -> {
                 Collection<Object> collection = collectionSupplier.get();
-                for (ResourceAccessor elementService : elementServices) {
+                for (ResourceAccessor elementService : elementAccessors) {
                     ProvisionStrategy provisionStrategy = elementService.force();
                     collection.add(provisionStrategy.get(supplier, resolutionContext));
                 }
@@ -130,7 +130,7 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
         }
 
         @Override public List<Dependency> dependencies() {
-            return elementServices
+            return elementAccessors
                     .stream()
                     .flatMap(service ->
                             service.binding().resource().dependencies().stream())

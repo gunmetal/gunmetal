@@ -39,7 +39,7 @@ public class ComponentBuilderTest {
 
     }
 
-    @Module(dependsOn = {UiModule.class, WsModule.class})
+    @Module(dependsOn = {UiModule.class, WsModule.class, RootModule.class})
     public interface MainComponent {
 
         void inject(ComponentBuilderTest test);

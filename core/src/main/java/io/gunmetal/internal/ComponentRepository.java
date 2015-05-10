@@ -22,7 +22,7 @@ class ComponentRepository implements Replicable<ComponentRepository> {
 
     private final ResourceAccessorFactory resourceAccessorFactory;
     private final ComponentRepository parentRepository;     
-    private final Map<Dependency, ResourceAccessor> dependencyServices = new ConcurrentHashMap<>(64, .75f, 2);
+    private final Map<Dependency, ResourceAccessor> resourceAccessors = new ConcurrentHashMap<>(64, .75f, 2);
     private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
     private final Queue<ResourceAccessor> myResourceAccessors = new LinkedList<>();
 
@@ -30,8 +30,8 @@ class ComponentRepository implements Replicable<ComponentRepository> {
                         ComponentRepository parentRepository) {
         this.resourceAccessorFactory = resourceAccessorFactory;
         this.parentRepository = parentRepository;
-        if (parentRepository != null && dependencyServices.isEmpty()) {
-            dependencyServices.putAll(parentRepository.dependencyServices);
+        if (parentRepository != null && resourceAccessors.isEmpty()) {
+            resourceAccessors.putAll(parentRepository.resourceAccessors);
         }
     }
 
@@ -57,7 +57,7 @@ class ComponentRepository implements Replicable<ComponentRepository> {
             return;
         }
 
-        ResourceAccessor previous = dependencyServices.put(dependency, resourceAccessor);
+        ResourceAccessor previous = resourceAccessors.put(dependency, resourceAccessor);
         if (previous == null) {
             myResourceAccessors.add(resourceAccessor);
             return;
@@ -69,27 +69,27 @@ class ComponentRepository implements Replicable<ComponentRepository> {
         // TODO better messages
         if (prevMetadata.overrides().allowMappingOverride()
                 && newMetadata.overrides().allowMappingOverride()) {
-            dependencyServices.put(dependency, previous);
+            resourceAccessors.put(dependency, previous);
             errors.add("more than one of type with override enabled -> " + dependency);
         } else if (
                 (overriddenDependencies.contains(dependency)
                         && !newMetadata.overrides().allowMappingOverride())
                         || (!prevMetadata.overrides().allowMappingOverride()
                         && !newMetadata.overrides().allowMappingOverride())) {
-            dependencyServices.put(dependency, previous);
+            resourceAccessors.put(dependency, previous);
             errors.add("more than one of type without override enabled -> " + dependency);
         } else if (newMetadata.overrides().allowMappingOverride()) {
             myResourceAccessors.add(resourceAccessor);
             myResourceAccessors.remove(previous);
             overriddenDependencies.add(dependency);
         } else if (prevMetadata.overrides().allowMappingOverride()) {
-            dependencyServices.put(dependency, previous);
+            resourceAccessors.put(dependency, previous);
             overriddenDependencies.add(dependency);
         }
     }
 
     ResourceAccessor get(Dependency dependency) {
-        return dependencyServices.get(dependency);
+        return resourceAccessors.get(dependency);
     }
 
     private void putCollectionElement(final Dependency dependency,
@@ -126,10 +126,10 @@ class ComponentRepository implements Replicable<ComponentRepository> {
 
                 });
         CollectionResourceAccessor collectionDependencyService
-                = (CollectionResourceAccessor) dependencyServices.get(collectionDependency);
+                = (CollectionResourceAccessor) resourceAccessors.get(collectionDependency);
         if (collectionDependencyService == null) {
             collectionDependencyService = resourceAccessorFactory.createForCollection(collectionDependency, dependency);
-            dependencyServices.put(collectionDependency, collectionDependencyService);
+            resourceAccessors.put(collectionDependency, collectionDependencyService);
             myResourceAccessors.add(collectionDependencyService);
         }
         collectionDependencyService.add(resourceAccessor);

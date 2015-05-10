@@ -62,12 +62,6 @@
 
             <dependency>
                 <groupId>io.gunmetal</groupId>
-                <artifactId>compiler</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.gunmetal</groupId>
                 <artifactId>core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -79,13 +73,21 @@
                 <optional>true</optional>
             </dependency>
 
+            <!-- =========  TEST  ========= -->
+
+            <dependency>
+                <groupId>com.googlecode.jmockit</groupId>
+                <artifactId>jmockit</artifactId>
+                <version>1.5</version>
+                <scope>test</scope>
+            </dependency>
+
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
+                <scope>test</scope>
             </dependency>
-
-            <!-- =========  TEST  ========= -->
             <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
@@ -100,15 +102,28 @@
             </dependency>
 
             <dependency>
-                <groupId>com.google.inject</groupId>
-                <artifactId>guice</artifactId>
-                <version>3.0</version>
+                <groupId>com.google.caliper</groupId>
+                <artifactId>caliper</artifactId>
+                <version>1.0-beta-2</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>18.0</version>
+                <scope>test</scope>
+            </dependency>
+
             <dependency>
                 <groupId>org.picocontainer</groupId>
                 <artifactId>picocontainer</artifactId>
                 <version>2.14.3</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>4.1.6.RELEASE</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -117,6 +132,19 @@
                 <version>0.5</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>com.squareup.dagger</groupId>
+                <artifactId>dagger</artifactId>
+                <version>1.2.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.dagger</groupId>
+                <artifactId>dagger-compiler</artifactId>
+                <version>1.2.2</version>
+                <scope>test</scope>
+            </dependency>
+
 
         </dependencies>
 

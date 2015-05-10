@@ -78,24 +78,24 @@ class ResourceAccessorFactoryImpl implements ResourceAccessorFactory {
     }
 
     @Override public ResourceAccessor createForConversion(
-            ResourceAccessor fromService,
+            ResourceAccessor fromAccessor,
             Converter converter,
             Dependency fromDependency,
             Dependency toDependency) {
         return new ConversionResourceAccessor(
-                fromService, converter, fromDependency, toDependency);
+                fromAccessor, converter, fromDependency, toDependency);
     }
 
     @Override public ResourceAccessor createForReference(
             DependencyRequest referenceRequest,
-            ResourceAccessor provisionService,
+            ResourceAccessor provisionAccessor,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
             ReferenceStrategyFactory referenceStrategyFactory,
             ComponentContext componentContext) {
         return new ReferenceResourceAccessor(
                 referenceRequest,
-                provisionService,
+                provisionAccessor,
                 provisionDependency,
                 referenceStrategy,
                 referenceStrategyFactory,

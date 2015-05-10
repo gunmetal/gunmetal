@@ -13,29 +13,29 @@ import java.util.Collections;
  */
 class ConversionResourceAccessor implements ResourceAccessor {
 
-    private final ResourceAccessor fromService;
+    private final ResourceAccessor fromAccessor;
     private final Converter converter;
     private final Dependency fromDependency;
     private final Dependency toDependency;
     private final Binding binding;
 
     ConversionResourceAccessor(
-            ResourceAccessor fromService,
+            ResourceAccessor fromAccessor,
             Converter converter,
             Dependency fromDependency,
             Dependency toDependency) {
-        this.fromService = fromService;
+        this.fromAccessor = fromAccessor;
         this.converter = converter;
         this.fromDependency = fromDependency;
         this.toDependency = toDependency;
         binding = new BindingImpl(
-                fromService.binding().resource(),
+                fromAccessor.binding().resource(),
                 Collections.singletonList(toDependency));
     }
 
     @Override public ResourceAccessor replicateWith(ComponentContext context) {
         return new ConversionResourceAccessor(
-                fromService.replicateWith(context),
+                fromAccessor.replicateWith(context),
                 converter,
                 fromDependency,
                 toDependency);
@@ -46,13 +46,13 @@ class ConversionResourceAccessor implements ResourceAccessor {
     }
 
     @Override public ProvisionStrategy process(DependencyRequest dependencyRequest, Errors errors) {
-        fromService.process(DependencyRequest.create(dependencyRequest, fromDependency), errors);
+        fromAccessor.process(DependencyRequest.create(dependencyRequest, fromDependency), errors);
         return force();
     }
 
     @Override public ProvisionStrategy force() {
         return (supplier, resolutionContext) ->
                 converter.convert(
-                        fromService.force().get(supplier, resolutionContext));
+                        fromAccessor.force().get(supplier, resolutionContext));
     }
 }

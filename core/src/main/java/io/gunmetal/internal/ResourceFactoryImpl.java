@@ -50,13 +50,15 @@ class ResourceFactoryImpl implements ResourceFactory {
                 Injector.NONE);
     }
 
-    @Override public Resource withClassProvider(ResourceMetadata<Class<?>> resourceMetadata,
+    @Override public Resource withClassProvider(Class<?> providerClass,
+                                                ResourceMetadata<?> resourceMetadata,
                                                 ComponentContext context) {
         return resource(
                 resourceMetadata,
                 context,
-                injectorFactory.constructorInstantiator(resourceMetadata, context),
-                injectorFactory.compositeInjector(resourceMetadata, context));
+                injectorFactory.constructorInstantiator(providerClass, resourceMetadata, context),
+                injectorFactory.compositeInjector(
+                        providerClass, resourceMetadata, context));
     }
 
     @Override public Resource withMethodProvider(
@@ -74,7 +76,8 @@ class ResourceFactoryImpl implements ResourceFactory {
                 resourceMetadata,
                 context,
                 injectorFactory.fieldInstantiator(resourceMetadata, moduleDependency, context),
-                injectorFactory.lazyCompositeInjector(resourceMetadata, context));
+                injectorFactory.lazyCompositeInjector(resourceMetadata, context)
+        );
     }
 
     private Resource resource(

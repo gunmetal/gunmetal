@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Scope

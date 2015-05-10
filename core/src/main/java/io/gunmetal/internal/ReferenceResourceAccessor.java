@@ -16,7 +16,7 @@ import java.util.Collections;
 class ReferenceResourceAccessor implements ResourceAccessor {
 
     private final DependencyRequest referenceRequest;
-    private final ResourceAccessor provisionService;
+    private final ResourceAccessor provisionAccessor;
     private final Dependency provisionDependency;
     private final ProvisionStrategy referenceStrategy;
     private final ReferenceStrategyFactory referenceStrategyFactory;
@@ -25,18 +25,18 @@ class ReferenceResourceAccessor implements ResourceAccessor {
 
     ReferenceResourceAccessor(
             DependencyRequest referenceRequest,
-            ResourceAccessor provisionService,
+            ResourceAccessor provisionAccessor,
             Dependency provisionDependency,
             ProvisionStrategy referenceStrategy,
             ReferenceStrategyFactory referenceStrategyFactory,
             ComponentContext componentContext) {
         this.referenceRequest = referenceRequest;
-        this.provisionService = provisionService;
+        this.provisionAccessor = provisionAccessor;
         this.provisionDependency = provisionDependency;
         this.referenceStrategy = referenceStrategy;
         this.referenceStrategyFactory = referenceStrategyFactory;
         binding = new BindingImpl(
-                provisionService.binding().resource(),
+                provisionAccessor.binding().resource(),
                 Collections.singletonList(referenceRequest.dependency()));
         this.componentContext = componentContext;
     }
@@ -44,7 +44,7 @@ class ReferenceResourceAccessor implements ResourceAccessor {
     @Override public ResourceAccessor replicateWith(ComponentContext context) {
         return new ReferenceResourceAccessor(
                 referenceRequest,
-                provisionService.replicateWith(context),
+                provisionAccessor.replicateWith(context),
                 provisionDependency,
                 new DelegatingProvisionStrategy(context.linkers()),
                 referenceStrategyFactory,
@@ -56,7 +56,7 @@ class ReferenceResourceAccessor implements ResourceAccessor {
     }
 
     @Override public ProvisionStrategy process(DependencyRequest dependencyRequest, Errors errors) {
-        provisionService.process(DependencyRequest.create(referenceRequest, provisionDependency), errors);
+        provisionAccessor.process(DependencyRequest.create(referenceRequest, provisionDependency), errors);
         return force();
     }
 

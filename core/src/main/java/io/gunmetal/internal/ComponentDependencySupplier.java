@@ -46,8 +46,7 @@ class ComponentDependencySupplier implements DependencySupplier {
         this.requireInterfaces = requireInterfaces;
     }
 
-    @Override public synchronized ProvisionStrategy supply(
-            final DependencyRequest dependencyRequest) {
+    @Override public synchronized ProvisionStrategy supply(DependencyRequest dependencyRequest) {
 
         Dependency dependency = dependencyRequest.dependency();
 
@@ -57,7 +56,7 @@ class ComponentDependencySupplier implements DependencySupplier {
             return strategy;
         }
 
-        // try jit constructor dependencyService strategy
+        // try jit constructor ResourceAccessor strategy
         ResourceAccessor resourceAccessor = resourceAccessorFactory.createJit(dependencyRequest, context);
         if (resourceAccessor != null) {
             // TODO jit injections by a parent can cause new children to
@@ -71,7 +70,7 @@ class ComponentDependencySupplier implements DependencySupplier {
         TypeKey typeKey = dependency.typeKey();
         for (Converter converter : converterSupplier.convertersForType(typeKey)) {
             for (Class<?> fromType : converter.supportedFromTypes()) {
-                resourceAccessor = createConversionDependencyService(converter, fromType, dependency);
+                resourceAccessor = createConversionResourceAccessor(converter, fromType, dependency);
                 if (resourceAccessor != null) {
                     componentRepository.put(dependency, resourceAccessor, context.errors());
                     return resourceAccessor
@@ -80,10 +79,10 @@ class ComponentDependencySupplier implements DependencySupplier {
             }
         }
 
-        // try jit local factory method dependencyService
-        List<ResourceAccessor> factoryDependencyServicesForRequest =
+        // try jit local factory method ResourceAccessor
+        List<ResourceAccessor> factoryResourceAccessorsForRequest =
                 resourceAccessorFactory.createJitFactoryRequest(dependencyRequest, context);
-        componentRepository.putAll(factoryDependencyServicesForRequest, context.errors());
+        componentRepository.putAll(factoryResourceAccessorsForRequest, context.errors());
         strategy = getCachedProvisionStrategy(dependencyRequest);
         if (strategy != null) {
             return strategy;
@@ -102,7 +101,7 @@ class ComponentDependencySupplier implements DependencySupplier {
 
     }
 
-    public synchronized ProvisionStrategy getCachedProvisionStrategy(final DependencyRequest dependencyRequest) {
+    private synchronized ProvisionStrategy getCachedProvisionStrategy(final DependencyRequest dependencyRequest) {
 
         final Dependency dependency = dependencyRequest.dependency();
 
@@ -113,29 +112,31 @@ class ComponentDependencySupplier implements DependencySupplier {
                     dependencyRequest.sourceProvision(),
                     "Dependency is not an interface -> " + dependency);
         }
+
         ResourceAccessor resourceAccessor = componentRepository.get(dependency);
         if (resourceAccessor != null) {
             return resourceAccessor
                     .process(dependencyRequest, context.errors());
         }
+
+        // TODO totally gross
         if (supplierAdapter.isSupplier(dependency)) {
-            resourceAccessor = createReferenceDependencyService(
+            resourceAccessor = createReferenceResourceAccessor(
                     dependencyRequest, () -> new SupplierStrategyFactory(supplierAdapter));
             if (resourceAccessor != null) {
                 componentRepository.put(dependency, resourceAccessor, context.errors());
                 return resourceAccessor
                         .process(dependencyRequest, context.errors());
-            } else {
                 // support empty multi-bind request
                 // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
-                if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
-                    return (supplier, resolutionContext) ->
-                            supplierAdapter.supplier(ArrayList::new);
-                }
+            } else if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
+                return (supplier, resolutionContext) ->
+                        supplierAdapter.supplier(ArrayList::new);
             }
         }
+
         if (dependency.typeKey().raw() == Ref.class) {
-            resourceAccessor = createReferenceDependencyService(dependencyRequest, RefStrategyFactory::new);
+            resourceAccessor = createReferenceResourceAccessor(dependencyRequest, RefStrategyFactory::new);
             if (resourceAccessor != null) {
                 componentRepository.put(dependency, resourceAccessor, context.errors());
                 return resourceAccessor
@@ -158,14 +159,24 @@ class ComponentDependencySupplier implements DependencySupplier {
         return null;
     }
 
-    private ResourceAccessor createReferenceDependencyService(
+    private ResourceAccessor createReferenceResourceAccessor(
             final DependencyRequest refRequest, Supplier<ReferenceStrategyFactory> factorySupplier) {
         Dependency referenceDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) referenceDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency provisionDependency = Dependency.from(referenceDependency.qualifier(), providedType);
         ResourceAccessor provisionResourceAccessor = componentRepository.get(provisionDependency);
         if (provisionResourceAccessor == null) {
-             return null;
+            // TODO gross, whole class gross
+            // try jit constructor ResourceAccessor strategy
+            provisionResourceAccessor =
+                    resourceAccessorFactory.createJit(
+                            DependencyRequest.create(refRequest, provisionDependency), context);
+            if (provisionResourceAccessor == null) {
+                return null;
+            }
+            // TODO jit injections by a parent can cause new children to
+            // TODO have provision override errors.  does it matter?
+            componentRepository.put(provisionDependency, provisionResourceAccessor, context.errors());
         }
         ProvisionStrategy provisionStrategy = provisionResourceAccessor.force();
         ReferenceStrategyFactory strategyFactory = factorySupplier.get();
@@ -179,7 +190,7 @@ class ComponentDependencySupplier implements DependencySupplier {
                 context);
     }
 
-    private ResourceAccessor createConversionDependencyService(
+    private ResourceAccessor createConversionResourceAccessor(
             Converter converter, Class<?> fromType, Dependency to) {
         Dependency from = Dependency.from(to.qualifier(), fromType);
         ResourceAccessor fromResourceAccessor = componentRepository.get(from);

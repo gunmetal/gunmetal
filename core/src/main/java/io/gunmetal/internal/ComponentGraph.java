@@ -90,9 +90,7 @@ final class ComponentGraph {
                                     args[i]);
                         }
                     }
-                    return config.resourceAccessor()
-                            .force()
-                            .get(dependencySupplier, resolutionContext);
+                    return config.provisionStrategy().get(dependencySupplier, resolutionContext);
                 }));
     }
 

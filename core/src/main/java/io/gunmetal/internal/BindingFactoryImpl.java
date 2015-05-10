@@ -103,7 +103,7 @@ class BindingFactoryImpl implements BindingFactory {
         }
         Class<?> cls = typeKey.raw();
         ModuleMetadata moduleMetadata = dependencyRequest.sourceModule(); // essentially, same as library
-        Resource resource = resourceFactory.withClassProvider(
+        Resource resource = resourceFactory.withClassProvider(cls,
                 resourceMetadataResolver.resolveMetadata(cls, moduleMetadata, context.errors()), context);
         if (!resource.metadata().qualifier().equals(dependency.qualifier())) {
             return null;
@@ -124,8 +124,8 @@ class BindingFactoryImpl implements BindingFactory {
         return resourceBindings;
     }
 
-    private ModuleMetadata moduleMetadata(final Class<?> module, final Module moduleAnnotation) {
-        final Qualifier qualifier = qualifierResolver.resolve(module);
+    private ModuleMetadata moduleMetadata(Class<?> module, Module moduleAnnotation) {
+        Qualifier qualifier = qualifierResolver.resolve(module);
         return new ModuleMetadata(module, qualifier, moduleAnnotation);
     }
 
@@ -151,7 +151,7 @@ class BindingFactoryImpl implements BindingFactory {
                     resource,
                     Collections.singletonList(moduleDependency)));
         } else if (moduleAnnotation.type() == Module.Type.CONSTRUCTED) {
-            Resource resource = resourceFactory.withClassProvider(
+            Resource resource = resourceFactory.withClassProvider(module,
                     resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
             resourceBindings.add(new BindingImpl(
                     resource,
@@ -164,9 +164,17 @@ class BindingFactoryImpl implements BindingFactory {
             if (resourceMetadata.isProvider()) {
                 List<Dependency> dependencies = Collections.singletonList(
                         Dependency.from(resourceMetadata.qualifier(), f.getGenericType()));
-                resourceBindings.add(new BindingImpl(
-                        resourceFactory.withFieldProvider(resourceMetadata, moduleDependency, context),
-                        dependencies));
+
+                if (resourceMetadata.supplies().with() != void.class) {
+                    resourceBindings.add(new BindingImpl(
+                            resourceFactory.withClassProvider(
+                                    resourceMetadata.supplies().with(), resourceMetadata, context),
+                            dependencies));
+                } else {
+                    resourceBindings.add(new BindingImpl(
+                            resourceFactory.withFieldProvider(resourceMetadata, moduleDependency, context),
+                            dependencies));
+                }
             }
         });
 

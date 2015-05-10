@@ -33,7 +33,8 @@ interface ResourceFactory {
             ComponentContext context);
 
     Resource withClassProvider(
-            ResourceMetadata<Class<?>> resourceMetadata,
+            Class<?> providerClass,
+            ResourceMetadata<?> resourceMetadata,
             ComponentContext context);
 
     Resource withMethodProvider(

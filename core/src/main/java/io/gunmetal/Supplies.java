@@ -40,6 +40,6 @@ public @interface Supplies {
         @Override public Class<? extends Annotation> annotationType() {
             return Supplies.class;
         }
-    } ;
+    };
 
 }

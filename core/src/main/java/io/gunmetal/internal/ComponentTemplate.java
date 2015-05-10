@@ -1,9 +1,15 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Module;
 import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.DependencySupplier;
+import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.QualifierResolver;
+import io.gunmetal.spi.ResourceMetadata;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -30,6 +36,7 @@ final class ComponentTemplate {
     private final ComponentRepository componentRepository;
     private final Dependency[] providedDependencies;
     private final Map<Method, ComponentMethodConfig> componentMethodConfigs;
+    private final ComponentContext templateContext;
 
     private ComponentTemplate(
             Class<?> componentClass,
@@ -39,7 +46,8 @@ final class ComponentTemplate {
             ResourceAccessorFactory resourceAccessorFactory,
             ComponentRepository componentRepository,
             Dependency[] providedDependencies,
-            Map<Method, ComponentMethodConfig> componentMethodConfigs) {
+            Map<Method, ComponentMethodConfig> componentMethodConfigs,
+            ComponentContext templateContext) {
         this.componentClass = componentClass;
         this.componentConfig = componentConfig;
         componentInjectors = new ComponentInjectors(
@@ -49,6 +57,7 @@ final class ComponentTemplate {
         this.componentRepository = componentRepository;
         this.providedDependencies = providedDependencies;
         this.componentMethodConfigs = componentMethodConfigs;
+        this.templateContext = templateContext;
     }
 
     static <T> T buildTemplate(ComponentGraph parentComponentGraph,
@@ -151,6 +160,19 @@ final class ComponentTemplate {
         Qualifier componentQualifier = componentConfig
                 .getConfigurableMetadataResolver()
                 .resolve(componentClass);
+        Module componentAnnotation = componentClass.getAnnotation(Module.class);
+        if (componentAnnotation == null) {
+            throw new RuntimeException("The component class [" + componentClass.getName()
+                    + "] must be annotated with @Module()");
+        }
+        ModuleMetadata componentModuleMetadata =
+                new ModuleMetadata(componentClass, componentQualifier, componentAnnotation);
+        ResourceMetadata<Class<?>> componentMetadata =
+                componentConfig.getConfigurableMetadataResolver().resolveMetadata(
+                        componentClass,
+                        componentModuleMetadata,
+                        errors);
+
         for (Method method : componentClass.getDeclaredMethods()) {
 
             // TODO complete these checks
@@ -179,11 +201,16 @@ final class ComponentTemplate {
                             .resolve(method)
                             .merge(componentQualifier),
                     type);
-            ResourceAccessor resourceAccessor = componentRepository.get(dependency);
-            if (resourceAccessor == null) {
-                throw new RuntimeException("not fucking here!"); // TODO
+
+            ProvisionStrategy strategy =
+                    dependencySupplier.supply(
+                            DependencyRequest.create(componentMetadata, dependency));
+
+            if (strategy == null) {
+                // TODO no matching resource
+                throw new RuntimeException("not fucking here!");
             }
-            componentMethodConfigs.put(method, new ComponentMethodConfig(resourceAccessor, dependencies));
+            componentMethodConfigs.put(method, new ComponentMethodConfig(strategy, dependencies));
         }
 
         componentLinker.linkGraph(dependencySupplier, componentContext.newResolutionContext());
@@ -196,11 +223,12 @@ final class ComponentTemplate {
                 strategyDecorator,
                 resourceAccessorFactory,
                 componentRepository,
-                DependencyUtils.forParamTypes(
+                dependenciesForParamTypes(
                         componentMethod,
                         componentConfig.getConfigurableMetadataResolver(),
                         Qualifier.NONE),
-                componentMethodConfigs);
+                componentMethodConfigs,
+                componentContext);
 
         return componentFactoryInterface.cast(Proxy.newProxyInstance(
                 componentFactoryInterface.getClassLoader(),
@@ -227,6 +255,7 @@ final class ComponentTemplate {
                 errors,
                 statefulModulesMap
         );
+        componentContext.loadedModules().addAll(templateContext.loadedModules());
 
         ComponentRepository newComponentRepository =
                 componentRepository.replicateWith(componentContext);
@@ -256,6 +285,25 @@ final class ComponentTemplate {
 
         return componentGraph.createProxy(componentClass);
 
+    }
+
+    static Dependency[] dependenciesForParamTypes(
+            Method method,
+            QualifierResolver qualifierResolver,
+            Qualifier parentQualifier) {
+        Class<?>[] paramTypes = method.getParameterTypes();
+        Dependency[] dependencies = new Dependency[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++) {
+            Class<?> paramType = paramTypes[i];
+            Qualifier paramQualifier = qualifierResolver
+                    .resolveDependencyQualifier(
+                            paramType,
+                            parentQualifier);
+            Dependency paramDependency =
+                    Dependency.from(paramQualifier, paramType);
+            dependencies[i] = paramDependency;
+        }
+        return dependencies;
     }
 
 }

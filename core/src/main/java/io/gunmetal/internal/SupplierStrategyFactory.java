@@ -32,9 +32,9 @@ class SupplierStrategyFactory implements ReferenceStrategyFactory {
             }
 
             try {
-                contextThreadLocal.set(componentContext.newResolutionContext());
-                return provisionStrategy.get(
-                        dependencySupplier, contextThreadLocal.get());
+                context = componentContext.newResolutionContext();
+                contextThreadLocal.set(context);
+                return provisionStrategy.get(dependencySupplier, context);
             } finally {
                 contextThreadLocal.remove();
             }

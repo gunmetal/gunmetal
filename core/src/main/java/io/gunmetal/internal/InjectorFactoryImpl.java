@@ -59,12 +59,13 @@ class InjectorFactoryImpl implements InjectorFactory {
         this.classWalker = classWalker;
     }
 
-    @Override public Injector compositeInjector(final ResourceMetadata<Class<?>> resourceMetadata,
-                                                final ComponentContext context) {
+    @Override public Injector compositeInjector(Class<?> target,
+                                                ResourceMetadata<?> resourceMetadata,
+                                                ComponentContext context) {
 
         final List<Injector> injectors = new ArrayList<>();
 
-        classWalker.walk(resourceMetadata.provider(),
+        classWalker.walk(target,
                 field -> {
                     Dependency dependency = Dependency.from(
                             qualifierResolver.resolveDependencyQualifier(
@@ -91,7 +92,7 @@ class InjectorFactoryImpl implements InjectorFactory {
 
     }
 
-    @Override public Injector lazyCompositeInjector(final ResourceMetadata<?> resourceMetadata,
+    @Override public Injector lazyCompositeInjector(ResourceMetadata<?> resourceMetadata,
                                                     ComponentContext context) {
         return new LazyCompositeInjector(classWalker, qualifierResolver, resourceMetadata, context);
     }
@@ -118,9 +119,10 @@ class InjectorFactoryImpl implements InjectorFactory {
         };
     }
 
-    @Override public Instantiator constructorInstantiator(ResourceMetadata<Class<?>> resourceMetadata,
+    @Override public Instantiator constructorInstantiator(Class<?> providerClass,
+                                                          ResourceMetadata<?> resourceMetadata,
                                                           ComponentContext context) {
-        Constructor<?> constructor = constructorResolver.resolve(resourceMetadata.provider());
+        Constructor<?> constructor = constructorResolver.resolve(providerClass);
         ParameterizedFunction function = new ConstructorFunction(constructor);
         Injector injector = new FunctionInjector(
                 function,
@@ -163,25 +165,11 @@ class InjectorFactoryImpl implements InjectorFactory {
     @Override public Instantiator fieldInstantiator(
             ResourceMetadata<Field> resourceMetadata, Dependency moduleDependency, ComponentContext context) {
         Field provider = resourceMetadata.provider();
-        if (resourceMetadata.supplies().with() != void.class) {
-            Constructor<?> constructor = constructorResolver.resolve(
-                    resourceMetadata.supplies().with());
-            ParameterizedFunction function = new ConstructorFunction(constructor);
-            Injector injector = new FunctionInjector(
-                    function,
-                    resourceMetadata,
-                    dependenciesForFunction(
-                            resourceMetadata,
-                            function,
-                            qualifierResolver),
-                    context.linkers());
-            return new InstantiatorImpl(injector);
-        }
         if (!Modifier.isStatic(provider.getModifiers())) {
             return new StatefulInstantiator(
                     new ReverseFieldInjector(provider), resourceMetadata,  moduleDependency);
         }
-        return new InstantiatorImpl(new ReverseFieldInjector(resourceMetadata.provider()));
+        return new InstantiatorImpl(new ReverseFieldInjector(provider));
     }
 
     private static Dependency[] dependenciesForFunction(ResourceMetadata<?> resourceMetadata,

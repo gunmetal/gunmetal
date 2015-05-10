@@ -85,7 +85,7 @@ class ResourceAccessorImpl implements ResourceAccessor {
         ResourceMetadata<?> resourceMetadata = resource.metadata();
         ModuleMetadata moduleMetadata = resourceMetadata.moduleMetadata();
 
-        // TODO this could be better
+        // TODO this could be better - move to factory
         AccessFilter<Class<?>> accessFilter;
         if (resourceMetadata.provider() instanceof Class) {
             accessFilter = AccessFilter.create(

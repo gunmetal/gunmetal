@@ -19,11 +19,26 @@ package io.gunmetal.sandbox.testmocks;
 import io.gunmetal.Module;
 import io.gunmetal.Supplies;
 
+import java.util.function.Supplier;
+
 @Module
 public class SlimGunmetalBenchMarkModule {
 
     @Supplies public static AA aa(A a, BB bb, R r, E e, E ee, S s) {
         return new AA(a, bb, r, e, ee, s);
+    }
+
+    @Module(dependsOn = SlimGunmetalBenchMarkModule.class)
+    public interface SlimComponent {
+
+        void inject(Object o);
+
+        Supplier<N> supplier();
+
+        public interface Factory {
+            SlimComponent create();
+        }
+
     }
 
 }
