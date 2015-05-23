@@ -4,7 +4,9 @@ import io.gunmetal.Module;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
 import io.gunmetal.spi.DependencySupplier;
+import io.gunmetal.spi.GunmetalComponent;
 import io.gunmetal.spi.ModuleMetadata;
+import io.gunmetal.spi.Option;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Qualifier;
 import io.gunmetal.spi.QualifierResolver;
@@ -25,10 +27,10 @@ import java.util.Set;
 /**
  * @author rees.byars
  */
-final class ComponentTemplate {
+public final class ComponentTemplate {
 
     private final Class<?> componentClass;
-    private final ComponentConfig componentConfig;
+    private final GunmetalComponent gunmetalComponent;
     private final ComponentInjectors componentInjectors;
     private final ProvisionStrategyDecorator strategyDecorator;
     private final ResourceAccessorFactory resourceAccessorFactory;
@@ -39,7 +41,7 @@ final class ComponentTemplate {
 
     private ComponentTemplate(
             Class<?> componentClass,
-            ComponentConfig componentConfig,
+            GunmetalComponent gunmetalComponent,
             InjectorFactory injectorFactory,
             ProvisionStrategyDecorator strategyDecorator,
             ResourceAccessorFactory resourceAccessorFactory,
@@ -48,9 +50,11 @@ final class ComponentTemplate {
             Map<Method, ComponentMethodConfig> componentMethodConfigs,
             ComponentContext templateContext) {
         this.componentClass = componentClass;
-        this.componentConfig = componentConfig;
+        this.gunmetalComponent = gunmetalComponent;
         componentInjectors = new ComponentInjectors(
-                injectorFactory, componentConfig.getConfigurableMetadataResolver());
+                injectorFactory,
+                gunmetalComponent.qualifierResolver(),
+                gunmetalComponent.resourceMetadataResolver());
         this.strategyDecorator = strategyDecorator;
         this.resourceAccessorFactory = resourceAccessorFactory;
         this.componentRepository = componentRepository;
@@ -59,9 +63,11 @@ final class ComponentTemplate {
         this.templateContext = templateContext;
     }
 
-    static <T> T buildTemplate(ComponentGraph parentComponentGraph,
-                               ComponentConfig componentConfig,
-                               Class<T> componentFactoryInterface) {
+    public static <T> T build(Class<T> componentFactoryInterface) {
+        return build(new GunmetalComponent.Default(), componentFactoryInterface);
+    }
+
+    public static <T> T build(GunmetalComponent gunmetalComponent, Class<T> componentFactoryInterface) {
 
         if (!componentFactoryInterface.isInterface()) {
             throw new IllegalArgumentException("no bueno"); // TODO message
@@ -75,17 +81,22 @@ final class ComponentTemplate {
         Class<?> componentClass = componentMethod.getReturnType();
 
         Set<Class<?>> modules = new HashSet<>();
-        modules.add(componentClass);
+        Module componentModuleAnnotation = componentClass.getAnnotation(Module.class);
+        if (componentModuleAnnotation != null) {
+            if (componentModuleAnnotation.type() != Module.Type.COMPONENT) {
+                throw new RuntimeException("The component class [" + componentClass.getName()
+                        + "] must be Module.Type.Component");
+            }
+            Collections.addAll(modules, componentModuleAnnotation.dependsOn());
+        } else {
+            throw new RuntimeException("The component class [" + componentClass.getName()
+                    + "] must be annotated with @Module");
+        }
         Collections.addAll(modules, componentMethod.getParameterTypes());
 
-        ComponentExtensions componentExtensions = new ComponentExtensions();
-        if (parentComponentGraph != null) {
-             parentComponentGraph.inject(componentExtensions);
-        }
-
-        List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>(componentExtensions.strategyDecorators());
+        List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>(gunmetalComponent.strategyDecorators());
         strategyDecorators.add(new ScopeDecorator(scope -> {
-            ProvisionStrategyDecorator decorator = componentConfig.getScopeDecorators().get(scope);
+            ProvisionStrategyDecorator decorator = gunmetalComponent.scopeDecorators().get(scope);
             if (decorator != null) {
                 return decorator;
             }
@@ -99,32 +110,33 @@ final class ComponentTemplate {
         };
 
         InjectorFactory injectorFactory = new InjectorFactoryImpl(
-                componentConfig.getConfigurableMetadataResolver(),
-                componentConfig.getConstructorResolver(),
+                gunmetalComponent.qualifierResolver(),
+                gunmetalComponent.constructorResolver(),
                 new ClassWalkerImpl(
-                        componentConfig.getInjectionResolver(),
-                        componentConfig.getComponentSettings().isRestrictFieldInjection(),
-                        componentConfig.getComponentSettings().isRestrictSetterInjection()));
+                        gunmetalComponent.injectionResolver(),
+                        gunmetalComponent.options().contains(Option.RESTRICT_FIELD_INJECTION),
+                        gunmetalComponent.options().contains(Option.RESTRICT_SETTER_INJECTION)));
 
         ResourceFactory resourceFactory =
-                new ResourceFactoryImpl(injectorFactory, componentConfig.getComponentSettings().isRequireAcyclic());
+                new ResourceFactoryImpl(
+                        injectorFactory,
+                        gunmetalComponent.options().contains(Option.REQUIRE_ACYCLIC));
 
         BindingFactory bindingFactory = new BindingFactoryImpl(
                 resourceFactory,
-                componentConfig.getConfigurableMetadataResolver(),
-                componentConfig.getConfigurableMetadataResolver());
+                gunmetalComponent.qualifierResolver(),
+                gunmetalComponent.resourceMetadataResolver());
 
         RequestVisitorFactory requestVisitorFactory =
                 new RequestVisitorFactoryImpl(
-                        componentConfig.getConfigurableMetadataResolver(),
-                        componentConfig.getComponentSettings().isRequireExplicitModuleDependencies());
+                        gunmetalComponent.qualifierResolver(),
+                        gunmetalComponent.options().contains(Option.REQUIRE_EXPLICIT_MODULE_DEPENDENCIES));
 
         ResourceAccessorFactory resourceAccessorFactory =
                 new ResourceAccessorFactoryImpl(bindingFactory, requestVisitorFactory);
 
-        ComponentRepository componentRepository = new ComponentRepository(
-                resourceAccessorFactory,
-                parentComponentGraph == null ? null : parentComponentGraph.repository());
+        ComponentRepository componentRepository =
+                new ComponentRepository(resourceAccessorFactory);
 
         ComponentLinker componentLinker = new ComponentLinker();
         ComponentErrors errors = new ComponentErrors();
@@ -134,10 +146,6 @@ final class ComponentTemplate {
                 errors,
                 Collections.emptyMap()
         );
-        if (parentComponentGraph != null) {
-            componentContext.loadedModules().addAll(
-                    parentComponentGraph.context().loadedModules());
-        }
 
         for (Class<?> module : modules) {
             List<ResourceAccessor> moduleResourceAccessors =
@@ -147,27 +155,24 @@ final class ComponentTemplate {
 
         DependencySupplier dependencySupplier =
                 new ComponentDependencySupplier(
-                        componentConfig.getSupplierAdapter(),
+                        gunmetalComponent.supplierAdapter(),
                         resourceAccessorFactory,
-                        componentConfig.getConverterSupplier(),
+                        gunmetalComponent.converterSupplier(),
                         componentRepository,
                         componentContext,
-                        componentConfig.getComponentSettings().isRequireInterfaces());
+                        gunmetalComponent.options().contains(Option.REQUIRE_INTERFACES));
 
          // TODO move all this shit to a method or sumpin
         Map<Method, ComponentMethodConfig> componentMethodConfigs = new HashMap<>();
-        Qualifier componentQualifier = componentConfig
-                .getConfigurableMetadataResolver()
-                .resolve(componentClass);
-        Module componentAnnotation = componentClass.getAnnotation(Module.class);
-        if (componentAnnotation == null) {
-            throw new RuntimeException("The component class [" + componentClass.getName()
-                    + "] must be annotated with @Module()");
-        }
+        Qualifier componentQualifier = gunmetalComponent.qualifierResolver().resolve(componentClass);
+
         ModuleMetadata componentModuleMetadata =
-                new ModuleMetadata(componentClass, componentQualifier, componentAnnotation);
+                new ModuleMetadata(
+                        componentClass,
+                        componentQualifier,
+                        componentModuleAnnotation);
         ResourceMetadata<Class<?>> componentMetadata =
-                componentConfig.getConfigurableMetadataResolver().resolveMetadata(
+                gunmetalComponent.resourceMetadataResolver().resolveMetadata(
                         componentClass,
                         componentModuleMetadata,
                         errors);
@@ -196,7 +201,7 @@ final class ComponentTemplate {
 
             Type type = method.getGenericReturnType();
             Dependency dependency = Dependency.from(
-                    componentConfig.getConfigurableMetadataResolver()
+                    gunmetalComponent.qualifierResolver()
                             .resolve(method)
                             .merge(componentQualifier),
                     type);
@@ -210,14 +215,14 @@ final class ComponentTemplate {
 
         final ComponentTemplate template = new ComponentTemplate(
                 componentClass,
-                componentConfig,
+                gunmetalComponent,
                 injectorFactory,
                 strategyDecorator,
                 resourceAccessorFactory,
                 componentRepository,
                 dependenciesForParamTypes(
                         componentMethod,
-                        componentConfig.getConfigurableMetadataResolver(),
+                        gunmetalComponent.qualifierResolver(),
                         Qualifier.NONE),
                 componentMethodConfigs,
                 componentContext);
@@ -254,12 +259,12 @@ final class ComponentTemplate {
 
         DependencySupplier dependencySupplier =
                 new ComponentDependencySupplier(
-                        componentConfig.getSupplierAdapter(),
+                        gunmetalComponent.supplierAdapter(),
                         resourceAccessorFactory,
-                        componentConfig.getConverterSupplier(),
+                        gunmetalComponent.converterSupplier(),
                         newComponentRepository,
                         componentContext,
-                        componentConfig.getComponentSettings().isRequireInterfaces());
+                        gunmetalComponent.options().contains(Option.REQUIRE_INTERFACES));
 
         ComponentInjectors injectors = componentInjectors.replicateWith(componentContext);
 
@@ -267,10 +272,8 @@ final class ComponentTemplate {
         errors.throwIfNotEmpty();
 
         ComponentGraph componentGraph = new ComponentGraph(
-                componentConfig,
                 componentLinker,
                 dependencySupplier,
-                newComponentRepository,
                 componentContext,
                 injectors,
                 componentMethodConfigs);

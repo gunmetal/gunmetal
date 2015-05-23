@@ -1,12 +1,10 @@
-package io.gunmetal.internal;
+package io.gunmetal.spi.impl;
 
 import io.gunmetal.FromModule;
-import io.gunmetal.Lazy;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
 import io.gunmetal.Overrides;
 import io.gunmetal.Param;
-import io.gunmetal.Singleton;
 import io.gunmetal.Supplies;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ModuleMetadata;
@@ -16,81 +14,45 @@ import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ResourceMetadataResolver;
 import io.gunmetal.spi.Scope;
-import io.gunmetal.spi.Scopes;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author rees.byars
  */
-final class ConfigurableMetadataResolver implements ResourceMetadataResolver, QualifierResolver {
+public final class ConfigurableMetadataResolver implements ResourceMetadataResolver, QualifierResolver {
 
-    private Class<? extends Annotation> qualifierType = io.gunmetal.Qualifier.class;
-    private Class<? extends Annotation> eagerType = Lazy.class;
-    private boolean indicatesEager = false;
-    private Class<? extends Annotation> scopeType = io.gunmetal.Scope.class;
-    private Map<Class<? extends Annotation>, Scope> scopeMap;
-    private boolean requireQualifiers = false;
-    private boolean restrictPluralQualifiers = false;
+    private final Class<? extends Annotation> qualifierType;
+    private final Class<? extends Annotation> eagerType;
+    private final boolean indicatesEager;
+    private final Class<? extends Annotation> scopeType;
+    private final Map<Class<? extends Annotation>, Scope> scopeMap;
+    private final boolean requireQualifiers;
+    private final boolean restrictPluralQualifiers;
 
-    ConfigurableMetadataResolver() {
-        scopeMap = new HashMap<>();
-        scopeMap.put(Singleton.class, Scopes.SINGLETON);
-        scopeMap.put(null, Scopes.PROTOTYPE);
-    }
-
-    private ConfigurableMetadataResolver(Map<Class<? extends Annotation>, Scope> scopeMap) {
-        this.scopeMap = new HashMap<>(scopeMap);
-    }
-
-    public ConfigurableMetadataResolver replicate() {
-        ConfigurableMetadataResolver copy = new ConfigurableMetadataResolver(scopeMap);
-        copy.qualifierType = qualifierType;
-        copy.eagerType = eagerType;
-        copy.indicatesEager = indicatesEager;
-        copy.scopeType = scopeType;
-        copy.requireQualifiers = requireQualifiers;
-        copy.restrictPluralQualifiers = restrictPluralQualifiers;
-        return copy;
-    }
-
-    public ConfigurableMetadataResolver qualifierType(Class<? extends Annotation> qualifierType) {
+    public ConfigurableMetadataResolver(
+            Class<? extends Annotation> qualifierType,
+            Class<? extends Annotation> eagerType,
+            boolean indicatesEager,
+            Class<? extends Annotation> scopeType,
+            Map<Class<? extends Annotation>, Scope> scopeMap,
+            boolean requireQualifiers,
+            boolean restrictPluralQualifiers) {
         this.qualifierType = qualifierType;
-        return this;
-    }
-
-    public ConfigurableMetadataResolver scopeType(Class<? extends Annotation> scopeType) {
-        this.scopeType = scopeType;
-        return this;
-    }
-
-    public ConfigurableMetadataResolver addScope(Class<? extends Annotation> scopeType, Scope scope) {
-        scopeMap.put(scopeType, scope);
-        return this;
-    }
-
-    public ConfigurableMetadataResolver eagerType(Class<? extends Annotation> eagerType, boolean indicatesEager) {
         this.eagerType = eagerType;
         this.indicatesEager = indicatesEager;
-        return this;
-    }
-
-    public ConfigurableMetadataResolver requireQualifiers(boolean requireQualifiers) {
+        this.scopeType = scopeType;
+        this.scopeMap = scopeMap;
         this.requireQualifiers = requireQualifiers;
-        return this;
+        this.restrictPluralQualifiers = restrictPluralQualifiers;
     }
 
-    public ConfigurableMetadataResolver restrictPluralQualifiers(boolean restrictPluralQualifiers) {
-        this.restrictPluralQualifiers = restrictPluralQualifiers;
-        return this;
-    }
 
     @Override public <T extends AnnotatedElement & Member> ResourceMetadata<T> resolveMetadata(
             T annotatedElement, ModuleMetadata moduleMetadata, Errors errors) {

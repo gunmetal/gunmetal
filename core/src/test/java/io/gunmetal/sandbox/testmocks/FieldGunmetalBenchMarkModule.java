@@ -54,7 +54,7 @@ public class FieldGunmetalBenchMarkModule {
     @Supplies(with = Y.class) public Y y;
     @Supplies(with = Z.class) public Z z;
 
-    @Module(dependsOn = FieldGunmetalBenchMarkModule.class)
+    @Module(dependsOn = FieldGunmetalBenchMarkModule.class, type = Module.Type.COMPONENT)
     public interface Component {
 
         void inject(Object o);

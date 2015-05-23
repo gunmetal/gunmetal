@@ -1,8 +1,8 @@
 package io.gunmetal.integration;
 
-import io.gunmetal.Component;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
+import io.gunmetal.internal.ComponentTemplate;
 import io.gunmetal.sandbox.testmocks.D;
 import io.gunmetal.sandbox.testmocks.E;
 import io.gunmetal.sandbox.testmocks.SlimGunmetalBenchMarkModule;
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ConsistentScopesIntegrationTest {
 
-    @Module(dependsOn = SlimGunmetalBenchMarkModule.class)
+    @Module(dependsOn = SlimGunmetalBenchMarkModule.class, type = Module.Type.COMPONENT)
     public interface TestComponent {
 
         void inject(Object o);
@@ -50,7 +50,7 @@ public class ConsistentScopesIntegrationTest {
     @Test
     public void testConsistentScopes() {
 
-        Factory factory = Component.builder().build(Factory.class);
+        Factory factory = ComponentTemplate.build(Factory.class);
 
         TestComponent component1 = factory.create();
         InjectTest test1 = new InjectTest();

@@ -8,10 +8,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,18 +19,11 @@ import java.util.concurrent.ConcurrentHashMap;
 class ComponentRepository implements Replicable<ComponentRepository> {
 
     private final ResourceAccessorFactory resourceAccessorFactory;
-    private final ComponentRepository parentRepository;     
     private final Map<Dependency, ResourceAccessor> resourceAccessors = new ConcurrentHashMap<>(64, .75f, 2);
     private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
-    private final Queue<ResourceAccessor> myResourceAccessors = new LinkedList<>();
 
-    ComponentRepository(ResourceAccessorFactory resourceAccessorFactory,
-                        ComponentRepository parentRepository) {
+    ComponentRepository(ResourceAccessorFactory resourceAccessorFactory) {
         this.resourceAccessorFactory = resourceAccessorFactory;
-        this.parentRepository = parentRepository;
-        if (parentRepository != null && resourceAccessors.isEmpty()) {
-            resourceAccessors.putAll(parentRepository.resourceAccessors);
-        }
     }
 
     void putAll(List<ResourceAccessor> resourceAccessors, Errors errors) {
@@ -59,7 +50,6 @@ class ComponentRepository implements Replicable<ComponentRepository> {
 
         ResourceAccessor previous = resourceAccessors.put(dependency, resourceAccessor);
         if (previous == null) {
-            myResourceAccessors.add(resourceAccessor);
             return;
         }
 
@@ -79,8 +69,6 @@ class ComponentRepository implements Replicable<ComponentRepository> {
             resourceAccessors.put(dependency, previous);
             errors.add("more than one of type without override enabled -> " + dependency);
         } else if (newMetadata.overrides().allowMappingOverride()) {
-            myResourceAccessors.add(resourceAccessor);
-            myResourceAccessors.remove(previous);
             overriddenDependencies.add(dependency);
         } else if (prevMetadata.overrides().allowMappingOverride()) {
             resourceAccessors.put(dependency, previous);
@@ -130,15 +118,14 @@ class ComponentRepository implements Replicable<ComponentRepository> {
         if (collectionDependencyService == null) {
             collectionDependencyService = resourceAccessorFactory.createForCollection(collectionDependency, dependency);
             resourceAccessors.put(collectionDependency, collectionDependencyService);
-            myResourceAccessors.add(collectionDependencyService);
         }
         collectionDependencyService.add(resourceAccessor);
     }
 
     @Override public ComponentRepository replicateWith(ComponentContext context) {
         ComponentRepository newRepo =
-                new ComponentRepository(resourceAccessorFactory, parentRepository);
-        for (ResourceAccessor resourceAccessor : myResourceAccessors) {
+                new ComponentRepository(resourceAccessorFactory);
+        for (ResourceAccessor resourceAccessor : resourceAccessors.values()) {
             newRepo.putAll(resourceAccessor.replicateWith(context), context.errors());
         }
         newRepo.overriddenDependencies.addAll(overriddenDependencies);

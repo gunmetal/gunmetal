@@ -1,0 +1,16 @@
+package io.gunmetal.spi;
+
+/**
+ * @author rees.byars
+ */
+public enum Option {
+
+    REQUIRE_QUALIFIERS,
+    RESTRICT_PLURAL_QUALIFIERS,
+    REQUIRE_INTERFACES,
+    REQUIRE_ACYCLIC,
+    REQUIRE_EXPLICIT_MODULE_DEPENDENCIES,
+    RESTRICT_FIELD_INJECTION,
+    RESTRICT_SETTER_INJECTION
+
+}

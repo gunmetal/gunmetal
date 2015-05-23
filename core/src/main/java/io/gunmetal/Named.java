@@ -16,15 +16,19 @@
 
 package io.gunmetal;
 
-import io.gunmetal.internal.ComponentBuilder;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author rees.byars
  */
-public interface Component {
-
-    static ComponentBuilder builder() {
-        return new ComponentBuilder();
-    }
-
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Qualifier
+public @interface Named {
+    String value();
 }

@@ -142,7 +142,7 @@ class BindingFactoryImpl implements BindingFactory {
         Dependency moduleDependency =
                 Dependency.from(moduleMetadata.qualifier(), module);
 
-        if (moduleAnnotation.type() == Module.Type.COMPONENT_PARAM) {
+        if (moduleAnnotation.type() == Module.Type.COMPONENT_PARAM || moduleAnnotation.type() == Module.Type.COMPONENT) {
             Resource resource = resourceFactory.withParamProvider(
                     resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()),
                     moduleDependency,
@@ -164,7 +164,7 @@ class BindingFactoryImpl implements BindingFactory {
             if (resourceMetadata.isProvider()) {
                 List<Dependency> dependencies = Collections.singletonList(
                         Dependency.from(resourceMetadata.qualifier(), f.getGenericType()));
-
+                // TODO void check is duplicated in injector
                 if (resourceMetadata.supplies().with() != void.class) {
                     resourceBindings.add(new BindingImpl(
                             resourceFactory.withClassProvider(
@@ -212,8 +212,10 @@ class BindingFactoryImpl implements BindingFactory {
                     moduleMetadata,
                     context);
         }
-        for (Class<?> m : moduleAnnotation.dependsOn()) {
-            resourceBindings.addAll(createBindingsForModule(m, context));
+        if (moduleAnnotation.type() != Module.Type.COMPONENT) {
+            for (Class<?> m : moduleAnnotation.dependsOn()) {
+                resourceBindings.addAll(createBindingsForModule(m, context));
+            }
         }
     }
 

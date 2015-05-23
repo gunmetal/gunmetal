@@ -2,21 +2,25 @@ package io.gunmetal.sandbox;
 
 import com.google.common.eventbus.EventBus;
 import io.gunmetal.Inject;
-import io.gunmetal.Component;
 import io.gunmetal.Module;
+import io.gunmetal.MultiBind;
+import io.gunmetal.Named;
 import io.gunmetal.Overrides;
-import io.gunmetal.internal.ComponentBuilder;
+import io.gunmetal.internal.ComponentTemplate;
 import io.gunmetal.sandbox.testmocks.dongle.bl.Dongler;
 import io.gunmetal.sandbox.testmocks.dongle.config.RootModule;
 import io.gunmetal.sandbox.testmocks.dongle.scope.Scopes;
 import io.gunmetal.sandbox.testmocks.dongle.ui.UiModule;
 import io.gunmetal.sandbox.testmocks.dongle.ui.UserModule;
 import io.gunmetal.sandbox.testmocks.dongle.ws.WsModule;
-import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.GunmetalComponent;
+import io.gunmetal.spi.Option;
+import io.gunmetal.spi.ProvisionStrategyDecorator;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * @author rees.byars
@@ -26,10 +30,12 @@ public class ComponentBuilderTest {
 
     @Inject EventBus eventBus;
 
-    @Module(dependsOn = RootModule.class)
+    @Module(dependsOn = RootModule.class, type = Module.Type.COMPONENT)
     public interface RootComponent {
 
-        ComponentBuilder plus();
+        @MultiBind List<ProvisionStrategyDecorator> strategyDecorators();
+
+        @Named("thread") ProvisionStrategyDecorator threadScope();
 
         public interface Factory {
 
@@ -39,7 +45,7 @@ public class ComponentBuilderTest {
 
     }
 
-    @Module(dependsOn = {UiModule.class, WsModule.class, RootModule.class})
+    @Module(dependsOn = {UiModule.class, WsModule.class, RootModule.class}, type = Module.Type.COMPONENT)
     public interface MainComponent {
 
         void inject(ComponentBuilderTest test);
@@ -48,7 +54,7 @@ public class ComponentBuilderTest {
 
         public interface Factory {
 
-            MainComponent create(UserModule userModule);
+            MainComponent create(UserModule userModule, RootComponent rootComponent);
 
         }
 
@@ -57,45 +63,40 @@ public class ComponentBuilderTest {
     @Test
     public void testBasic() {
 
-        RootComponent rootComponent = Component
-                .builder()
-                .requireAcyclic()
-                .requireExplicitModuleDependencies()
-                .restrictPluralQualifiers()
-                .restrictSetterInjection()
-                .restrictFieldInjection()
-                .addScope(
-                        io.gunmetal.sandbox.testmocks.dongle.scope.Thread.class,
-                        Scopes.THREAD,
-                        (componentMetadata, delegateStrategy, linkers) -> {
-                            final ThreadLocal<Object> threadLocal = new ThreadLocal<>();
-                            ProvisionStrategy provisionStrategy = (p, c) -> {
-                                Object t = threadLocal.get();
-                                if (t == null) {
-                                    t = delegateStrategy.get(p, c);
-                                    threadLocal.set(t);
-                                }
-                                return t;
-                            };
-                            {
-                                if (componentMetadata.eager()) linkers.addEagerLinker(provisionStrategy::get);
-                            }
-                            return provisionStrategy;
-                        })
-                .build(RootComponent.Factory.class)
+        RootComponent rootComponent =
+                ComponentTemplate.build(
+                        new GunmetalComponent.Default(
+                                Option.REQUIRE_ACYCLIC,
+                                Option.REQUIRE_EXPLICIT_MODULE_DEPENDENCIES,
+                                Option.RESTRICT_PLURAL_QUALIFIERS,
+                                Option.RESTRICT_SETTER_INJECTION,
+                                Option.RESTRICT_FIELD_INJECTION),
+                        RootComponent.Factory.class)
                 .create();
 
+        /*
         assertNotNull(
                 rootComponent
                         .plus()
                         .build(MainComponent.Factory.class)
                         .create(new UserModule("test")));
+                        */
 
 
-        MainComponent graph = rootComponent
-                .plus()
-                .build(MainComponent.Factory.class)
-                .create(new UserModule("test"));
+        GunmetalComponent gunmetalComponent = new GunmetalComponent.Default(
+                Option.REQUIRE_ACYCLIC,
+                Option.REQUIRE_EXPLICIT_MODULE_DEPENDENCIES,
+                Option.RESTRICT_PLURAL_QUALIFIERS,
+                Option.RESTRICT_SETTER_INJECTION,
+                Option.RESTRICT_FIELD_INJECTION
+        ).addScope(
+                io.gunmetal.sandbox.testmocks.dongle.scope.Thread.class,
+                Scopes.THREAD,
+                rootComponent.threadScope());
+
+        gunmetalComponent.strategyDecorators().addAll(rootComponent.strategyDecorators());
+        MainComponent graph = ComponentTemplate.build(gunmetalComponent, MainComponent.Factory.class)
+                .create(new UserModule("test"), rootComponent);
 
         graph.inject(this);
         eventBus.post(new Dongler());

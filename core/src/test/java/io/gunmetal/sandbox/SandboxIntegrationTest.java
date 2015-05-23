@@ -16,7 +16,6 @@
 
 package io.gunmetal.sandbox;
 
-import io.gunmetal.Component;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
@@ -24,15 +23,18 @@ import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
 import io.gunmetal.Overrides;
 import io.gunmetal.Param;
-import io.gunmetal.Supplies;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
-import io.gunmetal.internal.ComponentBuilder;
+import io.gunmetal.Supplies;
+import io.gunmetal.internal.ComponentTemplate;
 import io.gunmetal.sandbox.testmocks.A;
 import io.gunmetal.sandbox.testmocks.AA;
 import io.gunmetal.sandbox.testmocks.F;
 import io.gunmetal.sandbox.testmocks.NewGunmetalBenchMarkModule;
 import io.gunmetal.spi.Converter;
+import io.gunmetal.spi.ConverterSupplier;
+import io.gunmetal.spi.GunmetalComponent;
+import io.gunmetal.spi.Option;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 import io.gunmetal.spi.Scope;
 import org.junit.Test;
@@ -202,12 +204,10 @@ public class SandboxIntegrationTest {
         }
     }
 
-    @Module(dependsOn = TestModule.class)
+    @Module(dependsOn = TestModule.class, type = Module.Type.COMPONENT)
     public interface TestComponent {
 
         void inject(Object o);
-
-        ComponentBuilder plus();
 
         TestModule t(@Param String name);
 
@@ -217,7 +217,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(dependsOn = NewGunmetalBenchMarkModule.class)
+    @Module(dependsOn = NewGunmetalBenchMarkModule.class, type = Module.Type.COMPONENT)
     public interface GComponent {
 
         void inject(Object o);
@@ -231,9 +231,10 @@ public class SandboxIntegrationTest {
     @Test
     public void testBuild() {
 
-        TestComponent.Factory templateGraph = Component.builder()
-                .requireAcyclic()
-                .build(TestComponent.Factory.class);
+        TestComponent.Factory templateGraph = ComponentTemplate
+                .build(
+                        new GunmetalComponent.Default(Option.REQUIRE_ACYCLIC),
+                        TestComponent.Factory.class);
         templateGraph.create(new StatefulModule("rees"));
 
         TestComponent app = templateGraph.create(new StatefulModule("rees"));
@@ -275,8 +276,7 @@ public class SandboxIntegrationTest {
 
         Dep2 dep2 = new Dep2();
 
-        GComponent gApp = Component
-                .builder()
+        GComponent gApp = ComponentTemplate
                 .build(GComponent.Factory.class)
                 .create();
 
@@ -306,7 +306,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(dependsOn = {TestModule.class, M.class})
+    @Module(dependsOn = {TestModule.class, M.class}, type = Module.Type.COMPONENT)
     public interface BadComponent {
 
         public interface Factory {
@@ -317,7 +317,7 @@ public class SandboxIntegrationTest {
 
     @Test(expected = RuntimeException.class)
     public void testBlackList() {
-        new ComponentBuilder().build(BadComponent.Factory.class);
+        ComponentTemplate.build(BadComponent.Factory.class);
     }
 
     @Module(subsumes = MyLibrary.class, type = Module.Type.PROVIDED)
@@ -357,7 +357,7 @@ public class SandboxIntegrationTest {
     public interface Cheese {
     }
 
-    @Module(dependsOn = PlusModule.class)
+    @Module(dependsOn = PlusModule.class, type = Module.Type.COMPONENT)
     public interface PlusComponent {
 
         void inject(Object o);
@@ -367,6 +367,8 @@ public class SandboxIntegrationTest {
         }
 
     }
+
+    /*
 
     @Test
     public void testPlus() {
@@ -378,7 +380,7 @@ public class SandboxIntegrationTest {
 
         Dep dep = new Dep();
 
-        TestComponent parent = Component.builder()
+        TestComponent parent = Components.builder()
                 .build(TestComponent.Factory.class)
                 .create(new StatefulModule("plus"));
 
@@ -423,6 +425,8 @@ public class SandboxIntegrationTest {
 
     }
 
+    */
+
     static class AaHolder {
         @Inject AA aa;
     }
@@ -437,7 +441,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(dependsOn = ConversionModule.class)
+    @Module(dependsOn = ConversionModule.class, type = Module.Type.COMPONENT)
     public interface ConversionComponent {
 
         void inject(Object o);
@@ -451,22 +455,31 @@ public class SandboxIntegrationTest {
     @Test
     public void testConversion() {
 
-        ConversionComponent graph =
-                Component.builder()
-                        .withConverterSupplier(to -> {
-                            if (to.raw().equals(Long.class) || to.raw().equals(long.class)) {
-                                return Collections.singletonList(new Converter() {
-                                    @Override public List<Class<?>> supportedFromTypes() {
-                                        return Arrays.asList(String.class);
-                                    }
+        ConverterSupplier converterSupplier = to -> {
+            if (to.raw().equals(Long.class) || to.raw().equals(long.class)) {
+                return Collections.singletonList(new Converter() {
+                    @Override public List<Class<?>> supportedFromTypes() {
+                        return Arrays.asList(String.class);
+                    }
 
-                                    @Override public Object convert(Object from) {
-                                        return Long.valueOf(from.toString());
-                                    }
-                                });
-                            }
-                            return Collections.emptyList();
-                        }).build(ConversionComponent.Factory.class).create();
+                    @Override public Object convert(Object from) {
+                        return Long.valueOf(from.toString());
+                    }
+                });
+            }
+            return Collections.emptyList();
+        };
+
+        GunmetalComponent gunmetalComponent = new GunmetalComponent.Default() {
+
+            @Override public ConverterSupplier converterSupplier() {
+                return converterSupplier;
+            }
+
+        };
+
+        ConversionComponent graph =
+                ComponentTemplate.build(gunmetalComponent, ConversionComponent.Factory.class).create();
 
         ConversionModule c = new ConversionModule();
         graph.inject(c);
@@ -487,7 +500,7 @@ public class SandboxIntegrationTest {
         }
     }
 
-    @Module(dependsOn = MyModule.class)
+    @Module(dependsOn = MyModule.class, type = Module.Type.COMPONENT)
     public interface MyComponent {
 
         MyModule getMyModule(@Param String name);
@@ -499,8 +512,7 @@ public class SandboxIntegrationTest {
 
     @Test
     public void testComponent() {
-        MyComponent component = Component
-                .builder()
+        MyComponent component = ComponentTemplate
                 .build(MyComponent.Factory.class)
                 .create();
         assertEquals("sweet", component.getMyModule("sweet").name);
@@ -520,7 +532,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(dependsOn = Bullshit.class)
+    @Module(dependsOn = Bullshit.class, type = Module.Type.COMPONENT)
     public interface BullshitComponent {
         Bullshit bs(@Param String word);
         public static interface Factory {
@@ -530,7 +542,7 @@ public class SandboxIntegrationTest {
 
     @Test
     public void testBullShit() {
-        Component.builder()
+        ComponentTemplate
                 .build(BullshitComponent.Factory.class)
                 .bullshitComponent()
                 .bs("what");

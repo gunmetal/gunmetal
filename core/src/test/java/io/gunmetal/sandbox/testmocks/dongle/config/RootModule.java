@@ -3,9 +3,11 @@ package io.gunmetal.sandbox.testmocks.dongle.config;
 import com.google.common.eventbus.EventBus;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
-import io.gunmetal.Supplies;
+import io.gunmetal.Named;
 import io.gunmetal.Singleton;
+import io.gunmetal.Supplies;
 import io.gunmetal.sandbox.testmocks.dongle.bl.Dongler;
+import io.gunmetal.spi.ProvisionStrategy;
 import io.gunmetal.spi.ProvisionStrategyDecorator;
 
 /**
@@ -32,6 +34,24 @@ public interface RootModule {
 
                 return t;
             };
+        };
+    }
+
+    @Supplies @Named("thread") static ProvisionStrategyDecorator threadScope() {
+        return (componentMetadata, delegateStrategy, linkers) -> {
+            final ThreadLocal<Object> threadLocal = new ThreadLocal<>();
+            ProvisionStrategy provisionStrategy = (p, c) -> {
+                Object t = threadLocal.get();
+                if (t == null) {
+                    t = delegateStrategy.get(p, c);
+                    threadLocal.set(t);
+                }
+                return t;
+            };
+            {
+                if (componentMetadata.eager()) linkers.addEagerLinker(provisionStrategy::get);
+            }
+            return provisionStrategy;
         };
     }
 

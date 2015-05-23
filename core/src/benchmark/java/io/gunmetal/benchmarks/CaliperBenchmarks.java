@@ -5,12 +5,14 @@ import com.google.caliper.Benchmark;
 import com.google.inject.Guice;
 import com.google.inject.Key;
 import dagger.ObjectGraph;
-import io.gunmetal.Component;
 import io.gunmetal.Module;
+import io.gunmetal.internal.ComponentTemplate;
 import io.gunmetal.sandbox.testmocks.AA;
 import io.gunmetal.sandbox.testmocks.FieldGunmetalBenchMarkModule;
 import io.gunmetal.sandbox.testmocks.N;
 import io.gunmetal.sandbox.testmocks.SlimGunmetalBenchMarkModule;
+import io.gunmetal.spi.GunmetalComponent;
+import io.gunmetal.spi.Option;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import se.jbee.inject.bootstrap.Bootstrap;
 
@@ -33,13 +35,12 @@ public class CaliperBenchmarks {
     @BeforeExperiment
     void setUp() {
 
-        slimTemlplate = Component.builder().build(SlimGunmetalBenchMarkModule.SlimComponent.Factory.class);
+        slimTemlplate = ComponentTemplate.build(SlimGunmetalBenchMarkModule.SlimComponent.Factory.class);
 
         fieldTemplate =
-                Component.builder().build(FieldGunmetalBenchMarkModule.Component.Factory.class);
+                ComponentTemplate.build(FieldGunmetalBenchMarkModule.Component.Factory.class);
 
-        gunmetalProvider = Component
-                .builder()
+        gunmetalProvider = ComponentTemplate
                 .build(SlimGunmetalBenchMarkModule.SlimComponent.Factory.class)
                 .create()
                 .supplier();
@@ -54,7 +55,7 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            Component.builder()
+            ComponentTemplate
                     .build(FieldGunmetalBenchMarkModule.Component.Factory.class)
                     .create()
                     .inject(injectionTarget);
@@ -87,9 +88,10 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            Component.builder()
-                    .requireAcyclic()
-                    .build(SlimGunmetalBenchMarkModule.SlimComponent.Factory.class)
+            ComponentTemplate
+                    .build(
+                            new GunmetalComponent.Default(Option.REQUIRE_ACYCLIC),
+                            SlimGunmetalBenchMarkModule.SlimComponent.Factory.class)
                     .create()
                     .inject(injectionTarget);
             dummy |= injectionTarget.hashCode();
@@ -101,9 +103,10 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            Component.builder()
-                    .requireAcyclic()
-                    .build(ZeroComponent.Factory.class)
+            ComponentTemplate
+                    .build(
+                            new GunmetalComponent.Default(Option.REQUIRE_ACYCLIC),
+                            ZeroComponent.Factory.class)
                     .create()
                     .inject(injectionTarget);
             dummy |= injectionTarget.hashCode();

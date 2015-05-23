@@ -82,7 +82,7 @@ public @interface Module {
     };
 
     public enum Type {
-        STATELESS, COMPONENT_PARAM, CONSTRUCTED, PROVIDED
+        STATELESS, COMPONENT_PARAM, CONSTRUCTED, PROVIDED, COMPONENT
     }
 
 }

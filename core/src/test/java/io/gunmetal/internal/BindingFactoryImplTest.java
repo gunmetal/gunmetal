@@ -1,6 +1,5 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.Component;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
 import io.gunmetal.spi.DependencySupplier;
@@ -21,7 +20,7 @@ public class BindingFactoryImplTest {
     @Inject ComponentRepository componentRepository;
     @Inject ComponentErrors componentErrors;
 
-    @Module(dependsOn = BaseTestModule.class)
+    @Module(dependsOn = BaseTestModule.class, type = Module.Type.COMPONENT)
     public interface TestComponent {
 
         void inject(BindingFactoryImplTest test);
@@ -34,10 +33,7 @@ public class BindingFactoryImplTest {
 
     }
 
-    TestComponent graph = Component
-            .builder()
-            .build(TestComponent.Factory.class)
-            .create();
+    TestComponent graph = ComponentTemplate.build(TestComponent.Factory.class).create();
 
     @Module(type = Module.Type.CONSTRUCTED)
     static class EmptyStatefulModule {

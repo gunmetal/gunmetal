@@ -13,42 +13,22 @@ import java.util.Map;
  */
 final class ComponentGraph {
 
-    private final ComponentConfig componentConfig;
     private final ComponentLinker componentLinker;
     private final DependencySupplier dependencySupplier;
-    private final ComponentRepository componentRepository;
     private final ComponentContext componentContext;
     private final ComponentInjectors componentInjectors;
     private final Map<Method, ComponentMethodConfig> configMap;
 
-    ComponentGraph(ComponentConfig componentConfig,
-                   ComponentLinker componentLinker,
+    ComponentGraph(ComponentLinker componentLinker,
                    DependencySupplier dependencySupplier,
-                   ComponentRepository componentRepository,
                    ComponentContext componentContext,
                    ComponentInjectors componentInjectors,
                    Map<Method, ComponentMethodConfig> configMap) {
-        this.componentConfig = componentConfig;
         this.componentLinker = componentLinker;
         this.dependencySupplier = dependencySupplier;
-        this.componentRepository = componentRepository;
         this.componentContext = componentContext;
         this.componentInjectors = componentInjectors;
         this.configMap = configMap;
-    }
-
-    ComponentContext context() {
-        return componentContext;
-    }
-
-    ComponentRepository repository() {
-        return componentRepository;
-    }
-
-    void inject(Object injectionTarget) {
-        componentInjectors
-                .getInjector(injectionTarget, dependencySupplier, componentLinker, componentContext)
-                .inject(injectionTarget, dependencySupplier, componentContext.newResolutionContext());
     }
 
     <T> T createProxy(Class<T> componentInterface) {
@@ -74,14 +54,11 @@ final class ComponentGraph {
                     if (method.getName().equals("inject")) {
                         // TODO validate etc, earlier
                         for (Object arg : args) {
-                            inject(arg);
+                            componentInjectors
+                                    .getInjector(arg, dependencySupplier, componentLinker, componentContext)
+                                    .inject(arg, dependencySupplier, componentContext.newResolutionContext());
                         }
                         return null;
-                    }
-                    if (method.getReturnType() == ComponentBuilder.class &&
-                            method.getName().equals("plus")) {
-                        // TODO validate no params, do this earlier
-                        return new ComponentBuilder(this, componentConfig);
                     }
                     ComponentMethodConfig config = configMap.get(method);
                     if (args != null) {

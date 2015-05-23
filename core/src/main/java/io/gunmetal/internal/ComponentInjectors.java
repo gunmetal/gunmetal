@@ -4,6 +4,8 @@ import io.gunmetal.Module;
 import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ModuleMetadata;
 import io.gunmetal.spi.Qualifier;
+import io.gunmetal.spi.QualifierResolver;
+import io.gunmetal.spi.ResourceMetadataResolver;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,19 +17,23 @@ final class ComponentInjectors implements Replicable<ComponentInjectors> {
 
     private final Map<Class<?>, Injector> injectors = new ConcurrentHashMap<>(1, .75f, 4);
     private final InjectorFactory injectorFactory;
-    private final ConfigurableMetadataResolver metadataResolver;
+    private final QualifierResolver qualifierResolver;
+    private final ResourceMetadataResolver resourceMetadataResolver;
     private final ComponentInjectors parentInjectors;
 
     ComponentInjectors(InjectorFactory injectorFactory,
-                       ConfigurableMetadataResolver metadataResolver) {
+                       QualifierResolver qualifierResolver,
+                       ResourceMetadataResolver resourceMetadataResolver) {
         this.injectorFactory = injectorFactory;
-        this.metadataResolver = metadataResolver;
+        this.qualifierResolver = qualifierResolver;
+        this.resourceMetadataResolver = resourceMetadataResolver;
         parentInjectors = null;
     }
 
     private ComponentInjectors(ComponentInjectors parentInjectors, ComponentContext context) {
         this.injectorFactory = parentInjectors.injectorFactory;
-        this.metadataResolver = parentInjectors.metadataResolver;
+        this.qualifierResolver = parentInjectors.qualifierResolver;
+        this.resourceMetadataResolver = parentInjectors.resourceMetadataResolver;
         for (Map.Entry<Class<?>, Injector> entry : parentInjectors.injectors.entrySet()) {
             injectors.put(entry.getKey(), entry.getValue().replicateWith(context));
         }
@@ -45,11 +51,11 @@ final class ComponentInjectors implements Replicable<ComponentInjectors> {
 
         if (injector == null) {
 
-            final Qualifier qualifier = metadataResolver.resolve(targetClass);
+            final Qualifier qualifier = qualifierResolver.resolve(targetClass);
 
             injector = injectorFactory.compositeInjector(
                     targetClass,
-                    metadataResolver.resolveMetadata(
+                    resourceMetadataResolver.resolveMetadata(
                             targetClass,
                             new ModuleMetadata(targetClass, qualifier, Module.NONE),
                             componentContext.errors()),
