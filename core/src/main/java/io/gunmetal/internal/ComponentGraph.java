@@ -4,9 +4,6 @@ import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.Errors;
 import io.gunmetal.spi.ResourceMetadata;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -19,8 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
 class ComponentGraph implements Replicable<ComponentGraph> {
 
     private final ResourceAccessorFactory resourceAccessorFactory;
-    private final Map<Dependency, ResourceAccessor> resourceAccessors = new ConcurrentHashMap<>(64, .75f, 2);
-    private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
+    private final Map<Dependency, ResourceAccessor> resourceAccessors =
+            new ConcurrentHashMap<>(64, .75f, 2);
+    private final Set<Dependency> overriddenDependencies =
+            Collections.newSetFromMap(new ConcurrentHashMap<>(0));
 
     ComponentGraph(ResourceAccessorFactory resourceAccessorFactory) {
         this.resourceAccessorFactory = resourceAccessorFactory;
@@ -40,8 +39,7 @@ class ComponentGraph implements Replicable<ComponentGraph> {
 
     void put(final Dependency dependency, ResourceAccessor resourceAccessor, Errors errors) {
 
-        ResourceMetadata<?> newMetadata =
-                resourceAccessor.binding().resource().metadata();
+        ResourceMetadata<?> newMetadata = resourceAccessor.binding().resource().metadata();
 
         if (newMetadata.isCollectionElement()) {
             putCollectionElement(dependency, resourceAccessor);
@@ -53,12 +51,10 @@ class ComponentGraph implements Replicable<ComponentGraph> {
             return;
         }
 
-        ResourceMetadata<?> prevMetadata =
-                previous.binding().resource().metadata();
+        ResourceMetadata<?> prevMetadata = previous.binding().resource().metadata();
 
         // TODO better messages
-        if (prevMetadata.overrides().allowMappingOverride()
-                && newMetadata.overrides().allowMappingOverride()) {
+        if (prevMetadata.overrides().allowMappingOverride() && newMetadata.overrides().allowMappingOverride()) {
             resourceAccessors.put(dependency, previous);
             errors.add("more than one of type with override enabled -> " + dependency);
         } else if (
@@ -80,39 +76,9 @@ class ComponentGraph implements Replicable<ComponentGraph> {
         return resourceAccessors.get(dependency);
     }
 
-    private void putCollectionElement(final Dependency dependency,
-                                      ResourceAccessor resourceAccessor) {
+    private void putCollectionElement(Dependency dependency, ResourceAccessor resourceAccessor) {
         Dependency collectionDependency =
-                Dependency.from(dependency.qualifier(), new ParameterizedType() {
-                    @Override public Type[] getActualTypeArguments() {
-                        return new Type[]{dependency.typeKey().type()};
-                    }
-
-                    @Override public Type getRawType() {
-                        return List.class;
-                    }
-
-                    @Override public Type getOwnerType() {
-                        return null;
-                    }
-
-                    @Override public int hashCode() {
-                        return Arrays.hashCode(getActualTypeArguments()) * 67 + getRawType().hashCode();
-                    }
-
-                    @Override public boolean equals(Object target) {
-                        if (target == this) {
-                            return true;
-                        }
-                        if (!(target instanceof ParameterizedType)) {
-                            return false;
-                        }
-                        ParameterizedType parameterizedType = (ParameterizedType) target;
-                        return parameterizedType.getRawType().equals(getRawType())
-                                && Arrays.equals(parameterizedType.getActualTypeArguments(), getActualTypeArguments());
-                    }
-
-                });
+                Dependency.from(dependency.qualifier(), dependency.typeKey().type(), List.class);
         CollectionResourceAccessor collectionResourceAccessor
                 = (CollectionResourceAccessor) resourceAccessors.get(collectionDependency);
         if (collectionResourceAccessor == null) {
@@ -123,8 +89,7 @@ class ComponentGraph implements Replicable<ComponentGraph> {
     }
 
     @Override public ComponentGraph replicateWith(ComponentContext context) {
-        ComponentGraph newRepo =
-                new ComponentGraph(resourceAccessorFactory);
+        ComponentGraph newRepo = new ComponentGraph(resourceAccessorFactory);
         for (ResourceAccessor resourceAccessor : resourceAccessors.values()) {
             newRepo.putAll(resourceAccessor.replicateWith(context), context.errors());
         }

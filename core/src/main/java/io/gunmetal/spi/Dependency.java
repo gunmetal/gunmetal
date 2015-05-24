@@ -20,6 +20,7 @@ import io.gunmetal.util.Generics;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 
 /**
  * @author rees.byars
@@ -68,6 +69,10 @@ public final class Dependency {
         return new Dependency(qualifier, Types.typeKey(type));
     }
 
+    public static Dependency from(Qualifier qualifier, Type typeArg, Class<?> raw) {
+        return from(qualifier, new PType(raw, typeArg));
+    }
+
     private static final class Types {
 
         private Types() {
@@ -90,6 +95,46 @@ public final class Dependency {
         static TypeKey typeKey(final ParameterizedType type) {
             final Class<?> raw = Generics.as(type.getRawType());
             return new TypeKey(type, raw);
+        }
+
+    }
+
+    private static class PType implements ParameterizedType {
+
+        private final Class<?> rawType;
+        private final Type actualTypeArg;
+
+        PType(Class<?> rawType, Type actualTypeArg) {
+            this.rawType = rawType;
+            this.actualTypeArg = actualTypeArg;
+        }
+
+        @Override public Type[] getActualTypeArguments() {
+            return new Type[]{actualTypeArg};
+        }
+
+        @Override public Type getRawType() {
+            return rawType;
+        }
+
+        @Override public Type getOwnerType() {
+            return null;
+        }
+
+        @Override public int hashCode() {
+            return Arrays.hashCode(getActualTypeArguments()) * 67 + getRawType().hashCode();
+        }
+
+        @Override public boolean equals(Object target) {
+            if (target == this) {
+                return true;
+            }
+            if (!(target instanceof ParameterizedType)) {
+                return false;
+            }
+            ParameterizedType parameterizedType = (ParameterizedType) target;
+            return parameterizedType.getRawType().equals(getRawType())
+                    && Arrays.equals(parameterizedType.getActualTypeArguments(), getActualTypeArguments());
         }
 
     }

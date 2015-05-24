@@ -48,7 +48,7 @@ class ComponentErrors implements Errors {
         return this;
     }
 
-    synchronized void throwIfNotEmpty() {
+    @Override public synchronized void throwIfNotEmpty() {
 
         failFast = true;
 

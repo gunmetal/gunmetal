@@ -59,11 +59,8 @@ class ComponentDependencySupplier implements DependencySupplier {
         // try jit constructor ResourceAccessor strategy
         ResourceAccessor resourceAccessor = resourceAccessorFactory.createJit(dependencyRequest, context);
         if (resourceAccessor != null) {
-            // TODO jit injections by a parent can cause new children to
-            // TODO have provision override errors.  does it matter?
             componentGraph.put(dependencyRequest.dependency(), resourceAccessor, context.errors());
-            return resourceAccessor
-                    .process(dependencyRequest, context.errors());
+            return resourceAccessor.process(dependencyRequest, context.errors());
         }
 
         // try conversion strategy
@@ -73,8 +70,7 @@ class ComponentDependencySupplier implements DependencySupplier {
                 resourceAccessor = createConversionResourceAccessor(converter, fromType, dependency);
                 if (resourceAccessor != null) {
                     componentGraph.put(dependency, resourceAccessor, context.errors());
-                    return resourceAccessor
-                            .process(dependencyRequest, context.errors());
+                    return resourceAccessor.process(dependencyRequest, context.errors());
                 }
             }
         }
@@ -93,9 +89,8 @@ class ComponentDependencySupplier implements DependencySupplier {
                 dependencyRequest.sourceProvision(),
                 "There is no provider defined for a dependency -> " + dependencyRequest.dependency());
 
-        // TODO shouldn't need to cast
         return (p, c) -> {
-            ((ComponentErrors) context.errors()).throwIfNotEmpty();
+            context.errors().throwIfNotEmpty();
             return null;
         };
 
