@@ -1,80 +1,135 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.DependencySupplier;
-import io.gunmetal.spi.ProvisionStrategy;
-import io.gunmetal.spi.ResolutionContext;
+import io.gunmetal.spi.Dependency;
+import io.gunmetal.spi.Errors;
+import io.gunmetal.spi.ResourceMetadata;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author rees.byars
  */
-final class ComponentGraph {
+class ComponentGraph implements Replicable<ComponentGraph> {
 
-    private final ComponentLinker componentLinker;
-    private final DependencySupplier dependencySupplier;
-    private final ComponentContext componentContext;
-    private final ComponentInjectors componentInjectors;
-    private final Map<Method, ComponentMethodConfig> configMap;
+    private final ResourceAccessorFactory resourceAccessorFactory;
+    private final Map<Dependency, ResourceAccessor> resourceAccessors = new ConcurrentHashMap<>(64, .75f, 2);
+    private final Set<Dependency> overriddenDependencies = Collections.newSetFromMap(new ConcurrentHashMap<>(0));
 
-    ComponentGraph(ComponentLinker componentLinker,
-                   DependencySupplier dependencySupplier,
-                   ComponentContext componentContext,
-                   ComponentInjectors componentInjectors,
-                   Map<Method, ComponentMethodConfig> configMap) {
-        this.componentLinker = componentLinker;
-        this.dependencySupplier = dependencySupplier;
-        this.componentContext = componentContext;
-        this.componentInjectors = componentInjectors;
-        this.configMap = configMap;
+    ComponentGraph(ResourceAccessorFactory resourceAccessorFactory) {
+        this.resourceAccessorFactory = resourceAccessorFactory;
     }
 
-    <T> T createProxy(Class<T> componentInterface) {
-        return componentInterface.cast(Proxy.newProxyInstance(
-                getClass().getClassLoader(),
-                new Class<?>[]{componentInterface},
-                (proxy, method, args) -> {
-                    if (Object.class == method.getDeclaringClass()) {
-                        String name = method.getName();
-                        if ("equals".equals(name)) {
-                            return proxy == args[0];
-                        } else if ("hashCode".equals(name)) {
-                            return System.identityHashCode(proxy);
-                        } else if ("toString".equals(name)) {
-                            return proxy.getClass().getName() + "@" +
-                                    Integer.toHexString(System.identityHashCode(proxy)) +
-                                    "$GunmetalComponent";
-                        } else {
-                            throw new IllegalStateException(String.valueOf(method));
-                        }
+    void putAll(List<ResourceAccessor> resourceAccessors, Errors errors) {
+        for (ResourceAccessor resourceAccessor : resourceAccessors) {
+            putAll(resourceAccessor, errors);
+        }
+    }
+
+    void putAll(ResourceAccessor resourceAccessor, Errors errors) {
+        for (Dependency dependency : resourceAccessor.binding().targets()) {
+            put(dependency, resourceAccessor, errors);
+        }
+    }
+
+    void put(final Dependency dependency, ResourceAccessor resourceAccessor, Errors errors) {
+
+        ResourceMetadata<?> newMetadata =
+                resourceAccessor.binding().resource().metadata();
+
+        if (newMetadata.isCollectionElement()) {
+            putCollectionElement(dependency, resourceAccessor);
+            return;
+        }
+
+        ResourceAccessor previous = resourceAccessors.put(dependency, resourceAccessor);
+        if (previous == null) {
+            return;
+        }
+
+        ResourceMetadata<?> prevMetadata =
+                previous.binding().resource().metadata();
+
+        // TODO better messages
+        if (prevMetadata.overrides().allowMappingOverride()
+                && newMetadata.overrides().allowMappingOverride()) {
+            resourceAccessors.put(dependency, previous);
+            errors.add("more than one of type with override enabled -> " + dependency);
+        } else if (
+                (overriddenDependencies.contains(dependency)
+                        && !newMetadata.overrides().allowMappingOverride())
+                        || (!prevMetadata.overrides().allowMappingOverride()
+                        && !newMetadata.overrides().allowMappingOverride())) {
+            resourceAccessors.put(dependency, previous);
+            errors.add("more than one of type without override enabled -> " + dependency);
+        } else if (newMetadata.overrides().allowMappingOverride()) {
+            overriddenDependencies.add(dependency);
+        } else if (prevMetadata.overrides().allowMappingOverride()) {
+            resourceAccessors.put(dependency, previous);
+            overriddenDependencies.add(dependency);
+        }
+    }
+
+    ResourceAccessor get(Dependency dependency) {
+        return resourceAccessors.get(dependency);
+    }
+
+    private void putCollectionElement(final Dependency dependency,
+                                      ResourceAccessor resourceAccessor) {
+        Dependency collectionDependency =
+                Dependency.from(dependency.qualifier(), new ParameterizedType() {
+                    @Override public Type[] getActualTypeArguments() {
+                        return new Type[]{dependency.typeKey().type()};
                     }
-                    ResolutionContext resolutionContext = componentContext.newResolutionContext();
-                    if (method.getName().equals("inject")) {
-                        // TODO validate etc, earlier
-                        for (Object arg : args) {
-                            componentInjectors
-                                    .getInjector(arg, dependencySupplier, componentLinker, componentContext)
-                                    .inject(arg, dependencySupplier, componentContext.newResolutionContext());
-                        }
+
+                    @Override public Type getRawType() {
+                        return List.class;
+                    }
+
+                    @Override public Type getOwnerType() {
                         return null;
                     }
-                    ComponentMethodConfig config = configMap.get(method);
-                    if (args != null) {
-                        for (int i = 0; i < args.length; i++) {
-                            resolutionContext.setParam(
-                                    config.dependencies()[i],
-                                    args[i]);
+
+                    @Override public int hashCode() {
+                        return Arrays.hashCode(getActualTypeArguments()) * 67 + getRawType().hashCode();
+                    }
+
+                    @Override public boolean equals(Object target) {
+                        if (target == this) {
+                            return true;
                         }
+                        if (!(target instanceof ParameterizedType)) {
+                            return false;
+                        }
+                        ParameterizedType parameterizedType = (ParameterizedType) target;
+                        return parameterizedType.getRawType().equals(getRawType())
+                                && Arrays.equals(parameterizedType.getActualTypeArguments(), getActualTypeArguments());
                     }
-                    ProvisionStrategy strategy = dependencySupplier.supply(config.dependencyRequest());
-                    if (strategy == null) {
-                        // TODO no matching resource
-                        throw new RuntimeException("not fucking here!");
-                    }
-                    return strategy.get(dependencySupplier, resolutionContext);
-                }));
+
+                });
+        CollectionResourceAccessor collectionResourceAccessor
+                = (CollectionResourceAccessor) resourceAccessors.get(collectionDependency);
+        if (collectionResourceAccessor == null) {
+            collectionResourceAccessor = resourceAccessorFactory.createForCollection(collectionDependency, dependency);
+            resourceAccessors.put(collectionDependency, collectionResourceAccessor);
+        }
+        collectionResourceAccessor.add(resourceAccessor);
+    }
+
+    @Override public ComponentGraph replicateWith(ComponentContext context) {
+        ComponentGraph newRepo =
+                new ComponentGraph(resourceAccessorFactory);
+        for (ResourceAccessor resourceAccessor : resourceAccessors.values()) {
+            newRepo.putAll(resourceAccessor.replicateWith(context), context.errors());
+        }
+        newRepo.overriddenDependencies.addAll(overriddenDependencies);
+        return newRepo;
     }
 
 }

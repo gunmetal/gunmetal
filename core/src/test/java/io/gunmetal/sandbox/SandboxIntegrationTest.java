@@ -211,6 +211,8 @@ public class SandboxIntegrationTest {
 
         TestModule t(@Param String name);
 
+        @Supplies SandboxIntegrationTest sandboxIntegrationTest();
+
         public interface Factory {
             TestComponent create(StatefulModule statefulModule);
         }
@@ -363,12 +365,10 @@ public class SandboxIntegrationTest {
         void inject(Object o);
 
         public interface Factory {
-            PlusComponent create();
+            PlusComponent create(TestComponent parent);
         }
 
     }
-
-    /*
 
     @Test
     public void testPlus() {
@@ -380,12 +380,11 @@ public class SandboxIntegrationTest {
 
         Dep dep = new Dep();
 
-        TestComponent parent = Components.builder()
-                .build(TestComponent.Factory.class)
+        TestComponent parent = ComponentTemplate.build(TestComponent.Factory.class)
                 .create(new StatefulModule("plus"));
 
-        PlusComponent.Factory childTemplate = parent.plus().build(PlusComponent.Factory.class);
-        PlusComponent child = childTemplate.create();
+        PlusComponent.Factory childTemplate = ComponentTemplate.build(PlusComponent.Factory.class);
+        PlusComponent child = childTemplate.create(parent);
 
         child.inject(dep);
         PlusModule p = dep.plusModule;
@@ -412,7 +411,7 @@ public class SandboxIntegrationTest {
 
         assert injectTest.f != null;
 
-        PlusComponent childCopy = childTemplate.create();
+        PlusComponent childCopy = childTemplate.create(parent);
         Dep dep2 = new Dep();
         child.inject(dep);
         childCopy.inject(dep2);
@@ -424,8 +423,6 @@ public class SandboxIntegrationTest {
         childCopy.inject(injectTest);
 
     }
-
-    */
 
     static class AaHolder {
         @Inject AA aa;

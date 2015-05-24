@@ -57,18 +57,17 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
     }
 
     @Override public ResourceAccessor replicateWith(ComponentContext context) {
-        CollectionResourceAccessorImpl newService =
+        CollectionResourceAccessorImpl newAccessor =
                 new CollectionResourceAccessorImpl(
                         collectionSupplier,
                         collectionDependency,
                         collectionElementDependency);
-        newService.elementAccessors
+        newAccessor.elementAccessors
                 .addAll(elementAccessors
                         .stream()
-                        .map(elementService ->
-                                elementService.replicateWith(context))
+                        .map(element -> element.replicateWith(context))
                         .collect(Collectors.toList()));
-        return newService;
+        return newAccessor;
     }
 
     @Override public void add(ResourceAccessor resourceAccessor) {
@@ -82,8 +81,8 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
     @Override public ProvisionStrategy process(DependencyRequest dependencyRequest, Errors errors) {
         DependencyRequest subRequest =
                 DependencyRequest.create(dependencyRequest, collectionElementDependency);
-        for (ResourceAccessor elementService : elementAccessors) {
-            elementService.process(subRequest, errors);
+        for (ResourceAccessor element : elementAccessors) {
+            element.process(subRequest, errors);
         }
         return force();
     }
@@ -121,8 +120,8 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
         @Override public ProvisionStrategy provisionStrategy() {
             return (supplier, resolutionContext) -> {
                 Collection<Object> collection = collectionSupplier.get();
-                for (ResourceAccessor elementService : elementAccessors) {
-                    ProvisionStrategy provisionStrategy = elementService.force();
+                for (ResourceAccessor element : elementAccessors) {
+                    ProvisionStrategy provisionStrategy = element.force();
                     collection.add(provisionStrategy.get(supplier, resolutionContext));
                 }
                 return collection;
@@ -132,8 +131,7 @@ class CollectionResourceAccessorImpl implements CollectionResourceAccessor {
         @Override public List<Dependency> dependencies() {
             return elementAccessors
                     .stream()
-                    .flatMap(service ->
-                            service.binding().resource().dependencies().stream())
+                    .flatMap(element -> element.binding().resource().dependencies().stream())
                     .collect(Collectors.toList());
         }
 

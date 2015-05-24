@@ -28,20 +28,20 @@ class ComponentDependencySupplier implements DependencySupplier {
     private final SupplierAdapter supplierAdapter;
     private final ResourceAccessorFactory resourceAccessorFactory;
     private final ConverterSupplier converterSupplier;
-    private final ComponentRepository componentRepository;
+    private final ComponentGraph componentGraph;
     private final ComponentContext context;
     private final boolean requireInterfaces;
 
     ComponentDependencySupplier(SupplierAdapter supplierAdapter,
                                 ResourceAccessorFactory resourceAccessorFactory,
                                 ConverterSupplier converterSupplier,
-                                ComponentRepository componentRepository,
+                                ComponentGraph componentGraph,
                                 ComponentContext context,
                                 boolean requireInterfaces) {
         this.supplierAdapter = supplierAdapter;
         this.resourceAccessorFactory = resourceAccessorFactory;
         this.converterSupplier = converterSupplier;
-        this.componentRepository = componentRepository;
+        this.componentGraph = componentGraph;
         this.context = context;
         this.requireInterfaces = requireInterfaces;
     }
@@ -61,7 +61,7 @@ class ComponentDependencySupplier implements DependencySupplier {
         if (resourceAccessor != null) {
             // TODO jit injections by a parent can cause new children to
             // TODO have provision override errors.  does it matter?
-            componentRepository.put(dependencyRequest.dependency(), resourceAccessor, context.errors());
+            componentGraph.put(dependencyRequest.dependency(), resourceAccessor, context.errors());
             return resourceAccessor
                     .process(dependencyRequest, context.errors());
         }
@@ -72,7 +72,7 @@ class ComponentDependencySupplier implements DependencySupplier {
             for (Class<?> fromType : converter.supportedFromTypes()) {
                 resourceAccessor = createConversionResourceAccessor(converter, fromType, dependency);
                 if (resourceAccessor != null) {
-                    componentRepository.put(dependency, resourceAccessor, context.errors());
+                    componentGraph.put(dependency, resourceAccessor, context.errors());
                     return resourceAccessor
                             .process(dependencyRequest, context.errors());
                 }
@@ -82,7 +82,7 @@ class ComponentDependencySupplier implements DependencySupplier {
         // try jit local factory method ResourceAccessor
         List<ResourceAccessor> factoryResourceAccessorsForRequest =
                 resourceAccessorFactory.createJitFactoryRequest(dependencyRequest, context);
-        componentRepository.putAll(factoryResourceAccessorsForRequest, context.errors());
+        componentGraph.putAll(factoryResourceAccessorsForRequest, context.errors());
         strategy = getCachedProvisionStrategy(dependencyRequest);
         if (strategy != null) {
             return strategy;
@@ -113,7 +113,7 @@ class ComponentDependencySupplier implements DependencySupplier {
                     "Dependency is not an interface -> " + dependency);
         }
 
-        ResourceAccessor resourceAccessor = componentRepository.get(dependency);
+        ResourceAccessor resourceAccessor = componentGraph.get(dependency);
         if (resourceAccessor != null) {
             return resourceAccessor
                     .process(dependencyRequest, context.errors());
@@ -124,7 +124,7 @@ class ComponentDependencySupplier implements DependencySupplier {
             resourceAccessor = createReferenceResourceAccessor(
                     dependencyRequest, () -> new SupplierStrategyFactory(supplierAdapter));
             if (resourceAccessor != null) {
-                componentRepository.put(dependency, resourceAccessor, context.errors());
+                componentGraph.put(dependency, resourceAccessor, context.errors());
                 return resourceAccessor
                         .process(dependencyRequest, context.errors());
                 // support empty multi-bind request
@@ -138,7 +138,7 @@ class ComponentDependencySupplier implements DependencySupplier {
         if (dependency.typeKey().raw() == Ref.class) {
             resourceAccessor = createReferenceResourceAccessor(dependencyRequest, RefStrategyFactory::new);
             if (resourceAccessor != null) {
-                componentRepository.put(dependency, resourceAccessor, context.errors());
+                componentGraph.put(dependency, resourceAccessor, context.errors());
                 return resourceAccessor
                         .process(dependencyRequest, context.errors());
             }  else {
@@ -164,7 +164,7 @@ class ComponentDependencySupplier implements DependencySupplier {
         Dependency referenceDependency = refRequest.dependency();
         Type providedType = ((ParameterizedType) referenceDependency.typeKey().type()).getActualTypeArguments()[0];
         final Dependency provisionDependency = Dependency.from(referenceDependency.qualifier(), providedType);
-        ResourceAccessor provisionResourceAccessor = componentRepository.get(provisionDependency);
+        ResourceAccessor provisionResourceAccessor = componentGraph.get(provisionDependency);
         if (provisionResourceAccessor == null) {
             // TODO gross, whole class gross
             // try jit constructor ResourceAccessor strategy
@@ -176,7 +176,7 @@ class ComponentDependencySupplier implements DependencySupplier {
             }
             // TODO jit injections by a parent can cause new children to
             // TODO have provision override errors.  does it matter?
-            componentRepository.put(provisionDependency, provisionResourceAccessor, context.errors());
+            componentGraph.put(provisionDependency, provisionResourceAccessor, context.errors());
         }
         ProvisionStrategy provisionStrategy = provisionResourceAccessor.force();
         ReferenceStrategyFactory strategyFactory = factorySupplier.get();
@@ -193,7 +193,7 @@ class ComponentDependencySupplier implements DependencySupplier {
     private ResourceAccessor createConversionResourceAccessor(
             Converter converter, Class<?> fromType, Dependency to) {
         Dependency from = Dependency.from(to.qualifier(), fromType);
-        ResourceAccessor fromResourceAccessor = componentRepository.get(from);
+        ResourceAccessor fromResourceAccessor = componentGraph.get(from);
         if (fromResourceAccessor != null) {
             return resourceAccessorFactory.createForConversion(fromResourceAccessor, converter, from, to);
         }

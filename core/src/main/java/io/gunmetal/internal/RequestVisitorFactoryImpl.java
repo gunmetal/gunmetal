@@ -9,16 +9,22 @@ import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.RequestVisitor;
 import io.gunmetal.spi.ResourceMetadata;
 
+import java.util.List;
+
 /**
  * @author rees.byars
  */
 class RequestVisitorFactoryImpl implements RequestVisitorFactory {
 
     private final QualifierResolver qualifierResolver;
+    private final List<RequestVisitor> requestVisitors;
     private final boolean requireExplicitModuleDependencies;
 
-    RequestVisitorFactoryImpl(QualifierResolver qualifierResolver, boolean requireExplicitModuleDependencies) {
+    RequestVisitorFactoryImpl(QualifierResolver qualifierResolver,
+                              List<RequestVisitor> requestVisitors,
+                              boolean requireExplicitModuleDependencies) {
         this.qualifierResolver = qualifierResolver;
+        this.requestVisitors = requestVisitors;
         this.requireExplicitModuleDependencies = requireExplicitModuleDependencies;
     }
 
@@ -51,6 +57,9 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
             blackListVisitor.visit(dependencyRequest, errors);
             whiteListVisitor.visit(dependencyRequest, errors);
             moduleResourceVisitor.visit(dependencyRequest, errors);
+            for (RequestVisitor requestVisitor : requestVisitors) {
+                requestVisitor.visit(dependencyRequest, errors);
+            }
         };
     }
 

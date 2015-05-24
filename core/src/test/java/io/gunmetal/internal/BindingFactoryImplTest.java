@@ -17,7 +17,7 @@ public class BindingFactoryImplTest {
     @Inject DependencySupplier dependencySupplier;
     @Inject ComponentContext componentContext;
     @Inject ComponentLinker componentLinker;
-    @Inject ComponentRepository componentRepository;
+    @Inject ComponentGraph componentGraph;
     @Inject ComponentErrors componentErrors;
 
     @Module(dependsOn = BaseTestModule.class, type = Module.Type.COMPONENT)

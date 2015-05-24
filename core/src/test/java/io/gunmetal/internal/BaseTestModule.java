@@ -65,7 +65,7 @@ public class BaseTestModule {
                     false);
 
     @Supplies RequestVisitorFactory requestVisitorFactory =
-            new RequestVisitorFactoryImpl(metadataResolver, false);
+            new RequestVisitorFactoryImpl(metadataResolver, Collections.emptyList(), false);
 
     @Supplies ClassWalker classWalker =
             new ClassWalkerImpl(injectionResolver, false, false);
@@ -82,9 +82,9 @@ public class BaseTestModule {
     @Supplies ResourceAccessorFactory resourceAccessorFactory =
             new ResourceAccessorFactoryImpl(bindingFactory, requestVisitorFactory);
 
-    @Supplies ComponentRepository componentRepository = new ComponentRepository(resourceAccessorFactory);
+    @Supplies ComponentGraph componentGraph = new ComponentGraph(resourceAccessorFactory);
 
     @Supplies DependencySupplier dependencySupplier = new ComponentDependencySupplier(
-            supplierAdapter, resourceAccessorFactory, to -> Collections.emptyList(), componentRepository, componentContext, false);
+            supplierAdapter, resourceAccessorFactory, to -> Collections.emptyList(), componentGraph, componentContext, false);
 
 }

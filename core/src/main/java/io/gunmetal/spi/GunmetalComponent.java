@@ -45,6 +45,8 @@ public interface GunmetalComponent {
 
     Set<Option> options();
 
+    List<RequestVisitor> requestVisitors();
+
     class Default implements GunmetalComponent {
 
         private final InjectionResolver injectionResolver = new AnnotationInjectionResolver(Inject.class);
@@ -54,7 +56,8 @@ public interface GunmetalComponent {
         private final SupplierAdapter supplierAdapter = new DefaultSupplierAdapter();
         private final ConverterSupplier converterSupplier = to -> Collections.emptyList();
         private final Map<Scope, ProvisionStrategyDecorator> scopeDecorators;
-        private final List<ProvisionStrategyDecorator> strategyDecorators;
+        private final List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>();
+        private final List<RequestVisitor> requestVisitors = new ArrayList<>();
         private final Map<Class<? extends Annotation>, Scope> scopeMap = new HashMap<>();
 
         public Default(Option ... options) {
@@ -77,8 +80,6 @@ public interface GunmetalComponent {
                             scopeMap,
                             this.options.contains(Option.REQUIRE_QUALIFIERS),
                             this.options.contains(Option.RESTRICT_PLURAL_QUALIFIERS));
-
-            strategyDecorators = new ArrayList<>();
 
         }
 
@@ -118,6 +119,10 @@ public interface GunmetalComponent {
             return options;
         }
 
+        @Override public List<RequestVisitor> requestVisitors() {
+            return requestVisitors;
+        }
+
         public Default addScope(
                 Class<? extends Annotation> scopeAnnotationType,
                 Scope scope,
@@ -139,6 +144,7 @@ public interface GunmetalComponent {
         private final ConverterSupplier converterSupplier = to -> Collections.emptyList();
         private final Map<Scope, ProvisionStrategyDecorator> scopeDecorators;
         private final List<ProvisionStrategyDecorator> strategyDecorators;
+        private final List<RequestVisitor> requestVisitors = new ArrayList<>();
 
         public Jsr330(Option ... options) {
 
@@ -201,6 +207,10 @@ public interface GunmetalComponent {
 
         @Override public Set<Option> options() {
             return options;
+        }
+
+        @Override public List<RequestVisitor> requestVisitors() {
+            return requestVisitors;
         }
 
     }
