@@ -190,7 +190,7 @@ public class CaliperBenchmarks {
         return dummy;
     }
 
-    @Module
+    @Module(type = Module.Type.COMPONENT)
     public interface ZeroComponent {
 
         void inject(Object o);
