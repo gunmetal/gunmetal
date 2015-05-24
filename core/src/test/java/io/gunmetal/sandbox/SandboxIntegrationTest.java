@@ -95,8 +95,8 @@ public class SandboxIntegrationTest {
             return new Circ();
         }
 
-        @io.gunmetal.BlackList.Modules(M.class)
-        static class BlackList implements io.gunmetal.BlackList {
+        @io.gunmetal.BlackList(M.class)
+        static class BlackList {
 
             @Inject
             TestModule testModule;

@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 public interface IBlModule {
 
     @Dal
-    class BlackList implements io.gunmetal.BlackList {
+    class BlackList {
     }
 
     @Supplies public DongleService dongleService(@Dal DongleDao dongleDao,

@@ -26,7 +26,7 @@ import java.util.Map;
 public class UiModule {
 
     @Ui
-    class WhiteList implements io.gunmetal.WhiteList {
+    class WhiteList {
     }
 
     @Supplies @Thread static DongleController dongleController(

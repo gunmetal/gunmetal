@@ -24,7 +24,7 @@ import io.gunmetal.sandbox.testmocks.dongle.layers.Ws;
 public class WsModule {
 
     @Ws
-    class WhiteList implements io.gunmetal.WhiteList {
+    class WhiteList {
     }
 
     @Supplies static DongleResource dongleResource(@Bl DongleService dongleService,

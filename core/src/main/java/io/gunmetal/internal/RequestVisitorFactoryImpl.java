@@ -65,83 +65,111 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
 
     private RequestVisitor blackListVisitor(final Class<?> module, Module moduleAnnotation) {
 
-        Class<? extends BlackList> blackListConfigClass =
-                moduleAnnotation.notAccessibleFrom();
+        Class<?>[] blackListConfigClasses = moduleAnnotation.notAccessibleFrom();
 
-        if (blackListConfigClass == BlackList.class) {
+        if (blackListConfigClasses.length == 0) {
             return RequestVisitor.NONE;
         }
+        
+        RequestVisitor[] blackListVisitors = new RequestVisitor[blackListConfigClasses.length];
+        
+        for (int i = 0; i < blackListVisitors.length; i++) {
+            
+            Class<?> blackListConfigClass = blackListConfigClasses[i];
+            
+            final Class<?>[] blackListClasses;
 
-        final Class<?>[] blackListClasses;
+            BlackList blackListModules =
+                    blackListConfigClass.getAnnotation(BlackList.class);
 
-        BlackList.Modules blackListModules =
-                blackListConfigClass.getAnnotation(BlackList.Modules.class);
+            if (blackListModules != null) {
+                blackListClasses = blackListModules.value();
+            } else {
+                blackListClasses = new Class<?>[]{};
+            }
 
-        if (blackListModules != null) {
-            blackListClasses = blackListModules.value();
-        } else {
-            blackListClasses = new Class<?>[]{};
-        }
+            final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
 
-        final Qualifier blackListQualifier = qualifierResolver.resolve(blackListConfigClass);
+            blackListVisitors[i] = (dependencyRequest, errors) -> {
 
-        return (dependencyRequest, errors) -> {
+                Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
+                for (Class<?> blackListClass : blackListClasses) {
+                    if (blackListClass == requestingSourceModuleClass) {
+                        errors.add("The module [" + requestingSourceModuleClass.getName()
+                                + "] does not have access to the module [" + module.getName() + "].");
+                    }
+                }
 
-            Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-            for (Class<?> blackListClass : blackListClasses) {
-                if (blackListClass == requestingSourceModuleClass) {
+                boolean qualifierMatch =
+                        blackListQualifier.qualifiers().length > 0
+                                && dependencyRequest.sourceQualifier().qualifiers().length > 0
+                                && dependencyRequest.sourceQualifier().intersects(blackListQualifier);
+
+                if (qualifierMatch) {
                     errors.add("The module [" + requestingSourceModuleClass.getName()
                             + "] does not have access to the module [" + module.getName() + "].");
                 }
-            }
+            };
+            
+        }
 
-            boolean qualifierMatch =
-                    blackListQualifier.qualifiers().length > 0
-                            && dependencyRequest.sourceQualifier().qualifiers().length > 0
-                            && dependencyRequest.sourceQualifier().intersects(blackListQualifier);
-
-            if (qualifierMatch) {
-                errors.add("The module [" + requestingSourceModuleClass.getName()
-                        + "] does not have access to the module [" + module.getName() + "].");
+        return (dependencyRequest, errors) -> {
+            for (RequestVisitor requestVisitor : blackListVisitors) {
+                requestVisitor.visit(dependencyRequest, errors);
             }
         };
+        
     }
 
     private RequestVisitor whiteListVisitor(final Class<?> module, Module moduleAnnotation) {
 
-        Class<? extends WhiteList> whiteListConfigClass =
-                moduleAnnotation.onlyAccessibleFrom();
+        Class<?>[] whiteListConfigClasses = moduleAnnotation.onlyAccessibleFrom();
 
-        if (whiteListConfigClass == WhiteList.class) {
+        if (whiteListConfigClasses.length == 0) {
             return RequestVisitor.NONE;
         }
 
-        final Class<?>[] whiteListClasses;
+        RequestVisitor[] whiteListVisitors = new RequestVisitor[whiteListConfigClasses.length];
 
-        WhiteList.Modules whiteListModules =
-                whiteListConfigClass.getAnnotation(WhiteList.Modules.class);
+        for (int i = 0; i < whiteListVisitors.length; i++) {
 
-        if (whiteListModules != null) {
-            whiteListClasses = whiteListModules.value();
-        } else {
-            whiteListClasses = new Class<?>[]{};
-        }
+            Class<?> whiteListConfigClass = whiteListConfigClasses[i];
 
-        final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
+            final Class<?>[] whiteListClasses;
 
-        return (dependencyRequest, errors) -> {
+            WhiteList whiteListModules =
+                    whiteListConfigClass.getAnnotation(WhiteList.class);
 
-            Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
-            for (Class<?> whiteListClass : whiteListClasses) {
-                if (whiteListClass == requestingSourceModuleClass) {
-                    return;
-                }
+            if (whiteListModules != null) {
+                whiteListClasses = whiteListModules.value();
+            } else {
+                whiteListClasses = new Class<?>[]{};
             }
 
-            boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(whiteListQualifier);
-            if (!qualifierMatch) {
-                errors.add("The module [" + requestingSourceModuleClass.getName()
-                        + "] does not have access to the module [" + module.getName() + "].");
+            final Qualifier whiteListQualifier = qualifierResolver.resolve(whiteListConfigClass);
+
+            whiteListVisitors[i] = (dependencyRequest, errors) -> {
+
+                Class<?> requestingSourceModuleClass = dependencyRequest.sourceModule().moduleClass();
+                for (Class<?> whiteListClass : whiteListClasses) {
+                    if (whiteListClass == requestingSourceModuleClass || requestingSourceModuleClass == module) {
+                        return;
+                    }
+                }
+
+                boolean qualifierMatch = dependencyRequest.sourceQualifier().intersects(whiteListQualifier);
+                if (!qualifierMatch || whiteListQualifier.qualifiers().length == 0) {
+                    errors.add("The module [" + requestingSourceModuleClass.getName()
+                            + "] does not have access to the module [" + module.getName() + "].");
+                }
+
+            };
+
+        }
+
+        return (dependencyRequest, errors) -> {
+            for (RequestVisitor requestVisitor : whiteListVisitors) {
+                requestVisitor.visit(dependencyRequest, errors);
             }
         };
     }

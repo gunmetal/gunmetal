@@ -17,7 +17,7 @@ import io.gunmetal.sandbox.testmocks.dongle.layers.Ui;
 public class DalModule {
 
     @Ui
-    class BlackList implements io.gunmetal.BlackList {
+    class BlackList {
     }
 
     @Inject @Overrides(allowFieldInjection = true, allowCycle = true, allowPluralQualifier = true)

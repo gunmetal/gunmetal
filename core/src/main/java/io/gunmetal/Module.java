@@ -35,9 +35,9 @@ public @interface Module {
 
     Class<?>[] subsumes() default {};
 
-    Class<? extends BlackList> notAccessibleFrom() default BlackList.class;
+    Class<?>[] notAccessibleFrom() default {};
 
-    Class<? extends WhiteList> onlyAccessibleFrom() default WhiteList.class;
+    Class<?>[] onlyAccessibleFrom() default {};
 
     AccessLevel access() default AccessLevel.UNDEFINED;
 
@@ -59,12 +59,12 @@ public @interface Module {
             return new Class<?>[0];
         }
 
-        @Override public Class<? extends BlackList> notAccessibleFrom() {
-            return BlackList.class;
+        @Override public Class<?>[] notAccessibleFrom() {
+            return new Class<?>[0];
         }
 
-        @Override public Class<? extends WhiteList> onlyAccessibleFrom() {
-            return WhiteList.class;
+        @Override public Class<?>[] onlyAccessibleFrom() {
+            return new Class<?>[0];
         }
 
         @Override public AccessLevel access() {
