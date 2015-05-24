@@ -24,7 +24,7 @@ public class AccessibilityIntegrationTest {
 
     @Module(onlyAccessibleFrom = Grant.class)
     static class WhiteListModule { @Supplies String string = testValue; }
-    
+
     @Module
     static class UnrestrictedModule { @Supplies String string = testValue; }
 

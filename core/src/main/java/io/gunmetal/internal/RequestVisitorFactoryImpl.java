@@ -9,6 +9,8 @@ import io.gunmetal.spi.QualifierResolver;
 import io.gunmetal.spi.RequestVisitor;
 import io.gunmetal.spi.ResourceMetadata;
 
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
 import java.util.List;
 
 /**
@@ -32,22 +34,50 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
                                                            ComponentContext context) {
         ResourceMetadata<?> resourceMetadata = resource.metadata();
         ModuleMetadata moduleMetadata = resourceMetadata.moduleMetadata();
+        RequestVisitor moduleRequestVisitor = moduleRequestVisitor(moduleMetadata);
+        RequestVisitor moduleResourceVisitor = moduleResourceVisitor(resourceMetadata, moduleMetadata);
+        AccessFilter<Class<?>> resourceAccessFilter = accessFilter(resource);
+        RequestVisitor resourceClassVisitor = (dependencyRequest, errors) -> {
+            if (!resourceAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
+                errors.add(
+                        "The class [" + dependencyRequest.sourceOrigin().getName()
+                                + "] does not have access to [" + resourceAccessFilter.filteredElement() + "]"
+                );
+            }
+        };
+        RequestVisitor scopeVisitor = (dependencyRequest, errors) -> {
+            if (!dependencyRequest.sourceProvision().overrides().allowFuzzyScopes() &&
+                    !resource.metadata().scope().canInject(dependencyRequest.sourceScope())) {
+                errors.add("mis-scoped"); // TODO message
+            }
+        };
+        return (dependencyRequest, errors) -> {
+            moduleRequestVisitor.visit(dependencyRequest, errors);
+            moduleResourceVisitor.visit(dependencyRequest, errors);
+            resourceClassVisitor.visit(dependencyRequest, errors);
+            scopeVisitor.visit(dependencyRequest, errors);
+            for (RequestVisitor requestVisitor : requestVisitors) {
+                requestVisitor.visit(dependencyRequest, errors);
+            }
+        };
+    }
+
+    private RequestVisitor moduleRequestVisitor(ModuleMetadata moduleMetadata) {
         Class<?> module = moduleMetadata.moduleClass();
         Module moduleAnnotation = moduleMetadata.moduleAnnotation();
         if (moduleAnnotation == Module.NONE) {
             return RequestVisitor.NONE;
         }
-        final RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation);
-        final RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation);
-        final RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
-        final RequestVisitor moduleResourceVisitor =
-                moduleResourceVisitor(resourceMetadata, moduleMetadata);
-        final AccessFilter<Class<?>> classAccessFilter = AccessFilter.create(moduleAnnotation.access(), module);
-        final RequestVisitor moduleClassVisitor = (dependencyRequest, errors) -> {
-            if (!classAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
+        RequestVisitor blackListVisitor = blackListVisitor(module, moduleAnnotation);
+        RequestVisitor whiteListVisitor = whiteListVisitor(module, moduleAnnotation);
+        RequestVisitor dependsOnVisitor = dependsOnVisitor(module);
+        AccessFilter<Class<?>> moduleAccessFilter =
+                AccessFilter.create(moduleAnnotation.access(), module);
+        RequestVisitor moduleClassVisitor = (dependencyRequest, errors) -> {
+            if (!moduleAccessFilter.isAccessibleTo(dependencyRequest.sourceModule().moduleClass())) {
                 errors.add(
                         "The module [" + dependencyRequest.sourceModule().moduleClass().getName()
-                                + "] does not have access to [" + classAccessFilter.filteredElement() + "]"
+                                + "] does not have access to [" + moduleAccessFilter.filteredElement() + "]"
                 );
             }
         };
@@ -56,10 +86,6 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
             dependsOnVisitor.visit(dependencyRequest, errors);
             blackListVisitor.visit(dependencyRequest, errors);
             whiteListVisitor.visit(dependencyRequest, errors);
-            moduleResourceVisitor.visit(dependencyRequest, errors);
-            for (RequestVisitor requestVisitor : requestVisitors) {
-                requestVisitor.visit(dependencyRequest, errors);
-            }
         };
     }
 
@@ -215,6 +241,35 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
                 dependencyResponse.add("Module can only be requested by its providers"); // TODO
             }
         };
+    }
+
+    private AccessFilter<Class<?>> accessFilter(Resource resource) {
+
+        ResourceMetadata<?> resourceMetadata = resource.metadata();
+        ModuleMetadata moduleMetadata = resourceMetadata.moduleMetadata();
+
+        // TODO this could be better
+        AccessFilter<Class<?>> accessFilter;
+        if (resourceMetadata.provider() instanceof Class) {
+            accessFilter = AccessFilter.create(
+                    (Class<?>) resourceMetadata.provider());
+        } else if (resourceMetadata.provider() instanceof Member) {
+            accessFilter = AccessFilter.create(
+                    (AnnotatedElement & Member) resourceMetadata.provider());
+        } else {
+            accessFilter = AccessFilter.create(resourceMetadata.providerClass());
+        }
+
+        return new AccessFilter<Class<?>>() {
+            @Override public AnnotatedElement filteredElement() {
+                return accessFilter.filteredElement();
+            }
+            @Override public boolean isAccessibleTo(Class<?> target) {
+                // supports library access
+                return target == moduleMetadata.moduleClass() || accessFilter.isAccessibleTo(target);
+            }
+        };
+
     }
 
 }
