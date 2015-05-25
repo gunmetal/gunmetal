@@ -1,6 +1,6 @@
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ProvisionStrategy;
 
 /**
@@ -8,6 +8,9 @@ import io.gunmetal.spi.ProvisionStrategy;
  */
 interface ReferenceStrategyFactory {
 
-    <T> ProvisionStrategy<T> create(ProvisionStrategy<?> provisionStrategy, InternalProvider internalProvider);
+    ProvisionStrategy create(
+            ProvisionStrategy provisionStrategy,
+            DependencySupplier dependencySupplier,
+            ComponentContext componentContext);
 
 }

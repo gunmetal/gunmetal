@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.FIELD })
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Overrides {
@@ -44,6 +44,10 @@ public @interface Overrides {
     boolean allowFieldInjection() default false;
 
     boolean allowPluralQualifier() default false;
+
+    boolean allowImplicitModuleDependency() default false;
+
+    boolean allowFuzzyScopes() default false;
 
     Overrides NONE = new Overrides() {
 
@@ -76,6 +80,14 @@ public @interface Overrides {
         }
 
         @Override public boolean allowPluralQualifier() {
+            return false;
+        }
+
+        @Override public boolean allowImplicitModuleDependency() {
+            return false;
+        }
+
+        @Override public boolean allowFuzzyScopes() {
             return false;
         }
 

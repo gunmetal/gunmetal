@@ -1,15 +1,16 @@
 package io.gunmetal.benchmarks;
 
-import io.gunmetal.testmocks.*;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import io.gunmetal.sandbox.testmocks.*;
 
 import javax.inject.Singleton;
 
 public class GuiceProvidesMethodBenchMarkModule extends AbstractModule {
 
 
-    protected void configure() { }
+    protected void configure() {
+    }
 
     @Provides AA aa(A a, BB bb, R r, E e, E ee, S s) {
         return new AA(a, bb, r, e, ee, s);

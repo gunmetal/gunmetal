@@ -16,51 +16,29 @@
 
 package io.gunmetal.spi;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author rees.byars
  */
 public interface ResolutionContext {
 
-    <T> ProvisionContext<T> provisionContext(ResourceMetadata<?> resourceMetadata);
+    ProvisionContext provisionContext(ResourceMetadata<?> resourceMetadata);
 
-    static ResolutionContext create() {
-        return new Internal.ResolutionContextImpl();
-    }
+    void setParam(Dependency dependency, Object value);
 
-    interface States  {
+    Object getParam(Dependency dependency);
+
+    boolean hasParam(Dependency dependency);
+
+    interface States {
         byte NEW = 0;
         byte PRE_INSTANTIATION = 1;
         byte PRE_INJECTION = 2;
     }
 
-    final class ProvisionContext<T> {
+    final class ProvisionContext {
         public byte state = States.NEW;
-        public T provision;
+        public Object provision;
         public boolean attemptedCircularResolution = false;
     }
 
-    final class Internal {
-
-        private static class ResolutionContextImpl implements ResolutionContext {
-
-            private final Map<ResourceMetadata<?>, ProvisionContext<?>> contextMap = new HashMap<>();
-
-            @Override public <T> ProvisionContext<T> provisionContext(ResourceMetadata<?> resourceMetadata) {
-
-                @SuppressWarnings("unchecked")
-                ProvisionContext<T> strategyContext = (ProvisionContext<T>) contextMap.get(resourceMetadata);
-
-                if (strategyContext == null) {
-                    strategyContext = new ProvisionContext<>();
-                    contextMap.put(resourceMetadata, strategyContext);
-                }
-
-                return strategyContext;
-            }
-        }
-
-    }
 }

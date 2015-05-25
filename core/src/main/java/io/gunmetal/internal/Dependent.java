@@ -25,6 +25,6 @@ import java.util.List;
  */
 interface Dependent {
 
-    List<Dependency<?>> dependencies();
+    List<Dependency> dependencies();
 
 }

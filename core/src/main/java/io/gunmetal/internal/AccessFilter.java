@@ -19,7 +19,7 @@ package io.gunmetal.internal;
 import io.gunmetal.AccessLevel;
 
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
+import java.lang.reflect.Member;
 
 /**
  * @author rees.byars
@@ -34,22 +34,22 @@ interface AccessFilter<T> {
         boolean isPublic();
     }
 
-    static AccessFilter<Class<?>> create(final Method method) {
+    static <T extends AnnotatedElement & Member> AccessFilter<Class<?>> create(final T t) {
 
-        Class<?> declaringClass = method.getDeclaringClass();
+        Class<?> declaringClass = t.getDeclaringClass();
 
         final ClassAccessFilter classLevelFilter =
                 create(AccessLevel.get(declaringClass.getModifiers()), declaringClass);
 
         final ClassAccessFilter methodLevelFilter =
                 Internal.getClassAccessFilterForAccessLevel(AccessLevel
-                        .get(method.getModifiers()), declaringClass);
+                        .get(t.getModifiers()), declaringClass);
 
         if (classLevelFilter.isPublic() && methodLevelFilter.isPublic()) {
             return Internal.getClassAccessFilterForAccessLevel(AccessLevel.PUBLIC, declaringClass);
         }
 
-        return new Internal.BaseAccessFilter<Class<?>>(method) {
+        return new Internal.BaseAccessFilter<Class<?>>(t) {
             @Override public boolean isAccessibleTo(Class<?> cls) {
                 return classLevelFilter.isAccessibleTo(cls) && methodLevelFilter.isAccessibleTo(cls);
             }

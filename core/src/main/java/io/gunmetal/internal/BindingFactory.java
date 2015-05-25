@@ -18,22 +18,27 @@ package io.gunmetal.internal;
 
 import io.gunmetal.spi.DependencyRequest;
 
+import java.lang.reflect.Parameter;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author rees.byars
  */
 interface BindingFactory {
 
-    List<Binding<?>> createBindingsForModule(Class<?> module,
-                                             GraphContext context,
-                                             Set<Class<?>> loadedModules);
+    List<Binding> createBindingsForModule(
+            Class<?> module,
+            ComponentContext context);
 
-    <T> Binding<T> createJitBindingForRequest(DependencyRequest<T> dependencyRequest,
-                                              GraphContext context);
+    Binding createParamBinding(
+            Parameter parameter,
+            ComponentContext context);
 
-    List<Binding<?>> createJitFactoryBindingsForRequest(DependencyRequest<?> dependencyRequest,
-                                                        GraphContext context);
+    Binding createJitBindingForRequest(
+            DependencyRequest dependencyRequest,
+            ComponentContext context);
 
+    List<Binding> createJitFactoryBindingsForRequest(
+            DependencyRequest dependencyRequest,
+            ComponentContext context);
 }

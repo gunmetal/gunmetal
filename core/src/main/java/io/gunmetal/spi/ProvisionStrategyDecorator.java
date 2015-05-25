@@ -23,19 +23,16 @@ import java.util.List;
  */
 public interface ProvisionStrategyDecorator {
 
-    <T> ProvisionStrategy<T> decorate(
+    ProvisionStrategy decorate(
             ResourceMetadata<?> resourceMetadata,
-            ProvisionStrategy<T> delegateStrategy,
+            ProvisionStrategy delegateStrategy,
             Linkers linkers);
 
-    static <T> ProvisionStrategy<T> none(
+    static ProvisionStrategy none(
             ResourceMetadata<?> resourceMetadata,
-            ProvisionStrategy<T> delegateStrategy,
+            ProvisionStrategy delegateStrategy,
             Linkers linkers) {
         return delegateStrategy;
     }
-
-    class DecoratorsDependency
-            implements io.gunmetal.Dependency<List<? extends ProvisionStrategyDecorator>> { }
 
 }

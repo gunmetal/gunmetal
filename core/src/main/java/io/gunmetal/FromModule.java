@@ -25,7 +25,8 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD })
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface FromModule { }
+public @interface FromModule {
+}

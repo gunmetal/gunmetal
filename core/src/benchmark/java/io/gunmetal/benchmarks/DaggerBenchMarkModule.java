@@ -1,12 +1,12 @@
 package io.gunmetal.benchmarks;
 
-import io.gunmetal.testmocks.*;
 import dagger.Module;
 import dagger.Provides;
+import io.gunmetal.sandbox.testmocks.*;
 
 import javax.inject.Singleton;
 
-@Module(injects = { AA.class, E.class, F.class, N.class, R.class, CaliperBenchmarks.class, CaliperBenchmarks.InjectionTarget.class } )
+@Module(injects = {AA.class, E.class, F.class, N.class, R.class, CaliperBenchmarks.class, CaliperBenchmarks.InjectionTarget.class})
 public class DaggerBenchMarkModule {
 
     @Provides AA aa(A a, BB bb, R r, E e, E ee, S s) {

@@ -16,8 +16,8 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ResourceMetadata;
 
 import java.util.Stack;
 
@@ -28,7 +28,7 @@ class CircularReferenceException extends RuntimeException {
 
     private static final long serialVersionUID = -7837281223529967792L;
     private final ResourceMetadata<?> metadata;
-    private ProvisionStrategy<?> reverseStrategy;
+    private ProvisionStrategy reverseStrategy;
     private final Stack<ResourceMetadata<?>> resourceMetadataStack = new Stack<>();
 
     CircularReferenceException(ResourceMetadata<?> metadata) {
@@ -39,11 +39,11 @@ class CircularReferenceException extends RuntimeException {
         return metadata;
     }
 
-    public void setReverseStrategy(ProvisionStrategy<?> reverseStrategy) {
+    public void setReverseStrategy(ProvisionStrategy reverseStrategy) {
         this.reverseStrategy = reverseStrategy;
     }
 
-    public ProvisionStrategy<?> getReverseStrategy() {
+    public ProvisionStrategy getReverseStrategy() {
         return reverseStrategy;
     }
 

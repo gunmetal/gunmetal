@@ -22,5 +22,5 @@ import java.lang.reflect.Constructor;
  * @author rees.byars
  */
 public interface ConstructorResolver {
-    <T> Constructor<T> resolve(Class<T> cls);
+    Constructor<?> resolve(Class<?> cls);
 }

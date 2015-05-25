@@ -16,10 +16,9 @@
 
 package io.gunmetal.spi;
 
-import io.gunmetal.MultiBind;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -66,13 +65,11 @@ public interface Qualifier {
     };
 
     static Qualifier from(AnnotatedElement annotatedElement,
-                               Class<? extends Annotation> qualifierAnnotation) {
-        List<Object> qualifiers = new LinkedList<>();
+                          Class<? extends Annotation> qualifierAnnotation) {
+        List<Object> qualifiers = new ArrayList<>();
         for (Annotation annotation : annotatedElement.getAnnotations()) {
             Class<? extends Annotation> annotationType = annotation.annotationType();
             if (annotationType.isAnnotationPresent(qualifierAnnotation) && !qualifiers.contains(annotation)) {
-                qualifiers.add(annotation);
-            } else if (annotationType == MultiBind.class) {
                 qualifiers.add(annotation);
             }
         }

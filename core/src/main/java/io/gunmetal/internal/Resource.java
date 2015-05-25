@@ -16,16 +16,16 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ResourceMetadata;
 import io.gunmetal.spi.ProvisionStrategy;
+import io.gunmetal.spi.ResourceMetadata;
 
 /**
  * @author rees.byars
  */
-interface Resource<T> extends Dependent, Replicable<Resource<T>> {
+interface Resource extends Dependent, Replicable<Resource> {
 
     ResourceMetadata<?> metadata();
 
-    ProvisionStrategy<T> provisionStrategy();
+    ProvisionStrategy provisionStrategy();
 
 }

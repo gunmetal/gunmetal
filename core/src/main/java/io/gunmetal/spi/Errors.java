@@ -9,4 +9,6 @@ public interface Errors {
 
     Errors add(String errorMessage);
 
+    void throwIfNotEmpty();
+
 }

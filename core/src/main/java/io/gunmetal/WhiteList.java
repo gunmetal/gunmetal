@@ -25,11 +25,9 @@ import java.lang.annotation.Target;
 /**
  * @author rees.byars
  */
-public interface WhiteList {
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    public @interface Modules {
-        Class<?>[] value();
-    }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface WhiteList {
+    Class<?>[] value();
 }

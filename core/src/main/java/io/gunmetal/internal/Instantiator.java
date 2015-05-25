@@ -16,14 +16,14 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.InternalProvider;
+import io.gunmetal.spi.DependencySupplier;
 import io.gunmetal.spi.ResolutionContext;
 
 /**
-* @author rees.byars
-*/
-public interface Instantiator<T> extends Dependent, Replicable<Instantiator<T>> {
+ * @author rees.byars
+ */
+public interface Instantiator extends Dependent, Replicable<Instantiator> {
 
-    T newInstance(InternalProvider provider, ResolutionContext resolutionContext);
+    Object newInstance(DependencySupplier supplier, ResolutionContext resolutionContext);
 
 }

@@ -31,19 +31,17 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Module {
 
-    Class<?>[] dependsOn() default { };
+    Class<?>[] dependsOn() default {};
 
-    Class<?>[] subsumes() default { };
+    Class<?>[] subsumes() default {};
 
-    Class<? extends BlackList> notAccessibleFrom() default BlackList.class;
+    Class<?>[] notAccessibleFrom() default {};
 
-    Class<? extends WhiteList> onlyAccessibleFrom() default WhiteList.class;
+    Class<?>[] onlyAccessibleFrom() default {};
 
     AccessLevel access() default AccessLevel.UNDEFINED;
 
-    boolean stateful() default false;
-
-    boolean provided() default true;
+    Type type() default Type.STATELESS;
 
     boolean lib() default false;
 
@@ -61,24 +59,20 @@ public @interface Module {
             return new Class<?>[0];
         }
 
-        @Override public Class<? extends BlackList> notAccessibleFrom() {
-            return BlackList.class;
+        @Override public Class<?>[] notAccessibleFrom() {
+            return new Class<?>[0];
         }
 
-        @Override public Class<? extends WhiteList> onlyAccessibleFrom() {
-            return WhiteList.class;
+        @Override public Class<?>[] onlyAccessibleFrom() {
+            return new Class<?>[0];
         }
 
         @Override public AccessLevel access() {
             return AccessLevel.UNDEFINED;
         }
 
-        @Override public boolean stateful() {
-            return false;
-        }
-
-        @Override public boolean provided() {
-            return false;
+        @Override public Type type() {
+            return Type.STATELESS;
         }
 
         @Override public boolean lib() {
@@ -86,5 +80,9 @@ public @interface Module {
         }
 
     };
+
+    public enum Type {
+        STATELESS, COMPONENT_PARAM, CONSTRUCTED, PROVIDED, COMPONENT
+    }
 
 }

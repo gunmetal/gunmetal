@@ -23,8 +23,8 @@ import java.lang.reflect.AnnotatedElement;
  */
 public interface QualifierResolver {
 
-    Qualifier resolve(AnnotatedElement annotatedElement, Errors errors);
+    Qualifier resolve(AnnotatedElement annotatedElement);
 
-    Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier, ProvisionErrors errors);
+    Qualifier resolveDependencyQualifier(AnnotatedElement parameter, Qualifier parentQualifier);
 
 }

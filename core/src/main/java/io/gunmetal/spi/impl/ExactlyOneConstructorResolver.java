@@ -2,7 +2,6 @@ package io.gunmetal.spi.impl;
 
 import io.gunmetal.spi.ConstructorResolver;
 import io.gunmetal.spi.InjectionResolver;
-import io.gunmetal.util.Generics;
 
 import java.lang.reflect.Constructor;
 
@@ -17,18 +16,18 @@ public final class ExactlyOneConstructorResolver implements ConstructorResolver 
         this.injectionResolver = injectionResolver;
     }
 
-    @Override public <T> Constructor<T> resolve(Class<T> cls) {
+    @Override public Constructor<?> resolve(Class<?> cls) {
         Constructor<?>[] constructors = cls.getDeclaredConstructors();
         if (constructors.length == 1 && constructors[0].getParameterCount() == 0) {
-            return Generics.as(constructors[0]);
+            return constructors[0];
         }
-        Constructor<T> theOne = null;
+        Constructor<?> theOne = null;
         for (Constructor<?> constructor : constructors) {
             if (injectionResolver.shouldInject(constructor)) {
                 if (theOne != null) {
                     throw new IllegalArgumentException("More than one constructor marked for injection [" + cls + "]");
                 } else {
-                    theOne = Generics.as(constructor);
+                    theOne = constructor;
                 }
             }
         }

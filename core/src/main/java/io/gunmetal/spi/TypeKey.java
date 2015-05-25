@@ -24,13 +24,13 @@ import java.util.Objects;
 /**
  * @author rees.byars
  */
-public final class TypeKey<T> {
+public final class TypeKey {
 
     private final Type type;
-    private final Class<? super T> raw;
+    private final Class<?> raw;
     private final int hash;
 
-    TypeKey(Type type, Class<? super T> raw) {
+    TypeKey(Type type, Class<?> raw) {
         this.type = type;
         this.raw = raw;
         // TODO this could be better
@@ -49,7 +49,7 @@ public final class TypeKey<T> {
         return type;
     }
 
-    public Class<? super T> raw() {
+    public Class<?> raw() {
         return raw;
     }
 
@@ -61,10 +61,10 @@ public final class TypeKey<T> {
         if (target == this) {
             return true;
         }
-        if (!(target instanceof TypeKey<?>)) {
+        if (!(target instanceof TypeKey)) {
             return false;
         }
-        TypeKey<?> typeKeyTarget = (TypeKey<?>) target;
+        TypeKey typeKeyTarget = (TypeKey) target;
         return type().equals(typeKeyTarget.type());
     }
 
