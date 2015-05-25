@@ -1,6 +1,6 @@
 
 [![Build Status](https://travis-ci.org/gunmetal/gunmetal.svg?branch=master)](https://travis-ci.org/gunmetal/gunmetal)
-[![Coverage Status](https://coveralls.io/repos/gunmetal/gunmetal/badge.svg)](https://coveralls.io/r/gunmetal/gunmetal)
+[![Dependency Status](https://www.versioneye.com/user/projects/556396523637640022020000/badge.svg?style=flat)](https://www.versioneye.com/user/projects/556396523637640022020000)
 
 Gunmetal
 ========
