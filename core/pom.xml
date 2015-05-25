@@ -21,11 +21,6 @@
         </dependency>
 
         <!-- =========  TEST  ========= -->
-
-        <dependency>
-            <groupId>com.googlecode.jmockit</groupId>
-            <artifactId>jmockit</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

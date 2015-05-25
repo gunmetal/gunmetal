@@ -16,16 +16,7 @@
 
 package io.gunmetal.internal;
 
-import io.gunmetal.spi.ClassWalker;
-import io.gunmetal.spi.InjectionResolver;
-import io.gunmetal.spi.ProvisionErrors;
-import io.gunmetal.spi.ResourceMetadata;
-import mockit.Expectations;
-import mockit.Mocked;
-import org.junit.Test;
-
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 /**
  * @author rees.byars
@@ -50,6 +41,7 @@ public class ClassWalkerImplTest {
         static String field2 = "field2";
     }
 
+    /*
     @Test
     public void testWalk(@Mocked final InjectionResolver injectionResolver,
                          @Mocked final ClassWalker.InjectedMemberVisitor memberVisitor,
@@ -88,4 +80,5 @@ public class ClassWalkerImplTest {
         walker.walk(Inner.class, memberVisitor, memberVisitor, resourceMetadata, errors);
 
     }
+    */
 }
