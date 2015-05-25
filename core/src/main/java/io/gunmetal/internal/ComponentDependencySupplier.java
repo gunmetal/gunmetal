@@ -120,13 +120,11 @@ class ComponentDependencySupplier implements DependencySupplier {
                     dependencyRequest, () -> new SupplierStrategyFactory(supplierAdapter));
             if (resourceAccessor != null) {
                 componentGraph.put(dependency, resourceAccessor, context.errors());
-                return resourceAccessor
-                        .process(dependencyRequest, context.errors());
+                return resourceAccessor.process(dependencyRequest, context.errors());
                 // support empty multi-bind request
                 // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
             } else if (Arrays.stream(dependency.qualifier().qualifiers()).anyMatch(q -> q instanceof MultiBind)) {
-                return (supplier, resolutionContext) ->
-                        supplierAdapter.supplier(ArrayList::new);
+                return (supplier, resolutionContext) -> supplierAdapter.supplier(ArrayList::new);
             }
         }
 
@@ -134,8 +132,7 @@ class ComponentDependencySupplier implements DependencySupplier {
             resourceAccessor = createReferenceResourceAccessor(dependencyRequest, RefStrategyFactory::new);
             if (resourceAccessor != null) {
                 componentGraph.put(dependency, resourceAccessor, context.errors());
-                return resourceAccessor
-                        .process(dependencyRequest, context.errors());
+                return resourceAccessor.process(dependencyRequest, context.errors());
             }  else {
                 // support empty multi-bind request
                 // TODO should not know about MultiBind here -> should be included in above mentioned DependencyMetadata
