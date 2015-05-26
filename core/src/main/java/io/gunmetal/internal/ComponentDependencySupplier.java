@@ -110,8 +110,7 @@ class ComponentDependencySupplier implements DependencySupplier {
 
         ResourceAccessor resourceAccessor = componentGraph.get(dependency);
         if (resourceAccessor != null) {
-            return resourceAccessor
-                    .process(dependencyRequest, context.errors());
+            return resourceAccessor.process(dependencyRequest, context.errors());
         }
 
         // TODO totally gross
