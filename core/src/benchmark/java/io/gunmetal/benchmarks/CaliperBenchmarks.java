@@ -5,6 +5,7 @@ import com.google.caliper.Benchmark;
 import com.google.inject.Guice;
 import com.google.inject.Key;
 import dagger.ObjectGraph;
+import io.gunmetal.Component;
 import io.gunmetal.Module;
 import io.gunmetal.internal.ComponentTemplate;
 import io.gunmetal.sandbox.testmocks.AA;
@@ -35,13 +36,13 @@ public class CaliperBenchmarks {
     @BeforeExperiment
     void setUp() {
 
-        slimTemlplate = ComponentTemplate.build(SlimGunmetalBenchMarkModule.SlimComponent.Factory.class);
+        slimTemlplate = Component.buildTemplate(SlimGunmetalBenchMarkModule.SlimComponent.Factory.class);
 
         fieldTemplate =
-                ComponentTemplate.build(FieldGunmetalBenchMarkModule.Component.Factory.class);
+                Component.buildTemplate(FieldGunmetalBenchMarkModule.Component.Factory.class);
 
-        gunmetalProvider = ComponentTemplate
-                .build(SlimGunmetalBenchMarkModule.SlimComponent.Factory.class)
+        gunmetalProvider = Component.buildTemplate(
+                SlimGunmetalBenchMarkModule.SlimComponent.Factory.class)
                 .create()
                 .supplier();
 
@@ -55,8 +56,7 @@ public class CaliperBenchmarks {
         int dummy = 0;
         for (long i = 0; i < reps; i++) {
             InjectionTarget injectionTarget = new InjectionTarget();
-            ComponentTemplate
-                    .build(FieldGunmetalBenchMarkModule.Component.Factory.class)
+            Component.buildTemplate(FieldGunmetalBenchMarkModule.Component.Factory.class)
                     .create()
                     .inject(injectionTarget);
             dummy |= injectionTarget.hashCode();

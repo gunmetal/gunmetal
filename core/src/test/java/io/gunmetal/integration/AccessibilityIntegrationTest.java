@@ -1,10 +1,10 @@
 package io.gunmetal.integration;
 
 import io.gunmetal.BlackList;
+import io.gunmetal.Component;
 import io.gunmetal.Module;
 import io.gunmetal.Supplies;
 import io.gunmetal.WhiteList;
-import io.gunmetal.internal.ComponentTemplate;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -56,16 +56,14 @@ public class AccessibilityIntegrationTest {
 
     @Test(expected = Exception.class)
     public void testBlackListDeny() {
-        ComponentTemplate
-                .build(BlackListedComponentFactory1.class)
+        Component.buildTemplate(BlackListedComponentFactory1.class)
                 .create(new BlackListModule())
                 .string();
     }
 
     @Test(expected = Exception.class)
     public void testWhiteListDeny() {
-        ComponentTemplate
-                .build(BlackListedComponentFactory2.class)
+        Component.buildTemplate(BlackListedComponentFactory2.class)
                 .create(new WhiteListModule())
                 .string();
     }
@@ -73,8 +71,7 @@ public class AccessibilityIntegrationTest {
     @Test
     public void testBlackListGrant() {
         assertEquals(testValue,
-                ComponentTemplate
-                        .build(WhiteListedComponentFactory1.class)
+                Component.buildTemplate(WhiteListedComponentFactory1.class)
                         .create(new BlackListModule())
                         .string());
     }
@@ -82,8 +79,7 @@ public class AccessibilityIntegrationTest {
     @Test
     public void testWhiteListGrant() {
         assertEquals(testValue,
-                ComponentTemplate
-                        .build(WhiteListedComponentFactory2.class)
+                Component.buildTemplate(WhiteListedComponentFactory2.class)
                         .create(new WhiteListModule())
                         .string());
     }
@@ -91,8 +87,7 @@ public class AccessibilityIntegrationTest {
     @Test
     public void testUnrestrictedGrant() {
         assertEquals(testValue,
-                ComponentTemplate
-                        .build(BlackListedComponentFactory3.class)
+                Component.buildTemplate(BlackListedComponentFactory3.class)
                         .create(new UnrestrictedModule())
                         .string());
     }

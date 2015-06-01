@@ -1,7 +1,7 @@
 package io.gunmetal.sandbox;
 
 import com.google.common.eventbus.EventBus;
-import io.gunmetal.Component;
+import io.gunmetal.ComponentFactory;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
@@ -40,7 +40,7 @@ public class ComponentBuilderTest {
 
         public interface Factory {
 
-            @Component(dependsOn = RootModule.class)
+            @ComponentFactory(dependsOn = RootModule.class)
             RootComponent create();
 
         }
@@ -56,7 +56,7 @@ public class ComponentBuilderTest {
 
         public interface Factory {
 
-            @Component(dependsOn = {UiModule.class, WsModule.class, RootModule.class})
+            @ComponentFactory(dependsOn = {UiModule.class, WsModule.class, RootModule.class})
             MainComponent create(UserModule userModule, RootComponent rootComponent);
 
         }
