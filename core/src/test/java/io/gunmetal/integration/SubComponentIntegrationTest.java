@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.util.function.Supplier;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -18,7 +19,35 @@ import static org.junit.Assert.assertTrue;
  */
 public class SubComponentIntegrationTest {
 
-    @Module(dependsOn = SlimGunmetalBenchMarkModule.class, type = Module.Type.COMPONENT)
+    class Thing {
+        String name;
+    }
+
+    @Module(dependsOn = ThingModule.class)
+    class ProvidedModule {
+
+        private String name;
+
+        ProvidedModule(String name) {
+            this.name = name;
+        }
+
+        @Supplies String object(Thing thing) {
+            return name + thing.name;
+        }
+
+    }
+
+    @Module
+    class ThingModule {
+        @Supplies Thing thing() {
+            Thing thing = new Thing();
+            thing.name = "_fromThingModule";
+            return thing;
+        }
+    }
+
+    @Module(dependsOn = SlimGunmetalBenchMarkModule.class, component = true)
     public interface SubComponent {
 
         @Supplies E e();
@@ -31,7 +60,7 @@ public class SubComponentIntegrationTest {
 
     }
 
-    @Module(type = Module.Type.COMPONENT)
+    @Module(component = true)
     public interface RootComponent {
 
         void inject(Object o);
@@ -40,8 +69,10 @@ public class SubComponentIntegrationTest {
 
         Supplier<E> eSupplier();
 
+        String string();
+
         public interface Factory {
-            RootComponent create(SubComponent subComponent);
+            RootComponent create(SubComponent subComponent, ProvidedModule providedModule);
         }
 
     }
@@ -56,13 +87,17 @@ public class SubComponentIntegrationTest {
                 ComponentTemplate.build(RootComponent.Factory.class);
 
         SubComponent subComponent = subComponentFactory.create();
-        RootComponent rootComponent = rootComponentFactory.create(subComponent);
+        RootComponent rootComponent = rootComponentFactory.create(
+                subComponent,
+                new ProvidedModule("test"));
 
         // TODO new component annotation to fix this
 
         assertTrue(rootComponent.eSupplier().get() == rootComponent.eSupplier().get());
         assertTrue(rootComponent.eSupplier().get() == subComponent.e());
         assertFalse(rootComponent.dSupplier().get() == rootComponent.dSupplier().get());
+
+        assertEquals("test_fromThingModule", rootComponent.string());
 
     }
 

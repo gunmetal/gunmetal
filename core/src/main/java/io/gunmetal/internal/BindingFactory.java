@@ -28,6 +28,7 @@ interface BindingFactory {
 
     List<Binding> createBindingsForModule(
             Class<?> module,
+            boolean componentParam,
             ComponentContext context);
 
     Binding createParamBinding(

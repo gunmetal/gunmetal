@@ -7,7 +7,7 @@ import io.gunmetal.Supplies;
 /**
  * @author rees.byars
  */
-@Module(lib = true, type = Module.Type.CONSTRUCTED)
+@Module(lib = true)
 public class AuthLib {
 
     @Supplies private AuthService authService(@FromModule AuthAdapter authAdapter,

@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ConsistentScopesIntegrationTest {
 
-    @Module(dependsOn = SlimGunmetalBenchMarkModule.class, type = Module.Type.COMPONENT)
+    @Module(dependsOn = SlimGunmetalBenchMarkModule.class, component = true)
     public interface TestComponent {
 
         void inject(Object o);

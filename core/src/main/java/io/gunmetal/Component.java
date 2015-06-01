@@ -14,32 +14,22 @@
  * limitations under the License.
  */
 
-package io.gunmetal.sandbox.testmocks;
+package io.gunmetal;
 
-import io.gunmetal.Module;
-import io.gunmetal.Supplies;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.util.function.Supplier;
+/**
+ * @author rees.byars
+ */
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface Component {
 
-@Module
-public class SlimGunmetalBenchMarkModule {
-
-    @Supplies public static AA aa(A a, BB bb, R r, E e, E ee, S s) {
-        return new AA(a, bb, r, e, ee, s);
-    }
-
-    @Module(dependsOn = SlimGunmetalBenchMarkModule.class, component = true)
-    public interface SlimComponent {
-
-        void inject(Object o);
-
-        Supplier<N> supplier();
-
-        public interface Factory {
-            SlimComponent create();
-        }
-
-    }
-
+    Class<?>[] dependsOn() default {};
 
 }

@@ -210,6 +210,10 @@ class RequestVisitorFactoryImpl implements RequestVisitorFactory {
 
             ModuleMetadata requestSourceModule = dependencyRequest.sourceModule();
 
+            if (requestSourceModule.moduleAnnotation().component()) {
+                return;
+            }
+
             if (module == requestSourceModule.moduleClass()) {
                 return;
             }

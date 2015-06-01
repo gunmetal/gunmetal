@@ -9,7 +9,6 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class BindingFactoryImplTest {
 
@@ -20,7 +19,7 @@ public class BindingFactoryImplTest {
     @Inject ComponentGraph componentGraph;
     @Inject ComponentErrors componentErrors;
 
-    @Module(dependsOn = BaseTestModule.class, type = Module.Type.COMPONENT)
+    @Module(dependsOn = BaseTestModule.class, component = true)
     public interface TestComponent {
 
         void inject(BindingFactoryImplTest test);
@@ -35,7 +34,7 @@ public class BindingFactoryImplTest {
 
     TestComponent graph = ComponentTemplate.build(TestComponent.Factory.class).create();
 
-    @Module(type = Module.Type.CONSTRUCTED)
+    @Module
     static class EmptyStatefulModule {
     }
 
@@ -52,7 +51,7 @@ public class BindingFactoryImplTest {
         }
 
         List<Binding> bindings =
-                bindingFactory.createBindingsForModule(MyModule.class, componentContext);
+                bindingFactory.createBindingsForModule(MyModule.class, false, componentContext);
 
         assertEquals(0, bindings.size());
 
@@ -62,13 +61,9 @@ public class BindingFactoryImplTest {
     public void testCreateBindingsForModule_emptyStatefulModule() {
 
         List<Binding> bindings =
-                bindingFactory.createBindingsForModule(EmptyStatefulModule.class, componentContext);
+                bindingFactory.createBindingsForModule(EmptyStatefulModule.class, false, componentContext);
 
-        assertEquals(1, bindings.size());
-
-        Binding binding = bindings.get(0);
-
-        assertTrue(binding.resource().provisionStrategy().get(dependencySupplier, componentContext.newResolutionContext()) instanceof EmptyStatefulModule);
+        assertEquals(0, bindings.size());
 
     }
 

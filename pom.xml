@@ -61,12 +61,6 @@
         <dependencies>
 
             <dependency>
-                <groupId>io.gunmetal</groupId>
-                <artifactId>core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
                 <version>1</version>

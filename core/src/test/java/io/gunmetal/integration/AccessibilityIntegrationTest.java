@@ -19,19 +19,19 @@ public class AccessibilityIntegrationTest {
     @BlackList(BlackListedComponent.class) class Deny { }
     @WhiteList(WhiteListedComponent.class) class Grant { }
 
-    @Module(notAccessibleFrom = Deny.class, type = Module.Type.COMPONENT_PARAM)
+    @Module(notAccessibleFrom = Deny.class)
     static class BlackListModule { @Supplies String string = testValue; }
 
-    @Module(onlyAccessibleFrom = Grant.class, type = Module.Type.COMPONENT_PARAM)
+    @Module(onlyAccessibleFrom = Grant.class)
     static class WhiteListModule { @Supplies String string = testValue; }
 
-    @Module(type = Module.Type.COMPONENT_PARAM)
+    @Module
     static class UnrestrictedModule { @Supplies String string = testValue; }
 
-    @Module(type = Module.Type.COMPONENT)
+    @Module(component = true)
     interface BlackListedComponent { String string(); }
 
-    @Module(type = Module.Type.COMPONENT)
+    @Module(component = true)
     interface WhiteListedComponent { String string(); }
 
     interface BlackListedComponentFactory1 {
