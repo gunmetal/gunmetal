@@ -20,8 +20,7 @@ import java.util.function.Supplier;
  */
 @Bl
 @Module(dependsOn = DalModule.class,
-        notAccessibleFrom = IBlModule.BlackList.class,
-        type = Module.Type.PROVIDED)
+        notAccessibleFrom = IBlModule.BlackList.class)
 public interface IBlModule {
 
     @Dal

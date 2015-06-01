@@ -16,12 +16,12 @@ import static org.junit.Assert.assertEquals;
  */
 public class MultiBindIntegrationTest {
 
-    @Module(type = Module.Type.COMPONENT_PARAM)
+    @Module
     class NonEmptyModule {
         @Supplies @MultiBind Object object = "test";
     }
 
-    @Module(type = Module.Type.COMPONENT)
+    @Module(component = true)
     interface Component {
 
         @MultiBind Supplier<List<Object>> objectsSupplier();

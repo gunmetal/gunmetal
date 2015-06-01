@@ -16,6 +16,7 @@
 
 package io.gunmetal.sandbox;
 
+import io.gunmetal.Component;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
@@ -83,8 +84,7 @@ public class SandboxIntegrationTest {
     }
 
     @Module(notAccessibleFrom = TestModule.BlackList.class,
-            dependsOn = StatefulModule.class,
-            type = Module.Type.STATELESS)
+            dependsOn = StatefulModule.class)
     public static class TestModule {
 
         @Supplies @Singleton @Overrides(allowCycle = true) static Bad providedCirc(Supplier<Circ> circProvider) {
@@ -167,7 +167,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(type = Module.Type.COMPONENT_PARAM)
+    @Module
     @Stateful
     @Singleton
     public static class StatefulModule {
@@ -204,7 +204,7 @@ public class SandboxIntegrationTest {
         }
     }
 
-    @Module(dependsOn = TestModule.class, type = Module.Type.COMPONENT)
+    @Module(component = true)
     public interface TestComponent {
 
         void inject(Object o);
@@ -214,12 +214,15 @@ public class SandboxIntegrationTest {
         @Supplies SandboxIntegrationTest sandboxIntegrationTest();
 
         public interface Factory {
+
+            @Component(dependsOn = TestModule.class)
             TestComponent create(StatefulModule statefulModule);
+
         }
 
     }
 
-    @Module(dependsOn = NewGunmetalBenchMarkModule.class, type = Module.Type.COMPONENT)
+    @Module(dependsOn = NewGunmetalBenchMarkModule.class, component = true)
     public interface GComponent {
 
         void inject(Object o);
@@ -308,7 +311,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(dependsOn = {TestModule.class, M.class}, type = Module.Type.COMPONENT)
+    @Module(dependsOn = {TestModule.class, M.class})
     public interface BadComponent {
 
         public interface Factory {
@@ -322,7 +325,7 @@ public class SandboxIntegrationTest {
         ComponentTemplate.build(BadComponent.Factory.class);
     }
 
-    @Module(subsumes = MyLibrary.class, type = Module.Type.PROVIDED)
+    @Module(subsumes = MyLibrary.class)
     @Main
     public static class PlusModule implements Cheese {
 
@@ -359,7 +362,7 @@ public class SandboxIntegrationTest {
     public interface Cheese {
     }
 
-    @Module(dependsOn = PlusModule.class, type = Module.Type.COMPONENT)
+    @Module(dependsOn = PlusModule.class, component = true)
     public interface PlusComponent {
 
         void inject(Object o);
@@ -438,7 +441,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(dependsOn = ConversionModule.class, type = Module.Type.COMPONENT)
+    @Module(dependsOn = ConversionModule.class, component = true)
     public interface ConversionComponent {
 
         void inject(Object o);
@@ -497,7 +500,7 @@ public class SandboxIntegrationTest {
         }
     }
 
-    @Module(dependsOn = MyModule.class, type = Module.Type.COMPONENT)
+    @Module(dependsOn = MyModule.class, component = true)
     public interface MyComponent {
 
         MyModule getMyModule(@Param String name);
@@ -529,7 +532,7 @@ public class SandboxIntegrationTest {
 
     }
 
-    @Module(dependsOn = Bullshit.class, type = Module.Type.COMPONENT)
+    @Module(dependsOn = Bullshit.class, component = true)
     public interface BullshitComponent {
         Bullshit bs(@Param String word);
         public static interface Factory {

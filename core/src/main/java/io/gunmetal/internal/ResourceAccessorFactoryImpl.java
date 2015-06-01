@@ -29,8 +29,10 @@ class ResourceAccessorFactoryImpl implements ResourceAccessorFactory {
     }
 
     @Override public List<ResourceAccessor> createForModule(
-            Class<?> module, ComponentContext context) {
-        return bindingFactory.createBindingsForModule(module, context)
+            Class<?> module,
+            boolean componentParam,
+            ComponentContext context) {
+        return bindingFactory.createBindingsForModule(module, componentParam, context)
                 .stream()
                 .map(binding -> new ResourceAccessorImpl(
                         binding,

@@ -41,9 +41,9 @@ public @interface Module {
 
     AccessLevel access() default AccessLevel.UNDEFINED;
 
-    Type type() default Type.STATELESS;
-
     boolean lib() default false;
+
+    boolean component() default false;
 
     Module NONE = new Module() {
 
@@ -71,18 +71,14 @@ public @interface Module {
             return AccessLevel.UNDEFINED;
         }
 
-        @Override public Type type() {
-            return Type.STATELESS;
-        }
-
         @Override public boolean lib() {
             return false;
         }
 
-    };
+        @Override public boolean component() {
+            return false;
+        }
 
-    public enum Type {
-        STATELESS, COMPONENT_PARAM, CONSTRUCTED, PROVIDED, COMPONENT
-    }
+    };
 
 }

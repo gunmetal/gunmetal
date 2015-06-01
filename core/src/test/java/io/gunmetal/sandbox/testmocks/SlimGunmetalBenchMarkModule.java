@@ -28,7 +28,7 @@ public class SlimGunmetalBenchMarkModule {
         return new AA(a, bb, r, e, ee, s);
     }
 
-    @Module(dependsOn = SlimGunmetalBenchMarkModule.class, type = Module.Type.COMPONENT)
+    @Module(dependsOn = SlimGunmetalBenchMarkModule.class, component = true)
     public interface SlimComponent {
 
         void inject(Object o);

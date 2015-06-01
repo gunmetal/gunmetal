@@ -53,11 +53,8 @@ class BindingFactoryImpl implements BindingFactory {
     }
 
     @Override public List<Binding> createBindingsForModule(Class<?> module,
+                                                           boolean componentParam,
                                                            ComponentContext context) {
-        if (context.loadedModules().contains(module)) {
-            return Collections.emptyList();
-        }
-        context.loadedModules().add(module);
 
         final Module moduleAnnotation = module.getAnnotation(Module.class);
         if (moduleAnnotation == null) {
@@ -72,6 +69,7 @@ class BindingFactoryImpl implements BindingFactory {
                 module,
                 resourceBindings,
                 moduleMetadata,
+                componentParam,
                 context);
         return resourceBindings;
 
@@ -120,6 +118,7 @@ class BindingFactoryImpl implements BindingFactory {
                 dependencyRequest.dependency().typeKey().raw(), // TODO hmmmm
                 resourceBindings,
                 moduleMetadata,
+                false,
                 context);
         return resourceBindings;
     }
@@ -133,6 +132,7 @@ class BindingFactoryImpl implements BindingFactory {
                                      Class<?> module,
                                      List<Binding> resourceBindings,
                                      ModuleMetadata moduleMetadata,
+                                     boolean componentParam,
                                      ComponentContext context) {
 
         if (!module.isInterface() && module.getSuperclass() != Object.class && !module.isPrimitive()) {
@@ -142,17 +142,11 @@ class BindingFactoryImpl implements BindingFactory {
         Dependency moduleDependency =
                 Dependency.from(moduleMetadata.qualifier(), module);
 
-        if (moduleAnnotation.type() == Module.Type.COMPONENT_PARAM || moduleAnnotation.type() == Module.Type.COMPONENT) {
+        if (componentParam) {
             Resource resource = resourceFactory.withParamProvider(
                     resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()),
                     moduleDependency,
                     context);
-            resourceBindings.add(new BindingImpl(
-                    resource,
-                    Collections.singletonList(moduleDependency)));
-        } else if (moduleAnnotation.type() == Module.Type.CONSTRUCTED) {
-            Resource resource = resourceFactory.withClassProvider(module,
-                    resourceMetadataResolver.resolveMetadata(module, moduleMetadata, context.errors()), context);
             resourceBindings.add(new BindingImpl(
                     resource,
                     Collections.singletonList(moduleDependency)));
@@ -210,11 +204,15 @@ class BindingFactoryImpl implements BindingFactory {
                     library,
                     resourceBindings,
                     moduleMetadata,
+                    false,
                     context);
         }
-        if (moduleAnnotation.type() != Module.Type.COMPONENT) {
+        if (!moduleAnnotation.component()) {
             for (Class<?> m : moduleAnnotation.dependsOn()) {
-                resourceBindings.addAll(createBindingsForModule(m, context));
+                if (!context.loadedModules().contains(m)) {
+                    context.loadedModules().add(module);
+                    resourceBindings.addAll(createBindingsForModule(m, false, context));
+                }
             }
         }
     }
