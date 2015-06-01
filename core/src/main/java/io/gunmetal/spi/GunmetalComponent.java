@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * @author rees.byars
  */
-@Module(type = Module.Type.COMPONENT, access = AccessLevel.PRIVATE)
+@Module(access = AccessLevel.PRIVATE)
 public interface GunmetalComponent {
 
     InjectionResolver injectionResolver();

@@ -1,5 +1,6 @@
 package io.gunmetal.internal;
 
+import io.gunmetal.Component;
 import io.gunmetal.Module;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
@@ -18,6 +19,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,20 +80,6 @@ public final class ComponentTemplate {
         Method componentMethod = factoryMethods[0];
         Class<?> componentClass = componentMethod.getReturnType();
 
-        Set<Class<?>> modules = new HashSet<>();
-        Module componentModuleAnnotation = componentClass.getAnnotation(Module.class);
-        if (componentModuleAnnotation != null) {
-            if (componentModuleAnnotation.type() != Module.Type.COMPONENT) {
-                throw new RuntimeException("The component class [" + componentClass.getName()
-                        + "] must be Module.Type.Component");
-            }
-            Collections.addAll(modules, componentModuleAnnotation.dependsOn());
-        } else {
-            throw new RuntimeException("The component class [" + componentClass.getName()
-                    + "] must be annotated with @Module");
-        }
-        Collections.addAll(modules, componentMethod.getParameterTypes());
-
         List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>(gunmetalComponent.strategyDecorators());
         strategyDecorators.add(new ScopeDecorator(scope -> {
             ProvisionStrategyDecorator decorator = gunmetalComponent.scopeDecorators().get(scope);
@@ -146,9 +134,29 @@ public final class ComponentTemplate {
                 Collections.emptyMap()
         );
 
+        Set<Class<?>> modules = new HashSet<>();
+        Module componentModuleAnnotation = componentClass.getAnnotation(Module.class);
+        if (componentModuleAnnotation == null) {
+            throw new RuntimeException("The component class [" + componentClass.getName()
+                    + "] must be annotated with @Module");
+        } else if (!componentModuleAnnotation.component()) {
+            throw new RuntimeException("The component class [" + componentClass.getName()
+                    + "] must have @Module(component=true)");
+        }
+        Component componentAnnotation = componentMethod.getAnnotation(Component.class);
+        if (componentAnnotation != null) {
+            Collections.addAll(modules, componentAnnotation.dependsOn());
+        }
+        Collections.addAll(modules, componentMethod.getParameterTypes());
+        Collections.addAll(modules, componentModuleAnnotation.dependsOn());
+        componentContext.loadedModules().addAll(modules);
+        List<Class<?>> factoryParamTypes = Arrays.asList(componentMethod.getParameterTypes());
         for (Class<?> module : modules) {
             List<ResourceAccessor> moduleResourceAccessors =
-                    resourceAccessorFactory.createForModule(module, componentContext);
+                    resourceAccessorFactory.createForModule(
+                            module,
+                            factoryParamTypes.contains(module),
+                            componentContext);
             componentGraph.putAll(moduleResourceAccessors, errors);
         }
 
@@ -340,6 +348,10 @@ public final class ComponentTemplate {
             this.dependencies = dependencies;
         }
 
+    }
+
+    interface DefaultTemplate<T> {
+        T create();
     }
 
 }

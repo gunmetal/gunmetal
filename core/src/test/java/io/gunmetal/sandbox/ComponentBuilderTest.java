@@ -1,6 +1,7 @@
 package io.gunmetal.sandbox;
 
 import com.google.common.eventbus.EventBus;
+import io.gunmetal.Component;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
@@ -30,7 +31,7 @@ public class ComponentBuilderTest {
 
     @Inject EventBus eventBus;
 
-    @Module(dependsOn = RootModule.class, type = Module.Type.COMPONENT)
+    @Module(component = true)
     public interface RootComponent {
 
         @MultiBind List<ProvisionStrategyDecorator> strategyDecorators();
@@ -39,13 +40,14 @@ public class ComponentBuilderTest {
 
         public interface Factory {
 
+            @Component(dependsOn = RootModule.class)
             RootComponent create();
 
         }
 
     }
 
-    @Module(dependsOn = {UiModule.class, WsModule.class, RootModule.class}, type = Module.Type.COMPONENT)
+    @Module(component = true)
     public interface MainComponent {
 
         void inject(ComponentBuilderTest test);
@@ -54,6 +56,7 @@ public class ComponentBuilderTest {
 
         public interface Factory {
 
+            @Component(dependsOn = {UiModule.class, WsModule.class, RootModule.class})
             MainComponent create(UserModule userModule, RootComponent rootComponent);
 
         }

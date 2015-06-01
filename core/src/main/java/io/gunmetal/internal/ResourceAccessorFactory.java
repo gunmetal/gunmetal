@@ -15,6 +15,7 @@ interface ResourceAccessorFactory {
 
     List<ResourceAccessor> createForModule(
             Class<?> module,
+            boolean componentParam,
             ComponentContext context);
 
     ResourceAccessor createForParam(

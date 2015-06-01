@@ -27,7 +27,7 @@ import java.util.Map;
  * @author rees.byars
  */
 @Singleton
-@Module(type = Module.Type.CONSTRUCTED)
+@Module
 public class BaseTestModule {
 
     @Supplies ProvisionStrategyDecorator strategyDecorator =
