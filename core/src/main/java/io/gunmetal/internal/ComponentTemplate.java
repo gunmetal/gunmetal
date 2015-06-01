@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,6 +80,42 @@ public final class ComponentTemplate {
         Method componentMethod = factoryMethods[0];
         Class<?> componentClass = componentMethod.getReturnType();
 
+        Set<Class<?>> modules = new LinkedHashSet<>();
+
+        Component componentAnnotation = componentMethod.getAnnotation(Component.class);
+        if (componentAnnotation != null) {
+            Collections.addAll(modules, componentAnnotation.dependsOn());
+        }
+
+        Class<?>[] paramTypes = componentMethod.getParameterTypes();
+        Collections.addAll(modules, paramTypes);
+
+        ComponentTemplate template = build(gunmetalComponent, componentClass, modules, paramTypes);
+
+        return componentFactoryInterface.cast(Proxy.newProxyInstance(
+                componentFactoryInterface.getClassLoader(),
+                new Class<?>[]{componentFactoryInterface},
+                (proxy, method, args) -> {
+                    // TODO toString, hashCode etc
+                    return template.newInstance(args == null ? new Object[]{} : args);
+                }));
+    }
+
+    public static <T> T buildComponent(Class<T> componentClass) {
+        return buildComponent(new GunmetalComponent.Default(), componentClass);
+    }
+
+    public static <T> T buildComponent(GunmetalComponent gunmetalComponent, Class<T> componentClass) {
+        return componentClass.cast(
+                build(gunmetalComponent, componentClass, new LinkedHashSet<>(), new Class[]{}).newInstance());
+    }
+
+    private static ComponentTemplate build(
+            GunmetalComponent gunmetalComponent,
+            Class<?> componentClass,
+            Set<Class<?>> modules,
+            Class<?>[] paramTypes) {
+
         List<ProvisionStrategyDecorator> strategyDecorators = new ArrayList<>(gunmetalComponent.strategyDecorators());
         strategyDecorators.add(new ScopeDecorator(scope -> {
             ProvisionStrategyDecorator decorator = gunmetalComponent.scopeDecorators().get(scope);
@@ -134,7 +170,6 @@ public final class ComponentTemplate {
                 Collections.emptyMap()
         );
 
-        Set<Class<?>> modules = new HashSet<>();
         Module componentModuleAnnotation = componentClass.getAnnotation(Module.class);
         if (componentModuleAnnotation == null) {
             throw new RuntimeException("The component class [" + componentClass.getName()
@@ -143,14 +178,9 @@ public final class ComponentTemplate {
             throw new RuntimeException("The component class [" + componentClass.getName()
                     + "] must have @Module(component=true)");
         }
-        Component componentAnnotation = componentMethod.getAnnotation(Component.class);
-        if (componentAnnotation != null) {
-            Collections.addAll(modules, componentAnnotation.dependsOn());
-        }
-        Collections.addAll(modules, componentMethod.getParameterTypes());
         Collections.addAll(modules, componentModuleAnnotation.dependsOn());
         componentContext.loadedModules().addAll(modules);
-        List<Class<?>> factoryParamTypes = Arrays.asList(componentMethod.getParameterTypes());
+        List<Class<?>> factoryParamTypes = Arrays.asList(paramTypes);
         for (Class<?> module : modules) {
             List<ResourceAccessor> moduleResourceAccessors =
                     resourceAccessorFactory.createForModule(
@@ -169,7 +199,7 @@ public final class ComponentTemplate {
                         componentContext,
                         gunmetalComponent.options().contains(Option.REQUIRE_INTERFACES));
 
-         // TODO move all this shit to a method or sumpin
+        // TODO move all this shit to a method or sumpin
         Map<Method, ComponentMethodConfig> componentMethodConfigs = new HashMap<>();
         Qualifier componentQualifier = gunmetalComponent.qualifierResolver().resolve(componentClass);
 
@@ -220,7 +250,6 @@ public final class ComponentTemplate {
         componentLinker.linkGraph(dependencySupplier, componentContext.newResolutionContext());
         errors.throwIfNotEmpty();
 
-        Class<?>[] paramTypes = componentMethod.getParameterTypes();
         Dependency[] dependencies = new Dependency[paramTypes.length];
         for (int i = 0; i < paramTypes.length; i++) {
             Class<?> paramType = paramTypes[i];
@@ -233,7 +262,7 @@ public final class ComponentTemplate {
             dependencies[i] = paramDependency;
         }
 
-        final ComponentTemplate template = new ComponentTemplate(
+        return new ComponentTemplate(
                 componentClass,
                 gunmetalComponent,
                 new ComponentInjectors(
@@ -246,14 +275,6 @@ public final class ComponentTemplate {
                 dependencies,
                 componentMethodConfigs,
                 componentContext);
-
-        return componentFactoryInterface.cast(Proxy.newProxyInstance(
-                componentFactoryInterface.getClassLoader(),
-                new Class<?>[]{componentFactoryInterface},
-                (proxy, method, args) -> {
-                    // TODO toString, hashCode etc
-                    return template.newInstance(args == null ? new Object[]{} : args);
-                }));
     }
 
     Object newInstance(Object... statefulModules) {
@@ -348,10 +369,6 @@ public final class ComponentTemplate {
             this.dependencies = dependencies;
         }
 
-    }
-
-    interface DefaultTemplate<T> {
-        T create();
     }
 
 }
