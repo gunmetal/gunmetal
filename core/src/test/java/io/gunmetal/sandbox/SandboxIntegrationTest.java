@@ -204,7 +204,7 @@ public class SandboxIntegrationTest {
         }
     }
 
-    @Module(component = true)
+    @Module(component = true, dependsOn = TestModule.class)
     public interface TestComponent {
 
         void inject(Object o);
@@ -215,7 +215,7 @@ public class SandboxIntegrationTest {
 
         public interface Factory {
 
-            @Component(dependsOn = TestModule.class)
+            @Component()
             TestComponent create(StatefulModule statefulModule);
 
         }
@@ -226,10 +226,6 @@ public class SandboxIntegrationTest {
     public interface GComponent {
 
         void inject(Object o);
-
-        public interface Factory {
-            GComponent create();
-        }
 
     }
 
@@ -282,8 +278,7 @@ public class SandboxIntegrationTest {
         Dep2 dep2 = new Dep2();
 
         GComponent gApp = ComponentTemplate
-                .build(GComponent.Factory.class)
-                .create();
+                .buildComponent(GComponent.class);
 
         gApp.inject(dep2);
         A a = dep2.a;
