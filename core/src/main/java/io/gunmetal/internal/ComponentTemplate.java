@@ -1,6 +1,7 @@
 package io.gunmetal.internal;
 
 import io.gunmetal.Component;
+import io.gunmetal.ComponentFactory;
 import io.gunmetal.Module;
 import io.gunmetal.spi.Dependency;
 import io.gunmetal.spi.DependencyRequest;
@@ -63,10 +64,6 @@ public final class ComponentTemplate {
         this.templateContext = templateContext;
     }
 
-    public static <T> T build(Class<T> componentFactoryInterface) {
-        return build(new GunmetalComponent.Default(), componentFactoryInterface);
-    }
-
     public static <T> T build(GunmetalComponent gunmetalComponent, Class<T> componentFactoryInterface) {
 
         if (!componentFactoryInterface.isInterface()) {
@@ -82,9 +79,9 @@ public final class ComponentTemplate {
 
         Set<Class<?>> modules = new LinkedHashSet<>();
 
-        Component componentAnnotation = componentMethod.getAnnotation(Component.class);
-        if (componentAnnotation != null) {
-            Collections.addAll(modules, componentAnnotation.dependsOn());
+        ComponentFactory componentFactoryAnnotation = componentFactoryInterface.getAnnotation(ComponentFactory.class);
+        if (componentFactoryAnnotation != null) {
+            Collections.addAll(modules, componentFactoryAnnotation.dependsOn());
         }
 
         Class<?>[] paramTypes = componentMethod.getParameterTypes();
@@ -99,10 +96,6 @@ public final class ComponentTemplate {
                     // TODO toString, hashCode etc
                     return template.newInstance(args == null ? new Object[]{} : args);
                 }));
-    }
-
-    public static <T> T buildComponent(Class<T> componentClass) {
-        return buildComponent(new GunmetalComponent.Default(), componentClass);
     }
 
     public static <T> T buildComponent(GunmetalComponent gunmetalComponent, Class<T> componentClass) {
@@ -314,7 +307,7 @@ public final class ComponentTemplate {
 
         return componentClass.cast(Proxy.newProxyInstance(
                 getClass().getClassLoader(),
-                new Class<?>[]{componentClass},
+                new Class<?>[]{componentClass, Component.class},
                 (proxy, method, args) -> {
                     if (Object.class == method.getDeclaringClass()) {
                         String name = method.getName();

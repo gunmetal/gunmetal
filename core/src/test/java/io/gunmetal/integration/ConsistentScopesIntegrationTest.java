@@ -1,8 +1,8 @@
 package io.gunmetal.integration;
 
+import io.gunmetal.Component;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
-import io.gunmetal.internal.ComponentTemplate;
 import io.gunmetal.sandbox.testmocks.D;
 import io.gunmetal.sandbox.testmocks.E;
 import io.gunmetal.sandbox.testmocks.SlimGunmetalBenchMarkModule;
@@ -50,7 +50,7 @@ public class ConsistentScopesIntegrationTest {
     @Test
     public void testConsistentScopes() {
 
-        Factory factory = ComponentTemplate.build(Factory.class);
+        Factory factory = Component.buildTemplate(Factory.class);
 
         TestComponent component1 = factory.create();
         InjectTest test1 = new InjectTest();

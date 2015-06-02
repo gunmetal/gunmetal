@@ -1,7 +1,7 @@
 package io.gunmetal.sandbox;
 
 import com.google.common.eventbus.EventBus;
-import io.gunmetal.Component;
+import io.gunmetal.ComponentFactory;
 import io.gunmetal.Inject;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
@@ -38,9 +38,9 @@ public class ComponentBuilderTest {
 
         @Named("thread") ProvisionStrategyDecorator threadScope();
 
+        @ComponentFactory(dependsOn = RootModule.class)
         public interface Factory {
 
-            @Component(dependsOn = RootModule.class)
             RootComponent create();
 
         }
@@ -54,9 +54,9 @@ public class ComponentBuilderTest {
 
         EventBus eventBus();
 
+        @ComponentFactory(dependsOn = {UiModule.class, WsModule.class, RootModule.class})
         public interface Factory {
 
-            @Component(dependsOn = {UiModule.class, WsModule.class, RootModule.class})
             MainComponent create(UserModule userModule, RootComponent rootComponent);
 
         }
@@ -76,15 +76,6 @@ public class ComponentBuilderTest {
                                 Option.RESTRICT_FIELD_INJECTION),
                         RootComponent.Factory.class)
                 .create();
-
-        /*
-        assertNotNull(
-                rootComponent
-                        .plus()
-                        .build(MainComponent.Factory.class)
-                        .create(new UserModule("test")));
-                        */
-
 
         GunmetalComponent gunmetalComponent = new GunmetalComponent.Default(
                 Option.REQUIRE_ACYCLIC,

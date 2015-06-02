@@ -17,6 +17,7 @@
 package io.gunmetal.sandbox;
 
 import io.gunmetal.Component;
+import io.gunmetal.ComponentFactory;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
 import io.gunmetal.Lazy;
@@ -27,7 +28,6 @@ import io.gunmetal.Param;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
 import io.gunmetal.Supplies;
-import io.gunmetal.internal.ComponentTemplate;
 import io.gunmetal.sandbox.testmocks.A;
 import io.gunmetal.sandbox.testmocks.AA;
 import io.gunmetal.sandbox.testmocks.F;
@@ -213,9 +213,9 @@ public class SandboxIntegrationTest {
 
         @Supplies SandboxIntegrationTest sandboxIntegrationTest();
 
+        @ComponentFactory
         public interface Factory {
 
-            @Component()
             TestComponent create(StatefulModule statefulModule);
 
         }
@@ -232,8 +232,8 @@ public class SandboxIntegrationTest {
     @Test
     public void testBuild() {
 
-        TestComponent.Factory templateGraph = ComponentTemplate
-                .build(
+        TestComponent.Factory templateGraph = Component
+                .buildTemplate(
                         new GunmetalComponent.Default(Option.REQUIRE_ACYCLIC),
                         TestComponent.Factory.class);
         templateGraph.create(new StatefulModule("rees"));
@@ -277,8 +277,7 @@ public class SandboxIntegrationTest {
 
         Dep2 dep2 = new Dep2();
 
-        GComponent gApp = ComponentTemplate
-                .buildComponent(GComponent.class);
+        GComponent gApp = Component.build(GComponent.class);
 
         gApp.inject(dep2);
         A a = dep2.a;
@@ -317,7 +316,7 @@ public class SandboxIntegrationTest {
 
     @Test(expected = RuntimeException.class)
     public void testBlackList() {
-        ComponentTemplate.build(BadComponent.Factory.class);
+        Component.build(BadComponent.Factory.class);
     }
 
     @Module(subsumes = MyLibrary.class)
@@ -378,10 +377,10 @@ public class SandboxIntegrationTest {
 
         Dep dep = new Dep();
 
-        TestComponent parent = ComponentTemplate.build(TestComponent.Factory.class)
+        TestComponent parent = Component.buildTemplate(TestComponent.Factory.class)
                 .create(new StatefulModule("plus"));
 
-        PlusComponent.Factory childTemplate = ComponentTemplate.build(PlusComponent.Factory.class);
+        PlusComponent.Factory childTemplate = Component.buildTemplate(PlusComponent.Factory.class);
         PlusComponent child = childTemplate.create(parent);
 
         child.inject(dep);
@@ -474,7 +473,7 @@ public class SandboxIntegrationTest {
         };
 
         ConversionComponent graph =
-                ComponentTemplate.build(gunmetalComponent, ConversionComponent.Factory.class).create();
+                Component.buildTemplate(gunmetalComponent, ConversionComponent.Factory.class).create();
 
         ConversionModule c = new ConversionModule();
         graph.inject(c);
@@ -507,8 +506,8 @@ public class SandboxIntegrationTest {
 
     @Test
     public void testComponent() {
-        MyComponent component = ComponentTemplate
-                .build(MyComponent.Factory.class)
+        MyComponent component = Component
+                .buildTemplate(MyComponent.Factory.class)
                 .create();
         assertEquals("sweet", component.getMyModule("sweet").name);
     }
@@ -537,8 +536,8 @@ public class SandboxIntegrationTest {
 
     @Test
     public void testBullShit() {
-        ComponentTemplate
-                .build(BullshitComponent.Factory.class)
+        Component
+                .buildTemplate(BullshitComponent.Factory.class)
                 .bullshitComponent()
                 .bs("what");
     }

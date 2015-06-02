@@ -1,8 +1,8 @@
 package io.gunmetal.integration;
 
+import io.gunmetal.Component;
 import io.gunmetal.Module;
 import io.gunmetal.Supplies;
-import io.gunmetal.internal.ComponentTemplate;
 import io.gunmetal.sandbox.testmocks.D;
 import io.gunmetal.sandbox.testmocks.E;
 import io.gunmetal.sandbox.testmocks.SlimGunmetalBenchMarkModule;
@@ -81,10 +81,10 @@ public class SubComponentIntegrationTest {
     public void testSubComponent() {
 
         SubComponent.Factory subComponentFactory =
-                ComponentTemplate.build(SubComponent.Factory.class);
+                Component.buildTemplate(SubComponent.Factory.class);
 
         RootComponent.Factory rootComponentFactory =
-                ComponentTemplate.build(RootComponent.Factory.class);
+                Component.buildTemplate(RootComponent.Factory.class);
 
         SubComponent subComponent = subComponentFactory.create();
         RootComponent rootComponent = rootComponentFactory.create(

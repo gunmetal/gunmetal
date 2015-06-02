@@ -1,35 +1,27 @@
-/*
- * Copyright (c) 2013.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.gunmetal;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import io.gunmetal.internal.ComponentTemplate;
+import io.gunmetal.spi.GunmetalComponent;
 
 /**
  * @author rees.byars
  */
-@Target({ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface Component {
+public interface Component {
 
-    Class<?>[] dependsOn() default {};
+    public static <T> T buildTemplate(Class<T> componentFactoryInterface) {
+        return buildTemplate(new GunmetalComponent.Default(), componentFactoryInterface);
+    }
+
+    public static <T> T buildTemplate(GunmetalComponent gunmetalComponent, Class<T> componentFactoryInterface) {
+        return ComponentTemplate.build(gunmetalComponent, componentFactoryInterface);
+    }
+
+    public static <T> T build(Class<T> componentClass) {
+        return build(new GunmetalComponent.Default(), componentClass);
+    }
+
+    public static <T> T build(GunmetalComponent gunmetalComponent, Class<T> componentClass) {
+        return ComponentTemplate.buildComponent(gunmetalComponent, componentClass);
+    }
 
 }

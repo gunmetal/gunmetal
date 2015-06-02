@@ -1,9 +1,9 @@
 package io.gunmetal.integration;
 
+import io.gunmetal.Component;
 import io.gunmetal.Module;
 import io.gunmetal.MultiBind;
 import io.gunmetal.Supplies;
-import io.gunmetal.internal.ComponentTemplate;
 import org.junit.Test;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public class MultiBindIntegrationTest {
     }
 
     @Module(component = true)
-    interface Component {
+    interface TestComponent {
 
         @MultiBind Supplier<List<Object>> objectsSupplier();
 
@@ -30,31 +30,31 @@ public class MultiBindIntegrationTest {
     }
 
     interface EmptyComponentFactory {
-        Component create();
+        TestComponent create();
     }
 
     interface NonEmptyComponentFactory {
-        Component create(NonEmptyModule nonEmptyModule);
+        TestComponent create(NonEmptyModule nonEmptyModule);
     }
 
     @Test
     public void testEmpty() {
-        assertEquals(0, ComponentTemplate.build(EmptyComponentFactory.class).create().objects().size());
+        assertEquals(0, Component.buildTemplate(EmptyComponentFactory.class).create().objects().size());
     }
 
     @Test
     public void testEmptyProvider() {
-        assertEquals(0, ComponentTemplate.build(EmptyComponentFactory.class).create().objectsSupplier().get().size());
+        assertEquals(0, Component.buildTemplate(EmptyComponentFactory.class).create().objectsSupplier().get().size());
     }
 
     @Test
     public void testNonEmpty() {
-        assertEquals("test", ComponentTemplate.build(NonEmptyComponentFactory.class).create(new NonEmptyModule()).objects().get(0));
+        assertEquals("test", Component.buildTemplate(NonEmptyComponentFactory.class).create(new NonEmptyModule()).objects().get(0));
     }
 
     @Test
     public void testNonEmptyProvider() {
-        assertEquals("test", ComponentTemplate.build(NonEmptyComponentFactory.class).create(new NonEmptyModule()).objectsSupplier().get().get(0));
+        assertEquals("test", Component.buildTemplate(NonEmptyComponentFactory.class).create(new NonEmptyModule()).objectsSupplier().get().get(0));
     }
 
 }
