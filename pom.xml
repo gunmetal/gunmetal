@@ -18,19 +18,19 @@
 
     <name>gunmetal</name>
     <description>A JSR-330 dependency injection and application modularity library for Java.</description>
-    <url>https://github.com/overengineer/gunmetal</url>
+    <url>https://github.com/gunmetal/gunmetal</url>
     <inceptionYear>2013</inceptionYear>
 
     <scm>
-        <url>http://github.com/overengineer/gunmetal/</url>
-        <connection>scm:git:git://github.com/overengineer/gunmetal.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/overengineer/gunmetal.git</developerConnection>
+        <url>http://github.com/gunmetal/gunmetal/</url>
+        <connection>scm:git:git://github.com/gunmetal/gunmetal.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/gunmetal/gunmetal.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>http://github.com/overengineer/gunmetal/issues</url>
+        <url>http://github.com/gunmetal/gunmetal/issues</url>
     </issueManagement>
 
     <licenses>
@@ -214,7 +214,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.4.201502262128</version>
+                <version>0.7.5.201505241946</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>

@@ -79,7 +79,7 @@ public final class ComponentTemplate {
 
         Set<Class<?>> modules = new LinkedHashSet<>();
 
-        ComponentFactory componentFactoryAnnotation = componentMethod.getAnnotation(ComponentFactory.class);
+        ComponentFactory componentFactoryAnnotation = componentFactoryInterface.getAnnotation(ComponentFactory.class);
         if (componentFactoryAnnotation != null) {
             Collections.addAll(modules, componentFactoryAnnotation.dependsOn());
         }

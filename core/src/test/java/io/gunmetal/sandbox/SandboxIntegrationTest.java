@@ -16,6 +16,7 @@
 
 package io.gunmetal.sandbox;
 
+import io.gunmetal.Component;
 import io.gunmetal.ComponentFactory;
 import io.gunmetal.FromModule;
 import io.gunmetal.Inject;
@@ -27,7 +28,6 @@ import io.gunmetal.Param;
 import io.gunmetal.Ref;
 import io.gunmetal.Singleton;
 import io.gunmetal.Supplies;
-import io.gunmetal.Component;
 import io.gunmetal.sandbox.testmocks.A;
 import io.gunmetal.sandbox.testmocks.AA;
 import io.gunmetal.sandbox.testmocks.F;
@@ -213,9 +213,9 @@ public class SandboxIntegrationTest {
 
         @Supplies SandboxIntegrationTest sandboxIntegrationTest();
 
+        @ComponentFactory
         public interface Factory {
 
-            @ComponentFactory()
             TestComponent create(StatefulModule statefulModule);
 
         }
